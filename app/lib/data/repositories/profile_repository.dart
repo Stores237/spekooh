@@ -12,8 +12,12 @@ abstract class ProfileRepository {
 }
 
 class MockProfileRepository implements ProfileRepository {
+  MockProfileRepository({SpekoohUser? user}) : _user = user ?? mockGuestUser;
+
+  final SpekoohUser _user;
+
   @override
-  Future<SpekoohUser> getUser() => Future.value(mockGuestUser);
+  Future<SpekoohUser> getUser() => Future.value(_user);
 
   @override
   Future<List<Achievement>> getAchievements() => Future.value(mockAchievements);

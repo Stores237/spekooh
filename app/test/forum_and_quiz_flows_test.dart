@@ -49,6 +49,38 @@ void main() {
     expect(find.text('Great question!'), findsOneWidget);
   });
 
+  testWidgets('Forum: filter chips really filter — Unanswered is real, My subjects/Solved are honest not-yet-available', (tester) async {
+    final repo = MockForumRepository();
+    // The mock posts are all pre-answered, so a genuinely-real "Unanswered"
+    // filter should empty the list, not just relabel the same content.
+    await repo.createPost(tag: 'Chemistry', title: 'Freshly asked, zero replies', body: 'x');
+    await tester.pumpWidget(MaterialApp(theme: appTheme, home: ForumScreen(repository: repo)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Freshly asked, zero replies'), findsOneWidget);
+
+    await tester.tap(find.text('Unanswered'));
+    await tester.pump();
+    expect(find.text('Freshly asked, zero replies'), findsOneWidget); // the one real unanswered post survives
+    expect(find.textContaining('Rescheduling'), findsNothing); // the pre-answered mock posts are filtered out
+
+    await tester.tap(find.text('My subjects'));
+    await tester.pump();
+    expect(find.textContaining('isn\'t available yet'), findsOneWidget);
+    expect(find.text('Freshly asked, zero replies'), findsNothing);
+
+    await tester.tap(find.text('Solved'));
+    await tester.pump();
+    expect(find.textContaining('isn\'t available yet'), findsOneWidget);
+
+    await tester.tap(find.text('All'));
+    await tester.pump();
+    await tester.pump(); // leaving an unavailable-filter tab remounts the FutureBuilder; flush its microtask
+    expect(find.text('Freshly asked, zero replies'), findsOneWidget);
+    expect(find.textContaining('Rescheduling'), findsOneWidget);
+  });
+
   testWidgets('Quizzes: opening a quiz and submitting answers shows a score', (tester) async {
     final repo = MockQuizzesRepository();
     await tester.pumpWidget(MaterialApp(theme: appTheme, home: QuizzesScreen(repository: repo)));

@@ -28,6 +28,20 @@ class _ForumScreenState extends State<ForumScreen> {
   int _filter = 0;
   static const _filters = ['All', 'My subjects', 'Unanswered', 'Solved'];
 
+  // "My subjects" needs a per-user subject-preference concept that doesn't
+  // exist anywhere in the backend (no such field on User, no per-post
+  // subject tagging); "Solved" needs a resolved flag ForumPost doesn't
+  // have. Rather than silently show the same unfiltered list under a tab
+  // that implies personalization/resolution, these two are honest
+  // not-yet-available states. "Unanswered" is real — computed client-side
+  // from the real answers count.
+  static const _unavailableFilters = {1, 3};
+
+  List<ForumPost> _applyFilter(List<ForumPost> posts) {
+    if (_filter == 2) return posts.where((p) => p.answers == 0).toList();
+    return posts;
+  }
+
   void _reload() => setState(() {
         _postsFuture = widget.repository.getPosts();
       });
@@ -130,21 +144,37 @@ class _ForumScreenState extends State<ForumScreen> {
                   ),
                   const SizedBox(height: AppSpacing.space4),
                   Expanded(
-                    child: FutureBuilder<List<ForumPost>>(
-                      future: _postsFuture,
-                      builder: (context, snapshot) {
-                        final posts = snapshot.data ?? const [];
-                        return ListView.separated(
-                          itemCount: posts.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: AppSpacing.space3),
-                          itemBuilder: (context, i) => GestureDetector(
-                            onTap: () => _openPost(posts[i]),
-                            child: _PostCard(post: posts[i]),
+                    child: _unavailableFilters.contains(_filter)
+                        ? Center(
+                            child: Text(
+                              _filter == 1
+                                  ? 'Personalizing by subject isn\'t available yet.'
+                                  : 'Marking questions as solved isn\'t available yet.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
+                            ),
+                          )
+                        : FutureBuilder<List<ForumPost>>(
+                            future: _postsFuture,
+                            builder: (context, snapshot) {
+                              final posts = _applyFilter(snapshot.data ?? const []);
+                              if (snapshot.connectionState != ConnectionState.waiting && posts.isEmpty) {
+                                return Center(
+                                  child: Text(_filter == 2 ? 'No unanswered questions right now.' : 'No posts yet — be the first to ask.',
+                                      style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
+                                );
+                              }
+                              return ListView.separated(
+                                itemCount: posts.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: AppSpacing.space3),
+                                itemBuilder: (context, i) => GestureDetector(
+                                  onTap: () => _openPost(posts[i]),
+                                  child: _PostCard(post: posts[i]),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),

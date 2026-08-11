@@ -5,6 +5,7 @@ import 'package:spekooh/data/repositories/notifications_repository.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
 import 'package:spekooh/models/pamphlet.dart';
+import 'package:spekooh/models/spekooh_user.dart';
 import 'package:spekooh/screens/forum/forum_screen.dart';
 import 'package:spekooh/screens/shop/shop_screen.dart';
 import 'package:spekooh/screens/notifications/notifications_screen.dart';
@@ -83,5 +84,22 @@ void main() {
     await _pumpAndCheck(tester, ProfileScreen(repository: MockProfileRepository()));
     expect(find.text('Profile'), findsOneWidget);
     expect(find.text('Redeem code ready'), findsOneWidget);
+    expect(find.text('Share'), findsOneWidget); // real tappable share action, not dead text
+  });
+
+  testWidgets('ProfileScreen shows an honest state when there is no active redeem code', (tester) async {
+    const user = SpekoohUser(
+      name: 'Guest',
+      joinDate: 'Joined Jul 2026',
+      submissionsCount: 0,
+      quizzesCount: 0,
+      creditBalance: 0,
+      redeemCode: '',
+      redeemCodeSubtitle: '',
+    );
+    await _pumpAndCheck(tester, ProfileScreen(repository: MockProfileRepository(user: user)));
+    expect(find.text('No active redeem code'), findsOneWidget);
+    expect(find.text('Redeem code ready'), findsNothing);
+    expect(find.text('Share'), findsNothing); // nothing real to share
   });
 }

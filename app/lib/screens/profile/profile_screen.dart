@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../models/achievement.dart';
@@ -135,30 +136,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Redeem code ready', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                      Text(user.redeemCodeSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                      Text(user.redeemCode.isEmpty ? 'No active redeem code' : 'Redeem code ready',
+                                          style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                      Text(
+                                        user.redeemCode.isEmpty
+                                            ? 'You\'ll get one once a verified submission earns a bonus tier.'
+                                            : user.redeemCodeSubtitle,
+                                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
+                                      ),
                                     ],
                                   ),
                                 ),
                                 const Icon(Icons.confirmation_number_outlined),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceSunken,
-                                border: Border.all(color: AppColors.borderSubtle),
-                                borderRadius: BorderRadius.circular(12),
+                            if (user.redeemCode.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceSunken,
+                                  border: Border.all(color: AppColors.borderSubtle),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(user.redeemCode, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: 1, color: AppColors.textPrimary)),
+                                    GestureDetector(
+                                      onTap: () => Share.share(
+                                        'Use my Spekooh redeem code ${user.redeemCode} — ${user.redeemCodeSubtitle}',
+                                        subject: 'Spekooh redeem code',
+                                      ),
+                                      child: Text('Share', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700, fontWeight: FontWeight.w700, fontSize: 12)),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(user.redeemCode, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: 1, color: AppColors.textPrimary)),
-                                  Text('Share', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700, fontWeight: FontWeight.w700, fontSize: 12)),
-                                ],
-                              ),
-                            ),
+                            ],
                           ],
                         ),
                       ),

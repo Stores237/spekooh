@@ -50,6 +50,9 @@ dependencies:
   # Opens a submitted paper's real uploaded file in a new tab/viewer.
   url_launcher: ^6.3.1
 
+  # Real native share sheet for the redeem code on Profile.
+  share_plus: ^10.1.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
