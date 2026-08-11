@@ -53,7 +53,7 @@ I can write unilaterally. Grouped by what each one unblocks.
 ### Decisions still open
 - **Offline downloads platform target** (blocks P1 #4 below): mobile-only (standard
   `path_provider` approach) or web too (needs browser storage, a different implementation)?
-- **Marking-guide subscription tier** (P2 #10 below): still wanted, or does pay-per-unlock stay
+- **Marking-guide subscription tier** (P2 #9 below): still wanted, or does pay-per-unlock stay
   the only path?
 
 ---
@@ -110,38 +110,32 @@ I can write unilaterally. Grouped by what each one unblocks.
 - **Backend:** not built — no referral-code/tracking model anywhere.
 - **Client:** not built — no referral UI anywhere.
 
-### 6. Real share action for the redeem code
-- **Backend:** N/A.
-- **Client:** `profile_screen.dart`'s "Share" label next to the redeem code has no `onTap` at
-  all — smallest item on this list, needs a `share_plus`-style native share sheet call with the
-  real redeem code string (already fetched from `/credits/redeem-codes/`).
-
 ---
 
 ## P2 — Explicitly future/speculative in spec, or invented UI with no spec backing at all
 
-### 7. In-app practice quiz auto-generated from submitted papers ("Past-paper practice")
+### 6. In-app practice quiz auto-generated from submitted papers ("Past-paper practice")
 - **Backend:** not built — no paper→quiz generation pipeline; `Quiz`/`QuizQuestion` are
   manually authored rows only.
 - **Client:** shown honestly as "coming soon" (fixed this session — previously opened a
   hardcoded fake quiz regardless of what was tapped).
 - Matches spec §3.3 P2 exactly ("in-app practice/quiz mode generated from paper content").
 
-### 8. "Friday Arena" live elimination quiz
+### 7. "Friday Arena" live elimination quiz
 - **Backend:** not built — no live/scheduled quiz-session model, no real-time transport.
 - **Client:** shown honestly as "coming soon" (fixed this session — previously a dead tap).
 - **Not in the confirmed spec at all** — pure UI-mockup invention (closest real-world analogue
   is Kawlo's "live 1v1 quiz battles," which the spec itself flags in §12.4 as a P2 idea worth
   revisiting post-MVP, not committed scope). Lowest priority on this whole list.
 
-### 9. Quiz anti-cheat / answer-hiding
+### 8. Quiz anti-cheat / answer-hiding
 - **Backend:** `correct_choice_index` is stripped from the list/detail serializer response
   (confirmed not sent to the client) but there's no protection against a user inspecting network
   traffic before answering, since the full grading logic still lives client-adjacent in spirit.
   Documented as a known, accepted gap in `apps/quizzes/models.py`'s own docstring — quizzes are
   P2/non-spec'd, so this was a deliberate corner-cut, not an oversight.
 
-### 10. Subscription tier for marking-guide access
+### 9. Subscription tier for marking-guide access
 - Distinct from the already-real "Spekooh Pro" (ad-free + unlimited paper *views*, per §5.3 —
   confirmed to explicitly exclude marking guides). This P2 item is a *different*, not-yet-decided
   product idea (bundling marking-guide access into a subscription) — not started, and shouldn't
@@ -163,12 +157,20 @@ whole pass was hunting:
 - **Forum header search icon and notification bell**: purely decorative, no `onTap`. Forum
   already has a working list; wiring real search would need a `?search=` query param the backend
   doesn't currently expose on `/forum/posts/`.
+- **Forum's "My subjects" and "Solved" filter chips**: found this pass — all four filter chips
+  visually highlighted on tap but never filtered anything; fixed "All" and "Unanswered" for real
+  (client-side, no backend change needed), but "My subjects" (no per-user subject-preference
+  field anywhere) and "Solved" (no resolved flag on `ForumPost`) now show an honest "not
+  available yet" state rather than silently doing nothing under a tab that implies they work.
 
 ---
 
 ## Already fully real (for context — not on this TODO)
 
 Papers (browse/detail/submit), Home (guest + logged-in), quiz streaks, the 7-day new-account
-trial + first-unlock-free perk, the Pro subscription paywall, Forum (ask/reply/upvote), Notes,
-Notifications, Shop/pamphlets (including the escrow+QR pickup flow), Profile, and the daily
-quiz challenge + leaderboard.
+trial + first-unlock-free perk, the Pro subscription paywall, Forum (ask/reply/upvote/filter),
+Notes, Notifications, Shop/pamphlets (including the escrow+QR pickup flow), Profile (including
+the redeem-code share action), and the daily quiz challenge + leaderboard. The Django admin has
+also been redesigned with the real brand theme and a live ops dashboard (papers pipeline,
+admin-queue, instructor/withdrawal queues, credits, payments) — see the `feat: redesign the
+Django admin` commit.
