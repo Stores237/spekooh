@@ -104,12 +104,24 @@ class HttpPapersRepository implements PapersRepository {
         fileUrl: row['file_url'] as String?,
         createdAt: DateTime.tryParse(row['created_at'] as String? ?? ''),
         examBoard: row['exam_board'] as String? ?? '',
+        subjectTitle: row['subject_title'] as String?,
+        examTypeName: row['exam_type_name'] as String?,
       );
 
   @override
   Future<PaperEntry> getPaperDetail(int paperId) async {
     final row = await _client.get('/papers/submissions/$paperId/');
     return _paperFromJson(row as Map<String, dynamic>);
+  }
+
+  @override
+  Future<PaperEntry?> getLatestPublished() async {
+    final rows = await _client.get('/papers/submissions/', query: {
+      'status': 'PUBLISHED',
+      'ordering': '-created_at',
+    }) as List;
+    if (rows.isEmpty) return null;
+    return _paperFromJson(rows.first as Map<String, dynamic>);
   }
 
   @override

@@ -7,6 +7,8 @@ class SpekoohUser {
     required this.creditBalance,
     required this.redeemCode,
     required this.redeemCodeSubtitle,
+    this.trialDaysRemaining = 0,
+    this.firstUnlockFreeEligible = false,
   });
 
   final String name;
@@ -16,4 +18,6 @@ class SpekoohUser {
   final int creditBalance;
   final String redeemCode;
   final String redeemCodeSubtitle;
+  final int trialDaysRemaining;
+  final bool firstUnlockFreeEligible;
 }

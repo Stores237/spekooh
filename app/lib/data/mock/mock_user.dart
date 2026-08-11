@@ -8,6 +8,6 @@ const mockGuestUser = SpekoohUser(
   creditBalance: 2150,
   redeemCode: 'SPKH-24GT-Q3',
   redeemCodeSubtitle: '25% off any marking-guide unlock · expires in 30 days',
+  trialDaysRemaining: 7,
+  firstUnlockFreeEligible: true,
 );
-
-const mockLoggedInUserName = 'Kkk';

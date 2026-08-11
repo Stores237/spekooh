@@ -63,6 +63,8 @@ class HttpProfileRepository implements ProfileRepository {
       redeemCodeSubtitle: activeCode.isEmpty
           ? ''
           : '${activeCode['value_percent']}% off your next marking guide unlock',
+      trialDaysRemaining: me['trial_days_remaining'] as int? ?? 0,
+      firstUnlockFreeEligible: me['first_unlock_free_eligible'] as bool? ?? false,
     );
   }
 

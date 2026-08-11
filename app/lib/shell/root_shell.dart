@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/auth_session.dart';
 import '../data/repository_locator.dart';
+import '../models/paper_entry.dart';
 import '../sheets/auth_sheet.dart';
 import '../sheets/pamphlet_sheet.dart';
 import '../sheets/paywall_sheet.dart';
@@ -103,6 +104,10 @@ class RootShellState extends State<RootShell> {
         MaterialPageRoute(builder: (_) => PaperDetailScreen(paper: paper)),
       );
 
+  void _openPaperEntryDetail(BuildContext context, PaperEntry entry) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => PaperDetailScreen(paperEntry: entry)),
+      );
+
   void _openPaywall(BuildContext context) => showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -164,7 +169,10 @@ class RootShellState extends State<RootShell> {
         onOpenShop: () => _openShop(context),
         onOpenNotifications: () => _openNotifications(context),
         onOpenSubmit: () => goToTab(2),
-        onOpenPaper: () => _openPaperDetail(context),
+        onOpenPapers: () => goToTab(1),
+        onOpenForum: () => goToTab(3),
+        onOpenQuizzes: () => goToTab(4),
+        onOpenPaywall: () => _openPaywall(context),
       );
     }
     return HomeScreen(
@@ -172,7 +180,7 @@ class RootShellState extends State<RootShell> {
       onOpenProfile: () => _openProfile(context),
       onOpenNotes: () => _openNotes(context),
       onOpenShop: () => _openShop(context),
-      onOpenPaper: () => _openPaperDetail(context),
+      onOpenPaper: (entry) => _openPaperEntryDetail(context, entry),
       onOpenPamphlet: () => _openPamphlet(context),
       onOpenPaywall: () => _openPaywall(context),
     );

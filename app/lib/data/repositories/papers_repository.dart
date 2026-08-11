@@ -44,6 +44,11 @@ abstract class PapersRepository {
   /// present on the lightweight rows [getPapers] returns).
   Future<PaperEntry> getPaperDetail(int paperId);
 
+  /// The most recently published paper across all subjects — real content
+  /// for Home's "featured paper" card. Null means genuinely nothing has
+  /// been published yet, not a fabricated placeholder.
+  Future<PaperEntry?> getLatestPublished();
+
   /// Registers a real paper view against the 3-free-views/day paywall.
   /// Throws [PaywallException] once the daily limit (and any ad-earned
   /// bonus view) is exhausted.
@@ -123,6 +128,12 @@ class MockPapersRepository implements PapersRepository {
   @override
   Future<PaperEntry> getPaperDetail(int paperId) async =>
       _submitted.firstWhere((p) => p.id == paperId, orElse: () => _submitted.first);
+
+  @override
+  Future<PaperEntry?> getLatestPublished() async {
+    final published = _submitted.where((p) => p.status == 'PUBLISHED').toList();
+    return published.isEmpty ? null : published.first;
+  }
 
   @override
   Future<void> recordView(int paperId) async {}

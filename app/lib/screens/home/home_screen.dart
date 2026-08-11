@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../data/repositories/papers_repository.dart';
+import '../../data/repositories/shop_repository.dart';
+import '../../data/repository_locator.dart';
+import '../../models/paper_entry.dart';
+import '../../models/pamphlet.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
@@ -12,7 +17,7 @@ import '../../widgets/icon_chip.dart';
 /// Home tab. Callbacks are optional so this screen previews standalone in
 /// tests/gallery; RootShell wires the real ones in the navigation stage.
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({
+  HomeScreen({
     super.key,
     this.onOpenPaywall,
     this.onOpenSettings,
@@ -21,15 +26,20 @@ class HomeScreen extends StatelessWidget {
     this.onOpenProfile,
     this.onOpenNotes,
     this.onOpenShop,
-  });
+    PapersRepository? papersRepository,
+    ShopRepository? shopRepository,
+  })  : papersRepository = papersRepository ?? RepositoryLocator.instance.papers,
+        shopRepository = shopRepository ?? RepositoryLocator.instance.shop;
 
   final VoidCallback? onOpenPaywall;
   final VoidCallback? onOpenSettings;
-  final VoidCallback? onOpenPaper;
+  final ValueChanged<PaperEntry>? onOpenPaper;
   final VoidCallback? onOpenPamphlet;
   final VoidCallback? onOpenProfile;
   final VoidCallback? onOpenNotes;
   final VoidCallback? onOpenShop;
+  final PapersRepository papersRepository;
+  final ShopRepository shopRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +79,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      SpekoohButton(variant: SpekoohButtonVariant.secondary, size: SpekoohButtonSize.sm, onPressed: () {}, child: const Text('Join free')),
+                      SpekoohButton(variant: SpekoohButtonVariant.secondary, size: SpekoohButtonSize.sm, onPressed: onOpenSettings, child: const Text('Join free')),
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: onOpenSettings,
@@ -98,65 +108,62 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('FREE PAPER VIEWS TODAY', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                    const Text('FREE PAPER VIEWS', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
                     const SizedBox(height: 4),
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 24, color: AppColors.white),
-                        children: const [TextSpan(text: '2 '), TextSpan(text: 'of 3 used', style: TextStyle(fontSize: 13, color: AppColors.textOnDarkMuted, fontWeight: FontWeight.w400))],
-                      ),
-                    ),
+                    Text('3 a day', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 24, color: AppColors.white)),
                     const SizedBox(height: 6),
-                    const Text('Watch an ad for 1 more, or go Pro for unlimited views.', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
+                    // No account means no server-side counter to check against — a
+                    // live "N of 3 used" figure would just be fabricated for guests.
+                    const Text('No account needed. Sign up to track usage and unlock more.', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
                     const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {},
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.white.withValues(alpha: 0.14),
-                              foregroundColor: AppColors.white,
-                              side: BorderSide.none,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                            child: Text('Watch ad', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onOpenPaywall, child: const Text('Go Pro')),
-                        ),
-                      ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onOpenPaywall, child: const Text('Go Pro')),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: AppSpacing.space4),
-              InkWell(
-                onTap: onOpenPaper,
-                borderRadius: BorderRadius.circular(18),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                  child: Row(
-                    children: [
-                      const IconChip(icon: Icons.functions, tint: IconChipTint.purple),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Mathématiques · Baccalauréat 2025', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                            Text('Free to view — marking guide sold separately', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                          ],
-                        ),
+              FutureBuilder<PaperEntry?>(
+                future: papersRepository.getLatestPublished(),
+                builder: (context, snapshot) {
+                  final paper = snapshot.data;
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(height: 64, child: Center(child: CircularProgressIndicator()));
+                  }
+                  if (paper == null) {
+                    return Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                      child: Text('No papers published yet — check back soon.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                    );
+                  }
+                  final label = [paper.subjectTitle, paper.examTypeName].whereType<String>().join(' · ');
+                  return InkWell(
+                    onTap: () => onOpenPaper?.call(paper),
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                      child: Row(
+                        children: [
+                          const IconChip(icon: Icons.functions, tint: IconChipTint.purple),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('$label ${paper.year}', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                Text('Free to view — marking guide sold separately', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                        ],
                       ),
-                      const Icon(Icons.chevron_right, color: AppColors.textTertiary),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: AppSpacing.space6),
               Text('Contribution — earn credit', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
@@ -198,41 +205,57 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.space3),
-              InkWell(
-                onTap: onOpenPamphlet,
-                borderRadius: BorderRadius.circular(18),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                  child: Row(
-                    children: [
-                      Container(width: 64, height: 64, decoration: BoxDecoration(gradient: AppGradients.goldDeep, borderRadius: BorderRadius.circular(10))),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Probatoire Philosophy Pamphlet', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                            Text('Sold by Librairie Centrale · pick up with a QR code.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                            const SizedBox(height: 8),
-                            Row(
+              FutureBuilder<Pamphlet?>(
+                future: shopRepository.getFeaturedPamphlet().then<Pamphlet?>((p) => p).catchError((_) => null),
+                builder: (context, snapshot) {
+                  final pamphlet = snapshot.data;
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(height: 64, child: Center(child: CircularProgressIndicator()));
+                  }
+                  if (pamphlet == null) {
+                    return Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                      child: Text('No featured pamphlet right now.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                    );
+                  }
+                  return InkWell(
+                    onTap: onOpenPamphlet,
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                      child: Row(
+                        children: [
+                          Container(width: 64, height: 64, decoration: BoxDecoration(gradient: AppGradients.goldDeep, borderRadius: BorderRadius.circular(10))),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                RichText(
-                                  text: TextSpan(
-                                    style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                                    children: const [TextSpan(text: '7,500 '), TextSpan(text: 'FCFA', style: TextStyle(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w600))],
-                                  ),
+                                Text(pamphlet.title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                Text('Sold by ${pamphlet.partner} · pick up with a QR code.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    RichText(
+                                      text: TextSpan(
+                                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                                        children: [TextSpan(text: '${pamphlet.priceFcfa} '), TextSpan(text: 'FCFA', style: TextStyle(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w600))],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onOpenPamphlet, child: const Text('Buy')),
+                                  ],
                                 ),
-                                const SizedBox(width: 10),
-                                SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onOpenPamphlet, child: const Text('Buy')),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: AppSpacing.space6),
               Text('SIGN UP ONLY WHEN YOU WANT TO…', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.7)),
@@ -247,8 +270,6 @@ class HomeScreen extends StatelessWidget {
                     _lockedRow(Icons.fact_check_outlined, 'Track your contributions'),
                     const Divider(height: 1),
                     _lockedRow(Icons.notifications_none, 'Get instructor status alerts'),
-                    const Divider(height: 1),
-                    _lockedRow(Icons.download_outlined, 'Sync downloads across phones'),
                   ],
                 ),
               ),

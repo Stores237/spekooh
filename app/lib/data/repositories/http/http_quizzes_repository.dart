@@ -66,4 +66,10 @@ class HttpQuizzesRepository implements QuizzesRepository {
       );
     }).toList();
   }
+
+  @override
+  Future<({int currentStreak, bool playedToday})> getStreak() async {
+    final row = await _client.get('/quizzes/streak/') as Map<String, dynamic>;
+    return (currentStreak: row['current_streak'] as int, playedToday: row['played_today'] as bool);
+  }
 }

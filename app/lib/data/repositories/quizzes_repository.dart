@@ -7,11 +7,18 @@ abstract class QuizzesRepository {
   Future<Quiz> getQuizDetail(int quizId);
   Future<int> submitAttempt(int quizId, List<int> answers);
   Future<List<({String name, int rank, String quizzes})>> getLeaderboard();
+
+  /// Real consecutive-day daily-challenge streak — zero for an account
+  /// that's never played, not a fabricated count.
+  Future<({int currentStreak, bool playedToday})> getStreak();
 }
 
 class MockQuizzesRepository implements QuizzesRepository {
   @override
   Future<Quiz> getDailyChallenge() => Future.value(mockDailyChallenge);
+
+  @override
+  Future<({int currentStreak, bool playedToday})> getStreak() async => (currentStreak: 0, playedToday: false);
 
   @override
   Future<List<Quiz>> getQuizzes() => Future.value(mockQuizzes);

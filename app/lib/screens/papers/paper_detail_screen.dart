@@ -17,10 +17,17 @@ import 'papers_screen.dart';
 /// Ported from ui_kits/spekooh-app/PaperDetailScreen.jsx. Pushed as a
 /// full-screen overlay when a paper is tapped in PapersScreen's paper list.
 class PaperDetailScreen extends StatefulWidget {
-  PaperDetailScreen({super.key, this.paper, PapersRepository? repository})
+  PaperDetailScreen({super.key, this.paper, this.paperEntry, PapersRepository? repository})
       : repository = repository ?? RepositoryLocator.instance.papers;
 
+  /// Set when opened from Papers' full taxonomy drill-down — carries the
+  /// resolved category/examType/subject alongside the real entry.
   final PaperSelection? paper;
+
+  /// Set when opened from a simpler entry point (e.g. Home's featured-paper
+  /// card) that only has the raw submission, not the full taxonomy chain.
+  final PaperEntry? paperEntry;
+
   final PapersRepository repository;
 
   @override
@@ -35,15 +42,17 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   final _redeemController = TextEditingController();
   bool _showRedeemField = false;
 
+  int? get _entryId => widget.paper?.entry.id ?? widget.paperEntry?.id;
+
   @override
   void initState() {
     super.initState();
-    final selection = widget.paper;
-    if (selection == null) {
+    final id = _entryId;
+    if (id == null) {
       _detail = Future.value(null);
     } else {
-      _detail = widget.repository.getPaperDetail(selection.entry.id).then((full) {
-        _recordView(selection.entry.id);
+      _detail = widget.repository.getPaperDetail(id).then((full) {
+        _recordView(id);
         return full;
       });
     }
@@ -92,7 +101,8 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final selection = widget.paper;
-    if (selection == null) {
+    final entry = selection?.entry ?? widget.paperEntry;
+    if (entry == null) {
       return Scaffold(
         backgroundColor: AppColors.surfaceBg,
         body: SafeArea(
@@ -118,11 +128,15 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       );
     }
 
-    final title = '${selection.subject.title} — ${selection.examType.name}${selection.track != null ? ' ${selection.track}' : ''} ${selection.entry.year}';
-    final meta = [
-      selection.category.title,
-      if (selection.system != null) (selection.system == ExamSystem.francophone ? 'Francophone' : 'Anglophone'),
-    ].join(' · ');
+    final title = selection != null
+        ? '${selection.subject.title} — ${selection.examType.name}${selection.track != null ? ' ${selection.track}' : ''} ${entry.year}'
+        : '${entry.subjectTitle ?? entry.examTypeName ?? 'Paper'} — ${entry.examTypeName ?? ''} ${entry.year}';
+    final meta = selection != null
+        ? [
+            selection.category.title,
+            if (selection.system != null) (selection.system == ExamSystem.francophone ? 'Francophone' : 'Anglophone'),
+          ].join(' · ')
+        : (entry.track.isNotEmpty ? entry.track : '');
 
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
@@ -147,7 +161,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                       ],
                     ),
                   ),
-                  SpekoohBadge(text: selection.entry.isPublished ? 'Published' : 'Under review', tone: SpekoohBadgeTone.neutral),
+                  SpekoohBadge(text: entry.isPublished ? 'Published' : 'Under review', tone: SpekoohBadgeTone.neutral),
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
@@ -218,8 +232,8 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                 children: [
                                   SpekoohButton(
                                     size: SpekoohButtonSize.sm,
-                                    onPressed: _unlocking ? null : () => _unlock(selection.entry.id),
-                                    child: _unlocking ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Unlock — 400 FCFA'),
+                                    onPressed: _unlocking ? null : () => _unlock(entry.id),
+                                    child: _unlocking ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Unlock — 500 FCFA'),
                                   ),
                                   const SizedBox(width: 12),
                                   GestureDetector(
