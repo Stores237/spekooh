@@ -100,7 +100,14 @@ class PaperSubmission(TimeStampedModel):
     exam_board = models.CharField(max_length=120, blank=True)
     year = models.PositiveIntegerField()
 
-    file_ref = models.CharField(max_length=500)
+    # Real uploaded file (local disk storage — the free substitute for
+    # Supabase Storage, no credentials exist for this project; see backend
+    # plan's documented environment-forced substitutions). file_ref mirrors
+    # uploaded_file.path once a file is attached, so OCR (which takes a
+    # plain filesystem path) and existing tests that set file_ref directly
+    # both keep working unchanged.
+    uploaded_file = models.FileField(upload_to="paper_submissions/%Y/%m/", null=True, blank=True)
+    file_ref = models.CharField(max_length=500, blank=True)
     ocr_text = models.TextField(blank=True)
     duplicate_hash = models.CharField(max_length=64, blank=True, db_index=True)
 
@@ -120,6 +127,16 @@ class PaperSubmission(TimeStampedModel):
 
     def __str__(self):
         return f"{self.exam_type} {self.year} — {self.subject or 'no subject'}"
+
+    def save(self, *args, **kwargs):
+        if self.uploaded_file and not self.file_ref:
+            # Populated after the initial save, once Django has actually
+            # written the file to storage and .path is resolvable.
+            super().save(*args, **kwargs)
+            self.file_ref = self.uploaded_file.path
+            super().save(update_fields=["file_ref", "updated_at"])
+            return
+        super().save(*args, **kwargs)
 
 
 class MCQAnswerKey(TimeStampedModel):

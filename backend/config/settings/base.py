@@ -91,6 +91,14 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Local disk storage — the free substitute for Supabase Storage (no
+# credentials exist for this project). Swapping to real Supabase Storage
+# later is a storage-backend swap (e.g. django-storages), not a model change:
+# PaperSubmission.uploaded_file stays a FileField either way.
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20MB, matches the app's stated upload limit
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",

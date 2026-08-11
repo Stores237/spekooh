@@ -57,6 +57,8 @@ class PaperSubmissionListSerializer(serializers.ModelSerializer):
 
 
 class PaperSubmissionDetailSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = PaperSubmission
         fields = [
@@ -69,7 +71,7 @@ class PaperSubmissionDetailSerializer(serializers.ModelSerializer):
             "subject",
             "exam_board",
             "year",
-            "file_ref",
+            "file_url",
             "ocr_text",
             "duplicate_hash",
             "is_duplicate",
@@ -91,8 +93,21 @@ class PaperSubmissionDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    def get_file_url(self, obj) -> str | None:
+        if not obj.uploaded_file:
+            return None
+        request = self.context.get("request")
+        url = obj.uploaded_file.url
+        return request.build_absolute_uri(url) if request else url
+
 
 class PaperSubmissionCreateSerializer(serializers.ModelSerializer):
+    # Included so the create response is a real, complete PaperEntry (status,
+    # file_url, created_at) instead of an echo of just the input fields —
+    # the app shows the freshly-submitted paper immediately, it doesn't
+    # re-fetch.
+    file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = PaperSubmission
         fields = [
@@ -104,11 +119,22 @@ class PaperSubmissionCreateSerializer(serializers.ModelSerializer):
             "subject",
             "exam_board",
             "year",
-            "file_ref",
+            "uploaded_file",
+            "file_url",
+            "status",
+            "created_at",
             "mcq_section",
             "non_mcq_section",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "file_url", "status", "created_at"]
+        extra_kwargs = {"uploaded_file": {"required": True, "write_only": True}}
+
+    def get_file_url(self, obj) -> str | None:
+        if not obj.uploaded_file:
+            return None
+        request = self.context.get("request")
+        url = obj.uploaded_file.url
+        return request.build_absolute_uri(url) if request else url
 
     def create(self, validated_data):
         validated_data["submitted_by"] = self.context["request"].user

@@ -1,4 +1,5 @@
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
@@ -67,6 +68,7 @@ def test_submit_creates_paper_owned_by_requesting_user(authed_client):
     category = ExamCategoryFactory()
     exam_type = ExamTypeFactory(category=category)
     subject = SubjectFactory()
+    upload = SimpleUploadedFile("gce-bio-2024.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf")
     response = client.post(
         "/api/papers/submissions/",
         {
@@ -75,14 +77,30 @@ def test_submit_creates_paper_owned_by_requesting_user(authed_client):
             "subject": subject.id,
             "system": "anglophone",
             "year": 2024,
-            "file_ref": "papers/gce-bio-2024.pdf",
+            "uploaded_file": upload,
         },
-        format="json",
+        format="multipart",
     )
     assert response.status_code == 201
     submission = PaperSubmission.objects.get(id=response.data["id"])
     assert submission.submitted_by == user
     assert submission.status == PaperStatus.PENDING_REVIEW
+    assert submission.uploaded_file
+    assert submission.file_ref == submission.uploaded_file.path  # auto-populated for OCR to consume
+
+
+@pytest.mark.django_db
+def test_submit_requires_a_real_file(authed_client):
+    client, _ = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    response = client.post(
+        "/api/papers/submissions/",
+        {"category": category.id, "exam_type": exam_type.id, "system": "anglophone", "year": 2024},
+        format="multipart",
+    )
+    assert response.status_code == 400
+    assert "uploaded_file" in response.data
 
 
 @pytest.mark.django_db
@@ -103,8 +121,33 @@ def test_detail_returns_full_fields(authed_client):
     submission = PaperSubmissionFactory(submitted_by=user)
     response = client.get(f"/api/papers/submissions/{submission.id}/")
     assert response.status_code == 200
-    assert response.data["file_ref"] == submission.file_ref
     assert response.data["status"] == PaperStatus.PENDING_REVIEW
+    assert response.data["file_url"] is None  # factory doesn't attach a real uploaded file
+
+
+@pytest.mark.django_db
+def test_guest_can_browse_published_papers_but_not_others(api_client):
+    published = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+    PaperSubmissionFactory(status=PaperStatus.PENDING_REVIEW)
+    response = api_client.get("/api/papers/submissions/")
+    assert response.status_code == 200
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    ids = [row["id"] for row in rows]
+    assert published.id in ids
+    assert len(rows) == 1
+
+
+@pytest.mark.django_db
+def test_authed_user_sees_own_pending_papers_plus_everyones_published(authed_client):
+    client, user = authed_client
+    own_pending = PaperSubmissionFactory(submitted_by=user, status=PaperStatus.PENDING_REVIEW)
+    others_published = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+    others_pending = PaperSubmissionFactory(status=PaperStatus.PENDING_REVIEW)
+    response = client.get("/api/papers/submissions/")
+    ids = [row["id"] for row in response.data]
+    assert own_pending.id in ids
+    assert others_published.id in ids
+    assert others_pending.id not in ids
 
 
 @pytest.mark.django_db
@@ -160,7 +203,7 @@ def test_pro_subscriber_has_unlimited_views():
 @pytest.mark.django_db
 def test_view_endpoint_enforces_paywall(api_client):
     user = UserFactory()
-    paper = PaperSubmissionFactory()
+    paper = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
     api_client.force_authenticate(user=user)
     for _ in range(DAILY_FREE_VIEWS):
         response = api_client.post(f"/api/papers/submissions/{paper.id}/view/")

@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, status, viewsets
@@ -45,13 +46,33 @@ class SubjectViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.
 class PaperSubmissionViewSet(
     mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
+    # Reading (browsing published papers) stays open to guests, per spec
+    # ("guest browsing allowed... account required only for streaks/XP,
+    # forum posting, ... not for reading"). Only creating/viewing/unlocking
+    # requires auth. process_ocr/mark_published set their own IsAdminUser
+    # via @action(permission_classes=...) — defer to super() there instead
+    # of hardcoding, or those per-action overrides get silently clobbered.
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ["status", "category", "exam_type", "subject", "submitted_by"]
+    filterset_fields = ["status", "category", "exam_type", "subject", "system", "track", "submitted_by"]
     ordering_fields = ["created_at", "year"]
 
+    def get_permissions(self):
+        if self.action in ("list", "retrieve"):
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
     def get_queryset(self):
-        return PaperSubmission.objects.select_related("category", "exam_type", "subject").all()
+        qs = PaperSubmission.objects.select_related("category", "exam_type", "subject")
+        user = self.request.user
+        if user.is_authenticated and user.is_staff:
+            return qs
+        if user.is_authenticated:
+            # Published papers from anyone, plus your own at any status
+            # (so "My submissions" on the Profile screen just works).
+            return qs.filter(Q(status=PaperStatus.PUBLISHED) | Q(submitted_by=user))
+        # Guests (per spec: reading stays open to guests) see published only.
+        return qs.filter(status=PaperStatus.PUBLISHED)
 
     def get_serializer_class(self):
         if self.action == "create":
