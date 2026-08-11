@@ -1,0 +1,16 @@
+/* Spekooh brand overlay for django-unfold — same Plus Jakarta Sans font the
+   Flutter app uses, kept in sync with tokens/typography.css at the repo root. */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans-serif: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+body,
+input,
+button,
+select,
+textarea {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
+}

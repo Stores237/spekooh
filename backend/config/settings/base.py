@@ -16,6 +16,7 @@ DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 
 INSTALLED_APPS = [
+    "unfold",  # must precede django.contrib.admin to override its templates
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -58,7 +59,10 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        # DIRS is checked before any app's own templates/ dir (including
+        # unfold's), so this is where project-level admin template
+        # overrides like templates/admin/index.html take effect.
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -121,3 +125,52 @@ QR_SIGNING_SALT = env("QR_SIGNING_SALT", default="spekooh-pamphlet-qr")
 
 # Instructor webhook HMAC replay-protection window.
 INSTRUCTOR_WEBHOOK_MAX_SKEW_SECONDS = env.int("INSTRUCTOR_WEBHOOK_MAX_SKEW_SECONDS", default=300)
+
+# django-unfold admin theme — brand palette ported 1:1 from tokens/colors.css
+# (the same tokens the Flutter app's design system uses). The 50/900/950
+# extremes and a few mid-ramp steps aren't literal token values (the token
+# file only defines ~6 gold and ~4 ink/neutral anchors, not an 11-step
+# Tailwind ramp) — they're interpolated between the real anchors below, not
+# fabricated from nothing. No real logo file exists in the repo yet (see
+# TODOS.md), so SITE_LOGO is intentionally omitted in favor of a text header.
+UNFOLD = {
+    "SITE_TITLE": "Spekooh Admin",
+    "SITE_HEADER": "Spekooh Admin",
+    "SITE_SUBHEADER": "Review & ops",
+    "DASHBOARD_CALLBACK": "apps.core.admin_dashboard.dashboard_callback",
+    "SITE_SYMBOL": "school",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "BORDER_RADIUS": "0.75rem",
+    "STYLES": [
+        lambda request: f"/{STATIC_URL}core/admin-theme.css",
+    ],
+    "COLORS": {
+        "base": {
+            "50": "#F7F4EE",  # surface-bg
+            "100": "#F0EAD9",  # interpolated
+            "200": "#EAE2D2",  # border-subtle
+            "300": "#D9CDB5",  # interpolated
+            "400": "#C2B294",  # interpolated
+            "500": "#9C9184",  # text-tertiary
+            "600": "#6B6155",  # text-secondary
+            "700": "#4A3418",  # ink-700
+            "800": "#362610",  # ink-800
+            "900": "#241A08",  # ink-900
+            "950": "#180F04",  # interpolated, darker than ink-900 for dark-mode bg
+        },
+        "primary": {
+            "50": "#FBF3E1",  # gold-50
+            "100": "#F6E7C7",  # interpolated
+            "200": "#EFCD83",  # gold-200
+            "300": "#E8BC56",  # interpolated
+            "400": "#E2A52A",  # gold-400
+            "500": "#C8881C",  # gold-500
+            "600": "#A8721A",  # gold-600
+            "700": "#835611",  # gold-700
+            "800": "#6B460E",  # interpolated
+            "900": "#53370B",  # interpolated
+            "950": "#3A2607",  # interpolated
+        },
+    },
+}

@@ -4,7 +4,7 @@ from django.utils import timezone
 from apps.payments.models import Subscription
 
 from .duplicate_detection import DuplicateDetector, TfidfDuplicateDetector, exact_duplicate_hash
-from .models import AdWatchEvent, PaperSubmission, PaperViewLog
+from .models import AdWatchEvent, PaperStatus, PaperSubmission, PaperViewLog
 from .ocr import extract_text
 
 DAILY_FREE_VIEWS = 3
@@ -86,3 +86,18 @@ def process_ocr_and_duplicate_check(paper_submission: PaperSubmission) -> PaperS
         update_fields=["ocr_text", "duplicate_hash", "is_duplicate", "duplicate_of", "updated_at"]
     )
     return paper_submission
+
+
+def mark_published(paper: PaperSubmission) -> PaperSubmission:
+    """
+    Ops-triggered for now — the full instructor-accept -> marking-guide ->
+    merge pipeline (stage 8) will call award_contributor_bonus from this
+    same transition instead of duplicating the logic. Shared by the DRF
+    action and the admin dashboard action so the two never diverge.
+    """
+    from apps.credits.services import award_contributor_bonus
+
+    paper.status = PaperStatus.PUBLISHED
+    paper.save(update_fields=["status", "updated_at"])
+    award_contributor_bonus(paper)
+    return paper

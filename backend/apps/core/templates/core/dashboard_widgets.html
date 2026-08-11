@@ -1,0 +1,88 @@
+{% load i18n %}
+{% with d=spekooh_dashboard %}
+{% if d %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+
+    <div class="bg-base-50 rounded-default p-4 dark:bg-base-800">
+        <div class="font-semibold mb-3 text-base-900 dark:text-base-100">{% translate "Papers pipeline" %}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {% for step in d.papers_funnel %}
+            <a href="{{ step.url }}" class="bg-white dark:bg-base-900 rounded-default p-3 hover:opacity-80 transition-opacity">
+                <div class="text-2xl font-bold text-base-900 dark:text-base-100">{{ step.count }}</div>
+                <div class="text-xs text-base-500 dark:text-base-400">{{ step.label }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bg-base-50 rounded-default p-4 dark:bg-base-800">
+        <div class="flex items-center justify-between mb-3">
+            <div class="font-semibold text-base-900 dark:text-base-100">{% translate "Admin queue" %}</div>
+            <a href="{{ d.flags_url }}" class="text-xs font-semibold text-primary-600 dark:text-primary-400">{% translate "View open" %} &rarr;</a>
+        </div>
+        <div class="bg-white dark:bg-base-900 rounded-default p-3">
+            <div class="text-2xl font-bold text-base-900 dark:text-base-100">{{ d.open_flags_count }}</div>
+            <div class="text-xs text-base-500 dark:text-base-400 mb-2">{% translate "open flags" %}</div>
+            {% for row in d.flags_by_category %}
+            <div class="flex justify-between text-xs text-base-600 dark:text-base-300 py-0.5">
+                <span>{{ row.category }}</span><span class="font-semibold">{{ row.count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bg-base-50 rounded-default p-4 dark:bg-base-800">
+        <div class="font-semibold mb-3 text-base-900 dark:text-base-100">{% translate "Instructors" %}</div>
+        <div class="grid grid-cols-2 gap-2">
+            <a href="{{ d.instructor_requests_url }}" class="bg-white dark:bg-base-900 rounded-default p-3 hover:opacity-80 transition-opacity">
+                <div class="text-2xl font-bold text-base-900 dark:text-base-100">{{ d.pending_instructor_requests }}</div>
+                <div class="text-xs text-base-500 dark:text-base-400">{% translate "pending requests" %}</div>
+                {% if d.overdue_instructor_requests %}
+                <div class="text-xs font-semibold text-red-600 dark:text-red-400 mt-1">{{ d.overdue_instructor_requests }} {% translate "overdue" %}</div>
+                {% endif %}
+            </a>
+            <a href="{{ d.withdrawals_url }}" class="bg-white dark:bg-base-900 rounded-default p-3 hover:opacity-80 transition-opacity">
+                <div class="text-2xl font-bold text-base-900 dark:text-base-100">{{ d.pending_withdrawals }}</div>
+                <div class="text-xs text-base-500 dark:text-base-400">{% translate "withdrawals to approve" %}</div>
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-base-50 rounded-default p-4 dark:bg-base-800">
+        <div class="font-semibold mb-3 text-base-900 dark:text-base-100">{% translate "Credits" %}</div>
+        <a href="{{ d.redeem_codes_url }}" class="block bg-white dark:bg-base-900 rounded-default p-3 hover:opacity-80 transition-opacity">
+            <div class="text-2xl font-bold text-base-900 dark:text-base-100">{{ d.active_redeem_codes }}</div>
+            <div class="text-xs text-base-500 dark:text-base-400">{% translate "active redeem codes" %}</div>
+            {% if d.stale_redeem_codes %}
+            <div class="text-xs font-semibold text-red-600 dark:text-red-400 mt-1">{{ d.stale_redeem_codes }} {% translate "past expiry, not yet marked" %}</div>
+            {% endif %}
+        </a>
+    </div>
+
+    <div class="bg-base-50 rounded-default p-4 dark:bg-base-800 lg:col-span-2">
+        <div class="font-semibold mb-3 text-base-900 dark:text-base-100">{% translate "Payments" %}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <a href="{{ d.failed_transactions_url }}" class="bg-white dark:bg-base-900 rounded-default p-3 hover:opacity-80 transition-opacity">
+                <div class="text-2xl font-bold text-base-900 dark:text-base-100">{{ d.failed_transactions_7d }}</div>
+                <div class="text-xs text-base-500 dark:text-base-400">{% translate "failed transactions (7d)" %}</div>
+            </a>
+            <a href="{{ d.subscriptions_url }}" class="bg-white dark:bg-base-900 rounded-default p-3 hover:opacity-80 transition-opacity">
+                <div class="text-2xl font-bold text-base-900 dark:text-base-100">{{ d.expiring_subscriptions_7d }}</div>
+                <div class="text-xs text-base-500 dark:text-base-400">{% translate "subscriptions renewing (7d)" %}</div>
+            </a>
+            <div class="bg-white dark:bg-base-900 rounded-default p-3">
+                <div class="text-xs text-base-500 dark:text-base-400 mb-1">{% translate "revenue by purpose (all-time)" %}</div>
+                {% for row in d.revenue_by_purpose %}
+                <div class="flex justify-between text-xs text-base-700 dark:text-base-200 py-0.5">
+                    <span>{{ row.purpose }}</span><span class="font-semibold">{{ row.total }} FCFA</span>
+                </div>
+                {% empty %}
+                <div class="text-xs text-base-400">{% translate "No successful transactions yet." %}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endif %}
+{% endwith %}

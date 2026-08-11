@@ -18,7 +18,7 @@ from .serializers import (
     PaperViewLogSerializer,
     SubjectSerializer,
 )
-from .services import PaywallError, process_ocr_and_duplicate_check, record_ad_watch, record_paper_view
+from .services import PaywallError, mark_published, process_ocr_and_duplicate_check, record_ad_watch, record_paper_view
 
 
 class ExamCategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -98,17 +98,7 @@ class PaperSubmissionViewSet(
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAdminUser])
     def mark_published(self, request, pk=None):
-        """
-        Ops-triggered for now — the full instructor-accept -> marking-guide
-        -> merge pipeline (stage 8) will call award_contributor_bonus from
-        this same transition instead of duplicating the logic.
-        """
-        from apps.credits.services import award_contributor_bonus
-
-        paper = self.get_object()
-        paper.status = PaperStatus.PUBLISHED
-        paper.save(update_fields=["status", "updated_at"])
-        award_contributor_bonus(paper)
+        paper = mark_published(self.get_object())
         return Response(PaperSubmissionDetailSerializer(paper).data)
 
 

@@ -1,60 +1,94 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from unfold.admin import ModelAdmin
+from unfold.decorators import display
 
 from .models import (
     AdWatchEvent,
     ExamCategory,
     ExamType,
     MCQAnswerKey,
+    PaperStatus,
     PaperSubmission,
     PaperViewLog,
     PublishedGuide,
     Subject,
 )
+from .services import mark_published
+
+STATUS_LABELS = {
+    PaperStatus.PENDING_REVIEW: "warning",
+    PaperStatus.INSTRUCTOR_REQUEST_SENT: "info",
+    PaperStatus.INSTRUCTOR_ACCEPTED: "info",
+    PaperStatus.INSTRUCTOR_REJECTED: "danger",
+    PaperStatus.AWAITING_MARKING_GUIDE: "warning",
+    PaperStatus.GUIDE_SUBMITTED: "primary",
+    PaperStatus.MERGED: "primary",
+    PaperStatus.PUBLISHED: "success",
+    PaperStatus.UNASSIGNED_ADMIN_QUEUE: "danger",
+}
 
 
 @admin.register(ExamCategory)
-class ExamCategoryAdmin(admin.ModelAdmin):
+class ExamCategoryAdmin(ModelAdmin):
     list_display = ("title", "key", "requires_system", "sort_order")
     ordering = ("sort_order",)
 
 
 @admin.register(ExamType)
-class ExamTypeAdmin(admin.ModelAdmin):
+class ExamTypeAdmin(ModelAdmin):
     list_display = ("name", "category", "system", "sort_order")
     list_filter = ("category", "system")
 
 
 @admin.register(Subject)
-class SubjectAdmin(admin.ModelAdmin):
+class SubjectAdmin(ModelAdmin):
     list_display = ("title", "key", "code", "language")
     list_filter = ("language",)
 
 
 @admin.register(PaperSubmission)
-class PaperSubmissionAdmin(admin.ModelAdmin):
-    list_display = ("id", "exam_type", "subject", "year", "status", "submitted_by", "created_at")
+class PaperSubmissionAdmin(ModelAdmin):
+    list_display = ("id", "exam_type", "subject", "year", "status_badge", "submitted_by", "created_at")
     list_filter = ("status", "category", "exam_type")
     search_fields = ("id", "submitted_by__email", "duplicate_hash")
     readonly_fields = ("created_at", "updated_at")
+    actions = ["publish_selected"]
+
+    @display(description="Status", label=STATUS_LABELS, ordering="status")
+    def status_badge(self, obj):
+        return obj.status
+
+    @admin.action(description="Publish selected (guide submitted → published, awards contributor bonus)")
+    def publish_selected(self, request, queryset):
+        eligible = queryset.filter(status__in=[PaperStatus.GUIDE_SUBMITTED, PaperStatus.MERGED])
+        for paper in eligible:
+            mark_published(paper)
+        skipped = queryset.count() - eligible.count()
+        self.message_user(
+            request,
+            f"Published {eligible.count()} paper(s)."
+            + (f" Skipped {skipped} not in Guide submitted/Merged status." if skipped else ""),
+            level=messages.SUCCESS if eligible.count() else messages.WARNING,
+        )
 
 
 @admin.register(PaperViewLog)
-class PaperViewLogAdmin(admin.ModelAdmin):
+class PaperViewLogAdmin(ModelAdmin):
     list_display = ("user", "paper_submission", "created_at")
     search_fields = ("user__email",)
 
 
 @admin.register(AdWatchEvent)
-class AdWatchEventAdmin(admin.ModelAdmin):
+class AdWatchEventAdmin(ModelAdmin):
     list_display = ("user", "consumed_by_view_log", "created_at")
     search_fields = ("user__email",)
 
 
 @admin.register(MCQAnswerKey)
-class MCQAnswerKeyAdmin(admin.ModelAdmin):
+class MCQAnswerKeyAdmin(ModelAdmin):
     list_display = ("paper_submission", "authored_by", "created_at")
 
 
 @admin.register(PublishedGuide)
-class PublishedGuideAdmin(admin.ModelAdmin):
+class PublishedGuideAdmin(ModelAdmin):
     list_display = ("paper_submission", "published_at")
