@@ -1,4 +1,5 @@
 import '../../../models/exam_taxonomy.dart';
+import '../../../models/paper_entry.dart';
 import '../../../models/subject.dart';
 import '../../../widgets/icon_chip.dart';
 import '../../../widgets/spekooh_badge.dart';
@@ -41,6 +42,7 @@ class HttpPapersRepository implements PapersRepository {
       final key = ExamCategoryKey.values.byName(row['key'] as String);
       ids[key] = row['id'] as int;
       return ExamCategory(
+        id: row['id'] as int,
         key: key,
         title: row['title'] as String,
         icon: iconForName(row['icon_name'] as String?),
@@ -64,6 +66,7 @@ class HttpPapersRepository implements PapersRepository {
     return rows.map((row) {
       final tracks = (row['tracks'] as List?)?.map((t) => t as String).toList() ?? const [];
       return ExamType(
+        id: row['id'] as int,
         name: row['name'] as String,
         subtitle: row['subtitle'] as String? ?? '',
         mockVariantLabel: (row['mock_variant_label'] as String?)?.isEmpty ?? true ? null : row['mock_variant_label'] as String,
@@ -82,6 +85,7 @@ class HttpPapersRepository implements PapersRepository {
     final rows = await _client.get('/papers/subjects/', query: {'language': language}) as List;
     return rows.map((row) {
       return Subject(
+        id: row['id'] as int,
         key: row['key'] as String,
         title: row['title'] as String,
         tint: IconChipTint.values.byName(row['tint'] as String? ?? 'blue'),
@@ -89,5 +93,94 @@ class HttpPapersRepository implements PapersRepository {
         code: row['code'] as String? ?? '',
       );
     }).toList();
+  }
+
+  PaperEntry _paperFromJson(Map<String, dynamic> row) => PaperEntry(
+        id: row['id'] as int,
+        year: row['year'] as int,
+        system: row['system'] as String?,
+        track: row['track'] as String? ?? '',
+        status: row['status'] as String,
+        fileUrl: row['file_url'] as String?,
+        createdAt: DateTime.tryParse(row['created_at'] as String? ?? ''),
+        examBoard: row['exam_board'] as String? ?? '',
+      );
+
+  @override
+  Future<PaperEntry> getPaperDetail(int paperId) async {
+    final row = await _client.get('/papers/submissions/$paperId/');
+    return _paperFromJson(row as Map<String, dynamic>);
+  }
+
+  @override
+  Future<List<PaperEntry>> getPapers({
+    required int categoryId,
+    required int examTypeId,
+    int? subjectId,
+    ExamSystem? system,
+    String? track,
+  }) async {
+    final query = <String, String>{
+      'category': '$categoryId',
+      'exam_type': '$examTypeId',
+      'status': 'PUBLISHED',
+    };
+    if (subjectId != null) query['subject'] = '$subjectId';
+    if (system != null) query['system'] = system.name;
+    if (track != null && track.isNotEmpty) query['track'] = track;
+    final rows = await _client.get('/papers/submissions/', query: query) as List;
+    return rows.map((row) => _paperFromJson(row as Map<String, dynamic>)).toList();
+  }
+
+  @override
+  Future<PaperEntry> submitPaper({
+    required int categoryId,
+    required int examTypeId,
+    int? subjectId,
+    ExamSystem? system,
+    String? track,
+    required int year,
+    String examBoard = '',
+    required SubmissionFile file,
+  }) async {
+    final fields = <String, String>{
+      'category': '$categoryId',
+      'exam_type': '$examTypeId',
+      'year': '$year',
+      'exam_board': examBoard,
+    };
+    if (subjectId != null) fields['subject'] = '$subjectId';
+    if (system != null) fields['system'] = system.name;
+    if (track != null && track.isNotEmpty) fields['track'] = track;
+
+    final row = await _client.postMultipart(
+      '/papers/submissions/',
+      fileFieldName: 'uploaded_file',
+      fileBytes: file.bytes,
+      fileName: file.fileName,
+      mimeType: file.mimeType,
+      fields: fields,
+    );
+    return _paperFromJson(row as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> recordView(int paperId) async {
+    try {
+      await _client.post('/papers/submissions/$paperId/view/');
+    } on ApiException catch (e) {
+      if (e.statusCode == 402) throw PaywallException('Daily free view limit reached. Watch a rewarded ad or upgrade to Pro.');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<int> unlockPaper(int paperId, {String? redeemCode}) async {
+    final row = await _client.post('/payments/unlock/', body: {
+      'paper_submission': paperId,
+      'phone_number': '000000000',
+      if (redeemCode != null && redeemCode.isNotEmpty) 'redeem_code': redeemCode,
+    });
+    return row['amount_paid'] as int;
   }
 }

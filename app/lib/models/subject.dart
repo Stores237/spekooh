@@ -3,6 +3,7 @@ import '../widgets/icon_chip.dart';
 
 class Subject {
   const Subject({
+    this.id = 0,
     required this.key,
     required this.title,
     required this.tint,
@@ -10,6 +11,7 @@ class Subject {
     required this.code,
   });
 
+  final int id;
   final String key;
   final String title;
   final IconChipTint tint;

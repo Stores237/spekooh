@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../models/exam_taxonomy.dart';
+import '../../models/paper_entry.dart';
 import '../../models/subject.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
@@ -9,12 +10,12 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/search_input.dart';
-import '../../widgets/segmented_tabs.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/subject_card.dart';
 
-/// A fully-resolved paper selection (subject + exam type + year + variant),
-/// handed to `onOpenPaper` when the user taps a paper in the year list.
+/// A fully-resolved paper selection (subject + exam type + the real,
+/// already-submitted [PaperEntry]), handed to `onOpenPaper` when the user
+/// taps a paper in the paper list.
 class PaperSelection {
   const PaperSelection({
     required this.category,
@@ -22,8 +23,7 @@ class PaperSelection {
     required this.examType,
     required this.track,
     required this.subject,
-    required this.year,
-    required this.variant,
+    required this.entry,
   });
 
   final ExamCategory category;
@@ -31,8 +31,7 @@ class PaperSelection {
   final ExamType examType;
   final String? track;
   final Subject subject;
-  final int year;
-  final String variant;
+  final PaperEntry entry;
 }
 
 /// Ported from ui_kits/spekooh-app/PapersScreen.jsx — the most complex
@@ -54,7 +53,6 @@ class PapersScreen extends StatefulWidget {
 
 class _PapersScreenState extends State<PapersScreen> {
   PaperBrowseSelection _selection = const PaperBrowseSelection();
-  int _yearFilterTab = 0;
   final _searchController = TextEditingController();
 
   @override
@@ -65,7 +63,6 @@ class _PapersScreenState extends State<PapersScreen> {
 
   void _select(PaperBrowseSelection Function() next) => setState(() {
         _selection = next();
-        _yearFilterTab = 0;
       });
 
   @override
@@ -293,78 +290,103 @@ class _PapersScreenState extends State<PapersScreen> {
     );
   }
 
-  // Step 6: papers by year, for the resolved subject.
+  // Step 6: real submitted papers for the resolved subject.
   Widget _paperListStep() {
     final examType = _selection.examType!;
-    final hasVariant = examType.mockVariantLabel != null;
-    const years = [2026, 2025, 2024, 2023, 2022];
 
     return FutureBuilder<List<Subject>>(
       future: widget.repository.getSubjects(examType.name),
-      builder: (context, snapshot) {
-        final subject = (snapshot.data ?? const <Subject>[]).where((s) => s.key == _selection.subjectKey).firstOrNull;
+      builder: (context, subjectSnapshot) {
+        final subject =
+            (subjectSnapshot.data ?? const <Subject>[]).where((s) => s.key == _selection.subjectKey).firstOrNull;
         if (subject == null) return const SizedBox.shrink();
 
-        final rows = <(int, String)>[];
-        for (final year in years) {
-          if (!hasVariant || _yearFilterTab != 2) rows.add((year, 'Official'));
-          if (hasVariant && _yearFilterTab != 1) rows.add((year, examType.mockVariantLabel!));
-        }
+        return FutureBuilder<List<PaperEntry>>(
+          future: widget.repository.getPapers(
+            categoryId: _selection.category!.id,
+            examTypeId: examType.id,
+            subjectId: subject.id,
+            system: _selection.system,
+            track: _selection.track,
+          ),
+          builder: (context, papersSnapshot) {
+            final loading = papersSnapshot.connectionState == ConnectionState.waiting;
+            final papers = papersSnapshot.data ?? const <PaperEntry>[];
 
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppSpacing.space2),
-              _backHeader(subject.title, subtitle: '${examType.name}${_selection.track != null ? ' · ${_selection.track}' : ''} · ${subject.code}'),
-              if (hasVariant) ...[
-                const SizedBox(height: AppSpacing.space3),
-                SegmentedTabs(
-                  options: ['All', 'Official', examType.mockVariantLabel!],
-                  active: _yearFilterTab,
-                  onChanged: (i) => setState(() => _yearFilterTab = i),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.space4),
-              for (final (year, variant) in rows) ...[
-                InkWell(
-                  onTap: () => widget.onOpenPaper?.call(PaperSelection(
-                    category: _selection.category!,
-                    system: _selection.system,
-                    examType: examType,
-                    track: _selection.track,
-                    subject: subject,
-                    year: year,
-                    variant: variant,
-                  )),
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                    child: Row(
-                      children: [
-                        IconChip(icon: subject.icon, tint: subject.tint),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: AppSpacing.space2),
+                  _backHeader(subject.title,
+                      subtitle: '${examType.name}${_selection.track != null ? ' · ${_selection.track}' : ''} · ${subject.code}'),
+                  const SizedBox(height: AppSpacing.space4),
+                  if (loading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 48),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (papers.isEmpty)
+                    _noPapersYet(subject)
+                  else
+                    for (final paper in papers) ...[
+                      InkWell(
+                        onTap: () => widget.onOpenPaper?.call(PaperSelection(
+                          category: _selection.category!,
+                          system: _selection.system,
+                          examType: examType,
+                          track: _selection.track,
+                          subject: subject,
+                          entry: paper,
+                        )),
+                        borderRadius: BorderRadius.circular(18),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                          child: Row(
                             children: [
-                              Text('${examType.name} $year', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                              Text('$variant · Marking guide included', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary)),
+                              IconChip(icon: subject.icon, tint: subject.tint),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('${examType.name} ${paper.year}', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                    Text(paper.isPublished ? 'Marking guide available' : 'Under review',
+                                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary)),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right, color: AppColors.textTertiary),
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: AppColors.textTertiary),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space3),
-              ],
-            ],
-          ),
+                      ),
+                      const SizedBox(height: AppSpacing.space3),
+                    ],
+                ],
+              ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _noPapersYet(Subject subject) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          Icon(Icons.inbox_outlined, size: 40, color: AppColors.textTertiary),
+          const SizedBox(height: AppSpacing.space3),
+          Text('No papers yet', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
+          const SizedBox(height: 4),
+          Text('Nobody has submitted a ${subject.title} paper for this exam type yet. Be the first — submit one from the Submit tab.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+        ],
+      ),
     );
   }
 

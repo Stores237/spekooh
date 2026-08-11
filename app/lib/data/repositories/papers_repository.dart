@@ -1,15 +1,76 @@
 import '../../models/exam_taxonomy.dart';
+import '../../models/paper_entry.dart';
 import '../../models/subject.dart';
 import '../mock/mock_taxonomy.dart';
+
+/// A file picked on-device, ready to upload — kept decoupled from any
+/// specific file-picker package so the repository interface doesn't leak
+/// a third-party type.
+class SubmissionFile {
+  const SubmissionFile({required this.bytes, required this.fileName, this.mimeType});
+  final List<int> bytes;
+  final String fileName;
+  final String? mimeType;
+}
 
 abstract class PapersRepository {
   Future<List<ExamCategory>> getCategories();
   Future<List<ExamType>> getExamTypes(ExamCategoryKey category, ExamSystem? system);
   Future<List<ReportType>> getReportTypes();
   Future<List<Subject>> getSubjects(String examTypeName);
+
+  /// Real submitted papers for a resolved subject — not the taxonomy, the
+  /// actual [PaperEntry] rows. Empty means genuinely no papers yet.
+  Future<List<PaperEntry>> getPapers({
+    required int categoryId,
+    required int examTypeId,
+    int? subjectId,
+    ExamSystem? system,
+    String? track,
+  });
+
+  Future<PaperEntry> submitPaper({
+    required int categoryId,
+    required int examTypeId,
+    int? subjectId,
+    ExamSystem? system,
+    String? track,
+    required int year,
+    String examBoard,
+    required SubmissionFile file,
+  });
+
+  /// Fetches the full record for one paper (adds file_url/exam_board, not
+  /// present on the lightweight rows [getPapers] returns).
+  Future<PaperEntry> getPaperDetail(int paperId);
+
+  /// Registers a real paper view against the 3-free-views/day paywall.
+  /// Throws [PaywallException] once the daily limit (and any ad-earned
+  /// bonus view) is exhausted.
+  Future<void> recordView(int paperId);
+
+  /// Unlocks a marking guide for real money (via the backend's
+  /// MockPaymentProvider). Returns the amount actually charged (after any
+  /// redeem code discount).
+  Future<int> unlockPaper(int paperId, {String? redeemCode});
+}
+
+class PaywallException implements Exception {
+  PaywallException(this.message);
+  final String message;
+  @override
+  String toString() => message;
 }
 
 class MockPapersRepository implements PapersRepository {
+  /// [seedPublished] lets widget tests exercise the "tap a real paper"
+  /// flow without a backend — real usage always starts empty, an honest
+  /// "no papers yet" state until something is actually submitted+published.
+  MockPapersRepository({List<PaperEntry> seedPublished = const []}) : _submitted = List.of(seedPublished);
+
+  final List<PaperEntry> _submitted;
+  int _nextId = 9000;
+
   @override
   Future<List<ExamCategory>> getCategories() => Future.value(MockTaxonomy.categories);
 
@@ -23,4 +84,49 @@ class MockPapersRepository implements PapersRepository {
   @override
   Future<List<Subject>> getSubjects(String examTypeName) =>
       Future.value(MockTaxonomy.subjectsForExamType(examTypeName));
+
+  @override
+  Future<List<PaperEntry>> getPapers({
+    required int categoryId,
+    required int examTypeId,
+    int? subjectId,
+    ExamSystem? system,
+    String? track,
+  }) async {
+    return _submitted.where((p) => p.status == 'PUBLISHED').toList();
+  }
+
+  @override
+  Future<PaperEntry> submitPaper({
+    required int categoryId,
+    required int examTypeId,
+    int? subjectId,
+    ExamSystem? system,
+    String? track,
+    required int year,
+    String examBoard = '',
+    required SubmissionFile file,
+  }) async {
+    final entry = PaperEntry(
+      id: _nextId++,
+      year: year,
+      system: system?.name,
+      track: track ?? '',
+      status: 'PENDING_REVIEW',
+      fileUrl: null,
+      createdAt: DateTime.now(),
+    );
+    _submitted.add(entry);
+    return entry;
+  }
+
+  @override
+  Future<PaperEntry> getPaperDetail(int paperId) async =>
+      _submitted.firstWhere((p) => p.id == paperId, orElse: () => _submitted.first);
+
+  @override
+  Future<void> recordView(int paperId) async {}
+
+  @override
+  Future<int> unlockPaper(int paperId, {String? redeemCode}) async => 500;
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import 'auth_session.dart';
 
@@ -44,6 +45,54 @@ class ApiClient {
   Future<dynamic> patch(String path, {Object? body}) => _send('PATCH', _uri(path), body: body);
 
   Future<dynamic> delete(String path) => _send('DELETE', _uri(path));
+
+  /// Multipart POST for real file uploads (e.g. paper submission scans).
+  /// [fields] are form fields sent alongside the file as plain strings.
+  Future<dynamic> postMultipart(
+    String path, {
+    required String fileFieldName,
+    required List<int> fileBytes,
+    required String fileName,
+    String? mimeType,
+    Map<String, String> fields = const {},
+    bool isRetry = false,
+  }) async {
+    final uri = _uri(path);
+    final request = http.MultipartRequest('POST', uri)
+      ..fields.addAll(fields)
+      ..files.add(http.MultipartFile.fromBytes(
+        fileFieldName,
+        fileBytes,
+        filename: fileName,
+        contentType: mimeType != null ? MediaType.parse(mimeType) : null,
+      ));
+    final access = authSession.accessToken;
+    if (access != null) request.headers['Authorization'] = 'Bearer $access';
+
+    final streamed = await _client.send(request);
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 401 && !isRetry && authSession.refreshToken != null) {
+      final refreshed = await authSession.refreshAccessToken();
+      if (refreshed) {
+        return postMultipart(
+          path,
+          fileFieldName: fileFieldName,
+          fileBytes: fileBytes,
+          fileName: fileName,
+          mimeType: mimeType,
+          fields: fields,
+          isRetry: true,
+        );
+      }
+    }
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.body.isEmpty) return null;
+      return jsonDecode(response.body);
+    }
+    throw ApiException(response.statusCode, response.body);
+  }
 
   Future<dynamic> _send(String method, Uri uri, {Object? body, bool isRetry = false}) async {
     final headers = <String, String>{'Content-Type': 'application/json'};

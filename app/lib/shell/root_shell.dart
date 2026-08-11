@@ -134,7 +134,7 @@ class RootShellState extends State<RootShell> {
             Builder(
               builder: (context) => PapersScreen(onOpenPaper: (paper) => _openPaperDetail(context, paper)),
             ),
-            const SubmitScreen(),
+            SubmitScreen(),
             ForumScreen(),
             QuizzesScreen(),
           ],

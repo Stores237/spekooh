@@ -10,6 +10,7 @@ enum ExamSystem { francophone, anglophone }
 
 class ExamCategory {
   const ExamCategory({
+    this.id = 0,
     required this.key,
     required this.title,
     required this.icon,
@@ -18,6 +19,9 @@ class ExamCategory {
     this.requiresSystem = false,
   });
 
+  /// Real backend primary key — 0 for the static mock/report-type entries
+  /// that have no backend row (see ReportType, which is never sent to the API).
+  final int id;
   final ExamCategoryKey key;
   final String title;
   final IconData icon;
@@ -28,6 +32,7 @@ class ExamCategory {
 
 class ExamType {
   const ExamType({
+    this.id = 0,
     required this.name,
     required this.subtitle,
     this.mockVariantLabel,
@@ -35,6 +40,7 @@ class ExamType {
     this.badgeTone = SpekoohBadgeTone.neutral,
   });
 
+  final int id;
   final String name;
   final String subtitle;
 
