@@ -112,7 +112,7 @@ class RootShellState extends State<RootShell> {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (_) => const PaywallSheet(),
+        builder: (_) => PaywallSheet(),
       );
 
   Future<void> _openPamphlet(BuildContext context) async {
