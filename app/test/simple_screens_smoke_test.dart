@@ -4,6 +4,7 @@ import 'package:spekooh/data/repositories/forum_repository.dart';
 import 'package:spekooh/data/repositories/notifications_repository.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
+import 'package:spekooh/models/pamphlet.dart';
 import 'package:spekooh/screens/forum/forum_screen.dart';
 import 'package:spekooh/screens/shop/shop_screen.dart';
 import 'package:spekooh/screens/notifications/notifications_screen.dart';
@@ -31,6 +32,25 @@ void main() {
     expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
   });
 
+  testWidgets('ShopScreen search filters the real pamphlet list', (tester) async {
+    await _pumpAndCheck(tester, ShopScreen(repository: MockShopRepository()));
+    expect(find.text('GCE A Level Further Maths Pack'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'Philosophy');
+    await tester.pump();
+    expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
+    expect(find.text('GCE A Level Further Maths Pack'), findsNothing);
+  });
+
+  testWidgets('ShopScreen tapping a specific pamphlet passes that exact pamphlet, not always the featured one', (tester) async {
+    Pamphlet? opened;
+    await _pumpAndCheck(tester, ShopScreen(repository: MockShopRepository(), onOpenPamphlet: (p) => opened = p));
+    await tester.ensureVisible(find.text('GCE A Level Further Maths Pack'));
+    await tester.pump();
+    await tester.tap(find.text('GCE A Level Further Maths Pack'));
+    await tester.pump();
+    expect(opened?.title, 'GCE A Level Further Maths Pack');
+  });
+
   testWidgets('NotificationsScreen builds with no exceptions', (tester) async {
     await _pumpAndCheck(tester, NotificationsScreen(repository: MockNotificationsRepository()));
     expect(find.text('Notifications'), findsOneWidget);
@@ -50,6 +70,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Log in'));
     expect(called, isTrue);
+  });
+
+  testWidgets('SettingsScreen Spekooh Pro card opens the real paywall', (tester) async {
+    var opened = false;
+    await _pumpAndCheck(tester, SettingsScreen(onOpenPaywall: () => opened = true));
+    await tester.tap(find.text('Spekooh Pro'));
+    expect(opened, isTrue);
   });
 
   testWidgets('ProfileScreen builds with no exceptions', (tester) async {

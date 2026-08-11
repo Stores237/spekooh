@@ -79,4 +79,28 @@ void main() {
 
     expect(find.textContaining('You scored'), findsOneWidget);
   });
+
+  testWidgets('Quizzes: unbuilt features (past-paper practice, Friday Arena) are shown as coming soon, not fake content', (tester) async {
+    final repo = MockQuizzesRepository();
+    await tester.pumpWidget(MaterialApp(theme: appTheme, home: QuizzesScreen(repository: repo)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.textContaining('Past-paper practice'), findsOneWidget);
+    expect(find.textContaining('coming soon'), findsWidgets);
+    // Tapping it must not open any quiz detail (no more "Start quiz" from a fake source).
+    await tester.tap(find.textContaining('Past-paper practice'));
+    await tester.pump();
+    expect(find.text('Start quiz'), findsNothing);
+  });
+
+  testWidgets('Quizzes: daily challenge shows a real computed reset countdown, not a hardcoded one', (tester) async {
+    final repo = MockQuizzesRepository();
+    await tester.pumpWidget(MaterialApp(theme: appTheme, home: QuizzesScreen(repository: repo)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.textContaining('Resets in'), findsOneWidget);
+    expect(find.text('Resets in 7h 23m'), findsNothing); // the old hardcoded literal
+  });
 }

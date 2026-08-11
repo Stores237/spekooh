@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/auth_session.dart';
 import '../data/repository_locator.dart';
+import '../models/pamphlet.dart';
 import '../models/paper_entry.dart';
 import '../sheets/auth_sheet.dart';
 import '../sheets/pamphlet_sheet.dart';
@@ -82,7 +83,7 @@ class RootShellState extends State<RootShell> {
 
   void _openSettings(BuildContext context) => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => SettingsScreen(onLogin: () => _openAuthSheet(context)),
+          builder: (_) => SettingsScreen(onLogin: () => _openAuthSheet(context), onOpenPaywall: () => _openPaywall(context)),
         ),
       );
 
@@ -94,7 +95,7 @@ class RootShellState extends State<RootShell> {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotesScreen()));
 
   void _openShop(BuildContext context) => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => ShopScreen(onOpenPamphlet: () => _openPamphlet(context))),
+        MaterialPageRoute(builder: (_) => ShopScreen(onOpenPamphlet: (pamphlet) => _openPamphletSheet(context, pamphlet))),
       );
 
   void _openNotifications(BuildContext context) =>
@@ -118,13 +119,15 @@ class RootShellState extends State<RootShell> {
   Future<void> _openPamphlet(BuildContext context) async {
     final pamphlet = await RepositoryLocator.instance.shop.getFeaturedPamphlet();
     if (!context.mounted) return;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => PamphletSheet(pamphlet: pamphlet),
-    );
+    _openPamphletSheet(context, pamphlet);
   }
+
+  void _openPamphletSheet(BuildContext context, Pamphlet pamphlet) => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => PamphletSheet(pamphlet: pamphlet),
+      );
 
   @override
   Widget build(BuildContext context) {

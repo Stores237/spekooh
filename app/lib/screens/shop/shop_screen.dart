@@ -17,7 +17,7 @@ class ShopScreen extends StatefulWidget {
       : repository = repository ?? RepositoryLocator.instance.shop;
 
   final ShopRepository repository;
-  final VoidCallback? onOpenPamphlet;
+  final ValueChanged<Pamphlet>? onOpenPamphlet;
 
   @override
   State<ShopScreen> createState() => _ShopScreenState();
@@ -25,6 +25,14 @@ class ShopScreen extends StatefulWidget {
 
 class _ShopScreenState extends State<ShopScreen> {
   late final Future<List<Pamphlet>> _pamphletsFuture = widget.repository.getPamphlets();
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,17 +59,19 @@ class _ShopScreenState extends State<ShopScreen> {
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
-              const SearchInput(placeholder: 'Search pamphlets...'),
+              SearchInput(placeholder: 'Search pamphlets...', controller: _searchController, onChanged: (v) => setState(() => _query = v)),
               const SizedBox(height: AppSpacing.space4),
               Expanded(
                 child: FutureBuilder<List<Pamphlet>>(
                   future: _pamphletsFuture,
                   builder: (context, snapshot) {
-                    final items = snapshot.data ?? const [];
+                    final items = (snapshot.data ?? const [])
+                        .where((p) => p.title.toLowerCase().contains(_query.toLowerCase()))
+                        .toList();
                     return ListView.separated(
                       itemCount: items.length,
                       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.space3),
-                      itemBuilder: (context, i) => _PamphletCard(pamphlet: items[i], onTap: widget.onOpenPamphlet),
+                      itemBuilder: (context, i) => _PamphletCard(pamphlet: items[i], onTap: () => widget.onOpenPamphlet?.call(items[i])),
                     );
                   },
                 ),

@@ -31,6 +31,16 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
   late final Future<List<Quiz>> _quizzesFuture = widget.repository.getQuizzes();
   late final Future<List<({String name, int rank, String quizzes})>> _leaderboardFuture =
       widget.repository.getLeaderboard();
+  late final Future<({int currentStreak, bool playedToday})> _streakFuture = widget.repository.getStreak();
+
+  /// Real countdown to local midnight — no backend field exists for this,
+  /// but it doesn't need one: it's a pure function of the current time.
+  String get _resetsInLabel {
+    final now = DateTime.now();
+    final midnight = DateTime(now.year, now.month, now.day + 1);
+    final remaining = midnight.difference(now);
+    return 'Resets in ${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m';
+  }
 
   Quiz? _openQuiz;
   int _filter = 0;
@@ -225,16 +235,34 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: const [
-                              Text('DAILY CHALLENGE', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 11)),
-                              Text('Resets in 7h 23m', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 11)),
+                            children: [
+                              const Text('DAILY CHALLENGE', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 11)),
+                              Text(_resetsInLabel, style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 11)),
                             ],
                           ),
                           const SizedBox(height: 6),
                           Text(daily.title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.white)),
                           const SizedBox(height: 2),
                           Text('${daily.questionCount} questions · ${daily.playedCount} students played', style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
+                          FutureBuilder<({int currentStreak, bool playedToday})>(
+                            future: _streakFuture,
+                            builder: (context, streakSnapshot) {
+                              final streak = streakSnapshot.data?.currentStreak ?? 0;
+                              if (streak <= 0) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.local_fire_department, size: 14, color: AppColors.gold500),
+                                    const SizedBox(width: 4),
+                                    Text('$streak-day streak', style: const TextStyle(color: AppColors.gold500, fontSize: 12, fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 4),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 13),
@@ -262,48 +290,13 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   children: [
-                    GestureDetector(
-                      onTap: () => setState(() => _openQuiz = mockQuizDetail),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.bolt_outlined),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Past-paper practice', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                  Text('Generated from submitted papers · every sector & level', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.chevron_right, color: AppColors.textTertiary),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // Neither of these has a real backend concept yet — no
+                    // paper-to-quiz generation pipeline, no live/scheduled
+                    // quiz session model — so they're shown honestly as
+                    // upcoming rather than wired to an arbitrary real quiz.
+                    _comingSoonRow(Icons.bolt_outlined, 'Past-paper practice', 'Auto-generated from submitted papers — coming soon'),
                     const Divider(height: 1),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.emoji_events_outlined),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Friday Arena', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                Text('Live elimination quiz · everyone plays for prizes', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.chevron_right, color: AppColors.textTertiary),
-                        ],
-                      ),
-                    ),
+                    _comingSoonRow(Icons.emoji_events_outlined, 'Friday Arena', 'Live elimination quiz — coming soon'),
                   ],
                 ),
               ),
@@ -318,13 +311,9 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Top players', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 14)),
-                            const Text('See all', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
-                          ],
-                        ),
+                        // No "See all" link — the leaderboard endpoint already
+                        // returns its full top-10, there's nothing more to reveal.
+                        const Text('Top players', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 14)),
                         const SizedBox(height: AppSpacing.space3),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -417,6 +406,30 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _comingSoonRow(IconData icon, String title, String subtitle) {
+    return Opacity(
+      opacity: 0.55,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                  Text(subtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

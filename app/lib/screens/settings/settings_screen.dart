@@ -12,9 +12,10 @@ import '../common/circular_back_button.dart';
 /// by the bottom "Log in" button — RootShell flips `isLoggedIn` and returns
 /// to the Home tab.
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, this.onLogin});
+  const SettingsScreen({super.key, this.onLogin, this.onOpenPaywall});
 
   final VoidCallback? onLogin;
+  final VoidCallback? onOpenPaywall;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -48,30 +49,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(color: AppColors.gold200, borderRadius: BorderRadius.circular(12)),
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.star, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Spekooh Pro', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                          Text('Unlimited paper views · no ads', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                        ],
+              InkWell(
+                onTap: widget.onOpenPaywall,
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(color: AppColors.gold200, borderRadius: BorderRadius.circular(12)),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.star, size: 20),
                       ),
-                    ),
-                    const Icon(Icons.chevron_right, color: AppColors.textTertiary),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Spekooh Pro', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                            Text('Unlimited paper views · no ads', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                    ],
+                  ),
                 ),
               ),
               _sectionLabel('Language'),
