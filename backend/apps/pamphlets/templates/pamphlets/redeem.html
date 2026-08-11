@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Spekooh Pamphlet Pickup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="font-family: sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px;">
+  {% if error %}
+    <h1>Cannot redeem this ticket</h1>
+    <p>{{ error }}</p>
+  {% elif released %}
+    <h1>Handover confirmed</h1>
+    <p>{{ pamphlet_title }} — released to partner.</p>
+    <p>Payout amount: {{ payout_amount }} FCFA.</p>
+  {% else %}
+    <h1>Confirm pamphlet handover</h1>
+    <p><strong>{{ pamphlet_title }}</strong></p>
+    <p>Amount held in escrow: {{ amount_paid }} FCFA</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">Confirm handover &amp; release payment</button>
+    </form>
+  {% endif %}
+</body>
+</html>

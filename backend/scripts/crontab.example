@@ -1,0 +1,13 @@
+# Example crontab entries for Spekooh's cron-driven state transitions.
+# Install with: crontab -e  (paste the two lines below, adjusting paths).
+#
+# No Celery/Redis: these management commands are made race-safe via
+# select_for_update(skip_locked=True) + Postgres partial unique indexes,
+# so overlapping runs (e.g. a slow run still going when the next fires)
+# are safe to allow.
+
+# Instructor request timeouts + marking-guide day-4/day-6 reminders — every 15 min.
+*/15 * * * * cd /home/lucien/Spekooh/backend && /home/lucien/Spekooh/backend/.venv/bin/python manage.py process_instructor_timeouts >> /var/log/spekooh/cron.log 2>&1
+
+# Pamphlet 30-day expiry flags + 3-day courier self-confirm fallback — hourly.
+0 * * * * cd /home/lucien/Spekooh/backend && /home/lucien/Spekooh/backend/.venv/bin/python manage.py process_pamphlet_expiry >> /var/log/spekooh/cron.log 2>&1

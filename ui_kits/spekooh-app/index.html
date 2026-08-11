@@ -1,0 +1,75 @@
+<!-- @dsCard group="Spekooh App" viewport="430x860" name="Spekooh App UI Kit" subtitle="Guest + logged-in Home, Past papers, Submit, Forum, Quizzes, Profile, Settings+Login, Pro paywall, Pamphlet escrow+QR, floating AI assistant" -->
+<html><head>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;background:var(--surface-bg);display:flex;justify-content:center;padding:20px;font-family:var(--font-sans)}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="IconLucide.jsx"></script>
+<script type="text/babel" src="Phone.jsx"></script>
+<script type="text/babel" src="StatusBar.jsx"></script>
+<script type="text/babel" src="HomeScreen.jsx"></script>
+<script type="text/babel" src="LoggedInHomeScreen.jsx"></script>
+<script type="text/babel" src="NotificationsScreen.jsx"></script>
+<script type="text/babel" src="NotesScreen.jsx"></script>
+<script type="text/babel" src="ShopScreen.jsx"></script>
+<script type="text/babel" src="AIAssistant.jsx"></script>
+<script type="text/babel" src="PapersScreen.jsx"></script>
+<script type="text/babel" src="SubmitScreen.jsx"></script>
+<script type="text/babel" src="ForumScreen.jsx"></script>
+<script type="text/babel" src="QuizzesScreen.jsx"></script>
+<script type="text/babel" src="ProfileScreen.jsx"></script>
+<script type="text/babel" src="PaperDetailScreen.jsx"></script>
+<script type="text/babel" src="SettingsScreen.jsx"></script>
+<script type="text/babel" src="PaywallSheet.jsx"></script>
+<script type="text/babel" src="PamphletSheet.jsx"></script>
+<script type="text/babel">
+function App(){
+  const { BottomNav } = window.KawloSpekoohDesignSystem_10ffa8;
+  const [tab,setTab] = React.useState(0);
+  const [loggedIn,setLoggedIn] = React.useState(false);
+  const [showSettings,setShowSettings] = React.useState(false);
+  const [showProfile,setShowProfile] = React.useState(false);
+  const [showNotifications,setShowNotifications] = React.useState(false);
+  const [showNotes,setShowNotes] = React.useState(false);
+  const [showShop,setShowShop] = React.useState(false);
+  const [showPaywall,setShowPaywall] = React.useState(false);
+  const [showPamphlet,setShowPamphlet] = React.useState(false);
+  const [showPaper,setShowPaper] = React.useState(false);
+  const [paperMeta,setPaperMeta] = React.useState(null);
+  const Ic = window.Ic;
+  const goHome = ()=>{setShowSettings(false);setShowProfile(false);setShowNotifications(false);setShowNotes(false);setShowShop(false);setShowPaper(false);setPaperMeta(null);setTab(0);};
+  const screens = [
+    loggedIn ? <window.LoggedInHomeScreen onOpenSettings={()=>setShowSettings(true)} onOpenPaper={()=>{setPaperMeta(null);setShowPaper(true);}} onOpenSubmit={()=>setTab(2)} onOpenNotifications={()=>setShowNotifications(true)} onOpenProfile={()=>setShowProfile(true)} onOpenNotes={()=>setShowNotes(true)} onOpenShop={()=>setShowShop(true)}/> : <window.HomeScreen onOpenPaywall={()=>setShowPaywall(true)} onOpenSettings={()=>setShowSettings(true)} onOpenPaper={()=>{setPaperMeta(null);setShowPaper(true);}} onOpenPamphlet={()=>setShowPamphlet(true)} onOpenProfile={()=>setShowProfile(true)} onOpenNotes={()=>setShowNotes(true)} onOpenShop={()=>setShowShop(true)}/>,
+    <window.PapersScreen onOpenPaper={(p)=>{setPaperMeta(p);setShowPaper(true);}}/>,
+    <window.SubmitScreen/>,
+    <window.ForumScreen/>,
+    <window.QuizzesScreen/>
+  ];
+  return (
+    <window.Phone>
+      <window.StatusBar/>
+      <div style={{flex:1,display:'flex',flexDirection:'column',position:'relative',overflow:'hidden'}}>
+        {showSettings ? <window.SettingsScreen onLogin={()=>{setLoggedIn(true);goHome();}}/> : showProfile ? <window.ProfileScreen onBack={()=>setShowProfile(false)} onOpenSettings={()=>{setShowProfile(false);setShowSettings(true);}}/> : showNotifications ? <window.NotificationsScreen onBack={()=>setShowNotifications(false)}/> : showNotes ? <window.NotesScreen onBack={()=>setShowNotes(false)}/> : showShop ? <window.ShopScreen onBack={()=>setShowShop(false)} onOpenPamphlet={()=>setShowPamphlet(true)}/> : showPaper ? <window.PaperDetailScreen onBack={()=>setShowPaper(false)} paper={paperMeta}/> : screens[tab]}
+        {showPaywall && <window.PaywallSheet onClose={()=>setShowPaywall(false)}/>}
+        {showPamphlet && <window.PamphletSheet onClose={()=>setShowPamphlet(false)}/>}
+        {loggedIn && !showSettings && !showPaywall && !showPamphlet && <window.AIAssistant/>}
+      </div>
+      <BottomNav active={tab} onChange={(i)=>{setShowSettings(false);setShowProfile(false);setShowNotifications(false);setShowPaper(false);setTab(i);}} items={[
+        {icon:<Ic name="home"/>,label:'Home'},
+        {icon:<Ic name="file-text"/>,label:'Papers'},
+        {icon:<Ic name="upload" style={{color:'#fff'}}/>,center:true},
+        {icon:<Ic name="message-circle"/>,label:'Forum'},
+        {icon:<Ic name="zap"/>,label:'Quizzes'}
+      ]}/>
+    </window.Phone>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body></html>

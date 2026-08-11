@@ -1,0 +1,9 @@
+# Local Claude Code session state — not project config.
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.gstack/
+
+# OS cruft
+.DS_Store
+
+# app/ and backend/ have their own .gitignore for their toolchains.

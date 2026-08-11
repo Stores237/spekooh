@@ -1,0 +1,2212 @@
+openapi: 3.0.3
+info:
+  title: Spekooh API
+  version: 1.0.0
+  description: Past-paper marketplace, instructor marking, credits, and pamphlet escrow.
+paths:
+  /api/admin-queue/flags/:
+    get:
+      operationId: admin_queue_flags_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          enum:
+          - OTHER
+          - PAMPHLET_DISPUTE
+          - PAMPHLET_EXPIRED
+          - UNASSIGNED_PAPER
+          - WEBHOOK_ANOMALY
+        description: |-
+          * `UNASSIGNED_PAPER` - No instructor accepted
+          * `PAMPHLET_DISPUTE` - Pamphlet handover dispute
+          * `PAMPHLET_EXPIRED` - Pamphlet ticket expired unredeemed
+          * `WEBHOOK_ANOMALY` - Instructor webhook contradicted local state
+          * `OTHER` - Other
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - OPEN
+          - RESOLVED
+        description: |-
+          * `OPEN` - Open
+          * `RESOLVED` - Resolved
+      tags:
+      - admin-queue
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminFlagQueue'
+          description: ''
+  /api/admin-queue/flags/{id}/:
+    get:
+      operationId: admin_queue_flags_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this admin flag queue.
+        required: true
+      tags:
+      - admin-queue
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminFlagQueue'
+          description: ''
+  /api/admin-queue/flags/{id}/resolve/:
+    post:
+      operationId: admin_queue_flags_resolve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this admin flag queue.
+        required: true
+      tags:
+      - admin-queue
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminFlagQueue'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminFlagQueue'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminFlagQueue'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminFlagQueue'
+          description: ''
+  /api/auth/guest/:
+    post:
+      operationId: auth_guest_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailTokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailTokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailTokenObtainPair'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTokenObtainPair'
+          description: ''
+  /api/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: auth_me_update
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: auth_me_partial_update
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: ''
+  /api/credits/ledger/:
+    get:
+      operationId: credits_ledger_list
+      tags:
+      - credits
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CreditLedgerEntry'
+          description: ''
+  /api/credits/redeem-codes/:
+    get:
+      operationId: credits_redeem_codes_list
+      tags:
+      - credits
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RedeemCode'
+          description: ''
+  /api/credits/redeem-codes/{id}/:
+    get:
+      operationId: credits_redeem_codes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this redeem code.
+        required: true
+      tags:
+      - credits
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedeemCode'
+          description: ''
+  /api/credits/redeem-codes/apply/:
+    post:
+      operationId: credits_redeem_codes_apply_create
+      tags:
+      - credits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedeemCodeApply'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RedeemCodeApply'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RedeemCodeApply'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedeemCode'
+          description: ''
+  /api/credits/redeem-codes/issue/:
+    post:
+      operationId: credits_redeem_codes_issue_create
+      description: Request a new redeem code sized to the caller's own accepted-submission
+        tier.
+      tags:
+      - credits
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedeemCode'
+          description: ''
+  /api/instructors/papers/{paper_id}/merge-and-publish/:
+    post:
+      operationId: instructors_papers_merge_and_publish_create
+      parameters:
+      - in: path
+        name: paper_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - instructors
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaperSubmissionDetail'
+          description: ''
+  /api/instructors/papers/{paper_id}/route/:
+    post:
+      operationId: instructors_papers_route_create
+      description: 'Ops-triggered: kick off (or advance) instructor routing for a
+        paper ready for marking.'
+      parameters:
+      - in: path
+        name: paper_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - instructors
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstructorRequest'
+          description: ''
+  /api/instructors/requests/:
+    get:
+      operationId: instructors_requests_list
+      tags:
+      - instructors
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InstructorRequest'
+          description: ''
+  /api/instructors/requests/{id}/:
+    get:
+      operationId: instructors_requests_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this instructor request.
+        required: true
+      tags:
+      - instructors
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstructorRequest'
+          description: ''
+  /api/instructors/webhook/:
+    post:
+      operationId: instructors_webhook_create
+      description: |-
+        HMAC-signed, replay-protected — see apps.instructors.webhook. Not backed
+        by JWT auth (the instructor platform is a genuine external third party,
+        per spec's "golden rule"); AllowAny + signature verification instead.
+      tags:
+      - instructors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstructorWebhookEnvelope'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InstructorWebhookEnvelope'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InstructorWebhookEnvelope'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/pamphlets/catalog/:
+    get:
+      operationId: pamphlets_catalog_list
+      tags:
+      - pamphlets
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pamphlet'
+          description: ''
+  /api/pamphlets/catalog/{id}/:
+    get:
+      operationId: pamphlets_catalog_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pamphlet.
+        required: true
+      tags:
+      - pamphlets
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pamphlet'
+          description: ''
+  /api/pamphlets/orders/:
+    get:
+      operationId: pamphlets_orders_list
+      tags:
+      - pamphlets
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PamphletOrder'
+          description: ''
+  /api/pamphlets/orders/{order_id}/issue-qr/:
+    post:
+      operationId: pamphlets_orders_issue_qr_create
+      description: 'Ops-triggered: mint the pickup QR token once an order is ready
+        for handover.'
+      parameters:
+      - in: path
+        name: order_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - pamphlets
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PamphletOrder'
+          description: ''
+  /api/pamphlets/orders/{id}/:
+    get:
+      operationId: pamphlets_orders_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pamphlet order.
+        required: true
+      tags:
+      - pamphlets
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PamphletOrder'
+          description: ''
+  /api/pamphlets/orders/{id}/dispute/:
+    post:
+      operationId: pamphlets_orders_dispute_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pamphlet order.
+        required: true
+      tags:
+      - pamphlets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PamphletOrder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PamphletOrder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PamphletOrder'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PamphletOrder'
+          description: ''
+  /api/pamphlets/orders/{id}/self_confirm/:
+    post:
+      operationId: pamphlets_orders_self_confirm_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pamphlet order.
+        required: true
+      tags:
+      - pamphlets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PamphletOrder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PamphletOrder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PamphletOrder'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PamphletOrder'
+          description: ''
+  /api/pamphlets/orders/place/:
+    post:
+      operationId: pamphlets_orders_place_create
+      tags:
+      - pamphlets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceOrderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlaceOrderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlaceOrderRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PamphletOrder'
+          description: ''
+  /api/papers/ad-watch/:
+    post:
+      operationId: papers_ad_watch_create
+      tags:
+      - papers
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdWatchEvent'
+          description: ''
+  /api/papers/categories/:
+    get:
+      operationId: papers_categories_list
+      tags:
+      - papers
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExamCategory'
+          description: ''
+  /api/papers/categories/{id}/:
+    get:
+      operationId: papers_categories_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this exam category.
+        required: true
+      tags:
+      - papers
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamCategory'
+          description: ''
+  /api/papers/exam-types/:
+    get:
+      operationId: papers_exam_types_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: system
+        schema:
+          type: string
+          nullable: true
+          enum:
+          - anglophone
+          - francophone
+        description: |-
+          * `francophone` - Francophone
+          * `anglophone` - Anglophone
+      tags:
+      - papers
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExamType'
+          description: ''
+  /api/papers/exam-types/{id}/:
+    get:
+      operationId: papers_exam_types_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this exam type.
+        required: true
+      tags:
+      - papers
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamType'
+          description: ''
+  /api/papers/subjects/:
+    get:
+      operationId: papers_subjects_list
+      parameters:
+      - in: query
+        name: language
+        schema:
+          type: string
+          enum:
+          - en
+          - fr
+        description: |-
+          * `en` - English
+          * `fr` - French
+      tags:
+      - papers
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+          description: ''
+  /api/papers/subjects/{id}/:
+    get:
+      operationId: papers_subjects_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this subject.
+        required: true
+      tags:
+      - papers
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+          description: ''
+  /api/papers/submissions/:
+    get:
+      operationId: papers_submissions_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: exam_type
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - AWAITING_MARKING_GUIDE
+          - GUIDE_SUBMITTED
+          - INSTRUCTOR_ACCEPTED
+          - INSTRUCTOR_REJECTED
+          - INSTRUCTOR_REQUEST_SENT
+          - MERGED
+          - PENDING_REVIEW
+          - PUBLISHED
+          - UNASSIGNED_ADMIN_QUEUE
+        description: |-
+          * `PENDING_REVIEW` - Pending review
+          * `INSTRUCTOR_REQUEST_SENT` - Instructor request sent
+          * `INSTRUCTOR_ACCEPTED` - Instructor accepted
+          * `INSTRUCTOR_REJECTED` - Instructor rejected
+          * `AWAITING_MARKING_GUIDE` - Awaiting marking guide
+          * `GUIDE_SUBMITTED` - Guide submitted
+          * `MERGED` - Merged
+          * `PUBLISHED` - Published
+          * `UNASSIGNED_ADMIN_QUEUE` - Unassigned — admin queue
+      - in: query
+        name: subject
+        schema:
+          type: integer
+      - in: query
+        name: submitted_by
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - papers
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaperSubmissionList'
+          description: ''
+    post:
+      operationId: papers_submissions_create
+      tags:
+      - papers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaperSubmissionCreate'
+          description: ''
+  /api/papers/submissions/{id}/:
+    get:
+      operationId: papers_submissions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this paper submission.
+        required: true
+      tags:
+      - papers
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaperSubmissionDetail'
+          description: ''
+  /api/papers/submissions/{id}/mark_published/:
+    post:
+      operationId: papers_submissions_mark_published_create
+      description: |-
+        Ops-triggered for now — the full instructor-accept -> marking-guide
+        -> merge pipeline (stage 8) will call award_contributor_bonus from
+        this same transition instead of duplicating the logic.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this paper submission.
+        required: true
+      tags:
+      - papers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionDetail'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaperSubmissionDetail'
+          description: ''
+  /api/papers/submissions/{id}/process_ocr/:
+    post:
+      operationId: papers_submissions_process_ocr_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this paper submission.
+        required: true
+      tags:
+      - papers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionDetail'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaperSubmissionDetail'
+          description: ''
+  /api/papers/submissions/{id}/view/:
+    post:
+      operationId: papers_submissions_view_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this paper submission.
+        required: true
+      tags:
+      - papers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaperSubmissionDetail'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaperSubmissionDetail'
+          description: ''
+  /api/payments/subscribe/:
+    post:
+      operationId: payments_subscribe_create
+      tags:
+      - payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+          description: ''
+  /api/payments/subscriptions/:
+    get:
+      operationId: payments_subscriptions_list
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subscription'
+          description: ''
+  /api/payments/transactions/:
+    get:
+      operationId: payments_transactions_list
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentTransaction'
+          description: ''
+  /api/payments/unlock/:
+    post:
+      operationId: payments_unlock_create
+      tags:
+      - payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnlockRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UnlockRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UnlockRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaperUnlock'
+          description: ''
+  /api/payments/unlocks/:
+    get:
+      operationId: payments_unlocks_list
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaperUnlock'
+          description: ''
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+components:
+  schemas:
+    AccountTypeEnum:
+      enum:
+      - guest
+      - registered
+      type: string
+      description: |-
+        * `guest` - Guest
+        * `registered` - Registered
+    AdWatchEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+    AdminFlagQueue:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        content_type:
+          type: integer
+          readOnly: true
+        object_id:
+          type: string
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          readOnly: true
+        reason:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AdminFlagQueueStatusEnum'
+          readOnly: true
+        resolved_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        resolved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        resolution_notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - content_type
+      - created_at
+      - id
+      - object_id
+      - reason
+      - resolved_at
+      - resolved_by
+      - status
+    AdminFlagQueueStatusEnum:
+      enum:
+      - OPEN
+      - RESOLVED
+      type: string
+      description: |-
+        * `OPEN` - Open
+        * `RESOLVED` - Resolved
+    BlankEnum:
+      enum:
+      - ''
+    CategoryEnum:
+      enum:
+      - UNASSIGNED_PAPER
+      - PAMPHLET_DISPUTE
+      - PAMPHLET_EXPIRED
+      - WEBHOOK_ANOMALY
+      - OTHER
+      type: string
+      description: |-
+        * `UNASSIGNED_PAPER` - No instructor accepted
+        * `PAMPHLET_DISPUTE` - Pamphlet handover dispute
+        * `PAMPHLET_EXPIRED` - Pamphlet ticket expired unredeemed
+        * `WEBHOOK_ANOMALY` - Instructor webhook contradicted local state
+        * `OTHER` - Other
+    CreditLedgerEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: string
+          format: uuid
+          readOnly: true
+        paper_submission:
+          type: integer
+          readOnly: true
+          nullable: true
+        amount:
+          type: integer
+          readOnly: true
+        reason:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - created_at
+      - id
+      - paper_submission
+      - reason
+      - user
+    EmailTokenObtainPair:
+      type: object
+      description: Adds the serialized user alongside the token pair on login.
+      properties:
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    EventTypeEnum:
+      enum:
+      - instructor_response
+      - marking_guide_submission
+      type: string
+      description: |-
+        * `instructor_response` - instructor_response
+        * `marking_guide_submission` - marking_guide_submission
+    ExamCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          maxLength: 40
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          maxLength: 100
+        subtitle:
+          type: string
+          maxLength: 200
+        icon_name:
+          type: string
+          maxLength: 60
+        tint:
+          type: string
+          maxLength: 20
+        requires_system:
+          type: boolean
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - id
+      - key
+      - title
+    ExamType:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        system:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SystemEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        name:
+          type: string
+          maxLength: 100
+        subtitle:
+          type: string
+          maxLength: 200
+        mock_variant_label:
+          type: string
+          maxLength: 100
+        tracks: {}
+        requires_track:
+          type: boolean
+          readOnly: true
+        subject_language:
+          $ref: '#/components/schemas/LanguageEnum'
+        badge_tone:
+          type: string
+          maxLength: 20
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - category
+      - id
+      - name
+      - requires_track
+      - system
+    InstructorRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        paper:
+          type: integer
+          readOnly: true
+        instructor_id:
+          type: string
+          readOnly: true
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+        responds_by:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/InstructorRequestStatusEnum'
+          readOnly: true
+        responded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        guide_deadline:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - guide_deadline
+      - id
+      - instructor_id
+      - paper
+      - responded_at
+      - responds_by
+      - sent_at
+      - status
+    InstructorRequestStatusEnum:
+      enum:
+      - PENDING
+      - ACCEPTED
+      - REJECTED
+      - TIMED_OUT
+      type: string
+      description: |-
+        * `PENDING` - Pending response
+        * `ACCEPTED` - Accepted
+        * `REJECTED` - Rejected
+        * `TIMED_OUT` - Timed out
+    InstructorWebhookEnvelope:
+      type: object
+      properties:
+        event_type:
+          $ref: '#/components/schemas/EventTypeEnum'
+      required:
+      - event_type
+    LanguageEnum:
+      enum:
+      - en
+      - fr
+      type: string
+      description: |-
+        * `en` - English
+        * `fr` - French
+    NullEnum:
+      enum:
+      - null
+    Pamphlet:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        partner:
+          type: integer
+        partner_name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        price_fcfa:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        delivery_available:
+          type: boolean
+        delivery_fee_fcfa:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - id
+      - partner
+      - partner_name
+      - price_fcfa
+      - title
+    PamphletOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        pamphlet:
+          type: integer
+          readOnly: true
+        is_delivery:
+          type: boolean
+          readOnly: true
+        amount_paid:
+          type: integer
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PamphletOrderStatusEnum'
+          readOnly: true
+        qr_issued_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        self_confirmed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        payout_amount:
+          type: integer
+          readOnly: true
+          nullable: true
+        released_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount_paid
+      - created_at
+      - id
+      - is_delivery
+      - pamphlet
+      - payout_amount
+      - qr_issued_at
+      - released_at
+      - self_confirmed_at
+      - status
+    PamphletOrderStatusEnum:
+      enum:
+      - PAID_HELD
+      - QR_ISSUED
+      - RELEASED
+      - EXPIRED
+      - DISPUTED
+      type: string
+      description: |-
+        * `PAID_HELD` - Paid — held in escrow
+        * `QR_ISSUED` - QR issued
+        * `RELEASED` - Released to partner
+        * `EXPIRED` - Expired — flagged for admin review
+        * `DISPUTED` - Disputed
+    PaperSubmissionCreate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        exam_type:
+          type: integer
+        system:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SystemEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        track:
+          type: string
+          maxLength: 60
+        subject:
+          type: integer
+          nullable: true
+        exam_board:
+          type: string
+          maxLength: 120
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        file_ref:
+          type: string
+          maxLength: 500
+        mcq_section:
+          nullable: true
+        non_mcq_section:
+          nullable: true
+      required:
+      - category
+      - exam_type
+      - file_ref
+      - id
+      - year
+    PaperSubmissionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        submitted_by:
+          type: string
+          format: uuid
+          readOnly: true
+        category:
+          type: integer
+        exam_type:
+          type: integer
+        system:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SystemEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        track:
+          type: string
+          maxLength: 60
+        subject:
+          type: integer
+          nullable: true
+        exam_board:
+          type: string
+          maxLength: 120
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        file_ref:
+          type: string
+          maxLength: 500
+        ocr_text:
+          type: string
+          readOnly: true
+        duplicate_hash:
+          type: string
+          readOnly: true
+        is_duplicate:
+          type: boolean
+          readOnly: true
+        duplicate_of:
+          type: integer
+          readOnly: true
+          nullable: true
+        mcq_section:
+          nullable: true
+        non_mcq_section:
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusDa0Enum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - created_at
+      - duplicate_hash
+      - duplicate_of
+      - exam_type
+      - file_ref
+      - id
+      - is_duplicate
+      - ocr_text
+      - status
+      - submitted_by
+      - updated_at
+      - year
+    PaperSubmissionList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        exam_type:
+          type: integer
+        exam_type_name:
+          type: string
+          readOnly: true
+        subject:
+          type: integer
+          nullable: true
+        subject_title:
+          type: string
+          readOnly: true
+        system:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SystemEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        track:
+          type: string
+          maxLength: 60
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        status:
+          $ref: '#/components/schemas/StatusDa0Enum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - created_at
+      - exam_type
+      - exam_type_name
+      - id
+      - subject_title
+      - year
+    PaperUnlock:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        paper_submission:
+          type: integer
+          readOnly: true
+        amount_paid:
+          type: integer
+          readOnly: true
+        redeem_code_applied:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount_paid
+      - created_at
+      - id
+      - paper_submission
+      - redeem_code_applied
+    PatchedUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 150
+        account_type:
+          allOf:
+          - $ref: '#/components/schemas/AccountTypeEnum'
+          readOnly: true
+        education_level:
+          type: string
+          maxLength: 80
+        region:
+          type: string
+          maxLength: 80
+        language_pref:
+          $ref: '#/components/schemas/LanguageEnum'
+    PaymentTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        purpose:
+          allOf:
+          - $ref: '#/components/schemas/PurposeEnum'
+          readOnly: true
+        amount_fcfa:
+          type: integer
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PaymentTransactionStatusEnum'
+          readOnly: true
+        provider_reference:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount_fcfa
+      - created_at
+      - id
+      - provider_reference
+      - purpose
+      - status
+    PaymentTransactionStatusEnum:
+      enum:
+      - SUCCESS
+      - FAILED
+      type: string
+      description: |-
+        * `SUCCESS` - Success
+        * `FAILED` - Failed
+    PlaceOrderRequest:
+      type: object
+      properties:
+        pamphlet:
+          type: integer
+        is_delivery:
+          type: boolean
+          default: false
+        phone_number:
+          type: string
+          maxLength: 20
+      required:
+      - pamphlet
+      - phone_number
+    PurposeEnum:
+      enum:
+      - SUBSCRIPTION
+      - PAPER_UNLOCK
+      - PAMPHLET_ORDER
+      type: string
+      description: |-
+        * `SUBSCRIPTION` - Pro subscription
+        * `PAPER_UNLOCK` - Marking guide unlock
+        * `PAMPHLET_ORDER` - Pamphlet order
+    RedeemCode:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        owner:
+          type: string
+          format: uuid
+          readOnly: true
+        value_percent:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        tier_at_issuance:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Owner's total accepted submission count at issuance.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/RedeemCodeStatusEnum'
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+        redeemed_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        redeemed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - code
+      - created_at
+      - expires_at
+      - id
+      - owner
+      - redeemed_at
+      - redeemed_by
+      - status
+      - tier_at_issuance
+      - value_percent
+    RedeemCodeApply:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 20
+      required:
+      - code
+    RedeemCodeStatusEnum:
+      enum:
+      - ACTIVE
+      - REDEEMED
+      - EXPIRED
+      type: string
+      description: |-
+        * `ACTIVE` - Active
+        * `REDEEMED` - Redeemed
+        * `EXPIRED` - Expired
+    Register:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+        education_level:
+          type: string
+          maxLength: 80
+        region:
+          type: string
+          maxLength: 80
+        language_pref:
+          $ref: '#/components/schemas/LanguageEnum'
+      required:
+      - password
+    StatusDa0Enum:
+      enum:
+      - PENDING_REVIEW
+      - INSTRUCTOR_REQUEST_SENT
+      - INSTRUCTOR_ACCEPTED
+      - INSTRUCTOR_REJECTED
+      - AWAITING_MARKING_GUIDE
+      - GUIDE_SUBMITTED
+      - MERGED
+      - PUBLISHED
+      - UNASSIGNED_ADMIN_QUEUE
+      type: string
+      description: |-
+        * `PENDING_REVIEW` - Pending review
+        * `INSTRUCTOR_REQUEST_SENT` - Instructor request sent
+        * `INSTRUCTOR_ACCEPTED` - Instructor accepted
+        * `INSTRUCTOR_REJECTED` - Instructor rejected
+        * `AWAITING_MARKING_GUIDE` - Awaiting marking guide
+        * `GUIDE_SUBMITTED` - Guide submitted
+        * `MERGED` - Merged
+        * `PUBLISHED` - Published
+        * `UNASSIGNED_ADMIN_QUEUE` - Unassigned — admin queue
+    Subject:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          maxLength: 100
+        code:
+          type: string
+          maxLength: 20
+        icon_name:
+          type: string
+          maxLength: 60
+        tint:
+          type: string
+          maxLength: 20
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+      required:
+      - id
+      - key
+      - title
+    SubscribeRequest:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          maxLength: 20
+      required:
+      - phone_number
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SubscriptionStatusEnum'
+          readOnly: true
+        renews_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - renews_at
+      - status
+    SubscriptionStatusEnum:
+      enum:
+      - ACTIVE
+      - EXPIRED
+      type: string
+      description: |-
+        * `ACTIVE` - Active
+        * `EXPIRED` - Expired
+    SystemEnum:
+      enum:
+      - francophone
+      - anglophone
+      type: string
+      description: |-
+        * `francophone` - Francophone
+        * `anglophone` - Anglophone
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    UnlockRequest:
+      type: object
+      properties:
+        paper_submission:
+          type: integer
+        phone_number:
+          type: string
+          maxLength: 20
+        redeem_code:
+          type: string
+          maxLength: 20
+      required:
+      - paper_submission
+      - phone_number
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 150
+        account_type:
+          allOf:
+          - $ref: '#/components/schemas/AccountTypeEnum'
+          readOnly: true
+        education_level:
+          type: string
+          maxLength: 80
+        region:
+          type: string
+          maxLength: 80
+        language_pref:
+          $ref: '#/components/schemas/LanguageEnum'
+      required:
+      - account_type
+      - id
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
