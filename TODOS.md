@@ -10,6 +10,54 @@ app actually call it for real (not a mock, not a dead tap, not fabricated displa
 
 ---
 
+## Owner action items — not engineering work, blocks engineering work
+
+Everything below needs an account, real content, a decision, or a person — none of it is code
+I can write unilaterally. Grouped by what each one unblocks.
+
+### Accounts & credentials to set up
+- **Ad network** (unblocks P0 #2 below): create an AdMob account, register the app, generate an
+  App ID + rewarded-video Ad Unit ID. Hand those over and the SDK integration + real
+  `/papers/ad-watch/` wiring can happen.
+- **Real payment provider**: the backend runs on `MockPaymentProvider` (explicitly a stand-in,
+  documented as such in the code) for subscriptions, marking-guide unlocks, and pamphlet
+  payments. Going live needs a real MTN MoMo / Orange Money merchant integration, or an
+  aggregator (Flutterwave, Notch Pay) that bundles both — business registration + API keys.
+- **File/media storage**: uploaded papers currently save to local disk on the dev server
+  (documented as a placeholder for Supabase Storage). Production needs a real Supabase Storage
+  bucket or S3-compatible bucket with credentials.
+- **Firebase project** — only if real push notifications are wanted (current notifications are
+  in-app only, which may be enough for v1 per spec).
+- **App store accounts** — Apple Developer + Google Play Console, once a build is ready to ship.
+
+### Content only the owner can provide
+- **Real papers to seed the app**: the papers database is genuinely empty right now
+  (`getLatestPublished()` correctly shows "no papers yet"). The app won't feel real until actual
+  exam papers are submitted and pushed to `PUBLISHED` — via the Django admin, or real users.
+- **Academic Reports taxonomy**: the "reports" category exists with zero exam-type rows and no
+  discipline/institution fields — the field shape (internship? mémoire? thèse? by what
+  institution?) needs a decision before this can be built for real instead of "coming soon."
+- **French translations**: the biggest P0 gap (bilingual UI, below) needs real French copy for
+  every string in the app. A first draft can be AI-assisted, but a native-speaker review for the
+  Cameroon market should happen before shipping.
+- **Support destinations**: a real WhatsApp group link, support contact, and live website URL —
+  Settings currently has five dead links because none of these exist yet to point at.
+- **Privacy policy / terms content** — legal text, not something that should be drafted as if real.
+
+### People/ops
+- **Instructor recruitment**: the marking-guide pipeline (accept/reject, 7-day deadline, credits)
+  is fully built and tested, but inert without real instructors onboarded to receive requests.
+- **A review team**: someone needs to actually use the admin queue to trigger OCR/duplicate-check
+  and `mark_published` on submissions — a manual admin action by design.
+
+### Decisions still open
+- **Offline downloads platform target** (blocks P1 #4 below): mobile-only (standard
+  `path_provider` approach) or web too (needs browser storage, a different implementation)?
+- **Marking-guide subscription tier** (P2 #10 below): still wanted, or does pay-per-unlock stay
+  the only path?
+
+---
+
 ## P0 — Must-have, confirmed in scope, still not fully live
 
 ### 1. Bilingual UI (English + French)
