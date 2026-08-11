@@ -66,18 +66,41 @@ class PaperUnlockError(Exception):
 # no confirmed fixed price yet. Kept as a single constant so it's easy to retune.
 PAPER_UNLOCK_PRICE_FCFA = 500
 
+# Speculative — not in the confirmed spec, but a small, real onboarding perk:
+# a brand-new account's very first marking-guide unlock is free for a week.
+TRIAL_DAYS = 7
+
+
+def trial_days_remaining(user) -> int:
+    elapsed = (timezone.now() - user.created_at).days
+    return max(0, TRIAL_DAYS - elapsed)
+
+
+def first_unlock_free_eligible(user) -> bool:
+    return trial_days_remaining(user) > 0 and not PaperUnlock.objects.filter(user=user).exists()
+
 
 def unlock_paper(*, user, paper_submission, phone_number: str, redeem_code_str: str | None = None) -> PaperUnlock:
     if PaperUnlock.objects.has_unlocked(user, paper_submission):
         raise PaperUnlockError("Already unlocked.")
 
-    amount = PAPER_UNLOCK_PRICE_FCFA
     applied_code = None
     if redeem_code_str:
         try:
             applied_code = redeem_code(redeem_code_str, redeemed_by=user)
         except RedeemCodeError as exc:
             raise PaperUnlockError(str(exc)) from exc
+
+    # The trial perk only applies to a plain first unlock — a redeem code
+    # already grants a real discount, stacking both would be a fabricated
+    # freebie disguised as two independently-real ones.
+    if applied_code is None and first_unlock_free_eligible(user):
+        return PaperUnlock.objects.create(
+            user=user, paper_submission=paper_submission, amount_paid=0, payment_transaction=None
+        )
+
+    amount = PAPER_UNLOCK_PRICE_FCFA
+    if applied_code is not None:
         amount = round(amount * (1 - applied_code.value_percent / 100))
 
     transaction = charge(

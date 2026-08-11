@@ -1,11 +1,14 @@
+import datetime
+
 import pytest
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
 
 from .factories import QuizAttemptFactory, QuizFactory, QuizQuestionFactory
 from .models import Quiz, QuizAttempt
-from .services import QuizError, submit_attempt
+from .services import QuizError, current_streak, submit_attempt
 
 
 @pytest.fixture
@@ -113,3 +116,72 @@ def test_my_stats_endpoint_counts_own_attempts(api_client):
     response = api_client.get("/api/quizzes/my_stats/")
     assert response.status_code == 200
     assert response.data["quizzes_played"] == 2
+
+
+@pytest.mark.django_db
+def test_streak_counts_consecutive_daily_challenge_days_ending_today():
+    user = UserFactory()
+    daily_quiz = QuizFactory(is_daily_challenge=True)
+    today = timezone.localdate()
+    for offset in (0, 1, 2):
+        QuizAttemptFactory(
+            user=user, quiz=daily_quiz,
+            completed_at=timezone.make_aware(datetime.datetime.combine(today - datetime.timedelta(days=offset), datetime.time(12, 0))),
+        )
+    assert current_streak(user) == 3
+
+
+@pytest.mark.django_db
+def test_streak_still_counts_when_today_not_yet_played():
+    user = UserFactory()
+    daily_quiz = QuizFactory(is_daily_challenge=True)
+    yesterday = timezone.localdate() - datetime.timedelta(days=1)
+    QuizAttemptFactory(
+        user=user, quiz=daily_quiz,
+        completed_at=timezone.make_aware(datetime.datetime.combine(yesterday, datetime.time(12, 0))),
+    )
+    assert current_streak(user) == 1
+
+
+@pytest.mark.django_db
+def test_streak_breaks_on_a_gap():
+    user = UserFactory()
+    daily_quiz = QuizFactory(is_daily_challenge=True)
+    today = timezone.localdate()
+    QuizAttemptFactory(
+        user=user, quiz=daily_quiz,
+        completed_at=timezone.make_aware(datetime.datetime.combine(today, datetime.time(12, 0))),
+    )
+    QuizAttemptFactory(
+        user=user, quiz=daily_quiz,
+        completed_at=timezone.make_aware(datetime.datetime.combine(today - datetime.timedelta(days=3), datetime.time(12, 0))),
+    )
+    assert current_streak(user) == 1
+
+
+@pytest.mark.django_db
+def test_streak_ignores_non_daily_challenge_attempts():
+    user = UserFactory()
+    QuizAttemptFactory(user=user, quiz=QuizFactory(is_daily_challenge=False))
+    assert current_streak(user) == 0
+
+
+@pytest.mark.django_db
+def test_streak_endpoint_requires_auth(api_client):
+    response = api_client.get("/api/quizzes/streak/")
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_streak_endpoint_returns_real_count(api_client):
+    user = UserFactory()
+    daily_quiz = QuizFactory(is_daily_challenge=True)
+    QuizAttemptFactory(
+        user=user, quiz=daily_quiz,
+        completed_at=timezone.make_aware(datetime.datetime.combine(timezone.localdate(), datetime.time(12, 0))),
+    )
+    api_client.force_authenticate(user=user)
+    response = api_client.get("/api/quizzes/streak/")
+    assert response.status_code == 200
+    assert response.data["current_streak"] == 1
+    assert response.data["played_today"] is True

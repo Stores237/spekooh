@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Count
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -14,7 +15,7 @@ from .serializers import (
     QuizListSerializer,
     SubmitAttemptRequestSerializer,
 )
-from .services import QuizError, submit_attempt
+from .services import QuizError, current_streak, submit_attempt
 
 
 class QuizViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -65,3 +66,11 @@ class QuizViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def my_stats(self, request):
         return Response({"quizzes_played": request.user.quiz_attempts.count()})
+
+    @extend_schema(responses=None)
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    def streak(self, request):
+        played_today = request.user.quiz_attempts.filter(
+            quiz__is_daily_challenge=True, completed_at__date=timezone.localdate()
+        ).exists()
+        return Response({"current_streak": current_streak(request.user), "played_today": played_today})

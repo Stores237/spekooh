@@ -3,10 +3,15 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.payments.services import first_unlock_free_eligible, trial_days_remaining
+
 from .models import AccountType, User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    trial_days_remaining = serializers.SerializerMethodField()
+    first_unlock_free_eligible = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -19,8 +24,16 @@ class UserSerializer(serializers.ModelSerializer):
             "region",
             "language_pref",
             "created_at",
+            "trial_days_remaining",
+            "first_unlock_free_eligible",
         ]
-        read_only_fields = ["id", "account_type", "created_at"]
+        read_only_fields = ["id", "account_type", "created_at", "trial_days_remaining", "first_unlock_free_eligible"]
+
+    def get_trial_days_remaining(self, obj) -> int:
+        return trial_days_remaining(obj)
+
+    def get_first_unlock_free_eligible(self, obj) -> bool:
+        return first_unlock_free_eligible(obj)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
