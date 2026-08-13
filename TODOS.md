@@ -76,9 +76,16 @@ I can write unilaterally. Grouped by what each one unblocks.
   impressions count as invalid traffic). Mobile-only: `google_mobile_ads` has no web support, so
   the button doesn't render on the `flutter build web` dev target (`kIsWeb` gate), which is
   consistent with spec §6 ("no web app in v1").
-- Not yet verified on a real device/emulator (none available in this sandbox) — analyzer, the
-  full `flutter test` suite, and a clean `flutter build web` all pass, but nobody has watched an
-  actual ad render end-to-end yet.
+- A debug APK now builds cleanly and was sideloaded to a real device (no emulator available in
+  this sandbox). Getting there required two real, unrelated build fixes now committed
+  separately: `file_picker` bumped `8.1.2` → `11.0.3` (compileSdk 36 requirement pulled in
+  transitively by `google_mobile_ads`) and AGP pinned `9.0.1` → `8.13.2` (9.0.1 broke several
+  plugins' legacy Kotlin application mid-transition).
+- Still not verified end-to-end: the debug build's `API_BASE_URL` defaults to `10.0.2.2:8000`,
+  an Android-*emulator*-only loopback alias that a real phone can't reach — so on-device, the
+  daily view-limit paywall (and therefore the "Watch ad" button, gated behind it) has no working
+  backend to trigger against yet. Confirming an actual ad renders on-device needs a rebuild
+  pointed at a real reachable backend address, or the same network + port setup.
 
 ### 3. Flag/report an existing paper
 - **Backend:** not built — no `PaperFlag`/report model exists in `apps/papers` or
