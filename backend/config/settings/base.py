@@ -80,6 +80,14 @@ DATABASES = {"default": env.db("DATABASE_URL", default="postgres://postgres@loca
 
 AUTH_USER_MODEL = "accounts.User"
 
+# Without this, Django falls back to its hardcoded default
+# "/accounts/profile/" after a login that has no `next` param (e.g. a
+# direct visit to /admin/login/ rather than being redirected there from
+# /admin/) — a route that doesn't exist anywhere in this URLconf, so it
+# 404s and looks like the app is broken rather than just landing you back
+# on the admin dashboard.
+LOGIN_REDIRECT_URL = "/admin/"
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
