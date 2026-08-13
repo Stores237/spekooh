@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/repositories/forum_repository.dart';
 import 'package:spekooh/data/repositories/notifications_repository.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
+import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/models/pamphlet.dart';
 import 'package:spekooh/models/spekooh_user.dart';
 import 'package:spekooh/screens/forum/forum_screen.dart';
@@ -20,7 +22,22 @@ Future<void> _pumpAndCheck(WidgetTester tester, Widget screen) async {
   expect(tester.takeException(), isNull);
 }
 
+/// ProfileScreen (and anything else auth-gated) checks AuthSession.instance
+/// directly rather than taking a repository-level "am I logged in" flag —
+/// this simulates an already-logged-in session without a network call.
+void _fakeLoggedIn() {
+  final session = AuthSession(storage: InMemoryTokenStorage());
+  session.accessToken = 'fake-access-token';
+  AuthSession.debugSetInstance(session);
+}
+
 void main() {
+  tearDown(() {
+    // AuthSession.instance is a global singleton — reset it so a test that
+    // fakes a login doesn't leak into the next test in this file.
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
+  });
+
   testWidgets('ForumScreen builds with no exceptions', (tester) async {
     await _pumpAndCheck(tester, ForumScreen(repository: MockForumRepository()));
     expect(find.text('Forum'), findsOneWidget);
@@ -81,6 +98,7 @@ void main() {
   });
 
   testWidgets('ProfileScreen builds with no exceptions', (tester) async {
+    _fakeLoggedIn();
     await _pumpAndCheck(tester, ProfileScreen(repository: MockProfileRepository()));
     expect(find.text('Profile'), findsOneWidget);
     expect(find.text('Redeem code ready'), findsOneWidget);
@@ -88,6 +106,7 @@ void main() {
   });
 
   testWidgets('ProfileScreen shows an honest state when there is no active redeem code', (tester) async {
+    _fakeLoggedIn();
     const user = SpekoohUser(
       name: 'Guest',
       joinDate: 'Joined Jul 2026',
@@ -101,5 +120,15 @@ void main() {
     expect(find.text('No active redeem code'), findsOneWidget);
     expect(find.text('Redeem code ready'), findsNothing);
     expect(find.text('Share'), findsNothing); // nothing real to share
+  });
+
+  testWidgets('ProfileScreen shows an honest log-in prompt for a guest instead of a blank/broken page', (tester) async {
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage())); // logged out
+    var loginTapped = false;
+    await _pumpAndCheck(tester, ProfileScreen(repository: MockProfileRepository(), onLogin: () => loginTapped = true));
+    expect(find.text('Log in to see your profile'), findsOneWidget);
+    expect(find.text('Redeem code ready'), findsNothing); // no account data shown for a guest
+    await tester.tap(find.text('Log in'));
+    expect(loginTapped, isTrue);
   });
 }

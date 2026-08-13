@@ -88,7 +88,7 @@ class RootShellState extends State<RootShell> {
       );
 
   void _openProfile(BuildContext context) => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => ProfileScreen(onOpenSettings: () => _openSettings(context))),
+        MaterialPageRoute(builder: (_) => ProfileScreen(onOpenSettings: () => _openSettings(context), onLogin: () => _openAuthSheet(context))),
       );
 
   void _openNotes(BuildContext context) =>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../data/auth_session.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../models/achievement.dart';
@@ -11,24 +12,31 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/spekooh_badge.dart';
+import '../../widgets/spekooh_button.dart';
 import '../common/circular_back_button.dart';
 
 /// Ported from ui_kits/spekooh-app/ProfileScreen.jsx.
 class ProfileScreen extends StatefulWidget {
-  ProfileScreen({super.key, ProfileRepository? repository, this.onOpenSettings})
+  ProfileScreen({super.key, ProfileRepository? repository, this.onOpenSettings, this.onLogin})
       : repository = repository ?? RepositoryLocator.instance.profile;
 
   final ProfileRepository repository;
   final VoidCallback? onOpenSettings;
+  final VoidCallback? onLogin;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // `late` defers evaluation to first access — guarded by _isLoggedIn in
+  // build() below, so a guest never actually fires these (all three need
+  // auth: /auth/me/, /credits/..., /papers/submissions/?submitted_by=me).
   late final Future<SpekoohUser> _userFuture = widget.repository.getUser();
   late final Future<List<Achievement>> _achievementsFuture = widget.repository.getAchievements();
   late final Future<List<Submission>> _submissionsFuture = widget.repository.getSubmissions();
+
+  bool get _isLoggedIn => AuthSession.instance.isLoggedIn;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
+              if (!_isLoggedIn) _signedOutPrompt() else ...[
               FutureBuilder<SpekoohUser>(
                 future: _userFuture,
                 builder: (context, snapshot) {
@@ -248,6 +257,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
+              ],
               const SizedBox(height: AppSpacing.space6),
             ],
           ),
@@ -260,4 +270,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.only(top: AppSpacing.space5, bottom: AppSpacing.space2),
         child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.6)),
       );
+
+  // A guest reaching this screen has no account to show — submissions,
+  // credit balance, badges, and redeem codes are all per-account concepts.
+  // Every underlying repository call needs auth (/auth/me/, /credits/...,
+  // /papers/submissions/?submitted_by=me), so this avoids firing requests
+  // guaranteed to 401 and shows an honest prompt instead.
+  Widget _signedOutPrompt() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        children: [
+          const Icon(Icons.person_outline, size: 40, color: AppColors.textTertiary),
+          const SizedBox(height: AppSpacing.space3),
+          Text('Log in to see your profile', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
+          const SizedBox(height: 4),
+          Text('Your submissions, credit balance, and badges show up here once you have an account.',
+              textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.space4),
+          SpekoohButton(onPressed: widget.onLogin, child: const Text('Log in')),
+        ],
+      ),
+    );
+  }
 }
