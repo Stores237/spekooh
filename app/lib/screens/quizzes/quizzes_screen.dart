@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../data/auth_session.dart';
 import '../../data/mock/mock_quizzes.dart';
 import '../../data/repositories/quizzes_repository.dart';
 import '../../data/repository_locator.dart';
@@ -31,7 +32,12 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
   late final Future<List<Quiz>> _quizzesFuture = widget.repository.getQuizzes();
   late final Future<List<({String name, int rank, String quizzes})>> _leaderboardFuture =
       widget.repository.getLeaderboard();
-  late final Future<({int currentStreak, bool playedToday})> _streakFuture = widget.repository.getStreak();
+  // QuizzesScreen is built eagerly inside RootShell's IndexedStack regardless
+  // of which tab is active or whether the user is logged in — the streak
+  // endpoint requires auth, so guests get a real 0/false rather than a
+  // network call that's guaranteed to 401.
+  late final Future<({int currentStreak, bool playedToday})> _streakFuture =
+      AuthSession.instance.isLoggedIn ? widget.repository.getStreak() : Future.value((currentStreak: 0, playedToday: false));
 
   /// Real countdown to local midnight — no backend field exists for this,
   /// but it doesn't need one: it's a pure function of the current time.
