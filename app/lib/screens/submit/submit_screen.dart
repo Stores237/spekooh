@@ -192,7 +192,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
     );
 
     if (choice == 'file') {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
         withData: true,

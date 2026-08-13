@@ -44,7 +44,7 @@ dependencies:
   flutter_secure_storage: ^9.0.0
 
   # Real file picking for paper/report uploads (camera photo or PDF/doc pick).
-  file_picker: ^8.1.2
+  file_picker: ^11.0.3
   image_picker: ^1.1.2
 
   # Opens a submitted paper's real uploaded file in a new tab/viewer.
