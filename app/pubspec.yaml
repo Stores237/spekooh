@@ -52,6 +52,7 @@ dependencies:
 
   # Real native share sheet for the redeem code on Profile.
   share_plus: ^10.1.4
+  google_mobile_ads: ^9.1.0
 
 dev_dependencies:
   flutter_test:

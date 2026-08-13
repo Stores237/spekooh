@@ -187,6 +187,11 @@ class HttpPapersRepository implements PapersRepository {
   }
 
   @override
+  Future<void> recordAdWatch() async {
+    await _client.post('/papers/ad-watch/');
+  }
+
+  @override
   Future<int> unlockPaper(int paperId, {String? redeemCode}) async {
     final row = await _client.post('/payments/unlock/', body: {
       'paper_submission': paperId,

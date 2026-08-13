@@ -16,9 +16,6 @@ Everything below needs an account, real content, a decision, or a person — non
 I can write unilaterally. Grouped by what each one unblocks.
 
 ### Accounts & credentials to set up
-- **Ad network** (unblocks P0 #2 below): create an AdMob account, register the app, generate an
-  App ID + rewarded-video Ad Unit ID. Hand those over and the SDK integration + real
-  `/papers/ad-watch/` wiring can happen.
 - **Real payment provider**: the backend runs on `MockPaymentProvider` (explicitly a stand-in,
   documented as such in the code) for subscriptions, marking-guide unlocks, and pamphlet
   payments. Going live needs a real MTN MoMo / Orange Money merchant integration, or an
@@ -70,17 +67,18 @@ I can write unilaterally. Grouped by what each one unblocks.
 - **Scope note:** this is a real, sizeable piece of work — full ARB extraction of every string
   in the app plus a French translation pass — not a quick wiring fix like the rest of this list.
 
-### 2. Rewarded-ad unlock (the "watch an ad for +1 free view" mechanic)
-- **Backend:** real — `POST /papers/ad-watch/` (`AdWatchView` → `record_ad_watch()`) already
-  works and is covered by tests; `record_paper_view()` already checks for an unconsumed
-  `AdWatchEvent` before blocking with a paywall error.
-- **Client:** zero ad SDK integration anywhere (`app/pubspec.yaml` has no `google_mobile_ads` or
-  equivalent). The old "Watch ad" button was a no-op and was removed rather than left fake — but
-  removing it means the mechanic is currently just gone, not deferred honestly to the user.
-- **Why P0:** spec §5.3 describes this as a core piece of the confirmed revenue model, directly
-  tied to the P0 daily-free-view-limit feature.
-- **Needs:** pick an ad SDK (spec recommends AdMob to start), integrate rewarded-video unit, call
-  the real endpoint on completion, re-surface the "Watch ad" CTA on Home/paywall.
+### 2. ~~Rewarded-ad unlock~~ — done
+- Live: `google_mobile_ads` integrated (real AdMob App ID + rewarded-video ad unit); "Watch ad
+  for +1 view" button re-surfaced on `PaperDetailScreen` once the daily free-view paywall blocks
+  a paper. A real reward (`onUserEarnedReward`, not just closing the ad) calls
+  `POST /papers/ad-watch/` and then retries the blocked view. Debug builds request Google's
+  public test unit instead of the real one (AdMob policy — developer-triggered real-unit
+  impressions count as invalid traffic). Mobile-only: `google_mobile_ads` has no web support, so
+  the button doesn't render on the `flutter build web` dev target (`kIsWeb` gate), which is
+  consistent with spec §6 ("no web app in v1").
+- Not yet verified on a real device/emulator (none available in this sandbox) — analyzer, the
+  full `flutter test` suite, and a clean `flutter build web` all pass, but nobody has watched an
+  actual ad render end-to-end yet.
 
 ### 3. Flag/report an existing paper
 - **Backend:** not built — no `PaperFlag`/report model exists in `apps/papers` or

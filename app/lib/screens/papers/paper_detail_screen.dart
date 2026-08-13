@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../ads/rewarded_ad_controller.dart';
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../models/exam_taxonomy.dart';
@@ -17,8 +19,9 @@ import 'papers_screen.dart';
 /// Ported from ui_kits/spekooh-app/PaperDetailScreen.jsx. Pushed as a
 /// full-screen overlay when a paper is tapped in PapersScreen's paper list.
 class PaperDetailScreen extends StatefulWidget {
-  PaperDetailScreen({super.key, this.paper, this.paperEntry, PapersRepository? repository})
-      : repository = repository ?? RepositoryLocator.instance.papers;
+  PaperDetailScreen({super.key, this.paper, this.paperEntry, PapersRepository? repository, RewardedAdController? adController})
+      : repository = repository ?? RepositoryLocator.instance.papers,
+        adController = adController ?? RewardedAdController.instance;
 
   /// Set when opened from Papers' full taxonomy drill-down — carries the
   /// resolved category/examType/subject alongside the real entry.
@@ -30,6 +33,11 @@ class PaperDetailScreen extends StatefulWidget {
 
   final PapersRepository repository;
 
+  /// Drives the "Watch ad for +1 view" button shown once the daily free
+  /// view limit blocks this paper (see [_viewError]). Injectable so widget
+  /// tests can fake a reward without touching the real AdMob SDK.
+  final RewardedAdController adController;
+
   @override
   State<PaperDetailScreen> createState() => _PaperDetailScreenState();
 }
@@ -39,6 +47,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   bool _unlocking = false;
   int? _unlockedAmount;
   String? _viewError;
+  bool _watchingAd = false;
   final _redeemController = TextEditingController();
   bool _showRedeemField = false;
 
@@ -67,10 +76,28 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   Future<void> _recordView(int paperId) async {
     try {
       await widget.repository.recordView(paperId);
+      if (mounted) setState(() => _viewError = null);
     } on PaywallException catch (e) {
       if (mounted) setState(() => _viewError = e.message);
     } catch (_) {
       // View-tracking failing shouldn't block reading the detail page.
+    }
+  }
+
+  Future<void> _watchAdForView(int paperId) async {
+    setState(() => _watchingAd = true);
+    try {
+      final earned = await widget.adController.showAd();
+      if (!earned) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ad not completed — no view granted.')));
+        return;
+      }
+      await widget.repository.recordAdWatch();
+      await _recordView(paperId);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not load an ad: $e')));
+    } finally {
+      if (mounted) setState(() => _watchingAd = false);
     }
   }
 
@@ -201,6 +228,18 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                         ),
                       if (_viewError != null) ...[
                         SpekoohBanner(tone: SpekoohBannerTone.blue, icon: const Icon(Icons.lock_clock_outlined), message: _viewError!),
+                        const SizedBox(height: AppSpacing.space2),
+                        // google_mobile_ads has no web implementation — this
+                        // affordance only appears on mobile builds, not the
+                        // flutter build web target this app is dev-tested on.
+                        if (!kIsWeb)
+                          SpekoohButton(
+                            size: SpekoohButtonSize.sm,
+                            onPressed: _watchingAd ? null : () => _watchAdForView(entry.id),
+                            child: _watchingAd
+                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Text('Watch ad for +1 view'),
+                          ),
                         const SizedBox(height: AppSpacing.space3),
                       ],
                       Container(

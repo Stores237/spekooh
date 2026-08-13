@@ -54,6 +54,14 @@ abstract class PapersRepository {
   /// bonus view) is exhausted.
   Future<void> recordView(int paperId);
 
+  /// Records a completed rewarded-ad watch, granting one bonus view that
+  /// the next [recordView] call will consume instead of throwing
+  /// [PaywallException]. Called once [RewardedAdController.showAd] confirms
+  /// the reward was actually earned — never on an ad the user skipped.
+  /// Not tied to a specific paper: the backend consumes it against
+  /// whichever view is blocked next, so no paperId is passed.
+  Future<void> recordAdWatch();
+
   /// Unlocks a marking guide for real money (via the backend's
   /// MockPaymentProvider). Returns the amount actually charged (after any
   /// redeem code discount).
@@ -137,6 +145,9 @@ class MockPapersRepository implements PapersRepository {
 
   @override
   Future<void> recordView(int paperId) async {}
+
+  @override
+  Future<void> recordAdWatch() async {}
 
   @override
   Future<int> unlockPaper(int paperId, {String? redeemCode}) async => 500;
