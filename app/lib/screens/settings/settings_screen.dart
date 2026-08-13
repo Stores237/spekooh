@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../data/auth_session.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
@@ -9,12 +10,13 @@ import '../../widgets/list_item_row.dart';
 import '../common/circular_back_button.dart';
 
 /// Ported from ui_kits/spekooh-app/SettingsScreen.jsx. `onLogin` is called
-/// by the bottom "Log in" button — RootShell flips `isLoggedIn` and returns
-/// to the Home tab.
+/// by the bottom "Log in" button (shown to guests); `onLogout` by "Log out"
+/// (shown once actually logged in) — RootShell flips `isLoggedIn` for both.
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, this.onLogin, this.onOpenPaywall});
+  const SettingsScreen({super.key, this.onLogin, this.onLogout, this.onOpenPaywall});
 
   final VoidCallback? onLogin;
+  final VoidCallback? onLogout;
   final VoidCallback? onOpenPaywall;
 
   @override
@@ -100,20 +102,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListItemRow(icon: IconChip(icon: Icons.lock_outline, tint: IconChipTint.blue, size: 38), title: 'Privacy policy'),
               ]),
               const SizedBox(height: AppSpacing.space6),
-              GestureDetector(
-                onTap: widget.onLogin,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  decoration: BoxDecoration(
-                    gradient: AppGradients.primary,
-                    borderRadius: BorderRadius.circular(999),
-                    boxShadow: AppShadows.button,
+              if (AuthSession.instance.isLoggedIn)
+                GestureDetector(
+                  onTap: widget.onLogout,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      border: Border.all(color: AppColors.red500),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('Log out', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.red500, fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
-                  alignment: Alignment.center,
-                  child: Text('Log in', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                )
+              else
+                GestureDetector(
+                  onTap: widget.onLogin,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    decoration: BoxDecoration(
+                      gradient: AppGradients.primary,
+                      borderRadius: BorderRadius.circular(999),
+                      boxShadow: AppShadows.button,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('Log in', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
                 ),
-              ),
               const SizedBox(height: AppSpacing.space6),
             ],
           ),

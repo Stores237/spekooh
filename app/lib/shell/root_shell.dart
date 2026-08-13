@@ -68,6 +68,15 @@ class RootShellState extends State<RootShell> {
         _activeTab = 0;
       });
 
+  /// Clears the real session (AuthSession.logout()), pops back to the root
+  /// tab view, and returns to Home — _onAuthChanged flips _isLoggedIn once
+  /// the clear completes, swapping back to the guest Home/screens.
+  Future<void> _logout(BuildContext context) async {
+    await AuthSession.instance.logout();
+    if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+    setState(() => _activeTab = 0);
+  }
+
   Future<void> _openAuthSheet(BuildContext context) async {
     final success = await showModalBottomSheet<bool>(
       context: context,
@@ -83,7 +92,11 @@ class RootShellState extends State<RootShell> {
 
   void _openSettings(BuildContext context) => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => SettingsScreen(onLogin: () => _openAuthSheet(context), onOpenPaywall: () => _openPaywall(context)),
+          builder: (_) => SettingsScreen(
+            onLogin: () => _openAuthSheet(context),
+            onLogout: () => _logout(context),
+            onOpenPaywall: () => _openPaywall(context),
+          ),
         ),
       );
 

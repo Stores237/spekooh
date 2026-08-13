@@ -81,6 +81,18 @@ void main() {
     expect(find.text('Log in'), findsOneWidget);
   });
 
+  testWidgets('SettingsScreen shows a real Log out button once actually logged in, not still "Log in"', (tester) async {
+    _fakeLoggedIn();
+    var loggedOut = false;
+    await _pumpAndCheck(tester, SettingsScreen(onLogout: () => loggedOut = true));
+    expect(find.text('Log out'), findsOneWidget);
+    expect(find.text('Log in'), findsNothing);
+    await tester.ensureVisible(find.text('Log out'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Log out'));
+    expect(loggedOut, isTrue);
+  });
+
   testWidgets('SettingsScreen Log in button calls onLogin', (tester) async {
     var called = false;
     await _pumpAndCheck(tester, SettingsScreen(onLogin: () => called = true));
