@@ -25,7 +25,7 @@ Spekooh crowdsources exam papers from students **and individuals more broadly** 
 | Payments / payouts | Flutterwave (covers MTN MoMo + Orange Money in one integration) + Stripe/PayPal as secondary for diaspora instructors |
 | Pamphlet escrow ledger | Custom table on Supabase Postgres (not a third-party escrow product) |
 | QR generation/scanning | Standard server-side QR library; scanning = phone camera opening a web link, no native scanner app |
-| Admin dashboard | Django admin (free, comes with the backend choice) |
+| Admin dashboard | Django admin (free, comes with the backend choice) — doubles as the internal ticketing system (§4, `AdminFlagQueue`/`Ticket`) rather than integrating a separate Jira/Linear tool |
 | Target market (v1) | **Cameroon** — bilingual EN/FR UI is P0, currency is **XAF** |
 
 ---
@@ -130,8 +130,16 @@ PamphletOrder  (escrow state machine — see §5 below)
 ├─ fulfillment_type: PICKUP | DELIVERY
 └─ status: PAID_HELD → REDEEMED → RELEASED  |  EXPIRED_FLAGGED | DISPUTED
 
-AdminFlagQueue (generic — used for BOTH no-instructor-accepted papers AND pamphlet disputes)
-├─ subject_type: PAPER | PAMPHLET_ORDER, subject_id, reason, created_at, resolved_by, resolution
+AdminFlagQueue / Ticket  (general-purpose internal ticketing for the Review Team — not just
+                          the no-instructor-accepted and pamphlet-dispute cases; every event
+                          needing Review Team action creates a ticket)
+├─ subject_type: PAPER_VERIFICATION | INSTRUCTOR_ESCALATION | GUIDE_REVIEW | PAMPHLET_DISPUTE
+│                | WITHDRAWAL_APPROVAL, subject_id, reason
+├─ status: NEW → IN_PROGRESS → RESOLVED, assignee (Review Team member)
+├─ created_at, age (surfaced in Django admin — matters given 7-day/30-day SLAs elsewhere)
+└─ Build as an internal Jira-lite on Django admin, not a third-party Jira/Linear integration
+   for v1 — cheaper, tailored to Spekooh's exact workflow, no second source of truth to sync.
+   Revisit only if the Review Team scales past what Django admin's UI can comfortably handle.
 ```
 
 ---

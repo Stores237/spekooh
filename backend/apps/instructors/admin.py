@@ -14,6 +14,7 @@ from .models import (
     WithdrawalRequest,
     WithdrawalStatus,
 )
+from .services import request_withdrawal
 
 REQUEST_STATUS_LABELS = {
     InstructorRequestStatus.PENDING: "warning",
@@ -81,6 +82,18 @@ class WithdrawalRequestAdmin(ModelAdmin):
     list_filter = ("status", "kyc_status")
     ordering = ("status", "-created_at")
     actions = ["approve_selected", "mark_paid_selected"]
+
+    def save_model(self, request, obj, form, change):
+        # Route creation through the service so the KYC/payout approval
+        # ticket (§2.1) always gets created — not a direct super().save().
+        # Edits (change=True) save normally; there's no ticket to re-create.
+        if not change:
+            created = request_withdrawal(
+                instructor_id=obj.instructor_id, amount=obj.amount, payout_method=obj.payout_method
+            )
+            obj.pk = created.pk
+            return
+        super().save_model(request, obj, form, change)
 
     @display(description="Status", label=WITHDRAWAL_STATUS_LABELS, ordering="status")
     def status_badge(self, obj):

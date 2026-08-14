@@ -134,3 +134,22 @@ class ContributorBonusConfig(TimeStampedModel):
 
     def __str__(self):
         return f"{self.amount} credits per accepted submission"
+
+
+class CreditCeilingConfig(TimeStampedModel):
+    """
+    Singleton: spec §5.2's "profit-deficit guardrail" — the sum of credits
+    attributed to a single paper must stay under a defined ceiling, so the
+    platform never pays out more than it earns per asset. The spec frames
+    the ceiling as ideally a % of a paper's *predicted* downstream revenue,
+    but no such per-paper revenue-prediction model exists yet (the spec
+    itself says that formula needs product/finance ownership) — this is a
+    flat, real, enforced backstop in the meantime, not the final version.
+    Default of 5000 XAF gives headroom above the spec's own worked example
+    (~2500 XAF for a 4-essay-question O-Level physics paper).
+    """
+
+    max_credit_per_paper_xaf = models.PositiveIntegerField(default=5000)
+
+    def __str__(self):
+        return f"Max {self.max_credit_per_paper_xaf} XAF instructor credit per paper"

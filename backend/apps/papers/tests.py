@@ -90,6 +90,35 @@ def test_submit_creates_paper_owned_by_requesting_user(authed_client):
 
 
 @pytest.mark.django_db
+def test_submit_auto_creates_a_verification_ticket(authed_client):
+    """Spec §2.1: every new submission creates a Review Team ticket, not just a silent DB row."""
+    from apps.admin_queue.models import AdminFlagQueue, FlagCategory, FlagStatus
+
+    client, _ = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    upload = SimpleUploadedFile("gce-bio-2024.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf")
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "uploaded_file": upload,
+        },
+        format="multipart",
+    )
+    submission = PaperSubmission.objects.get(id=response.data["id"])
+
+    ticket = AdminFlagQueue.objects.get(category=FlagCategory.PAPER_VERIFICATION)
+    assert ticket.subject == submission
+    assert ticket.status == FlagStatus.NEW
+
+
+@pytest.mark.django_db
 def test_submit_requires_a_real_file(authed_client):
     client, _ = authed_client
     category = ExamCategoryFactory()

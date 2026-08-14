@@ -18,6 +18,7 @@ from .models import (
     InstructorRequest,
     InstructorRequestStatus,
     InstructorSubjectQueue,
+    WithdrawalRequest,
 )
 
 REQUEST_TIMEOUT_HOURS = 48
@@ -162,10 +163,21 @@ def handle_marking_guide_submission(*, instructor_request_id: int, content: list
             paper.save(update_fields=["status", "updated_at"])
 
             questions = [MarkingQuestion(question_type=item["question_type"]) for item in content]
-            amount = PaperCreditCalculator().calculate(
+            credit_result = PaperCreditCalculator().calculate_detailed(
                 questions=questions, level=_complexity_level_for(paper), subject=paper.subject
             )
-            InstructorCreditLedger.objects.create(instructor_id=request.instructor_id, paper=paper, amount=amount)
+            InstructorCreditLedger.objects.create(
+                instructor_id=request.instructor_id, paper=paper, amount=credit_result.amount
+            )
+
+            review_reason = "Instructor marking guide returned — needs review team merge with in-house MCQ key."
+            if credit_result.capped:
+                review_reason += (
+                    f" Credit ceiling applied: formula produced {credit_result.raw_amount} XAF, "
+                    f"capped to {credit_result.amount} XAF (see CreditCeilingConfig) — worth checking "
+                    f"whether this paper/subject's rate config needs tuning."
+                )
+            flag(subject=guide, category=FlagCategory.GUIDE_REVIEW, reason=review_reason)
 
     if request is None:
         raise RoutingError("Unknown instructor_request_id.")
@@ -217,3 +229,22 @@ def merge_and_publish(paper: PaperSubmission) -> PublishedGuide:
     )
 
     return published
+
+
+def request_withdrawal(*, instructor_id: str, amount: int, payout_method: str) -> WithdrawalRequest:
+    """
+    Single entry point for creating a WithdrawalRequest (spec §5.4), so the
+    KYC/payout approval ticket (§2.1) is created every time regardless of
+    where the request comes from — currently only the Django admin, but
+    this is the seam a future partner-platform withdrawal API would call
+    into too, rather than that API duplicating the flag() call itself.
+    """
+    withdrawal = WithdrawalRequest.objects.create(
+        instructor_id=instructor_id, amount=amount, payout_method=payout_method
+    )
+    flag(
+        subject=withdrawal,
+        category=FlagCategory.WITHDRAWAL_APPROVAL,
+        reason=f"Instructor {instructor_id} requested a {amount} XAF withdrawal — needs KYC/payout approval.",
+    )
+    return withdrawal

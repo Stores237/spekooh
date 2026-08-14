@@ -48,7 +48,9 @@ def dashboard_callback(request, context):
         for value, label in PaperStatus.choices
     ]
 
-    open_flags = AdminFlagQueue.objects.filter(status=FlagStatus.OPEN)
+    # "Open" here means not yet resolved (NEW or IN_PROGRESS) — the ticket
+    # queue (spec §2.1) has three states now, not just open/resolved.
+    open_flags = AdminFlagQueue.objects.exclude(status=FlagStatus.RESOLVED)
     flags_by_category = list(
         open_flags.values("category").annotate(count=Count("id")).order_by("-count")
     )
@@ -64,7 +66,7 @@ def dashboard_callback(request, context):
         "papers_funnel": papers_funnel,
         "open_flags_count": open_flags.count(),
         "flags_by_category": flags_by_category,
-        "flags_url": _changelist_url(AdminFlagQueue, status=FlagStatus.OPEN),
+        "flags_url": _changelist_url(AdminFlagQueue),
         "pending_instructor_requests": InstructorRequest.objects.filter(
             status=InstructorRequestStatus.PENDING
         ).count(),

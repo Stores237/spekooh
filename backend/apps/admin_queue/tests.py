@@ -6,7 +6,7 @@ from apps.papers.factories import PaperSubmissionFactory
 
 from .factories import AdminFlagQueueFactory
 from .models import FlagCategory, FlagStatus
-from .services import flag, resolve
+from .services import assign, flag, resolve
 
 
 @pytest.fixture
@@ -19,7 +19,7 @@ def test_flag_service_links_generic_subject():
     paper = PaperSubmissionFactory()
     entry = flag(subject=paper, category=FlagCategory.UNASSIGNED_PAPER, reason="No instructor accepted.")
     assert entry.subject == paper
-    assert entry.status == FlagStatus.OPEN
+    assert entry.status == FlagStatus.NEW
 
 
 @pytest.mark.django_db
@@ -30,6 +30,31 @@ def test_resolve_service_records_who_and_when():
     assert resolved.status == FlagStatus.RESOLVED
     assert resolved.resolved_by == admin_user
     assert resolved.resolved_at is not None
+
+
+@pytest.mark.django_db
+def test_assign_service_claims_ticket_and_advances_new_to_in_progress():
+    entry = AdminFlagQueueFactory()  # NEW by default
+    reviewer = UserFactory(is_staff=True)
+    claimed = assign(entry, assignee=reviewer)
+    assert claimed.assignee == reviewer
+    assert claimed.status == FlagStatus.IN_PROGRESS
+
+
+@pytest.mark.django_db
+def test_assign_service_does_not_regress_an_already_resolved_ticket():
+    entry = AdminFlagQueueFactory()
+    resolve(entry, resolved_by=UserFactory(is_staff=True))
+    reviewer = UserFactory(is_staff=True)
+    claimed = assign(entry, assignee=reviewer)
+    assert claimed.assignee == reviewer
+    assert claimed.status == FlagStatus.RESOLVED  # assigning doesn't reopen it
+
+
+@pytest.mark.django_db
+def test_age_days_reflects_time_since_creation():
+    entry = AdminFlagQueueFactory()
+    assert entry.age_days == 0
 
 
 @pytest.mark.django_db

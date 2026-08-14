@@ -7,6 +7,9 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.admin_queue.models import FlagCategory
+from apps.admin_queue.services import flag
+
 from .models import AdWatchEvent, ExamCategory, ExamType, PaperStatus, PaperSubmission, Subject
 from .serializers import (
     AdWatchEventSerializer,
@@ -80,6 +83,17 @@ class PaperSubmissionViewSet(
         if self.action == "list":
             return PaperSubmissionListSerializer
         return PaperSubmissionDetailSerializer
+
+    def perform_create(self, serializer):
+        # Spec §2.1: every new submission auto-creates a Review Team
+        # verification ticket rather than sitting silently in PENDING_REVIEW
+        # until someone happens to look.
+        paper = serializer.save()
+        flag(
+            subject=paper,
+            category=FlagCategory.PAPER_VERIFICATION,
+            reason="New paper submission awaiting review team verification.",
+        )
 
     @action(detail=True, methods=["post"])
     def view(self, request, pk=None):

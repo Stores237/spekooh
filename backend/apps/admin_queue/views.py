@@ -4,8 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import AdminFlagQueue
-from .serializers import AdminFlagQueueSerializer, ResolveFlagSerializer
-from .services import resolve
+from .serializers import AdminFlagQueueSerializer, AssignFlagSerializer, ResolveFlagSerializer
+from .services import assign, resolve
 
 
 class AdminFlagQueueViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -13,7 +13,15 @@ class AdminFlagQueueViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, vi
     queryset = AdminFlagQueue.objects.all()
     serializer_class = AdminFlagQueueSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["status", "category"]
+    filterset_fields = ["status", "category", "assignee"]
+
+    @action(detail=True, methods=["post"])
+    def assign(self, request, pk=None):
+        flag_entry = self.get_object()
+        serializer = AssignFlagSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        claimed = assign(flag_entry, assignee=serializer.validated_data["assignee"])
+        return Response(AdminFlagQueueSerializer(claimed).data)
 
     @action(detail=True, methods=["post"])
     def resolve(self, request, pk=None):

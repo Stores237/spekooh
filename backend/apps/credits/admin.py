@@ -5,6 +5,7 @@ from unfold.decorators import display
 
 from .models import (
     ContributorBonusConfig,
+    CreditCeilingConfig,
     CreditLedgerEntry,
     LevelComplexityMultiplier,
     QuestionTypeRate,
@@ -78,3 +79,8 @@ class RedeemCodeTierConfigAdmin(ModelAdmin):
 @admin.register(ContributorBonusConfig)
 class ContributorBonusConfigAdmin(ModelAdmin):
     list_display = ("amount",)
+
+
+@admin.register(CreditCeilingConfig)
+class CreditCeilingConfigAdmin(ModelAdmin):
+    list_display = ("max_credit_per_paper_xaf",)

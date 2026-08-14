@@ -7,15 +7,22 @@ from apps.core.models import TimeStampedModel
 
 
 class FlagCategory(models.TextChoices):
+    # Spec §2.1: every event that needs Review Team action auto-creates a
+    # ticket in this same queue rather than a separate ticketing system.
+    PAPER_VERIFICATION = "PAPER_VERIFICATION", "New submission needs verification"
     UNASSIGNED_PAPER = "UNASSIGNED_PAPER", "No instructor accepted"
+    GUIDE_REVIEW = "GUIDE_REVIEW", "Marking guide returned — needs review/merge"
     PAMPHLET_DISPUTE = "PAMPHLET_DISPUTE", "Pamphlet handover dispute"
     PAMPHLET_EXPIRED = "PAMPHLET_EXPIRED", "Pamphlet ticket expired unredeemed"
+    WITHDRAWAL_APPROVAL = "WITHDRAWAL_APPROVAL", "Instructor withdrawal needs KYC/payout approval"
     WEBHOOK_ANOMALY = "WEBHOOK_ANOMALY", "Instructor webhook contradicted local state"
     OTHER = "OTHER", "Other"
 
 
 class FlagStatus(models.TextChoices):
-    OPEN = "OPEN", "Open"
+    # Spec §2.1: "New -> In Progress -> Resolved."
+    NEW = "NEW", "New"
+    IN_PROGRESS = "IN_PROGRESS", "In Progress"
     RESOLVED = "RESOLVED", "Resolved"
 
 
@@ -33,7 +40,13 @@ class AdminFlagQueue(TimeStampedModel):
 
     category = models.CharField(max_length=20, choices=FlagCategory.choices)
     reason = models.TextField()
-    status = models.CharField(max_length=10, choices=FlagStatus.choices, default=FlagStatus.OPEN)
+    status = models.CharField(max_length=12, choices=FlagStatus.choices, default=FlagStatus.NEW)
+
+    # Who's actively working the ticket right now — distinct from
+    # resolved_by, which only gets set once it's actually closed.
+    assignee = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_flags"
+    )
 
     resolved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="resolved_flags"
@@ -47,3 +60,10 @@ class AdminFlagQueue(TimeStampedModel):
 
     def __str__(self):
         return f"[{self.category}] {self.subject!r} — {self.status}"
+
+    @property
+    def age_days(self) -> int:
+        from django.utils import timezone
+
+        end = self.resolved_at or timezone.now()
+        return (end - self.created_at).days

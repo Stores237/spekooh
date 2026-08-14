@@ -20,6 +20,7 @@ from .models import (
     InstructorMarkingGuide,
     InstructorRequest,
     InstructorRequestStatus,
+    WithdrawalRequest,
 )
 from .services import (
     GUIDE_REMINDER_DAYS,
@@ -28,6 +29,7 @@ from .services import (
     handle_instructor_response,
     handle_marking_guide_submission,
     merge_and_publish,
+    request_withdrawal,
     route_next_instructor,
 )
 from .webhook import sign_payload
@@ -175,6 +177,35 @@ def test_marking_guide_submission_creates_guide_and_credit_ledger():
     ledger_entry = InstructorCreditLedger.objects.get(paper=paper)
     assert ledger_entry.instructor_id == "instructor-a"
     assert ledger_entry.amount == 2 * 400 * 1.2  # ESSAY x O_LEVEL multiplier, demand defaults to 1.0x
+
+    review_ticket = AdminFlagQueue.objects.get(category=FlagCategory.GUIDE_REVIEW)
+    assert review_ticket.subject == guide
+    assert "credit ceiling" not in review_ticket.reason.lower()  # under the default ceiling — no clamp note
+
+
+@pytest.mark.django_db
+def test_marking_guide_submission_clamps_credit_at_ceiling_and_flags_it():
+    """Spec §5.2's "profit-deficit guardrail" — never pay out more than the configured ceiling per paper."""
+    from apps.credits.models import CreditCeilingConfig
+
+    CreditCeilingConfig.objects.create(max_credit_per_paper_xaf=500)
+
+    subject = SubjectFactory(key="guide_subject_ceiling")
+    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-a", priority_order=1)
+    paper = _routable_paper(subject=subject)
+    request = route_next_instructor(paper)
+    handle_instructor_response(instructor_request_id=request.id, decision="ACCEPTED")
+
+    # 2 essays * 400 * 1.2 = 960 XAF raw — above the 500 XAF ceiling just configured.
+    content = [{"question_type": "ESSAY"}, {"question_type": "ESSAY"}]
+    guide = handle_marking_guide_submission(instructor_request_id=request.id, content=content)
+
+    ledger_entry = InstructorCreditLedger.objects.get(paper=paper)
+    assert ledger_entry.amount == 500  # clamped, not the raw 960
+
+    review_ticket = AdminFlagQueue.objects.get(category=FlagCategory.GUIDE_REVIEW)
+    assert review_ticket.subject == guide
+    assert "960" in review_ticket.reason and "500" in review_ticket.reason
 
 
 @pytest.mark.django_db
@@ -381,3 +412,19 @@ def test_route_endpoint_works_for_staff(api_client):
     response = api_client.post(f"/api/instructors/papers/{paper.id}/route/")
     assert response.status_code == 201
     assert response.data["instructor_id"] == "instructor-a"
+
+
+# --- Withdrawal requests (spec §5.4 + §2.1 KYC/payout ticket) ---
+
+
+@pytest.mark.django_db
+def test_request_withdrawal_creates_request_and_approval_ticket():
+    withdrawal = request_withdrawal(instructor_id="instructor-a", amount=15000, payout_method="MTN_MOMO")
+
+    assert withdrawal.instructor_id == "instructor-a"
+    assert withdrawal.amount == 15000
+    assert WithdrawalRequest.objects.count() == 1
+
+    ticket = AdminFlagQueue.objects.get(category=FlagCategory.WITHDRAWAL_APPROVAL)
+    assert ticket.subject == withdrawal
+    assert "instructor-a" in ticket.reason and "15000" in ticket.reason
