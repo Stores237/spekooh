@@ -118,9 +118,28 @@ I can write unilaterally. Grouped by what each one unblocks.
   spec §6 ("No web app in v1 (mobile-first)"), which suggests the mobile path is the real target
   and this Flutter Web testing setup is a dev-environment convenience, not the ship target.
 
-### 5. Referral bonuses
-- **Backend:** not built — no referral-code/tracking model anywhere.
-- **Client:** not built — no referral UI anywhere.
+### 5. ~~Referral bonuses~~ — done
+- Spec only listed this as a one-liner with no mechanics, so the trigger and reward were
+  decided with the owner before building (not invented): **trigger** = referred user's first
+  real action (their first paper unlock, not bare signup — resists fake-account abuse);
+  **reward** = a flat credit-ledger amount, same `CreditLedgerEntry` mechanism as the
+  contributor bonus.
+- **Backend:** `User.referral_code` (auto-generated, unique), `referred_by` (self FK, set at
+  registration via an optional `referral_code` field on `RegisterSerializer` — 400 if the code
+  doesn't exist), `referral_bonus_awarded_at` (idempotency guard). New
+  `ReferralBonusConfig` singleton (default 200 credits, admin-configurable like
+  `ContributorBonusConfig`). `award_referral_bonus()` fires from
+  `apps.payments.services.unlock_paper()` on both the free-trial and paid branches — the
+  guard means it only actually credits once, on whichever unlock happens first.
+  `UserSerializer` exposes `referral_code` so the client can display it.
+- **Client:** an optional "Referral code" field on the registration sheet; Profile shows a
+  real "Invite a friend" card (own code + real `share_plus` share action), matching the
+  existing redeem-code share pattern.
+- Tests: 3 new credits-service tests (fires once, no-op without a referrer, no-op on repeat),
+  2 new payments tests (end-to-end via `unlock_paper`, doesn't double-fire), 3 new accounts
+  tests (code returned on register, valid code sets `referred_by`, invalid code 400s), 2 new
+  Flutter widget tests (code included when given, omitted — not sent empty — when not), plus
+  the existing Profile smoke test updated for the second real "Share" action now on the page.
 
 ---
 

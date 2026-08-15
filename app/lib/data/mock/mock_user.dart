@@ -10,4 +10,5 @@ const mockGuestUser = SpekoohUser(
   redeemCodeSubtitle: '25% off any marking-guide unlock · expires in 30 days',
   trialDaysRemaining: 7,
   firstUnlockFreeEligible: true,
+  referralCode: 'A1B2C3D4',
 );

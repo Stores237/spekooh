@@ -9,6 +9,7 @@ class SpekoohUser {
     required this.redeemCodeSubtitle,
     this.trialDaysRemaining = 0,
     this.firstUnlockFreeEligible = false,
+    this.referralCode = '',
   });
 
   final String name;
@@ -20,4 +21,9 @@ class SpekoohUser {
   final String redeemCodeSubtitle;
   final int trialDaysRemaining;
   final bool firstUnlockFreeEligible;
+
+  /// Shareable code a new signup can enter at registration — the referrer
+  /// earns a real credit bonus once the referred user completes their first
+  /// paper unlock (see apps.credits.services.award_referral_bonus).
+  final String referralCode;
 }

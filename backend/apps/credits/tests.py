@@ -7,8 +7,8 @@ from rest_framework.test import APIClient
 from apps.accounts.factories import UserFactory
 
 from .factories import CreditLedgerEntryFactory, RedeemCodeFactory
-from .models import RedeemCodeStatus
-from .services import RedeemCodeError, redeem_code
+from .models import ReferralBonusConfig, RedeemCodeStatus
+from .services import RedeemCodeError, award_referral_bonus, redeem_code
 
 
 @pytest.fixture
@@ -183,3 +183,33 @@ def test_issue_redeem_code_endpoint_counts_published_submissions(api_client):
     response = api_client.post("/api/credits/redeem-codes/issue/")
     assert response.status_code == 201
     assert response.data["value_percent"] == 10  # 6 accepted -> the 5+ tier
+
+
+@pytest.mark.django_db
+def test_award_referral_bonus_credits_the_referrer():
+    referrer = UserFactory()
+    referred = UserFactory(referred_by=referrer)
+    entry = award_referral_bonus(referred)
+    config = ReferralBonusConfig.objects.first()
+    assert entry.user == referrer
+    assert entry.amount == config.amount
+    referred.refresh_from_db()
+    assert referred.referral_bonus_awarded_at is not None
+
+
+@pytest.mark.django_db
+def test_award_referral_bonus_is_a_noop_without_a_referrer():
+    user = UserFactory()
+    assert award_referral_bonus(user) is None
+
+
+@pytest.mark.django_db
+def test_award_referral_bonus_fires_only_once():
+    referrer = UserFactory()
+    referred = UserFactory(referred_by=referrer)
+    first = award_referral_bonus(referred)
+    referred.refresh_from_db()
+    second = award_referral_bonus(referred)
+    assert first is not None
+    assert second is None
+    assert CreditLedgerEntry.objects.filter(user=referrer).count() == 1

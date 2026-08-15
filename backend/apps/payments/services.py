@@ -3,7 +3,7 @@ import datetime
 from django.utils import timezone
 
 from apps.core.payment_provider import MockPaymentProvider, PaymentProvider
-from apps.credits.services import RedeemCodeError, redeem_code
+from apps.credits.services import RedeemCodeError, award_referral_bonus, redeem_code
 
 from .models import (
     PaperUnlock,
@@ -95,9 +95,11 @@ def unlock_paper(*, user, paper_submission, phone_number: str, redeem_code_str: 
     # already grants a real discount, stacking both would be a fabricated
     # freebie disguised as two independently-real ones.
     if applied_code is None and first_unlock_free_eligible(user):
-        return PaperUnlock.objects.create(
+        unlock = PaperUnlock.objects.create(
             user=user, paper_submission=paper_submission, amount_paid=0, payment_transaction=None
         )
+        award_referral_bonus(user)
+        return unlock
 
     amount = PAPER_UNLOCK_PRICE_FCFA
     if applied_code is not None:
@@ -113,10 +115,12 @@ def unlock_paper(*, user, paper_submission, phone_number: str, redeem_code_str: 
     if transaction.status != PaymentTransactionStatus.SUCCESS:
         raise PaperUnlockError(transaction.failure_reason or "Payment failed.")
 
-    return PaperUnlock.objects.create(
+    unlock = PaperUnlock.objects.create(
         user=user,
         paper_submission=paper_submission,
         amount_paid=amount,
         redeem_code_applied=applied_code,
         payment_transaction=transaction,
     )
+    award_referral_bonus(user)
+    return unlock

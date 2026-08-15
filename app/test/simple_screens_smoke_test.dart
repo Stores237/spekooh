@@ -114,7 +114,9 @@ void main() {
     await _pumpAndCheck(tester, ProfileScreen(repository: MockProfileRepository()));
     expect(find.text('Profile'), findsOneWidget);
     expect(find.text('Redeem code ready'), findsOneWidget);
-    expect(find.text('Share'), findsOneWidget); // real tappable share action, not dead text
+    expect(find.text('Invite a friend'), findsOneWidget);
+    // Two real, independently-tappable share actions (redeem code + referral code), not dead text.
+    expect(find.text('Share'), findsNWidgets(2));
   });
 
   testWidgets('ProfileScreen shows an honest state when there is no active redeem code', (tester) async {

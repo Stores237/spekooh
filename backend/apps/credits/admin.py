@@ -12,6 +12,7 @@ from .models import (
     RedeemCode,
     RedeemCodeStatus,
     RedeemCodeTierConfig,
+    ReferralBonusConfig,
     SubjectDemandFactor,
 )
 
@@ -84,3 +85,8 @@ class ContributorBonusConfigAdmin(ModelAdmin):
 @admin.register(CreditCeilingConfig)
 class CreditCeilingConfigAdmin(ModelAdmin):
     list_display = ("max_credit_per_paper_xaf",)
+
+
+@admin.register(ReferralBonusConfig)
+class ReferralBonusConfigAdmin(ModelAdmin):
+    list_display = ("amount",)

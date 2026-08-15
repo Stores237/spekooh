@@ -136,6 +136,17 @@ class ContributorBonusConfig(TimeStampedModel):
         return f"{self.amount} credits per accepted submission"
 
 
+class ReferralBonusConfig(TimeStampedModel):
+    """Singleton: flat credit awarded to a referrer once their referred user
+    completes a real first action (first paper unlock) — not bare signup,
+    to resist fake-account abuse. See apps.credits.services.award_referral_bonus."""
+
+    amount = models.PositiveIntegerField(default=200)
+
+    def __str__(self):
+        return f"{self.amount} credits per successful referral"
+
+
 class CreditCeilingConfig(TimeStampedModel):
     """
     Singleton: spec §5.2's "profit-deficit guardrail" — the sum of credits

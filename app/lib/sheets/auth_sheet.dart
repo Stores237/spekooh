@@ -24,12 +24,14 @@ class _AuthSheetState extends State<AuthSheet> {
   final _emailController = TextEditingController();
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _referralCodeController = TextEditingController();
 
   @override
   void dispose() {
     _emailController.dispose();
     _nameController.dispose();
     _passwordController.dispose();
+    _referralCodeController.dispose();
     super.dispose();
   }
 
@@ -44,6 +46,7 @@ class _AuthSheetState extends State<AuthSheet> {
           email: _emailController.text.trim(),
           name: _nameController.text.trim(),
           password: _passwordController.text,
+          referralCode: _referralCodeController.text.trim(),
         );
       } else {
         await AuthSession.instance.login(
@@ -101,6 +104,12 @@ class _AuthSheetState extends State<AuthSheet> {
             _FieldLabel('PASSWORD'),
             const SizedBox(height: 6),
             _TextField(controller: _passwordController, hint: '••••••••', obscureText: true),
+            if (_isRegisterMode) ...[
+              const SizedBox(height: AppSpacing.space3),
+              _FieldLabel('REFERRAL CODE (OPTIONAL)'),
+              const SizedBox(height: 6),
+              _TextField(controller: _referralCodeController, hint: 'e.g. A1B2C3D4'),
+            ],
             if (_error != null) ...[
               const SizedBox(height: AppSpacing.space3),
               Text(_error!, style: const TextStyle(color: AppColors.red500, fontSize: 12)),

@@ -17,6 +17,10 @@ class LanguagePreference(models.TextChoices):
     FRENCH = "fr", "French"
 
 
+def generate_referral_code():
+    return uuid.uuid4().hex[:8].upper()
+
+
 class UserManager(BaseUserManager):
     use_in_migrations = True
 
@@ -78,6 +82,18 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+
+    # Referral bonuses (spec: "referral bonuses", mechanics scoped by product
+    # this session — fires on the referred user's first real action, not
+    # bare signup, to resist fake-account abuse; see
+    # apps.credits.services.award_referral_bonus).
+    referral_code = models.CharField(max_length=10, unique=True, default=generate_referral_code)
+    referred_by = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="referrals_made"
+    )
+    # Set once this user's first paper unlock has credited their referrer —
+    # the idempotency guard so the bonus can't fire twice.
+    referral_bonus_awarded_at = models.DateTimeField(null=True, blank=True)
 
     objects = UserManager()
 

@@ -98,3 +98,48 @@ def test_me_returns_authenticated_user_profile(api_client):
 def test_registered_user_requires_email_at_db_level():
     with pytest.raises(Exception):
         User.objects.create(account_type=AccountType.REGISTERED, email=None)
+
+
+@pytest.mark.django_db
+def test_register_returns_a_referral_code(api_client):
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "coded@example.com", "name": "Coded User", "password": "S0mePass!23"},
+        format="json",
+    )
+    assert response.status_code == 201
+    assert len(response.data["user"]["referral_code"]) == 8
+
+
+@pytest.mark.django_db
+def test_register_with_valid_referral_code_sets_referred_by(api_client):
+    referrer = UserFactory()
+    response = api_client.post(
+        "/api/auth/register/",
+        {
+            "email": "referred@example.com",
+            "name": "Referred User",
+            "password": "S0mePass!23",
+            "referral_code": referrer.referral_code.lower(),  # case-insensitive
+        },
+        format="json",
+    )
+    assert response.status_code == 201
+    new_user = User.objects.get(email="referred@example.com")
+    assert new_user.referred_by_id == referrer.id
+
+
+@pytest.mark.django_db
+def test_register_rejects_an_unknown_referral_code(api_client):
+    response = api_client.post(
+        "/api/auth/register/",
+        {
+            "email": "bad-code@example.com",
+            "name": "Bad Code",
+            "password": "S0mePass!23",
+            "referral_code": "NOTREAL1",
+        },
+        format="json",
+    )
+    assert response.status_code == 400
+    assert not User.objects.filter(email="bad-code@example.com").exists()

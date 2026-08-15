@@ -65,13 +65,26 @@ class AuthSession extends ChangeNotifier {
     await _storeTokens(jsonDecode(response.body));
   }
 
-  Future<void> register({required String email, required String name, required String password}) async {
+  Future<void> register({
+    required String email,
+    required String name,
+    required String password,
+    String? referralCode,
+  }) async {
     final response = await _client.post(
       Uri.parse('$_authBaseUrl/auth/register/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'name': name, 'password': password}),
+      body: jsonEncode({
+        'email': email,
+        'name': name,
+        'password': password,
+        if (referralCode != null && referralCode.isNotEmpty) 'referral_code': referralCode,
+      }),
     );
     if (response.statusCode != 201) {
+      if (referralCode != null && referralCode.isNotEmpty) {
+        throw AuthException("Registration failed. Check your details, and that the referral code is correct.");
+      }
       throw AuthException('Registration failed. That email may already be in use.');
     }
     await _storeTokens(jsonDecode(response.body));

@@ -152,3 +152,29 @@ def test_unlock_paper_does_not_stack_trial_waiver_with_a_redeem_code():
     code = RedeemCodeFactory(value_percent=20)
     unlock = unlock_paper(user=user, paper_submission=paper, phone_number="670000000", redeem_code_str=code.code)
     assert unlock.amount_paid == round(PAPER_UNLOCK_PRICE_FCFA * 0.8)
+
+
+@pytest.mark.django_db
+def test_unlock_paper_credits_the_referrer_on_first_unlock():
+    from apps.credits.models import CreditLedgerEntry
+
+    referrer = UserFactory()
+    referred = UserFactory(referred_by=referrer)
+    paper = PaperSubmissionFactory()
+    unlock_paper(user=referred, paper_submission=paper, phone_number="670000000")
+    assert CreditLedgerEntry.objects.filter(user=referrer).exists()
+    referred.refresh_from_db()
+    assert referred.referral_bonus_awarded_at is not None
+
+
+@pytest.mark.django_db
+def test_unlock_paper_does_not_credit_referrer_again_on_a_second_unlock():
+    from apps.credits.models import CreditLedgerEntry
+
+    referrer = UserFactory()
+    referred = UserFactory(referred_by=referrer)
+    first_paper = PaperSubmissionFactory()
+    second_paper = PaperSubmissionFactory()
+    unlock_paper(user=referred, paper_submission=first_paper, phone_number="670000000")
+    unlock_paper(user=referred, paper_submission=second_paper, phone_number="670000000")
+    assert CreditLedgerEntry.objects.filter(user=referrer).count() == 1
