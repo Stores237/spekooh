@@ -66,6 +66,11 @@ abstract class PapersRepository {
   /// MockPaymentProvider). Returns the amount actually charged (after any
   /// redeem code discount).
   Future<int> unlockPaper(int paperId, {String? redeemCode});
+
+  /// Flags a paper for Review Team attention (spec §3.2). [reason] must be
+  /// one of [paperFlagReasons]' keys. Throws [AlreadyReportedException] if
+  /// this user already reported this paper — one flag per user per paper.
+  Future<void> reportPaper(int paperId, {required String reason, String details});
 }
 
 class PaywallException implements Exception {
@@ -75,6 +80,24 @@ class PaywallException implements Exception {
   String toString() => message;
 }
 
+class AlreadyReportedException implements Exception {
+  AlreadyReportedException(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}
+
+/// Mirrors apps.papers.models.PaperFlagReason on the backend — key sent to
+/// the API, label shown in the report dialog.
+const paperFlagReasons = <String, String>{
+  'WRONG_ANSWERS': 'Wrong or missing answers',
+  'POOR_QUALITY': 'Poor scan quality / unreadable',
+  'WRONG_SUBJECT': 'Wrong subject or exam type',
+  'DUPLICATE': 'Duplicate of another paper',
+  'COPYRIGHT': 'Copyright concern',
+  'OTHER': 'Other',
+};
+
 class MockPapersRepository implements PapersRepository {
   /// [seedPublished] lets widget tests exercise the "tap a real paper"
   /// flow without a backend — real usage always starts empty, an honest
@@ -83,6 +106,7 @@ class MockPapersRepository implements PapersRepository {
 
   final List<PaperEntry> _submitted;
   int _nextId = 9000;
+  final Set<int> _reportedPaperIds = {};
 
   @override
   Future<List<ExamCategory>> getCategories() => Future.value(MockTaxonomy.categories);
@@ -151,4 +175,11 @@ class MockPapersRepository implements PapersRepository {
 
   @override
   Future<int> unlockPaper(int paperId, {String? redeemCode}) async => 500;
+
+  @override
+  Future<void> reportPaper(int paperId, {required String reason, String details = ''}) async {
+    if (!_reportedPaperIds.add(paperId)) {
+      throw AlreadyReportedException("You've already reported this paper.");
+    }
+  }
 }

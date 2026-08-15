@@ -41,6 +41,15 @@ class _PaywalledPapersRepository implements PapersRepository {
     grantView = true; // mirrors the backend: next recordView succeeds.
   }
 
+  List<({int paperId, String reason, String details})> reportCalls = [];
+  bool throwAlreadyReported = false;
+
+  @override
+  Future<void> reportPaper(int paperId, {required String reason, String details = ''}) async {
+    if (throwAlreadyReported) throw AlreadyReportedException("You've already reported this paper.");
+    reportCalls.add((paperId: paperId, reason: reason, details: details));
+  }
+
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by PaperDetailScreen tests');
 }
@@ -103,5 +112,46 @@ void main() {
     expect(repository.adWatchCalls, 0);
     expect(find.textContaining('Daily free view limit reached'), findsOneWidget);
     expect(find.text('Ad not completed — no view granted.'), findsOneWidget);
+  });
+
+  testWidgets('reporting a paper picks a reason and submits it for real', (tester) async {
+    final repository = _PaywalledPapersRepository();
+    await _pump(tester, repository, _FakeRewardedAdController(grantsReward: true));
+
+    await tester.tap(find.byTooltip('Report an issue with this paper'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Report an issue'), findsOneWidget);
+    await tester.tap(find.text('Submit'));
+    await tester.pumpAndSettle();
+
+    expect(repository.reportCalls, hasLength(1));
+    expect(repository.reportCalls.single.paperId, 1);
+    expect(repository.reportCalls.single.reason, 'WRONG_ANSWERS');
+    expect(find.text('Thanks — the Review Team has been notified.'), findsOneWidget);
+  });
+
+  testWidgets('cancelling the report dialog sends nothing', (tester) async {
+    final repository = _PaywalledPapersRepository();
+    await _pump(tester, repository, _FakeRewardedAdController(grantsReward: true));
+
+    await tester.tap(find.byTooltip('Report an issue with this paper'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(repository.reportCalls, isEmpty);
+  });
+
+  testWidgets('reporting the same paper twice surfaces the already-reported message', (tester) async {
+    final repository = _PaywalledPapersRepository()..throwAlreadyReported = true;
+    await _pump(tester, repository, _FakeRewardedAdController(grantsReward: true));
+
+    await tester.tap(find.byTooltip('Report an issue with this paper'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Submit'));
+    await tester.pumpAndSettle();
+
+    expect(find.text("You've already reported this paper."), findsOneWidget);
   });
 }

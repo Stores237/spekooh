@@ -149,6 +149,35 @@ class PaperSubmission(TimeStampedModel):
         super().save(*args, **kwargs)
 
 
+class PaperFlagReason(models.TextChoices):
+    WRONG_ANSWERS = "WRONG_ANSWERS", "Wrong or missing answers"
+    POOR_QUALITY = "POOR_QUALITY", "Poor scan quality / unreadable"
+    WRONG_SUBJECT = "WRONG_SUBJECT", "Wrong subject or exam type"
+    DUPLICATE = "DUPLICATE", "Duplicate of another paper"
+    COPYRIGHT = "COPYRIGHT", "Copyright concern"
+    OTHER = "OTHER", "Other"
+
+
+class PaperFlag(TimeStampedModel):
+    """A user-reported issue on a published paper. Spec §3.2 'flag/report an
+    existing paper' — one flag per user per paper feeds the same Review Team
+    queue as every other event (see PAPER_REPORTED in apps.admin_queue)."""
+
+    paper_submission = models.ForeignKey(PaperSubmission, on_delete=models.CASCADE, related_name="flags")
+    flagged_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="paper_flags")
+    reason = models.CharField(max_length=20, choices=PaperFlagReason.choices)
+    details = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["paper_submission", "flagged_by"], name="unique_flag_per_user_per_paper"),
+        ]
+
+    def __str__(self):
+        return f"{self.get_reason_display()} — paper {self.paper_submission_id} (by {self.flagged_by_id})"
+
+
 class MCQAnswerKey(TimeStampedModel):
     """Marked and finalized in-house by the Review Team — never sent to an external instructor."""
 

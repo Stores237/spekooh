@@ -200,4 +200,17 @@ class HttpPapersRepository implements PapersRepository {
     });
     return row['amount_paid'] as int;
   }
+
+  @override
+  Future<void> reportPaper(int paperId, {required String reason, String details = ''}) async {
+    try {
+      await _client.post('/papers/submissions/$paperId/report/', body: {
+        'reason': reason,
+        if (details.isNotEmpty) 'details': details,
+      });
+    } on ApiException catch (e) {
+      if (e.statusCode == 409) throw AlreadyReportedException("You've already reported this paper.");
+      rethrow;
+    }
+  }
 }

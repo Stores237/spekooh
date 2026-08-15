@@ -7,6 +7,7 @@ from .models import (
     ExamCategory,
     ExamType,
     MCQAnswerKey,
+    PaperFlag,
     PaperStatus,
     PaperSubmission,
     PaperViewLog,
@@ -70,6 +71,14 @@ class PaperSubmissionAdmin(ModelAdmin):
             + (f" Skipped {skipped} not in Guide submitted/Merged status." if skipped else ""),
             level=messages.SUCCESS if eligible.count() else messages.WARNING,
         )
+
+
+@admin.register(PaperFlag)
+class PaperFlagAdmin(ModelAdmin):
+    list_display = ("paper_submission", "reason", "flagged_by", "created_at")
+    list_filter = ("reason",)
+    search_fields = ("paper_submission__id", "flagged_by__email")
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(PaperViewLog)

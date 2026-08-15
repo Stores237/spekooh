@@ -1,10 +1,12 @@
 from django.db import transaction
 from django.utils import timezone
 
+from apps.admin_queue.models import FlagCategory
+from apps.admin_queue.services import flag
 from apps.payments.models import Subscription
 
 from .duplicate_detection import DuplicateDetector, TfidfDuplicateDetector, exact_duplicate_hash
-from .models import AdWatchEvent, PaperStatus, PaperSubmission, PaperViewLog
+from .models import AdWatchEvent, PaperFlag, PaperStatus, PaperSubmission, PaperViewLog
 from .ocr import extract_text, extract_text_from_fieldfile
 
 DAILY_FREE_VIEWS = 3
@@ -12,6 +14,27 @@ DAILY_FREE_VIEWS = 3
 
 class PaywallError(Exception):
     pass
+
+
+class AlreadyFlaggedError(Exception):
+    pass
+
+
+def report_paper(*, user, paper_submission, reason, details="") -> PaperFlag:
+    """Spec §3.2 flag/report — one flag per user per paper, each also creates
+    a Review Team ticket in the same queue every other event uses (§2.1)."""
+    if PaperFlag.objects.filter(paper_submission=paper_submission, flagged_by=user).exists():
+        raise AlreadyFlaggedError("You've already reported this paper.")
+    paper_flag = PaperFlag.objects.create(
+        paper_submission=paper_submission, flagged_by=user, reason=reason, details=details
+    )
+    flag(
+        subject=paper_submission,
+        category=FlagCategory.PAPER_REPORTED,
+        reason=f"Reported by user #{user.id} — {paper_flag.get_reason_display()}"
+        + (f": {details}" if details else ""),
+    )
+    return paper_flag
 
 
 def _today_start():

@@ -87,13 +87,20 @@ I can write unilaterally. Grouped by what each one unblocks.
   backend to trigger against yet. Confirming an actual ad renders on-device needs a rebuild
   pointed at a real reachable backend address, or the same network + port setup.
 
-### 3. Flag/report an existing paper
-- **Backend:** not built — no `PaperFlag`/report model exists in `apps/papers` or
-  `apps/admin_queue` (the admin queue currently only handles the "no instructor accepted"
-  escalation path, a different concept).
-- **Client:** no report affordance anywhere in `paper_detail_screen.dart`.
-- **Why P0-adjacent:** listed as P1 in §3.2, but it's the cheapest way to keep a
-  guest-submission-driven corpus clean, so worth pulling forward.
+### 3. ~~Flag/report an existing paper~~ — done
+- **Backend:** `PaperFlag` model (`apps/papers/models.py`) — one flag per user per paper
+  (`unique_flag_per_user_per_paper`), 6 reasons (wrong answers, poor quality, wrong subject,
+  duplicate, copyright, other). `report_paper()` service creates the flag row and a
+  `PAPER_REPORTED` ticket in the same §2.1 `AdminFlagQueue`, matching every other
+  auto-created ticket. New `POST /api/papers/submissions/{id}/report/` action — 401 if
+  logged out, 404 if the paper isn't visible to this user (same visibility rules as
+  everywhere else), 409 on a second report from the same user.
+- **Client:** flag icon in `paper_detail_screen.dart`'s header opens a real dialog (reason
+  dropdown + optional details), calls the endpoint, shows a real success/already-reported
+  message — not a mock.
+- Tests: 4 new backend tests (auth required, creates flag+ticket, duplicate conflicts,
+  different users both succeed), 3 new Flutter widget tests (submit, cancel,
+  already-reported message).
 
 ---
 

@@ -125,6 +125,26 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     }
   }
 
+  Future<void> _openReportDialog(int paperId) async {
+    final result = await showDialog<({String reason, String details})>(
+      context: context,
+      builder: (context) => _ReportPaperDialog(paperId: paperId),
+    );
+    if (result == null || !mounted) return;
+    try {
+      await widget.repository.reportPaper(paperId, reason: result.reason, details: result.details);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Thanks — the Review Team has been notified.')),
+        );
+      }
+    } on AlreadyReportedException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not send report: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final selection = widget.paper;
@@ -189,6 +209,11 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                     ),
                   ),
                   SpekoohBadge(text: entry.isPublished ? 'Published' : 'Under review', tone: SpekoohBadgeTone.neutral),
+                  IconButton(
+                    tooltip: 'Report an issue with this paper',
+                    icon: const Icon(Icons.flag_outlined, size: 20, color: AppColors.textSecondary),
+                    onPressed: () => _openReportDialog(entry.id),
+                  ),
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
@@ -307,6 +332,65 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Pick a reason (mirrors backend PaperFlagReason) + optional free-text
+/// details, mirroring paper_flag_reasons. Pops null on cancel, or the
+/// selected (reason, details) record on submit.
+class _ReportPaperDialog extends StatefulWidget {
+  const _ReportPaperDialog({required this.paperId});
+  final int paperId;
+
+  @override
+  State<_ReportPaperDialog> createState() => _ReportPaperDialogState();
+}
+
+class _ReportPaperDialogState extends State<_ReportPaperDialog> {
+  String _reason = paperFlagReasons.keys.first;
+  final _detailsController = TextEditingController();
+
+  @override
+  void dispose() {
+    _detailsController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Report an issue'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<String>(
+            initialValue: _reason,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'What\'s wrong?', isDense: true),
+            items: paperFlagReasons.entries
+                .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                .toList(),
+            onChanged: (value) {
+              if (value != null) setState(() => _reason = value);
+            },
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _detailsController,
+            decoration: const InputDecoration(labelText: 'Details (optional)', isDense: true, border: OutlineInputBorder()),
+            maxLines: 3,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop((reason: _reason, details: _detailsController.text.trim())),
+          child: const Text('Submit'),
+        ),
+      ],
     );
   }
 }

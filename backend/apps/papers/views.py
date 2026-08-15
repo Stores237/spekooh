@@ -15,13 +15,22 @@ from .serializers import (
     AdWatchEventSerializer,
     ExamCategorySerializer,
     ExamTypeSerializer,
+    PaperFlagSerializer,
     PaperSubmissionCreateSerializer,
     PaperSubmissionDetailSerializer,
     PaperSubmissionListSerializer,
     PaperViewLogSerializer,
     SubjectSerializer,
 )
-from .services import PaywallError, mark_published, process_ocr_and_duplicate_check, record_ad_watch, record_paper_view
+from .services import (
+    AlreadyFlaggedError,
+    PaywallError,
+    mark_published,
+    process_ocr_and_duplicate_check,
+    record_ad_watch,
+    record_paper_view,
+    report_paper,
+)
 
 
 class ExamCategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -103,6 +112,22 @@ class PaperSubmissionViewSet(
         except PaywallError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_402_PAYMENT_REQUIRED)
         return Response(PaperViewLogSerializer(log).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def report(self, request, pk=None):
+        paper = self.get_object()
+        serializer = PaperFlagSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            paper_flag = report_paper(
+                user=request.user,
+                paper_submission=paper,
+                reason=serializer.validated_data["reason"],
+                details=serializer.validated_data.get("details", ""),
+            )
+        except AlreadyFlaggedError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
+        return Response(PaperFlagSerializer(paper_flag).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAdminUser])
     def process_ocr(self, request, pk=None):

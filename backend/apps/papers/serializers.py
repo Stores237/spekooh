@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import AdWatchEvent, ExamCategory, ExamType, PaperSubmission, PaperViewLog, Subject
+from .models import AdWatchEvent, ExamCategory, ExamType, PaperFlag, PaperSubmission, PaperViewLog, Subject
 
 
 class ExamCategorySerializer(serializers.ModelSerializer):
@@ -139,6 +139,13 @@ class PaperSubmissionCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["submitted_by"] = self.context["request"].user
         return super().create(validated_data)
+
+
+class PaperFlagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaperFlag
+        fields = ["id", "paper_submission", "reason", "details", "created_at"]
+        read_only_fields = ["id", "paper_submission", "created_at"]
 
 
 class PaperViewLogSerializer(serializers.ModelSerializer):

@@ -10,6 +10,7 @@ class FlagCategory(models.TextChoices):
     # Spec §2.1: every event that needs Review Team action auto-creates a
     # ticket in this same queue rather than a separate ticketing system.
     PAPER_VERIFICATION = "PAPER_VERIFICATION", "New submission needs verification"
+    PAPER_REPORTED = "PAPER_REPORTED", "Paper reported by a user"
     UNASSIGNED_PAPER = "UNASSIGNED_PAPER", "No instructor accepted"
     GUIDE_REVIEW = "GUIDE_REVIEW", "Marking guide returned — needs review/merge"
     PAMPHLET_DISPUTE = "PAMPHLET_DISPUTE", "Pamphlet handover dispute"

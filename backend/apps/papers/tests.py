@@ -365,3 +365,61 @@ def test_process_ocr_endpoint_works_for_staff(tmp_path, api_client):
     response = api_client.post(f"/api/papers/submissions/{paper.id}/process_ocr/")
     assert response.status_code == 200
     assert "paper text" in response.data["ocr_text"].lower()
+
+
+@pytest.mark.django_db
+def test_report_paper_requires_authentication(api_client):
+    paper = PaperSubmissionFactory()
+    response = api_client.post(f"/api/papers/submissions/{paper.id}/report/", {"reason": "WRONG_ANSWERS"}, format="json")
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_report_paper_creates_flag_and_ticket(authed_client):
+    """Spec §3.2 flag/report an existing paper — creates both the flag row
+    and a Review Team ticket in the same §2.1 queue every other event uses."""
+    from apps.admin_queue.models import AdminFlagQueue, FlagCategory
+
+    client, user = authed_client
+    paper = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+    response = client.post(
+        f"/api/papers/submissions/{paper.id}/report/",
+        {"reason": "POOR_QUALITY", "details": "Half the pages are blank."},
+        format="json",
+    )
+    assert response.status_code == 201
+    assert response.data["reason"] == "POOR_QUALITY"
+
+    from .models import PaperFlag
+
+    paper_flag = PaperFlag.objects.get(paper_submission=paper, flagged_by=user)
+    assert paper_flag.details == "Half the pages are blank."
+
+    ticket = AdminFlagQueue.objects.get(
+        content_type__model="papersubmission", object_id=str(paper.id), category=FlagCategory.PAPER_REPORTED
+    )
+    assert "Poor scan quality" in ticket.reason
+    assert "Half the pages are blank." in ticket.reason
+
+
+@pytest.mark.django_db
+def test_report_paper_twice_by_same_user_conflicts(authed_client):
+    client, _ = authed_client
+    paper = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+    first = client.post(f"/api/papers/submissions/{paper.id}/report/", {"reason": "OTHER"}, format="json")
+    assert first.status_code == 201
+    second = client.post(f"/api/papers/submissions/{paper.id}/report/", {"reason": "DUPLICATE"}, format="json")
+    assert second.status_code == 409
+
+
+@pytest.mark.django_db
+def test_report_paper_by_different_users_both_succeed(authed_client, api_client):
+    client, _ = authed_client
+    paper = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+    first = client.post(f"/api/papers/submissions/{paper.id}/report/", {"reason": "OTHER"}, format="json")
+    assert first.status_code == 201
+
+    other_user = UserFactory()
+    api_client.force_authenticate(user=other_user)
+    second = api_client.post(f"/api/papers/submissions/{paper.id}/report/", {"reason": "COPYRIGHT"}, format="json")
+    assert second.status_code == 201
