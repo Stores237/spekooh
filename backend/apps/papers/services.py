@@ -5,7 +5,7 @@ from apps.payments.models import Subscription
 
 from .duplicate_detection import DuplicateDetector, TfidfDuplicateDetector, exact_duplicate_hash
 from .models import AdWatchEvent, PaperStatus, PaperSubmission, PaperViewLog
-from .ocr import extract_text
+from .ocr import extract_text, extract_text_from_fieldfile
 
 DAILY_FREE_VIEWS = 3
 
@@ -60,7 +60,13 @@ def process_ocr_and_duplicate_check(paper_submission: PaperSubmission) -> PaperS
     other submissions of the same exam type + subject. Bonus-credit eligibility
     (stage 7) reads paper_submission.is_duplicate rather than re-deriving it.
     """
-    text = extract_text(paper_submission.file_ref)
+    # file_ref is only populated for local-disk storage (see
+    # PaperSubmission.save) — for remote storage (real Supabase Storage),
+    # it's blank and OCR has to stage the file through a temp copy instead.
+    if paper_submission.file_ref:
+        text = extract_text(paper_submission.file_ref)
+    else:
+        text = extract_text_from_fieldfile(paper_submission.uploaded_file)
     paper_submission.ocr_text = text
     paper_submission.duplicate_hash = exact_duplicate_hash(text)
 

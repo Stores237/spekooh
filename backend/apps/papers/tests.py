@@ -86,7 +86,15 @@ def test_submit_creates_paper_owned_by_requesting_user(authed_client):
     assert submission.submitted_by == user
     assert submission.status == PaperStatus.PENDING_REVIEW
     assert submission.uploaded_file
-    assert submission.file_ref == submission.uploaded_file.path  # auto-populated for OCR to consume
+    # file_ref mirrors uploaded_file.path only for storage backends that have
+    # a local filesystem path (local disk). Remote storage (S3/Supabase) has
+    # no .path() by design, so file_ref stays blank there instead — see
+    # PaperSubmission.save().
+    try:
+        expected_file_ref = submission.uploaded_file.path
+    except NotImplementedError:
+        expected_file_ref = ""
+    assert submission.file_ref == expected_file_ref
 
 
 @pytest.mark.django_db
@@ -274,6 +282,28 @@ def test_process_ocr_extracts_text_and_sets_hash(tmp_path):
     assert "Physics" in processed.ocr_text
     assert processed.duplicate_hash != ""
     assert processed.is_duplicate is False
+
+
+@pytest.mark.django_db
+def test_extract_text_from_fieldfile_stages_a_temp_copy(tmp_path):
+    """
+    Storage-agnostic path for apps.papers.ocr.extract_text_from_fieldfile —
+    exercises the branch process_ocr_and_duplicate_check takes when
+    file_ref is blank (real remote storage, e.g. Supabase Storage, where
+    .path() raises NotImplementedError so PaperSubmission.save() can't
+    populate it — see models.py). Works the same whether the actual
+    storage backend under test is local disk or S3: the function only
+    ever reads bytes via FieldFile.chunks(), never .path().
+    """
+    from .ocr import extract_text_from_fieldfile
+
+    image_path = _fixture_image(tmp_path, "Chemistry Organic Reactions")
+    with open(image_path, "rb") as fh:
+        upload = SimpleUploadedFile("chem.png", fh.read(), content_type="image/png")
+    paper = PaperSubmissionFactory(uploaded_file=upload, file_ref="")
+
+    text = extract_text_from_fieldfile(paper.uploaded_file)
+    assert "Chemistry" in text
 
 
 @pytest.mark.django_db

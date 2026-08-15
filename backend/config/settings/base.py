@@ -103,13 +103,45 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Local disk storage — the free substitute for Supabase Storage (no
-# credentials exist for this project). Swapping to real Supabase Storage
-# later is a storage-backend swap (e.g. django-storages), not a model change:
-# PaperSubmission.uploaded_file stays a FileField either way.
+# Local disk storage stays the default so a fresh clone with no Supabase
+# credentials still works out of the box (mirrors DATABASE_URL's fallback
+# to local Postgres). Set AWS_STORAGE_BUCKET_NAME (+ the other AWS_* vars
+# below) to switch to real Supabase Storage — no model change either way,
+# PaperSubmission.uploaded_file stays a plain FileField.
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20MB, matches the app's stated upload limit
+
+_aws_bucket = env("AWS_STORAGE_BUCKET_NAME", default=None)
+STORAGES = {
+    "default": (
+        {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "access_key": env("AWS_ACCESS_KEY_ID", default=None),
+                "secret_key": env("AWS_SECRET_ACCESS_KEY", default=None),
+                "bucket_name": _aws_bucket,
+                "endpoint_url": env("AWS_S3_ENDPOINT_URL", default=None),
+                "region_name": env("AWS_S3_REGION_NAME", default=None),
+                "signature_version": "s3v4",
+                # Bucket is private (Supabase Storage default) — every
+                # file_url is a freshly signed, expiring link, not a static
+                # public path. 3600s matches django-storages' own default;
+                # generated fresh per API response, not cached, so this
+                # only needs to outlive the time between the response and
+                # the user actually opening the file.
+                "querystring_auth": True,
+                "querystring_expire": 3600,
+                "default_acl": None,
+            },
+        }
+        if _aws_bucket
+        else {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+    ),
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (

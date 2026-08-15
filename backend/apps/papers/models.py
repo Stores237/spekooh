@@ -100,12 +100,15 @@ class PaperSubmission(TimeStampedModel):
     exam_board = models.CharField(max_length=120, blank=True)
     year = models.PositiveIntegerField()
 
-    # Real uploaded file (local disk storage — the free substitute for
-    # Supabase Storage, no credentials exist for this project; see backend
-    # plan's documented environment-forced substitutions). file_ref mirrors
-    # uploaded_file.path once a file is attached, so OCR (which takes a
-    # plain filesystem path) and existing tests that set file_ref directly
-    # both keep working unchanged.
+    # Real uploaded file — local disk in dev, Supabase Storage (S3-compatible)
+    # when AWS_STORAGE_BUCKET_NAME is set (see config/settings/base.py).
+    # file_ref mirrors uploaded_file.path when the storage backend actually
+    # has one (local disk only — S3-backed storage has no local filesystem
+    # path at all), so OCR's fast path and tests that set file_ref directly
+    # both keep working unchanged. When storage doesn't support .path()
+    # (real Supabase Storage), file_ref stays blank and OCR downloads the
+    # file to a temp copy itself instead — see
+    # apps.papers.ocr.extract_text_from_fieldfile.
     uploaded_file = models.FileField(upload_to="paper_submissions/%Y/%m/", null=True, blank=True)
     file_ref = models.CharField(max_length=500, blank=True)
     ocr_text = models.TextField(blank=True)
@@ -131,10 +134,17 @@ class PaperSubmission(TimeStampedModel):
     def save(self, *args, **kwargs):
         if self.uploaded_file and not self.file_ref:
             # Populated after the initial save, once Django has actually
-            # written the file to storage and .path is resolvable.
+            # written the file to storage. Only meaningful for local-disk
+            # storage — remote/S3-backed storage raises NotImplementedError
+            # from .path() by design (there's no local filesystem path),
+            # so file_ref just stays blank there; OCR handles that case.
             super().save(*args, **kwargs)
-            self.file_ref = self.uploaded_file.path
-            super().save(update_fields=["file_ref", "updated_at"])
+            try:
+                self.file_ref = self.uploaded_file.path
+            except NotImplementedError:
+                pass
+            else:
+                super().save(update_fields=["file_ref", "updated_at"])
             return
         super().save(*args, **kwargs)
 
