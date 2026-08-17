@@ -70,6 +70,11 @@ class HttpProfileRepository implements ProfileRepository {
   }
 
   @override
+  Future<void> setLanguagePreference(String code) async {
+    await _client.patch('/auth/me/', body: {'language_pref': code});
+  }
+
+  @override
   Future<List<Achievement>> getAchievements() async {
     // No backend concept for achievements/gamification — not in the confirmed
     // spec (see the backend-wiring plan's "explicitly out of scope"). Empty

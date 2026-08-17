@@ -13,10 +13,11 @@ import 'package:spekooh/screens/shop/shop_screen.dart';
 import 'package:spekooh/screens/notifications/notifications_screen.dart';
 import 'package:spekooh/screens/settings/settings_screen.dart';
 import 'package:spekooh/screens/profile/profile_screen.dart';
-import 'package:spekooh/theme/app_theme.dart';
+
+import 'support/l10n_test_app.dart';
 
 Future<void> _pumpAndCheck(WidgetTester tester, Widget screen) async {
-  await tester.pumpWidget(MaterialApp(theme: appTheme, home: screen));
+  await tester.pumpWidget(l10nTestApp(screen));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50)); // let FutureBuilder futures resolve
   expect(tester.takeException(), isNull);
@@ -76,7 +77,7 @@ void main() {
   });
 
   testWidgets('SettingsScreen builds with no exceptions', (tester) async {
-    await _pumpAndCheck(tester, const SettingsScreen());
+    await _pumpAndCheck(tester, SettingsScreen(profileRepository: MockProfileRepository()));
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Log in'), findsOneWidget);
   });

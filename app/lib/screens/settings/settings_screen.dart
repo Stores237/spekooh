@@ -1,5 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../data/auth_session.dart';
+import '../../data/locale_controller.dart';
+import '../../data/repositories/profile_repository.dart';
+import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
@@ -13,21 +19,31 @@ import '../common/circular_back_button.dart';
 /// by the bottom "Log in" button (shown to guests); `onLogout` by "Log out"
 /// (shown once actually logged in) — RootShell flips `isLoggedIn` for both.
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, this.onLogin, this.onLogout, this.onOpenPaywall});
+  SettingsScreen({super.key, this.onLogin, this.onLogout, this.onOpenPaywall, ProfileRepository? profileRepository})
+      : profileRepository = profileRepository ?? RepositoryLocator.instance.profile;
 
   final VoidCallback? onLogin;
   final VoidCallback? onLogout;
   final VoidCallback? onOpenPaywall;
+  final ProfileRepository profileRepository;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  String _lang = 'en';
+  Future<void> _changeLanguage(String code) async {
+    await LocaleController.instance.setLocale(code);
+    if (AuthSession.instance.isLoggedIn) {
+      // Best-effort — the local switch already happened; a failed sync just
+      // means this device's choice won't yet be mirrored to the account.
+      unawaited(widget.profileRepository.setLanguagePreference(code).catchError((_) {}));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -44,8 +60,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Settings', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
-                      Text('Account & app', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                      Text(l10n.settingsTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
+                      Text(l10n.settingsSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                     ],
                   ),
                 ],
@@ -71,8 +87,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Spekooh Pro', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                            Text('Unlimited paper views · no ads', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                            Text(l10n.spekoohProTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                            Text(l10n.spekoohProSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                           ],
                         ),
                       ),
@@ -81,25 +97,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              _sectionLabel('Language'),
+              _sectionLabel(l10n.languageSection),
               _card([
                 _langRow('English', 'en'),
                 const Divider(height: 1),
                 _langRow('Français', 'fr'),
               ]),
-              _sectionLabel('Help'),
-              _card(const [
-                ListItemRow(icon: IconChip(icon: Icons.phone_outlined, tint: IconChipTint.blue, size: 38), title: 'Help & support', subtitle: 'Chat with a real person'),
-                Divider(height: 1),
-                ListItemRow(icon: IconChip(icon: Icons.chat_bubble_outline, tint: IconChipTint.blue, size: 38), title: 'Join our WhatsApp group', subtitle: 'Tips & updates'),
-                Divider(height: 1),
-                ListItemRow(icon: IconChip(icon: Icons.person_outline, tint: IconChipTint.blue, size: 38), title: 'Contact us', subtitle: 'Questions or feedback'),
+              _sectionLabel(l10n.helpSection),
+              _card([
+                ListItemRow(icon: const IconChip(icon: Icons.phone_outlined, tint: IconChipTint.blue, size: 38), title: l10n.helpSupportTitle, subtitle: l10n.helpSupportSubtitle),
+                const Divider(height: 1),
+                ListItemRow(icon: const IconChip(icon: Icons.chat_bubble_outline, tint: IconChipTint.blue, size: 38), title: l10n.helpWhatsappTitle, subtitle: l10n.helpWhatsappSubtitle),
+                const Divider(height: 1),
+                ListItemRow(icon: const IconChip(icon: Icons.person_outline, tint: IconChipTint.blue, size: 38), title: l10n.helpContactTitle, subtitle: l10n.helpContactSubtitle),
               ]),
-              _sectionLabel('About'),
-              _card(const [
-                ListItemRow(icon: IconChip(icon: Icons.language_outlined, tint: IconChipTint.blue, size: 38), title: 'Visit our website', subtitle: 'spekooh.app'),
-                Divider(height: 1),
-                ListItemRow(icon: IconChip(icon: Icons.lock_outline, tint: IconChipTint.blue, size: 38), title: 'Privacy policy'),
+              _sectionLabel(l10n.aboutSection),
+              _card([
+                ListItemRow(icon: const IconChip(icon: Icons.language_outlined, tint: IconChipTint.blue, size: 38), title: l10n.aboutWebsiteTitle, subtitle: 'spekooh.app'),
+                const Divider(height: 1),
+                ListItemRow(icon: const IconChip(icon: Icons.lock_outline, tint: IconChipTint.blue, size: 38), title: l10n.aboutPrivacyTitle),
               ]),
               const SizedBox(height: AppSpacing.space6),
               if (AuthSession.instance.isLoggedIn)
@@ -114,7 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     alignment: Alignment.center,
-                    child: Text('Log out', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.red500, fontWeight: FontWeight.w700, fontSize: 15)),
+                    child: Text(l10n.logOut, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.red500, fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
                 )
               else
@@ -129,7 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       boxShadow: AppShadows.button,
                     ),
                     alignment: Alignment.center,
-                    child: Text('Log in', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                    child: Text(l10n.logIn, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
                 ),
               const SizedBox(height: AppSpacing.space6),
@@ -155,8 +171,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
   Widget _langRow(String label, String code) {
+    // Language names are shown as autonyms (each language's own name for
+    // itself) — standard convention, so "English" and "Français" never get
+    // translated based on the current UI language.
+    final active = LocaleController.instance.locale.languageCode == code;
     return InkWell(
-      onTap: () => setState(() => _lang = code),
+      onTap: active ? null : () => _changeLanguage(code),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 13),
         child: Row(
@@ -164,7 +184,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Icon(Icons.language_outlined),
             const SizedBox(width: 12),
             Expanded(child: Text(label, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary))),
-            if (_lang == code) const Icon(Icons.check),
+            if (active) const Icon(Icons.check),
           ],
         ),
       ),

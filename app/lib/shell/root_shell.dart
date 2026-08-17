@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/auth_session.dart';
 import '../data/repository_locator.dart';
+import '../l10n/app_localizations.dart';
 import '../models/pamphlet.dart';
 import '../models/paper_entry.dart';
 import '../sheets/auth_sheet.dart';
@@ -144,6 +145,7 @@ class RootShellState extends State<RootShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -164,12 +166,12 @@ class RootShellState extends State<RootShell> {
       bottomNavigationBar: BottomNav(
         active: _activeTab,
         onChanged: goToTab,
-        items: const [
-          SpekoohNavItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          SpekoohNavItem(icon: Icon(Icons.description_outlined), label: 'Papers'),
-          SpekoohNavItem(icon: Icon(Icons.upload_outlined), center: true),
-          SpekoohNavItem(icon: Icon(Icons.chat_bubble_outline), label: 'Forum'),
-          SpekoohNavItem(icon: Icon(Icons.bolt_outlined), label: 'Quizzes'),
+        items: [
+          SpekoohNavItem(icon: const Icon(Icons.home_outlined), label: l10n.navHome),
+          SpekoohNavItem(icon: const Icon(Icons.description_outlined), label: l10n.navPapers),
+          const SpekoohNavItem(icon: Icon(Icons.upload_outlined), center: true),
+          SpekoohNavItem(icon: const Icon(Icons.chat_bubble_outline), label: l10n.navForum),
+          SpekoohNavItem(icon: const Icon(Icons.bolt_outlined), label: l10n.navQuizzes),
         ],
       ),
       floatingActionButton: _isLoggedIn ? const AIAssistantFab() : null,

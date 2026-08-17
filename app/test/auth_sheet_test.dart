@@ -7,7 +7,8 @@ import 'package:http/testing.dart';
 import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/sheets/auth_sheet.dart';
-import 'package:spekooh/theme/app_theme.dart';
+
+import 'support/l10n_test_app.dart';
 
 void main() {
   testWidgets('registering with a referral code sends it to the real endpoint', (tester) async {
@@ -26,7 +27,7 @@ void main() {
     });
     AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient));
 
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: const Scaffold(body: AuthSheet())));
+    await tester.pumpWidget(l10nTestApp(const Scaffold(body: AuthSheet())));
 
     await tester.tap(find.text('New here? Create an account'));
     await tester.pumpAndSettle();
@@ -59,7 +60,7 @@ void main() {
     });
     AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient));
 
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: const Scaffold(body: AuthSheet())));
+    await tester.pumpWidget(l10nTestApp(const Scaffold(body: AuthSheet())));
     await tester.tap(find.text('New here? Create an account'));
     await tester.pumpAndSettle();
 

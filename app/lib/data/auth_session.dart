@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import 'locale_controller.dart';
 import 'token_storage.dart';
 
 /// Base URL for the auth endpoints specifically, since [AuthSession] can't
@@ -10,12 +11,21 @@ import 'token_storage.dart';
 /// token) — kept in sync with api_client.dart's default/override.
 const String _authBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://10.0.2.2:8000/api');
 
+/// Which of AuthSession's fixed set of failures happened — the widget layer
+/// (which has a BuildContext, so can reach AppLocalizations) maps this to a
+/// real localized message rather than AuthSession carrying pre-built,
+/// English-only text.
+enum AuthErrorCode { loginFailed, registerFailedReferral, registerFailedGeneric }
+
 class AuthException implements Exception {
-  AuthException(this.message);
-  final String message;
+  AuthException(this.code, this.debugMessage);
+  final AuthErrorCode code;
+
+  /// English, for logs/debugging only — never shown to the user directly.
+  final String debugMessage;
 
   @override
-  String toString() => message;
+  String toString() => debugMessage;
 }
 
 /// Persists JWT tokens in secure storage and exposes login/register/logout.
@@ -60,7 +70,7 @@ class AuthSession extends ChangeNotifier {
       body: jsonEncode({'email': email, 'password': password}),
     );
     if (response.statusCode != 200) {
-      throw AuthException('Login failed. Check your email and password.');
+      throw AuthException(AuthErrorCode.loginFailed, 'Login failed. Check your email and password.');
     }
     await _storeTokens(jsonDecode(response.body));
   }
@@ -83,9 +93,12 @@ class AuthSession extends ChangeNotifier {
     );
     if (response.statusCode != 201) {
       if (referralCode != null && referralCode.isNotEmpty) {
-        throw AuthException("Registration failed. Check your details, and that the referral code is correct.");
+        throw AuthException(
+          AuthErrorCode.registerFailedReferral,
+          "Registration failed. Check your details, and that the referral code is correct.",
+        );
       }
-      throw AuthException('Registration failed. That email may already be in use.');
+      throw AuthException(AuthErrorCode.registerFailedGeneric, 'Registration failed. That email may already be in use.');
     }
     await _storeTokens(jsonDecode(response.body));
   }
@@ -93,10 +106,15 @@ class AuthSession extends ChangeNotifier {
   Future<void> _storeTokens(Map<String, dynamic> data) async {
     accessToken = data['access'] as String;
     refreshToken = data['refresh'] as String;
-    currentUserId = (data['user'] as Map<String, dynamic>)['id'] as String;
+    final user = data['user'] as Map<String, dynamic>;
+    currentUserId = user['id'] as String;
     await _storage.write(_accessKey, accessToken!);
     await _storage.write(_refreshKey, refreshToken!);
     await _storage.write(_userIdKey, currentUserId!);
+    // The account's own language_pref wins over this device's system
+    // default the first time we learn it — but not over a choice this
+    // device already made explicitly (see LocaleController.syncFromAccount).
+    await LocaleController.instance.syncFromAccount(user['language_pref'] as String?);
     notifyListeners();
   }
 

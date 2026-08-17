@@ -57,15 +57,29 @@ I can write unilaterally. Grouped by what each one unblocks.
 
 ## P0 — Must-have, confirmed in scope, still not fully live
 
-### 1. Bilingual UI (English + French)
-- **Backend:** partial — `User.language_pref` field exists (`en`/`fr`), never read by anything.
-- **Client:** not implemented at all. No `flutter_localizations`, no `.arb` files, no `intl`
-  wiring. Every screen's copy is a hardcoded English literal. The "EN/FR" pills on Home and the
-  language rows on Settings are pure decoration — tapping "Français" in Settings only flips a
-  local `bool`, no French string exists anywhere to switch to.
+### 1. Bilingual UI (English + French) — infrastructure done, string coverage in progress
+- **Register/tone decision (researched, not guessed):** standard/formal French, not Camfranglais
+  (the Douala/Yaoundé youth slang blend) — Cameroonian educators actively discourage Camfranglais
+  as undermining real French acquisition, and real local apps in this space (Orange Money) use
+  plain standard French, not invented "local" phrasing. Education vocabulary already in the
+  taxonomy (BEPC, Probatoire, Mémoire de Licence, Rattrapage, etc.) already gets the real
+  Cameroonian terms right — new UI copy extends that same register.
+- **Adaptive locale (done):** `LocaleController` (`app/lib/data/locale_controller.dart`) resolves,
+  in order: an explicit choice already made on this device → that account's own
+  `language_pref` synced in from another device (only if this device has no explicit choice of
+  its own yet) → the device's system locale, clamped to {en, fr} (anything else defaults to
+  English). `Settings`' language rows now call it for real — no more local dead `bool`.
+  `User.language_pref` now actually gets read (`RegisterSerializer`/login response) and written
+  (`PATCH /auth/me/` via a new `ProfileRepository.setLanguagePreference`), closing the
+  previously-dead backend field.
+- **Client wiring (done):** `flutter_localizations` + `intl` + ARB codegen
+  (`app/lib/l10n/app_{en,fr}.arb` → generated `AppLocalizations`), `MaterialApp.locale` reactive
+  to `LocaleController` via a `ListenableBuilder` in `main.dart`.
+- **String coverage (in progress, screen-by-screen to keep each diff verifiable):** done —
+  bottom nav labels, Settings screen, the auth (login/register) sheet including its error
+  messages. Still hardcoded English — every other screen (Home, Papers, Submit, Forum, Quizzes,
+  Profile, Shop, Notes, Notifications, and the sheets/dialogs within them).
 - **Why P0:** spec §3.1 lists this as must-have "from launch, not a future add-on."
-- **Scope note:** this is a real, sizeable piece of work — full ARB extraction of every string
-  in the app plus a French translation pass — not a quick wiring fix like the rest of this list.
 
 ### 2. ~~Rewarded-ad unlock~~ — done
 - Live: `google_mobile_ads` integrated (real AdMob App ID + rewarded-video ad unit); "Watch ad

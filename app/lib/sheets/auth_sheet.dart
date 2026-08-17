@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/auth_session.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
@@ -56,16 +57,29 @@ class _AuthSheetState extends State<AuthSheet> {
       }
       if (mounted) Navigator.of(context).pop(true);
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      if (mounted) setState(() => _error = _localizedAuthError(context, e.code));
     } catch (_) {
-      setState(() => _error = 'Something went wrong. Check your connection and try again.');
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.authErrorUnknown);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
+  String _localizedAuthError(BuildContext context, AuthErrorCode code) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (code) {
+      case AuthErrorCode.loginFailed:
+        return l10n.authErrorLogin;
+      case AuthErrorCode.registerFailedReferral:
+        return l10n.authErrorRegisterReferral;
+      case AuthErrorCode.registerFailedGeneric:
+        return l10n.authErrorRegisterGeneric;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 10, 22, 26),
       decoration: const BoxDecoration(
@@ -87,28 +101,28 @@ class _AuthSheetState extends State<AuthSheet> {
             ),
             const SizedBox(height: AppSpacing.space4),
             Text(
-              _isRegisterMode ? 'Create your account' : 'Log in to Spekooh',
+              _isRegisterMode ? l10n.authCreateAccountTitle : l10n.authLoginTitle,
               style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary),
             ),
             const SizedBox(height: AppSpacing.space4),
             if (_isRegisterMode) ...[
-              _FieldLabel('NAME'),
+              _FieldLabel(l10n.authNameLabel),
               const SizedBox(height: 6),
-              _TextField(controller: _nameController, hint: 'Your name'),
+              _TextField(controller: _nameController, hint: l10n.authNameHint),
               const SizedBox(height: AppSpacing.space3),
             ],
-            _FieldLabel('EMAIL'),
+            _FieldLabel(l10n.authEmailLabel),
             const SizedBox(height: 6),
-            _TextField(controller: _emailController, hint: 'you@example.com', keyboardType: TextInputType.emailAddress),
+            _TextField(controller: _emailController, hint: l10n.authEmailHint, keyboardType: TextInputType.emailAddress),
             const SizedBox(height: AppSpacing.space3),
-            _FieldLabel('PASSWORD'),
+            _FieldLabel(l10n.authPasswordLabel),
             const SizedBox(height: 6),
             _TextField(controller: _passwordController, hint: '••••••••', obscureText: true),
             if (_isRegisterMode) ...[
               const SizedBox(height: AppSpacing.space3),
-              _FieldLabel('REFERRAL CODE (OPTIONAL)'),
+              _FieldLabel(l10n.authReferralLabel),
               const SizedBox(height: 6),
-              _TextField(controller: _referralCodeController, hint: 'e.g. A1B2C3D4'),
+              _TextField(controller: _referralCodeController, hint: l10n.authReferralHint),
             ],
             if (_error != null) ...[
               const SizedBox(height: AppSpacing.space3),
@@ -117,14 +131,14 @@ class _AuthSheetState extends State<AuthSheet> {
             const SizedBox(height: AppSpacing.space4),
             SpekoohButton(
               onPressed: _isSubmitting ? null : _submit,
-              child: Text(_isSubmitting ? 'Please wait…' : (_isRegisterMode ? 'Create account' : 'Log in')),
+              child: Text(_isSubmitting ? l10n.authPleaseWait : (_isRegisterMode ? l10n.authCreateAccountButton : l10n.authLoginButton)),
             ),
             const SizedBox(height: AppSpacing.space3),
             Center(
               child: GestureDetector(
                 onTap: _isSubmitting ? null : () => setState(() => _isRegisterMode = !_isRegisterMode),
                 child: Text(
-                  _isRegisterMode ? 'Already have an account? Log in' : "New here? Create an account",
+                  _isRegisterMode ? l10n.authSwitchToLogin : l10n.authSwitchToRegister,
                   style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
                 ),
               ),
