@@ -300,4 +300,148 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get streakPlayToBegin => 'Jouez à un quiz pour commencer';
+
+  @override
+  String get papersTitle => 'Anciennes épreuves';
+
+  @override
+  String get papersSubtitle =>
+      'Tous les niveaux, tous les systèmes — du Primaire au Concours des Grandes Écoles.';
+
+  @override
+  String get searchExamOrSubject =>
+      'Rechercher un type d\'examen ou une matière...';
+
+  @override
+  String get categoryLabel => 'CATÉGORIE';
+
+  @override
+  String chooseSystemHeader(String category) {
+    return '$category — choisir le système';
+  }
+
+  @override
+  String examTypeStepHeaderWithSystem(String category, String system) {
+    return '$category · $system';
+  }
+
+  @override
+  String get searchExamType => 'Rechercher un type d\'examen...';
+
+  @override
+  String examTypeOfficialPlus(String variant) {
+    return 'Officiel + $variant';
+  }
+
+  @override
+  String get examTypeOfficialOnly => 'Officiel uniquement';
+
+  @override
+  String chooseTrackHeader(String examType) {
+    return '$examType — choisir la filière';
+  }
+
+  @override
+  String get searchSubjects => 'Rechercher une matière...';
+
+  @override
+  String get subjectCardSubtitle => 'Épreuves + corrigés';
+
+  @override
+  String get paperMarkingGuideAvailable => 'Corrigé disponible';
+
+  @override
+  String get paperUnderReview => 'En cours de vérification';
+
+  @override
+  String get noPapersYetTitle => 'Aucune épreuve pour l\'instant';
+
+  @override
+  String noPapersYetBody(String subject) {
+    return 'Personne n\'a encore soumis d\'épreuve de $subject pour ce type d\'examen. Soyez le premier — soumettez-en une depuis l\'onglet Contribuer.';
+  }
+
+  @override
+  String get contributionTitle => 'Contribution';
+
+  @override
+  String get contributionSubtitle =>
+      'Partagez une ancienne épreuve ou un rapport académique — chaque contribution aide un autre étudiant.';
+
+  @override
+  String get examPaperTab => 'Épreuve d\'examen';
+
+  @override
+  String get academicReportTab => 'Rapport académique';
+
+  @override
+  String get notAvailableYet => 'Pas encore disponible';
+
+  @override
+  String get academicReportComingSoon =>
+      'Les soumissions de rapports académiques ne sont pas encore connectées au serveur — seules les épreuves d\'examen peuvent être soumises pour l\'instant. Revenez bientôt.';
+
+  @override
+  String get takePhotoOrUploadPdf => 'Prenez une photo ou téléversez un PDF';
+
+  @override
+  String get fileFormatsHint => 'JPG, PNG ou PDF · jusqu\'à 20 Mo';
+
+  @override
+  String get tapToReplace => 'Appuyez pour remplacer';
+
+  @override
+  String get educationLevelLabel => 'Niveau d\'étude';
+
+  @override
+  String get systemLabel => 'Système';
+
+  @override
+  String get examTypeLabel => 'Type d\'examen';
+
+  @override
+  String get trackLabel => 'Filière';
+
+  @override
+  String get subjectLabel => 'Matière';
+
+  @override
+  String get yearLabel => 'Année';
+
+  @override
+  String get examBoardHint => 'Jury d\'examen / établissement (facultatif)';
+
+  @override
+  String get contributionBonusBanner =>
+      'Les nouvelles soumissions vérifiées rapportent un bonus de crédit — utilisable pour débloquer des corrigés.';
+
+  @override
+  String get submitPaperButton => 'Soumettre l\'épreuve';
+
+  @override
+  String get selectPlaceholder => 'Choisir';
+
+  @override
+  String get nothingAvailable => 'Rien de disponible.';
+
+  @override
+  String get submitAnother => 'Soumettre une autre';
+
+  @override
+  String get contributionReceivedTitle => 'Contribution reçue';
+
+  @override
+  String get contributionReceivedBody =>
+      'Nous la vérifierons d\'abord par rapport aux épreuves existantes — si elle est nouvelle, elle passe en revue par l\'instructeur. Suivez-la depuis Profil.';
+
+  @override
+  String submissionFailed(String error) {
+    return 'Échec de la soumission : $error';
+  }
+
+  @override
+  String get choosePdfOrImage => 'Choisir un PDF ou une image';
+
+  @override
+  String get takePhoto => 'Prendre une photo';
 }

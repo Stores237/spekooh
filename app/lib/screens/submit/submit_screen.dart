@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/exam_taxonomy.dart';
 import '../../models/paper_entry.dart';
 import '../../models/subject.dart';
@@ -90,7 +91,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
                 child: items.isEmpty
                     ? Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Text('Nothing available.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
+                        child: Text(AppLocalizations.of(context)!.nothingAvailable, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
                       )
                     : ListView.builder(
                         shrinkWrap: true,
@@ -110,8 +111,10 @@ class _SubmitScreenState extends State<SubmitScreen> {
   }
 
   Future<void> _pickCategory() async {
+    final title = AppLocalizations.of(context)!.educationLevelLabel;
     final categories = (await widget.repository.getCategories()).where((c) => c.key != ExamCategoryKey.reports).toList();
-    final picked = await _pickFromList<ExamCategory>(title: 'Education level', items: categories, label: (c) => c.title);
+    if (!mounted) return;
+    final picked = await _pickFromList<ExamCategory>(title: title, items: categories, label: (c) => c.title);
     if (picked == null) return;
     setState(() {
       _category = picked;
@@ -124,7 +127,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
 
   Future<void> _pickSystem() async {
     final picked = await _pickFromList<ExamSystem>(
-      title: 'System',
+      title: AppLocalizations.of(context)!.systemLabel,
       items: ExamSystem.values,
       label: (s) => s == ExamSystem.francophone ? 'Francophone' : 'Anglophone',
     );
@@ -138,8 +141,10 @@ class _SubmitScreenState extends State<SubmitScreen> {
   }
 
   Future<void> _pickExamType() async {
+    final title = AppLocalizations.of(context)!.examTypeLabel;
     final types = await widget.repository.getExamTypes(_category!.key, _system);
-    final picked = await _pickFromList<ExamType>(title: 'Exam type', items: types, label: (t) => t.name);
+    if (!mounted) return;
+    final picked = await _pickFromList<ExamType>(title: title, items: types, label: (t) => t.name);
     if (picked == null) return;
     setState(() {
       _examType = picked;
@@ -149,14 +154,16 @@ class _SubmitScreenState extends State<SubmitScreen> {
   }
 
   Future<void> _pickTrack() async {
-    final picked = await _pickFromList<String>(title: 'Track', items: _examType!.tracks!, label: (t) => t);
+    final picked = await _pickFromList<String>(title: AppLocalizations.of(context)!.trackLabel, items: _examType!.tracks!, label: (t) => t);
     if (picked == null) return;
     setState(() => _track = picked);
   }
 
   Future<void> _pickSubject() async {
+    final title = AppLocalizations.of(context)!.subjectLabel;
     final subjects = await widget.repository.getSubjects(_examType!.name);
-    final picked = await _pickFromList<Subject>(title: 'Subject', items: subjects, label: (s) => s.title);
+    if (!mounted) return;
+    final picked = await _pickFromList<Subject>(title: title, items: subjects, label: (s) => s.title);
     if (picked == null) return;
     setState(() => _subject = picked);
   }
@@ -164,12 +171,13 @@ class _SubmitScreenState extends State<SubmitScreen> {
   Future<void> _pickYear() async {
     final now = DateTime.now();
     final years = List.generate(15, (i) => now.year - i);
-    final picked = await _pickFromList<int>(title: 'Year', items: years, label: (y) => '$y');
+    final picked = await _pickFromList<int>(title: AppLocalizations.of(context)!.yearLabel, items: years, label: (y) => '$y');
     if (picked == null) return;
     setState(() => _year = picked);
   }
 
   Future<void> _pickFile() async {
+    final l10n = AppLocalizations.of(context)!;
     final choice = await showModalBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
@@ -178,12 +186,12 @@ class _SubmitScreenState extends State<SubmitScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.upload_file_outlined),
-              title: const Text('Choose PDF or image'),
+              title: Text(l10n.choosePdfOrImage),
               onTap: () => Navigator.of(context).pop('file'),
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Take a photo'),
+              title: Text(l10n.takePhoto),
               onTap: () => Navigator.of(context).pop('camera'),
             ),
           ],
@@ -242,7 +250,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
       );
       if (mounted) setState(() => _submitted = entry);
     } catch (e) {
-      if (mounted) setState(() => _submitError = 'Submission failed: $e');
+      if (mounted) setState(() => _submitError = AppLocalizations.of(context)!.submissionFailed('$e'));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -265,6 +273,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_submitted != null) {
       return Scaffold(
         backgroundColor: AppColors.surfaceBg,
@@ -277,15 +286,15 @@ class _SubmitScreenState extends State<SubmitScreen> {
                 children: [
                   const IconChip(icon: Icons.check, tint: IconChipTint.green, size: 64),
                   const SizedBox(height: AppSpacing.space4),
-                  Text('Contribution received', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
+                  Text(l10n.contributionReceivedTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
                   const SizedBox(height: AppSpacing.space2),
                   Text(
-                    "We'll check it against existing papers first — if it's new, it moves to instructor review. Track it under Profile.",
+                    l10n.contributionReceivedBody,
                     textAlign: TextAlign.center,
                     style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: AppSpacing.space4),
-                  SpekoohButton(onPressed: _reset, child: const Text('Submit another')),
+                  SpekoohButton(onPressed: _reset, child: Text(l10n.submitAnother)),
                 ],
               ),
             ),
@@ -303,22 +312,22 @@ class _SubmitScreenState extends State<SubmitScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppSpacing.space2),
-              Text('Contribution', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
+              Text(l10n.contributionTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
               const SizedBox(height: 4),
-              Text('Share a past paper or an academic report — every contribution helps another student.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+              Text(l10n.contributionSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.space4),
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(color: AppColors.surfaceSunken, borderRadius: BorderRadius.circular(999)),
                 child: Row(
                   children: [
-                    Expanded(child: _typeTab('Exam paper', _SubmitType.paper)),
-                    Expanded(child: _typeTab('Academic report', _SubmitType.report)),
+                    Expanded(child: _typeTab(l10n.examPaperTab, _SubmitType.paper)),
+                    Expanded(child: _typeTab(l10n.academicReportTab, _SubmitType.report)),
                   ],
                 ),
               ),
               const SizedBox(height: AppSpacing.space4),
-              if (_type == _SubmitType.report) ..._reportComingSoon() else ..._paperForm(),
+              if (_type == _SubmitType.report) ..._reportComingSoon(l10n) else ..._paperForm(l10n),
               const SizedBox(height: AppSpacing.space6),
             ],
           ),
@@ -327,7 +336,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
     );
   }
 
-  List<Widget> _reportComingSoon() {
+  List<Widget> _reportComingSoon(AppLocalizations l10n) {
     return [
       Container(
         padding: const EdgeInsets.all(16),
@@ -337,10 +346,10 @@ class _SubmitScreenState extends State<SubmitScreen> {
           children: [
             const Icon(Icons.hourglass_empty, size: 28, color: AppColors.textTertiary),
             const SizedBox(height: AppSpacing.space2),
-            Text('Not available yet', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+            Text(l10n.notAvailableYet, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
             const SizedBox(height: 4),
             Text(
-              'Academic report submissions aren\'t wired to the backend yet — only exam papers can be submitted right now. Check back soon.',
+              l10n.academicReportComingSoon,
               style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
@@ -349,7 +358,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
     ];
   }
 
-  List<Widget> _paperForm() {
+  List<Widget> _paperForm(AppLocalizations l10n) {
     return [
       GestureDetector(
         onTap: _pickFile,
@@ -364,21 +373,21 @@ class _SubmitScreenState extends State<SubmitScreen> {
             children: [
               IconChip(icon: _file == null ? Icons.camera_alt_outlined : Icons.check_circle_outline, tint: IconChipTint.amber, size: 52),
               const SizedBox(height: 8),
-              Text(_file == null ? 'Take a photo or upload a PDF' : _file!.fileName,
+              Text(_file == null ? l10n.takePhotoOrUploadPdf : _file!.fileName,
                   style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-              Text(_file == null ? 'JPG, PNG or PDF · up to 20MB' : 'Tap to replace', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+              Text(_file == null ? l10n.fileFormatsHint : l10n.tapToReplace, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
             ],
           ),
         ),
       ),
       const SizedBox(height: AppSpacing.space5),
-      _fieldRow('Education level', _category?.title, _pickCategory),
+      _fieldRow(l10n, l10n.educationLevelLabel, _category?.title, _pickCategory),
       if (_category?.requiresSystem ?? false)
-        _fieldRow('System', _system == null ? null : (_system == ExamSystem.francophone ? 'Francophone' : 'Anglophone'), _pickSystem),
-      _fieldRow('Exam type', _examType?.name, _category == null || (_category!.requiresSystem && _system == null) ? null : _pickExamType),
-      if (_examType?.requiresTrack ?? false) _fieldRow('Track', _track, _pickTrack),
-      _fieldRow('Subject', _subject?.title, _examType == null || (_examType!.requiresTrack && _track == null) ? null : _pickSubject),
-      _fieldRow('Year', _year?.toString(), _pickYear),
+        _fieldRow(l10n, l10n.systemLabel, _system == null ? null : (_system == ExamSystem.francophone ? 'Francophone' : 'Anglophone'), _pickSystem),
+      _fieldRow(l10n, l10n.examTypeLabel, _examType?.name, _category == null || (_category!.requiresSystem && _system == null) ? null : _pickExamType),
+      if (_examType?.requiresTrack ?? false) _fieldRow(l10n, l10n.trackLabel, _track, _pickTrack),
+      _fieldRow(l10n, l10n.subjectLabel, _subject?.title, _examType == null || (_examType!.requiresTrack && _track == null) ? null : _pickSubject),
+      _fieldRow(l10n, l10n.yearLabel, _year?.toString(), _pickYear),
       Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.space3),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -386,12 +395,12 @@ class _SubmitScreenState extends State<SubmitScreen> {
         child: TextField(
           controller: _examBoardController,
           style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textPrimary),
-          decoration: const InputDecoration(labelText: 'Exam board / school (optional)', border: InputBorder.none),
+          decoration: InputDecoration(labelText: l10n.examBoardHint, border: InputBorder.none),
         ),
       ),
       SpekoohBanner(
         icon: const Icon(Icons.card_giftcard_outlined),
-        message: 'New, verified submissions earn bonus credit — redeemable toward marking-guide unlocks.',
+        message: l10n.contributionBonusBanner,
       ),
       if (_submitError != null) ...[
         const SizedBox(height: AppSpacing.space3),
@@ -402,13 +411,13 @@ class _SubmitScreenState extends State<SubmitScreen> {
         width: double.infinity,
         child: SpekoohButton(
           onPressed: _canSubmit ? _submit : null,
-          child: _submitting ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Submit paper'),
+          child: _submitting ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : Text(l10n.submitPaperButton),
         ),
       ),
     ];
   }
 
-  Widget _fieldRow(String label, String? value, VoidCallback? onTap) {
+  Widget _fieldRow(AppLocalizations l10n, String label, String? value, VoidCallback? onTap) {
     final enabled = onTap != null;
     return GestureDetector(
       onTap: onTap,
@@ -422,7 +431,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
             Text(label, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
             Row(
               children: [
-                Text(value ?? (enabled ? 'Select' : '—'),
+                Text(value ?? (enabled ? l10n.selectPlaceholder : '—'),
                     style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: value == null ? AppColors.textTertiary : AppColors.textPrimary)),
                 const SizedBox(width: 6),
                 Icon(Icons.chevron_right, size: 14, color: enabled ? AppColors.textTertiary : AppColors.textTertiary.withValues(alpha: 0.4)),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/exam_taxonomy.dart';
 import '../../models/paper_entry.dart';
 import '../../models/subject.dart';
@@ -67,18 +68,19 @@ class _PapersScreenState extends State<PapersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPad),
           child: switch (_selection.currentStep) {
-            PaperBrowseStep.category => _categoryStep(),
-            PaperBrowseStep.system => _systemStep(),
-            PaperBrowseStep.examType => _examTypeStep(),
-            PaperBrowseStep.track => _trackStep(),
-            PaperBrowseStep.subject => _subjectStep(),
-            PaperBrowseStep.paperList => _paperListStep(),
+            PaperBrowseStep.category => _categoryStep(l10n),
+            PaperBrowseStep.system => _systemStep(l10n),
+            PaperBrowseStep.examType => _examTypeStep(l10n),
+            PaperBrowseStep.track => _trackStep(l10n),
+            PaperBrowseStep.subject => _subjectStep(l10n),
+            PaperBrowseStep.paperList => _paperListStep(l10n),
           },
         ),
       ),
@@ -108,19 +110,19 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   // Step 1: category grid.
-  Widget _categoryStep() {
+  Widget _categoryStep(AppLocalizations l10n) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppSpacing.space2),
-          Text('Past papers', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
+          Text(l10n.papersTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
           const SizedBox(height: 4),
-          Text('Every level, every system — Primary to Concours des Grandes Écoles.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+          Text(l10n.papersSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.space4),
-          SearchInput(placeholder: 'Search exam type or subject...', controller: _searchController),
+          SearchInput(placeholder: l10n.searchExamOrSubject, controller: _searchController),
           const SizedBox(height: AppSpacing.space5),
-          Text('CATEGORY', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.6)),
+          Text(l10n.categoryLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.6)),
           const SizedBox(height: AppSpacing.space3),
           FutureBuilder<List<ExamCategory>>(
             future: widget.repository.getCategories(),
@@ -151,14 +153,14 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   // Step 2: system (only for categories that require one).
-  Widget _systemStep() {
+  Widget _systemStep(AppLocalizations l10n) {
     final category = _selection.category!;
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppSpacing.space2),
-          _backHeader('${category.title} — choose system'),
+          _backHeader(l10n.chooseSystemHeader(category.title)),
           const SizedBox(height: AppSpacing.space4),
           _optionRow(
             'Francophone',
@@ -177,10 +179,10 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   // Step 3: exam type grid.
-  Widget _examTypeStep() {
+  Widget _examTypeStep(AppLocalizations l10n) {
     final category = _selection.category!;
     final header = category.requiresSystem
-        ? '${category.title} · ${_selection.system == ExamSystem.francophone ? 'Francophone' : 'Anglophone'}'
+        ? l10n.examTypeStepHeaderWithSystem(category.title, _selection.system == ExamSystem.francophone ? 'Francophone' : 'Anglophone')
         : category.title;
     return SingleChildScrollView(
       child: Column(
@@ -189,7 +191,7 @@ class _PapersScreenState extends State<PapersScreen> {
           const SizedBox(height: AppSpacing.space2),
           _backHeader(header),
           const SizedBox(height: AppSpacing.space3),
-          const SearchInput(placeholder: 'Search exam type...'),
+          SearchInput(placeholder: l10n.searchExamType),
           const SizedBox(height: AppSpacing.space4),
           FutureBuilder<List<ExamType>>(
             future: widget.repository.getExamTypes(category.key, _selection.system),
@@ -213,7 +215,7 @@ class _PapersScreenState extends State<PapersScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                SpekoohBadge(text: t.mockVariantLabel != null ? 'Official + ${t.mockVariantLabel}' : 'Official only', tone: t.badgeTone),
+                                SpekoohBadge(text: t.mockVariantLabel != null ? l10n.examTypeOfficialPlus(t.mockVariantLabel!) : l10n.examTypeOfficialOnly, tone: t.badgeTone),
                                 const SizedBox(height: 6),
                                 Text(t.name, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
                                 Text(t.subtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary)),
@@ -231,14 +233,14 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   // Step 4: track (only for exam types that require one).
-  Widget _trackStep() {
+  Widget _trackStep(AppLocalizations l10n) {
     final examType = _selection.examType!;
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppSpacing.space2),
-          _backHeader('${examType.name} — choose track'),
+          _backHeader(l10n.chooseTrackHeader(examType.name)),
           const SizedBox(height: AppSpacing.space4),
           for (final track in examType.tracks!) ...[
             _optionRow(track, null, () => _select(() => _selection.selectTrack(track))),
@@ -250,7 +252,7 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   // Step 5: subject grid.
-  Widget _subjectStep() {
+  Widget _subjectStep(AppLocalizations l10n) {
     final examType = _selection.examType!;
     return SingleChildScrollView(
       child: Column(
@@ -259,7 +261,7 @@ class _PapersScreenState extends State<PapersScreen> {
           const SizedBox(height: AppSpacing.space2),
           _backHeader(examType.name, subtitle: _selection.track),
           const SizedBox(height: AppSpacing.space3),
-          const SearchInput(placeholder: 'Search subjects...'),
+          SearchInput(placeholder: l10n.searchSubjects),
           const SizedBox(height: AppSpacing.space4),
           FutureBuilder<List<Subject>>(
             future: widget.repository.getSubjects(examType.name),
@@ -276,8 +278,8 @@ class _PapersScreenState extends State<PapersScreen> {
                     .map((s) => SubjectCard(
                           icon: IconChip(icon: s.icon, tint: s.tint),
                           title: s.title,
-                          subtitle: 'Papers + marking guides',
-                          badgeText: 'Papers',
+                          subtitle: l10n.subjectCardSubtitle,
+                          badgeText: l10n.navPapers,
                           code: s.code,
                           onTap: () => _select(() => _selection.selectSubject(s.key)),
                         ))
@@ -291,7 +293,7 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   // Step 6: real submitted papers for the resolved subject.
-  Widget _paperListStep() {
+  Widget _paperListStep(AppLocalizations l10n) {
     final examType = _selection.examType!;
 
     return FutureBuilder<List<Subject>>(
@@ -327,7 +329,7 @@ class _PapersScreenState extends State<PapersScreen> {
                       child: Center(child: CircularProgressIndicator()),
                     )
                   else if (papers.isEmpty)
-                    _noPapersYet(subject)
+                    _noPapersYet(l10n, subject)
                   else
                     for (final paper in papers) ...[
                       InkWell(
@@ -352,7 +354,7 @@ class _PapersScreenState extends State<PapersScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('${examType.name} ${paper.year}', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                    Text(paper.isPublished ? 'Marking guide available' : 'Under review',
+                                    Text(paper.isPublished ? l10n.paperMarkingGuideAvailable : l10n.paperUnderReview,
                                         style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary)),
                                   ],
                                 ),
@@ -373,16 +375,16 @@ class _PapersScreenState extends State<PapersScreen> {
     );
   }
 
-  Widget _noPapersYet(Subject subject) {
+  Widget _noPapersYet(AppLocalizations l10n, Subject subject) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         children: [
           Icon(Icons.inbox_outlined, size: 40, color: AppColors.textTertiary),
           const SizedBox(height: AppSpacing.space3),
-          Text('No papers yet', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
+          Text(l10n.noPapersYetTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
           const SizedBox(height: 4),
-          Text('Nobody has submitted a ${subject.title} paper for this exam type yet. Be the first — submit one from the Submit tab.',
+          Text(l10n.noPapersYetBody(subject.title),
               textAlign: TextAlign.center,
               style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
         ],

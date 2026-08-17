@@ -294,4 +294,147 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get streakPlayToBegin => 'Play a quiz to begin';
+
+  @override
+  String get papersTitle => 'Past papers';
+
+  @override
+  String get papersSubtitle =>
+      'Every level, every system — Primary to Concours des Grandes Écoles.';
+
+  @override
+  String get searchExamOrSubject => 'Search exam type or subject...';
+
+  @override
+  String get categoryLabel => 'CATEGORY';
+
+  @override
+  String chooseSystemHeader(String category) {
+    return '$category — choose system';
+  }
+
+  @override
+  String examTypeStepHeaderWithSystem(String category, String system) {
+    return '$category · $system';
+  }
+
+  @override
+  String get searchExamType => 'Search exam type...';
+
+  @override
+  String examTypeOfficialPlus(String variant) {
+    return 'Official + $variant';
+  }
+
+  @override
+  String get examTypeOfficialOnly => 'Official only';
+
+  @override
+  String chooseTrackHeader(String examType) {
+    return '$examType — choose track';
+  }
+
+  @override
+  String get searchSubjects => 'Search subjects...';
+
+  @override
+  String get subjectCardSubtitle => 'Papers + marking guides';
+
+  @override
+  String get paperMarkingGuideAvailable => 'Marking guide available';
+
+  @override
+  String get paperUnderReview => 'Under review';
+
+  @override
+  String get noPapersYetTitle => 'No papers yet';
+
+  @override
+  String noPapersYetBody(String subject) {
+    return 'Nobody has submitted a $subject paper for this exam type yet. Be the first — submit one from the Submit tab.';
+  }
+
+  @override
+  String get contributionTitle => 'Contribution';
+
+  @override
+  String get contributionSubtitle =>
+      'Share a past paper or an academic report — every contribution helps another student.';
+
+  @override
+  String get examPaperTab => 'Exam paper';
+
+  @override
+  String get academicReportTab => 'Academic report';
+
+  @override
+  String get notAvailableYet => 'Not available yet';
+
+  @override
+  String get academicReportComingSoon =>
+      'Academic report submissions aren\'t wired to the backend yet — only exam papers can be submitted right now. Check back soon.';
+
+  @override
+  String get takePhotoOrUploadPdf => 'Take a photo or upload a PDF';
+
+  @override
+  String get fileFormatsHint => 'JPG, PNG or PDF · up to 20MB';
+
+  @override
+  String get tapToReplace => 'Tap to replace';
+
+  @override
+  String get educationLevelLabel => 'Education level';
+
+  @override
+  String get systemLabel => 'System';
+
+  @override
+  String get examTypeLabel => 'Exam type';
+
+  @override
+  String get trackLabel => 'Track';
+
+  @override
+  String get subjectLabel => 'Subject';
+
+  @override
+  String get yearLabel => 'Year';
+
+  @override
+  String get examBoardHint => 'Exam board / school (optional)';
+
+  @override
+  String get contributionBonusBanner =>
+      'New, verified submissions earn bonus credit — redeemable toward marking-guide unlocks.';
+
+  @override
+  String get submitPaperButton => 'Submit paper';
+
+  @override
+  String get selectPlaceholder => 'Select';
+
+  @override
+  String get nothingAvailable => 'Nothing available.';
+
+  @override
+  String get submitAnother => 'Submit another';
+
+  @override
+  String get contributionReceivedTitle => 'Contribution received';
+
+  @override
+  String get contributionReceivedBody =>
+      'We\'ll check it against existing papers first — if it\'s new, it moves to instructor review. Track it under Profile.';
+
+  @override
+  String submissionFailed(String error) {
+    return 'Submission failed: $error';
+  }
+
+  @override
+  String get choosePdfOrImage => 'Choose PDF or image';
+
+  @override
+  String get takePhoto => 'Take a photo';
 }

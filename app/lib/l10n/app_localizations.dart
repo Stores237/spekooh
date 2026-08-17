@@ -631,6 +631,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Play a quiz to begin'**
   String get streakPlayToBegin;
+
+  /// No description provided for @papersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Past papers'**
+  String get papersTitle;
+
+  /// No description provided for @papersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every level, every system — Primary to Concours des Grandes Écoles.'**
+  String get papersSubtitle;
+
+  /// No description provided for @searchExamOrSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Search exam type or subject...'**
+  String get searchExamOrSubject;
+
+  /// No description provided for @categoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'CATEGORY'**
+  String get categoryLabel;
+
+  /// No description provided for @chooseSystemHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'{category} — choose system'**
+  String chooseSystemHeader(String category);
+
+  /// No description provided for @examTypeStepHeaderWithSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'{category} · {system}'**
+  String examTypeStepHeaderWithSystem(String category, String system);
+
+  /// No description provided for @searchExamType.
+  ///
+  /// In en, this message translates to:
+  /// **'Search exam type...'**
+  String get searchExamType;
+
+  /// No description provided for @examTypeOfficialPlus.
+  ///
+  /// In en, this message translates to:
+  /// **'Official + {variant}'**
+  String examTypeOfficialPlus(String variant);
+
+  /// No description provided for @examTypeOfficialOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Official only'**
+  String get examTypeOfficialOnly;
+
+  /// No description provided for @chooseTrackHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'{examType} — choose track'**
+  String chooseTrackHeader(String examType);
+
+  /// No description provided for @searchSubjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Search subjects...'**
+  String get searchSubjects;
+
+  /// No description provided for @subjectCardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Papers + marking guides'**
+  String get subjectCardSubtitle;
+
+  /// No description provided for @paperMarkingGuideAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Marking guide available'**
+  String get paperMarkingGuideAvailable;
+
+  /// No description provided for @paperUnderReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Under review'**
+  String get paperUnderReview;
+
+  /// No description provided for @noPapersYetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No papers yet'**
+  String get noPapersYetTitle;
+
+  /// No description provided for @noPapersYetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has submitted a {subject} paper for this exam type yet. Be the first — submit one from the Submit tab.'**
+  String noPapersYetBody(String subject);
+
+  /// No description provided for @contributionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution'**
+  String get contributionTitle;
+
+  /// No description provided for @contributionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share a past paper or an academic report — every contribution helps another student.'**
+  String get contributionSubtitle;
+
+  /// No description provided for @examPaperTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam paper'**
+  String get examPaperTab;
+
+  /// No description provided for @academicReportTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Academic report'**
+  String get academicReportTab;
+
+  /// No description provided for @notAvailableYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available yet'**
+  String get notAvailableYet;
+
+  /// No description provided for @academicReportComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Academic report submissions aren\'t wired to the backend yet — only exam papers can be submitted right now. Check back soon.'**
+  String get academicReportComingSoon;
+
+  /// No description provided for @takePhotoOrUploadPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo or upload a PDF'**
+  String get takePhotoOrUploadPdf;
+
+  /// No description provided for @fileFormatsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'JPG, PNG or PDF · up to 20MB'**
+  String get fileFormatsHint;
+
+  /// No description provided for @tapToReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to replace'**
+  String get tapToReplace;
+
+  /// No description provided for @educationLevelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Education level'**
+  String get educationLevelLabel;
+
+  /// No description provided for @systemLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get systemLabel;
+
+  /// No description provided for @examTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam type'**
+  String get examTypeLabel;
+
+  /// No description provided for @trackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Track'**
+  String get trackLabel;
+
+  /// No description provided for @subjectLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get subjectLabel;
+
+  /// No description provided for @yearLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get yearLabel;
+
+  /// No description provided for @examBoardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam board / school (optional)'**
+  String get examBoardHint;
+
+  /// No description provided for @contributionBonusBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'New, verified submissions earn bonus credit — redeemable toward marking-guide unlocks.'**
+  String get contributionBonusBanner;
+
+  /// No description provided for @submitPaperButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit paper'**
+  String get submitPaperButton;
+
+  /// No description provided for @selectPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get selectPlaceholder;
+
+  /// No description provided for @nothingAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing available.'**
+  String get nothingAvailable;
+
+  /// No description provided for @submitAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit another'**
+  String get submitAnother;
+
+  /// No description provided for @contributionReceivedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution received'**
+  String get contributionReceivedTitle;
+
+  /// No description provided for @contributionReceivedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll check it against existing papers first — if it\'s new, it moves to instructor review. Track it under Profile.'**
+  String get contributionReceivedBody;
+
+  /// No description provided for @submissionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission failed: {error}'**
+  String submissionFailed(String error);
+
+  /// No description provided for @choosePdfOrImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose PDF or image'**
+  String get choosePdfOrImage;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo'**
+  String get takePhoto;
 }
 
 class _AppLocalizationsDelegate

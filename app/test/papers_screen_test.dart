@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
+import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/models/paper_entry.dart';
 import 'package:spekooh/screens/papers/papers_screen.dart';
-import 'package:spekooh/theme/app_theme.dart';
+
+import 'support/l10n_test_app.dart';
 
 void main() {
   testWidgets('PapersScreen full drill-down: category (needs system+track) -> paper -> back all the way', (tester) async {
@@ -17,9 +20,8 @@ void main() {
       fileUrl: 'http://testserver/media/paper_submissions/2026/physics.pdf',
       createdAt: DateTime(2026, 1, 1),
     );
-    await tester.pumpWidget(MaterialApp(
-      theme: appTheme,
-      home: PapersScreen(repository: MockPapersRepository(seedPublished: [seededPaper]), onOpenPaper: (p) => opened = p),
+    await tester.pumpWidget(l10nTestApp(
+      PapersScreen(repository: MockPapersRepository(seedPublished: [seededPaper]), onOpenPaper: (p) => opened = p),
     ));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
@@ -81,7 +83,7 @@ void main() {
   });
 
   testWidgets('Category with no system/track requirement goes straight to exam-type then subject step', (tester) async {
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: PapersScreen(repository: MockPapersRepository())));
+    await tester.pumpWidget(l10nTestApp(PapersScreen(repository: MockPapersRepository())));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
@@ -100,7 +102,7 @@ void main() {
   });
 
   testWidgets('No papers submitted yet shows an honest empty state, not fabricated rows', (tester) async {
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: PapersScreen(repository: MockPapersRepository())));
+    await tester.pumpWidget(l10nTestApp(PapersScreen(repository: MockPapersRepository())));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
@@ -118,5 +120,17 @@ void main() {
 
     expect(find.text('No papers yet'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('renders the category step in French once that locale is active', (tester) async {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    await LocaleController.instance.setLocale('fr');
+    await tester.pumpWidget(l10nTestApp(PapersScreen(repository: MockPapersRepository())));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Anciennes épreuves'), findsOneWidget);
+    expect(find.text('CATÉGORIE'), findsOneWidget);
+    expect(find.text('Past papers'), findsNothing);
   });
 }

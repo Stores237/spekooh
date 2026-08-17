@@ -79,9 +79,13 @@ I can write unilaterally. Grouped by what each one unblocks.
   bottom nav labels, Settings screen, the auth (login/register) sheet including its error
   messages, Home (both the guest and logged-in variants — greeting-by-time-of-day correctly
   collapses "Good morning"/"Good afternoon" to the single "Bonjour" French uses for both,
-  distinct from "Bonsoir" in the evening, not a naive 3-way 1:1 mapping). Still hardcoded
-  English — Papers, Submit, Forum, Quizzes, Profile, Shop, Notes, Notifications, and the
-  sheets/dialogs within them.
+  distinct from "Bonsoir" in the evening, not a naive 3-way 1:1 mapping), Papers (the full
+  category → system → exam-type → track → subject → paper-list drill-down) and Submit (the
+  real exam-paper upload flow + the "Academic report" honest not-available state). Real exam
+  names (BEPC, Probatoire, O Level, etc.) and the Francophone/Anglophone system labels are
+  deliberately left untranslated — they're the actual proper names of those systems/exams in
+  either language, not generic UI chrome. Still hardcoded English — Forum, Quizzes, Profile,
+  Shop, Notes, Notifications, and the sheets/dialogs within them.
 - **Why P0:** spec §3.1 lists this as must-have "from launch, not a future add-on."
 
 ### 2. ~~Rewarded-ad unlock~~ — done
