@@ -61,20 +61,25 @@ def award_referral_bonus(referred_user) -> CreditLedgerEntry | None:
     """Credits the referrer once, the first time their referred user
     completes a real first action (currently: their first paper unlock —
     see apps.payments.services.unlock_paper). referral_bonus_awarded_at is
-    the idempotency guard: a no-op on every unlock after the first, and a
-    no-op entirely if this user wasn't referred by anyone."""
+    the idempotency guard, claimed via a conditional UPDATE (not a Python
+    read-then-write) so two concurrent unlock requests for the same brand
+    -new user can't both pass the check and double-credit the referrer."""
     referrer = referred_user.referred_by
     if referrer is None or referred_user.referral_bonus_awarded_at is not None:
         return None
+    now = timezone.now()
+    claimed = type(referred_user).objects.filter(
+        pk=referred_user.pk, referral_bonus_awarded_at__isnull=True
+    ).update(referral_bonus_awarded_at=now)
+    if not claimed:
+        return None
+    referred_user.referral_bonus_awarded_at = now
     config = ReferralBonusConfig.objects.first() or ReferralBonusConfig.objects.create()
-    entry = CreditLedgerEntry.objects.create(
+    return CreditLedgerEntry.objects.create(
         user=referrer,
         amount=config.amount,
         reason=f"Referral bonus — {referred_user.name or referred_user.email} unlocked their first paper",
     )
-    referred_user.referral_bonus_awarded_at = timezone.now()
-    referred_user.save(update_fields=["referral_bonus_awarded_at", "updated_at"])
-    return entry
 
 
 class RedeemCodeIssuer:
