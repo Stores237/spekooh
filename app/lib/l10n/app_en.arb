@@ -386,5 +386,12 @@
   },
   "paymentFailedGeneric": "Payment failed. Check your connection and try again.",
   "paywallBlockedMessage": "Daily free view limit reached. Watch a rewarded ad or upgrade to Pro.",
-  "alreadyReportedMessage": "You've already reported this paper."
+  "alreadyReportedMessage": "You've already reported this paper.",
+
+  "aiAssistantTitle": "Spekooh Assistant",
+  "aiAssistantSubtitle": "Explains topics using real past papers",
+  "aiPromptExplainPhysics": "Explain a hard Physics topic",
+  "aiPromptMathsQuestions": "Give me 5 Maths practice questions",
+  "aiPromptSummarizeGuide": "Summarize this paper's marking guide",
+  "aiAssistantInputHint": "Ask about a topic or paper..."
 }

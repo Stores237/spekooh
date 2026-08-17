@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
 import '../theme/app_shadows.dart';
@@ -11,11 +12,11 @@ import '../theme/app_theme.dart';
 class AIAssistantFab extends StatelessWidget {
   const AIAssistantFab({super.key});
 
-  static const _prompts = [
-    'Explain a hard Physics topic',
-    'Give me 5 Maths practice questions',
-    'Summarize this paper’s marking guide',
-  ];
+  static List<String> _prompts(AppLocalizations l10n) => [
+        l10n.aiPromptExplainPhysics,
+        l10n.aiPromptMathsQuestions,
+        l10n.aiPromptSummarizeGuide,
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +43,7 @@ class _AIAssistantSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
       decoration: const BoxDecoration(
@@ -68,14 +70,14 @@ class _AIAssistantSheet extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Spekooh Assistant', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
-                  Text('Explains topics using real past papers', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary)),
+                  Text(l10n.aiAssistantTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
+                  Text(l10n.aiAssistantSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary)),
                 ],
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.space4),
-          for (final prompt in AIAssistantFab._prompts) ...[
+          for (final prompt in AIAssistantFab._prompts(l10n)) ...[
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -92,7 +94,7 @@ class _AIAssistantSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: TextField(
-                    decoration: InputDecoration(hintText: 'Ask about a topic or paper...', border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
+                    decoration: InputDecoration(hintText: l10n.aiAssistantInputHint, border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
                     style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13),
                   ),
                 ),

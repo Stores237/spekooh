@@ -894,4 +894,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get alreadyReportedMessage => 'You\'ve already reported this paper.';
+
+  @override
+  String get aiAssistantTitle => 'Spekooh Assistant';
+
+  @override
+  String get aiAssistantSubtitle => 'Explains topics using real past papers';
+
+  @override
+  String get aiPromptExplainPhysics => 'Explain a hard Physics topic';
+
+  @override
+  String get aiPromptMathsQuestions => 'Give me 5 Maths practice questions';
+
+  @override
+  String get aiPromptSummarizeGuide => 'Summarize this paper\'s marking guide';
+
+  @override
+  String get aiAssistantInputHint => 'Ask about a topic or paper...';
 }

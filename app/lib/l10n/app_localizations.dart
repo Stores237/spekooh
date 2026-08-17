@@ -1669,6 +1669,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You\'ve already reported this paper.'**
   String get alreadyReportedMessage;
+
+  /// No description provided for @aiAssistantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Spekooh Assistant'**
+  String get aiAssistantTitle;
+
+  /// No description provided for @aiAssistantSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Explains topics using real past papers'**
+  String get aiAssistantSubtitle;
+
+  /// No description provided for @aiPromptExplainPhysics.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain a hard Physics topic'**
+  String get aiPromptExplainPhysics;
+
+  /// No description provided for @aiPromptMathsQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Give me 5 Maths practice questions'**
+  String get aiPromptMathsQuestions;
+
+  /// No description provided for @aiPromptSummarizeGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize this paper\'s marking guide'**
+  String get aiPromptSummarizeGuide;
+
+  /// No description provided for @aiAssistantInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about a topic or paper...'**
+  String get aiAssistantInputHint;
 }
 
 class _AppLocalizationsDelegate

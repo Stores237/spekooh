@@ -277,5 +277,12 @@
   "ticketRefLabel": "Réf. du ticket : {ref}…",
   "paymentFailedGeneric": "Échec du paiement. Vérifiez votre connexion et réessayez.",
   "paywallBlockedMessage": "Limite quotidienne de consultations gratuites atteinte. Regardez une pub ou passez à Pro.",
-  "alreadyReportedMessage": "Vous avez déjà signalé cette épreuve."
+  "alreadyReportedMessage": "Vous avez déjà signalé cette épreuve.",
+
+  "aiAssistantTitle": "Assistant Spekooh",
+  "aiAssistantSubtitle": "Explique des notions à partir de vraies épreuves",
+  "aiPromptExplainPhysics": "Expliquer une notion difficile de Physique",
+  "aiPromptMathsQuestions": "Donne-moi 5 questions d'entraînement en Maths",
+  "aiPromptSummarizeGuide": "Résume le corrigé de cette épreuve",
+  "aiAssistantInputHint": "Posez une question sur un sujet ou une épreuve..."
 }

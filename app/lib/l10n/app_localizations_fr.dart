@@ -908,4 +908,26 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get alreadyReportedMessage => 'Vous avez déjà signalé cette épreuve.';
+
+  @override
+  String get aiAssistantTitle => 'Assistant Spekooh';
+
+  @override
+  String get aiAssistantSubtitle =>
+      'Explique des notions à partir de vraies épreuves';
+
+  @override
+  String get aiPromptExplainPhysics =>
+      'Expliquer une notion difficile de Physique';
+
+  @override
+  String get aiPromptMathsQuestions =>
+      'Donne-moi 5 questions d\'entraînement en Maths';
+
+  @override
+  String get aiPromptSummarizeGuide => 'Résume le corrigé de cette épreuve';
+
+  @override
+  String get aiAssistantInputHint =>
+      'Posez une question sur un sujet ou une épreuve...';
 }
