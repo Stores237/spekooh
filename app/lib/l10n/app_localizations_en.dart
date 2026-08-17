@@ -590,4 +590,89 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get doneLabel => 'Done';
+
+  @override
+  String get profileTitle => 'Profile';
+
+  @override
+  String submissionsCountBadge(int count) {
+    return '$count submissions';
+  }
+
+  @override
+  String quizzesCountBadge(int count) {
+    return '$count quizzes';
+  }
+
+  @override
+  String get bonusCreditBalanceLabel => 'BONUS CREDIT BALANCE';
+
+  @override
+  String get ptsLabel => 'pts';
+
+  @override
+  String submissionsScaleNote(int count) {
+    return '$count papers submitted · redeem code value scales with your contributions';
+  }
+
+  @override
+  String get redeemCodeNotActive => 'No active redeem code';
+
+  @override
+  String get redeemCodeReady => 'Redeem code ready';
+
+  @override
+  String get redeemCodeEarnHint =>
+      'You\'ll get one once a verified submission earns a bonus tier.';
+
+  @override
+  String get shareLabel => 'Share';
+
+  @override
+  String shareRedeemCodeMessage(String code, String subtitle) {
+    return 'Use my Spekooh redeem code $code — $subtitle';
+  }
+
+  @override
+  String get shareRedeemCodeSubject => 'Spekooh redeem code';
+
+  @override
+  String get inviteAFriendTitle => 'Invite a friend';
+
+  @override
+  String get inviteAFriendSubtitle =>
+      'You earn bonus credit once they unlock their first paper.';
+
+  @override
+  String shareReferralMessage(String code) {
+    return 'Join me on Spekooh — sign up with my referral code $code.';
+  }
+
+  @override
+  String get shareReferralSubject => 'Spekooh referral code';
+
+  @override
+  String get badgesSectionLabel => 'Badges';
+
+  @override
+  String get submissionStatusSectionLabel => 'Submission status';
+
+  @override
+  String get profileLoginPrompt => 'Log in to see your profile';
+
+  @override
+  String get profileLoginPromptSubtitle =>
+      'Your submissions, credit balance, and badges show up here once you have an account.';
+
+  @override
+  String get shopHeaderSubtitle =>
+      'Partner pamphlets · pay in-app, pick up with a QR code';
+
+  @override
+  String get searchPamphlets => 'Search pamphlets...';
+
+  @override
+  String pamphletSoldByQr(String partner) {
+    return 'Sold by $partner · QR pickup';
+  }
 }

@@ -185,5 +185,30 @@
   "quizScoreLine": "Vous avez obtenu {score} / {total}",
   "startQuizButton": "Commencer le quiz",
   "submittingLabel": "Envoi en cours…",
-  "doneLabel": "Terminé"
+  "doneLabel": "Terminé",
+
+  "profileTitle": "Profil",
+  "submissionsCountBadge": "{count} soumissions",
+  "quizzesCountBadge": "{count} quiz",
+  "bonusCreditBalanceLabel": "SOLDE DE CRÉDIT BONUS",
+  "ptsLabel": "pts",
+  "submissionsScaleNote": "{count} épreuves soumises · la valeur du code de réduction augmente avec vos contributions",
+  "redeemCodeNotActive": "Aucun code de réduction actif",
+  "redeemCodeReady": "Code de réduction prêt",
+  "redeemCodeEarnHint": "Vous en recevrez un dès qu'une soumission vérifiée atteint un palier de bonus.",
+  "shareLabel": "Partager",
+  "shareRedeemCodeMessage": "Utilisez mon code de réduction Spekooh {code} — {subtitle}",
+  "shareRedeemCodeSubject": "Code de réduction Spekooh",
+  "inviteAFriendTitle": "Invitez un ami",
+  "inviteAFriendSubtitle": "Vous gagnez un bonus dès qu'ils débloquent leur première épreuve.",
+  "shareReferralMessage": "Rejoignez-moi sur Spekooh — inscrivez-vous avec mon code de parrainage {code}.",
+  "shareReferralSubject": "Code de parrainage Spekooh",
+  "badgesSectionLabel": "Badges",
+  "submissionStatusSectionLabel": "Statut des soumissions",
+  "profileLoginPrompt": "Connectez-vous pour voir votre profil",
+  "profileLoginPromptSubtitle": "Vos soumissions, votre solde de crédit et vos badges apparaîtront ici une fois que vous aurez un compte.",
+
+  "shopHeaderSubtitle": "Fascicules partenaires · payez dans l'appli, retirez avec un code QR",
+  "searchPamphlets": "Rechercher des fascicules...",
+  "pamphletSoldByQr": "Vendu par {partner} · retrait par QR"
 }

@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../data/auth_session.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/achievement.dart';
 import '../../models/spekooh_user.dart';
 import '../../models/submission.dart';
@@ -40,6 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -56,14 +58,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       CircularBackButton(onTap: () => Navigator.of(context).pop()),
                       const SizedBox(width: AppSpacing.space3),
-                      Text('Profile', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
+                      Text(l10n.profileTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
                     ],
                   ),
                   CircularBackButton(onTap: () => widget.onOpenSettings?.call()),
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
-              if (!_isLoggedIn) _signedOutPrompt() else ...[
+              if (!_isLoggedIn) _signedOutPrompt(l10n) else ...[
               FutureBuilder<SpekoohUser>(
                 future: _userFuture,
                 builder: (context, snapshot) {
@@ -94,9 +96,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   const SizedBox(height: 6),
                                   Row(
                                     children: [
-                                      SpekoohBadge(text: '${user.submissionsCount} submissions', tone: SpekoohBadgeTone.blue),
+                                      SpekoohBadge(text: l10n.submissionsCountBadge(user.submissionsCount), tone: SpekoohBadgeTone.blue),
                                       const SizedBox(width: 8),
-                                      SpekoohBadge(text: '${user.quizzesCount} quizzes', tone: SpekoohBadgeTone.amber),
+                                      SpekoohBadge(text: l10n.quizzesCountBadge(user.quizzesCount), tone: SpekoohBadgeTone.amber),
                                     ],
                                   ),
                                 ],
@@ -112,20 +114,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('BONUS CREDIT BALANCE', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                            Text(l10n.bonusCreditBalanceLabel, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
                             const SizedBox(height: 4),
                             RichText(
                               text: TextSpan(
                                 style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 28, color: AppColors.white),
                                 children: [
                                   TextSpan(text: '${user.creditBalance} '),
-                                  const TextSpan(text: 'pts', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                  TextSpan(text: l10n.ptsLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              '${user.submissionsCount} papers submitted · redeem code value scales with your contributions',
+                              l10n.submissionsScaleNote(user.submissionsCount),
                               style: const TextStyle(color: Colors.white70, fontSize: 12),
                             ),
                           ],
@@ -145,11 +147,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(user.redeemCode.isEmpty ? 'No active redeem code' : 'Redeem code ready',
+                                      Text(user.redeemCode.isEmpty ? l10n.redeemCodeNotActive : l10n.redeemCodeReady,
                                           style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
                                       Text(
                                         user.redeemCode.isEmpty
-                                            ? 'You\'ll get one once a verified submission earns a bonus tier.'
+                                            ? l10n.redeemCodeEarnHint
                                             : user.redeemCodeSubtitle,
                                         style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
                                       ),
@@ -174,10 +176,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     Text(user.redeemCode, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: 1, color: AppColors.textPrimary)),
                                     GestureDetector(
                                       onTap: () => Share.share(
-                                        'Use my Spekooh redeem code ${user.redeemCode} — ${user.redeemCodeSubtitle}',
-                                        subject: 'Spekooh redeem code',
+                                        l10n.shareRedeemCodeMessage(user.redeemCode, user.redeemCodeSubtitle),
+                                        subject: l10n.shareRedeemCodeSubject,
                                       ),
-                                      child: Text('Share', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700, fontWeight: FontWeight.w700, fontSize: 12)),
+                                      child: Text(l10n.shareLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700, fontWeight: FontWeight.w700, fontSize: 12)),
                                     ),
                                   ],
                                 ),
@@ -201,10 +203,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('Invite a friend',
+                                        Text(l10n.inviteAFriendTitle,
                                             style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
                                         Text(
-                                          'You earn bonus credit once they unlock their first paper.',
+                                          l10n.inviteAFriendSubtitle,
                                           style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
                                         ),
                                       ],
@@ -227,10 +229,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     Text(user.referralCode, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: 1, color: AppColors.textPrimary)),
                                     GestureDetector(
                                       onTap: () => Share.share(
-                                        'Join me on Spekooh — sign up with my referral code ${user.referralCode}.',
-                                        subject: 'Spekooh referral code',
+                                        l10n.shareReferralMessage(user.referralCode),
+                                        subject: l10n.shareReferralSubject,
                                       ),
-                                      child: Text('Share', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700, fontWeight: FontWeight.w700, fontSize: 12)),
+                                      child: Text(l10n.shareLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700, fontWeight: FontWeight.w700, fontSize: 12)),
                                     ),
                                   ],
                                 ),
@@ -243,7 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
-              _sectionLabel('Badges'),
+              _sectionLabel(l10n.badgesSectionLabel),
               FutureBuilder<List<Achievement>>(
                 future: _achievementsFuture,
                 builder: (context, snapshot) {
@@ -275,7 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
-              _sectionLabel('Submission status'),
+              _sectionLabel(l10n.submissionStatusSectionLabel),
               FutureBuilder<List<Submission>>(
                 future: _submissionsFuture,
                 builder: (context, snapshot) {
@@ -329,19 +331,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Every underlying repository call needs auth (/auth/me/, /credits/...,
   // /papers/submissions/?submitted_by=me), so this avoids firing requests
   // guaranteed to 401 and shows an honest prompt instead.
-  Widget _signedOutPrompt() {
+  Widget _signedOutPrompt(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
         children: [
           const Icon(Icons.person_outline, size: 40, color: AppColors.textTertiary),
           const SizedBox(height: AppSpacing.space3),
-          Text('Log in to see your profile', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
+          Text(l10n.profileLoginPrompt, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
           const SizedBox(height: 4),
-          Text('Your submissions, credit balance, and badges show up here once you have an account.',
+          Text(l10n.profileLoginPromptSubtitle,
               textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.space4),
-          SpekoohButton(onPressed: widget.onLogin, child: const Text('Log in')),
+          SpekoohButton(onPressed: widget.onLogin, child: Text(l10n.logIn)),
         ],
       ),
     );

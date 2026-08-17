@@ -1159,6 +1159,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done'**
   String get doneLabel;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profileTitle;
+
+  /// No description provided for @submissionsCountBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} submissions'**
+  String submissionsCountBadge(int count);
+
+  /// No description provided for @quizzesCountBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} quizzes'**
+  String quizzesCountBadge(int count);
+
+  /// No description provided for @bonusCreditBalanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'BONUS CREDIT BALANCE'**
+  String get bonusCreditBalanceLabel;
+
+  /// No description provided for @ptsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'pts'**
+  String get ptsLabel;
+
+  /// No description provided for @submissionsScaleNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} papers submitted · redeem code value scales with your contributions'**
+  String submissionsScaleNote(int count);
+
+  /// No description provided for @redeemCodeNotActive.
+  ///
+  /// In en, this message translates to:
+  /// **'No active redeem code'**
+  String get redeemCodeNotActive;
+
+  /// No description provided for @redeemCodeReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem code ready'**
+  String get redeemCodeReady;
+
+  /// No description provided for @redeemCodeEarnHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll get one once a verified submission earns a bonus tier.'**
+  String get redeemCodeEarnHint;
+
+  /// No description provided for @shareLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get shareLabel;
+
+  /// No description provided for @shareRedeemCodeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Use my Spekooh redeem code {code} — {subtitle}'**
+  String shareRedeemCodeMessage(String code, String subtitle);
+
+  /// No description provided for @shareRedeemCodeSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Spekooh redeem code'**
+  String get shareRedeemCodeSubject;
+
+  /// No description provided for @inviteAFriendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite a friend'**
+  String get inviteAFriendTitle;
+
+  /// No description provided for @inviteAFriendSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You earn bonus credit once they unlock their first paper.'**
+  String get inviteAFriendSubtitle;
+
+  /// No description provided for @shareReferralMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Join me on Spekooh — sign up with my referral code {code}.'**
+  String shareReferralMessage(String code);
+
+  /// No description provided for @shareReferralSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Spekooh referral code'**
+  String get shareReferralSubject;
+
+  /// No description provided for @badgesSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Badges'**
+  String get badgesSectionLabel;
+
+  /// No description provided for @submissionStatusSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission status'**
+  String get submissionStatusSectionLabel;
+
+  /// No description provided for @profileLoginPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to see your profile'**
+  String get profileLoginPrompt;
+
+  /// No description provided for @profileLoginPromptSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your submissions, credit balance, and badges show up here once you have an account.'**
+  String get profileLoginPromptSubtitle;
+
+  /// No description provided for @shopHeaderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner pamphlets · pay in-app, pick up with a QR code'**
+  String get shopHeaderSubtitle;
+
+  /// No description provided for @searchPamphlets.
+  ///
+  /// In en, this message translates to:
+  /// **'Search pamphlets...'**
+  String get searchPamphlets;
+
+  /// No description provided for @pamphletSoldByQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold by {partner} · QR pickup'**
+  String pamphletSoldByQr(String partner);
 }
 
 class _AppLocalizationsDelegate

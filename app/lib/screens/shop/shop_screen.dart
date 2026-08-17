@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/repositories/shop_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/pamphlet.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_gradients.dart';
@@ -36,6 +37,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -49,17 +51,19 @@ class _ShopScreenState extends State<ShopScreen> {
                 children: [
                   CircularBackButton(onTap: () => Navigator.of(context).pop()),
                   const SizedBox(width: AppSpacing.space3),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Shop', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
-                      Text('Partner pamphlets · pay in-app, pick up with a QR code', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.shopTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
+                        Text(l10n.shopHeaderSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                      ],
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
-              SearchInput(placeholder: 'Search pamphlets...', controller: _searchController, onChanged: (v) => setState(() => _query = v)),
+              SearchInput(placeholder: l10n.searchPamphlets, controller: _searchController, onChanged: (v) => setState(() => _query = v)),
               const SizedBox(height: AppSpacing.space4),
               Expanded(
                 child: FutureBuilder<List<Pamphlet>>(
@@ -91,6 +95,7 @@ class _PamphletCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
@@ -115,7 +120,7 @@ class _PamphletCard extends StatelessWidget {
                 children: [
                   Text(pamphlet.title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
                   const SizedBox(height: 2),
-                  Text('Sold by ${pamphlet.partner} · QR pickup', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                  Text(l10n.pamphletSoldByQr(pamphlet.partner), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                   const SizedBox(height: 6),
                   RichText(
                     text: TextSpan(

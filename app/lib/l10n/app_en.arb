@@ -243,5 +243,48 @@
   },
   "startQuizButton": "Start quiz",
   "submittingLabel": "Submitting…",
-  "doneLabel": "Done"
+  "doneLabel": "Done",
+
+  "profileTitle": "Profile",
+  "submissionsCountBadge": "{count} submissions",
+  "@submissionsCountBadge": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "quizzesCountBadge": "{count} quizzes",
+  "@quizzesCountBadge": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "bonusCreditBalanceLabel": "BONUS CREDIT BALANCE",
+  "ptsLabel": "pts",
+  "submissionsScaleNote": "{count} papers submitted · redeem code value scales with your contributions",
+  "@submissionsScaleNote": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "redeemCodeNotActive": "No active redeem code",
+  "redeemCodeReady": "Redeem code ready",
+  "redeemCodeEarnHint": "You'll get one once a verified submission earns a bonus tier.",
+  "shareLabel": "Share",
+  "shareRedeemCodeMessage": "Use my Spekooh redeem code {code} — {subtitle}",
+  "@shareRedeemCodeMessage": {
+    "placeholders": {"code": {"type": "String"}, "subtitle": {"type": "String"}}
+  },
+  "shareRedeemCodeSubject": "Spekooh redeem code",
+  "inviteAFriendTitle": "Invite a friend",
+  "inviteAFriendSubtitle": "You earn bonus credit once they unlock their first paper.",
+  "shareReferralMessage": "Join me on Spekooh — sign up with my referral code {code}.",
+  "@shareReferralMessage": {
+    "placeholders": {"code": {"type": "String"}}
+  },
+  "shareReferralSubject": "Spekooh referral code",
+  "badgesSectionLabel": "Badges",
+  "submissionStatusSectionLabel": "Submission status",
+  "profileLoginPrompt": "Log in to see your profile",
+  "profileLoginPromptSubtitle": "Your submissions, credit balance, and badges show up here once you have an account.",
+
+  "shopHeaderSubtitle": "Partner pamphlets · pay in-app, pick up with a QR code",
+  "searchPamphlets": "Search pamphlets...",
+  "pamphletSoldByQr": "Sold by {partner} · QR pickup",
+  "@pamphletSoldByQr": {
+    "placeholders": {"partner": {"type": "String"}}
+  }
 }

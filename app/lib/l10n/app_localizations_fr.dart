@@ -601,4 +601,89 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get doneLabel => 'Terminé';
+
+  @override
+  String get profileTitle => 'Profil';
+
+  @override
+  String submissionsCountBadge(int count) {
+    return '$count soumissions';
+  }
+
+  @override
+  String quizzesCountBadge(int count) {
+    return '$count quiz';
+  }
+
+  @override
+  String get bonusCreditBalanceLabel => 'SOLDE DE CRÉDIT BONUS';
+
+  @override
+  String get ptsLabel => 'pts';
+
+  @override
+  String submissionsScaleNote(int count) {
+    return '$count épreuves soumises · la valeur du code de réduction augmente avec vos contributions';
+  }
+
+  @override
+  String get redeemCodeNotActive => 'Aucun code de réduction actif';
+
+  @override
+  String get redeemCodeReady => 'Code de réduction prêt';
+
+  @override
+  String get redeemCodeEarnHint =>
+      'Vous en recevrez un dès qu\'une soumission vérifiée atteint un palier de bonus.';
+
+  @override
+  String get shareLabel => 'Partager';
+
+  @override
+  String shareRedeemCodeMessage(String code, String subtitle) {
+    return 'Utilisez mon code de réduction Spekooh $code — $subtitle';
+  }
+
+  @override
+  String get shareRedeemCodeSubject => 'Code de réduction Spekooh';
+
+  @override
+  String get inviteAFriendTitle => 'Invitez un ami';
+
+  @override
+  String get inviteAFriendSubtitle =>
+      'Vous gagnez un bonus dès qu\'ils débloquent leur première épreuve.';
+
+  @override
+  String shareReferralMessage(String code) {
+    return 'Rejoignez-moi sur Spekooh — inscrivez-vous avec mon code de parrainage $code.';
+  }
+
+  @override
+  String get shareReferralSubject => 'Code de parrainage Spekooh';
+
+  @override
+  String get badgesSectionLabel => 'Badges';
+
+  @override
+  String get submissionStatusSectionLabel => 'Statut des soumissions';
+
+  @override
+  String get profileLoginPrompt => 'Connectez-vous pour voir votre profil';
+
+  @override
+  String get profileLoginPromptSubtitle =>
+      'Vos soumissions, votre solde de crédit et vos badges apparaîtront ici une fois que vous aurez un compte.';
+
+  @override
+  String get shopHeaderSubtitle =>
+      'Fascicules partenaires · payez dans l\'appli, retirez avec un code QR';
+
+  @override
+  String get searchPamphlets => 'Rechercher des fascicules...';
+
+  @override
+  String pamphletSoldByQr(String partner) {
+    return 'Vendu par $partner · retrait par QR';
+  }
 }

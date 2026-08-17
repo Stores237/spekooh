@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/data/auth_session.dart';
+import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/forum_repository.dart';
 import 'package:spekooh/data/repositories/notifications_repository.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
@@ -34,9 +35,11 @@ void _fakeLoggedIn() {
 
 void main() {
   tearDown(() {
-    // AuthSession.instance is a global singleton — reset it so a test that
-    // fakes a login doesn't leak into the next test in this file.
+    // AuthSession.instance and LocaleController.instance are global
+    // singletons — reset both so a test that fakes a login or a French
+    // locale doesn't leak into the next test in this file.
     AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
   });
 
   testWidgets('ForumScreen builds with no exceptions', (tester) async {
@@ -145,5 +148,23 @@ void main() {
     expect(find.text('Redeem code ready'), findsNothing); // no account data shown for a guest
     await tester.tap(find.text('Log in'));
     expect(loginTapped, isTrue);
+  });
+
+  testWidgets('ProfileScreen renders in French once that locale is active', (tester) async {
+    _fakeLoggedIn();
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    await LocaleController.instance.setLocale('fr');
+    await _pumpAndCheck(tester, ProfileScreen(repository: MockProfileRepository()));
+    expect(find.text('Profil'), findsOneWidget);
+    expect(find.text('Invitez un ami'), findsOneWidget);
+    expect(find.text('Profile'), findsNothing);
+  });
+
+  testWidgets('ShopScreen renders in French once that locale is active', (tester) async {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    await LocaleController.instance.setLocale('fr');
+    await _pumpAndCheck(tester, ShopScreen(repository: MockShopRepository()));
+    expect(find.text('Boutique'), findsOneWidget);
+    expect(find.text('Shop'), findsNothing);
   });
 }
