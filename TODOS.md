@@ -77,8 +77,11 @@ I can write unilaterally. Grouped by what each one unblocks.
   to `LocaleController` via a `ListenableBuilder` in `main.dart`.
 - **String coverage (in progress, screen-by-screen to keep each diff verifiable):** done —
   bottom nav labels, Settings screen, the auth (login/register) sheet including its error
-  messages. Still hardcoded English — every other screen (Home, Papers, Submit, Forum, Quizzes,
-  Profile, Shop, Notes, Notifications, and the sheets/dialogs within them).
+  messages, Home (both the guest and logged-in variants — greeting-by-time-of-day correctly
+  collapses "Good morning"/"Good afternoon" to the single "Bonjour" French uses for both,
+  distinct from "Bonsoir" in the evening, not a naive 3-way 1:1 mapping). Still hardcoded
+  English — Papers, Submit, Forum, Quizzes, Profile, Shop, Notes, Notifications, and the
+  sheets/dialogs within them.
 - **Why P0:** spec §3.1 lists this as must-have "from launch, not a future add-on."
 
 ### 2. ~~Rewarded-ad unlock~~ — done

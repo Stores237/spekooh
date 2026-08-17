@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repositories/shop_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/paper_entry.dart';
 import '../../models/pamphlet.dart';
 import '../../theme/app_colors.dart';
@@ -43,6 +44,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -70,8 +72,8 @@ class HomeScreen extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Bienvenue · Welcome', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                            Text('Guest', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
+                            Text(l10n.homeWelcomeGreeting, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                            Text(l10n.guestLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
                           ],
                         ),
                       ],
@@ -79,7 +81,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      SpekoohButton(variant: SpekoohButtonVariant.secondary, size: SpekoohButtonSize.sm, onPressed: onOpenSettings, child: const Text('Join free')),
+                      SpekoohButton(variant: SpekoohButtonVariant.secondary, size: SpekoohButtonSize.sm, onPressed: onOpenSettings, child: Text(l10n.joinFree)),
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: onOpenSettings,
@@ -96,10 +98,10 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.space3),
-              const Row(children: [
-                SpekoohBadge(text: 'Exploring — no account', tone: SpekoohBadgeTone.neutral),
-                SizedBox(width: 6),
-                SpekoohBadge(text: 'EN / FR', tone: SpekoohBadgeTone.blue),
+              Row(children: [
+                SpekoohBadge(text: l10n.homeExploringBadge, tone: SpekoohBadgeTone.neutral),
+                const SizedBox(width: 6),
+                const SpekoohBadge(text: 'EN / FR', tone: SpekoohBadgeTone.blue),
               ]),
               const SizedBox(height: AppSpacing.space4),
               Container(
@@ -108,17 +110,17 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('FREE PAPER VIEWS', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                    Text(l10n.homeFreeViewsLabel, style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
                     const SizedBox(height: 4),
-                    Text('3 a day', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 24, color: AppColors.white)),
+                    Text(l10n.homeFreeViewsCount, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 24, color: AppColors.white)),
                     const SizedBox(height: 6),
                     // No account means no server-side counter to check against — a
                     // live "N of 3 used" figure would just be fabricated for guests.
-                    const Text('No account needed. Sign up to track usage and unlock more.', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
+                    Text(l10n.homeFreeViewsHint, style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
-                      child: SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onOpenPaywall, child: const Text('Go Pro')),
+                      child: SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onOpenPaywall, child: Text(l10n.goPro)),
                     ),
                   ],
                 ),
@@ -135,7 +137,7 @@ class HomeScreen extends StatelessWidget {
                     return Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                      child: Text('No papers published yet — check back soon.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                      child: Text(l10n.homeNoPapersYet, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                     );
                   }
                   final label = [paper.subjectTitle, paper.examTypeName].whereType<String>().join(' · ');
@@ -153,8 +155,8 @@ class HomeScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('$label ${paper.year}', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                Text('Free to view — marking guide sold separately', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                Text(l10n.homePaperLabelWithYear(label, paper.year), style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                Text(l10n.homeFreeToView, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                               ],
                             ),
                           ),
@@ -166,7 +168,7 @@ class HomeScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: AppSpacing.space6),
-              Text('Contribution — earn credit', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
+              Text(l10n.homeContributionTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
               const SizedBox(height: AppSpacing.space3),
               Container(
                 padding: const EdgeInsets.all(14),
@@ -180,8 +182,8 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Got a past paper or report we don\'t have?', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                          Text('Snap a photo, tag it, earn bonus credit once it\'s verified — first contribution counts.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                          Text(l10n.homeContributionPrompt, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                          Text(l10n.homeContributionSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                         ],
                       ),
                     ),
@@ -191,17 +193,17 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.space5),
               Row(
                 children: [
-                  Expanded(child: _tile(icon: Icons.menu_book_outlined, tint: IconChipTint.green, title: 'Notes', subtitle: 'Topic study notes by subject', onTap: onOpenNotes)),
+                  Expanded(child: _tile(icon: Icons.menu_book_outlined, tint: IconChipTint.green, title: l10n.notesTitle, subtitle: l10n.notesSubtitle, onTap: onOpenNotes)),
                   const SizedBox(width: AppSpacing.space3),
-                  Expanded(child: _tile(icon: Icons.shopping_bag_outlined, tint: IconChipTint.amber, title: 'Shop', subtitle: 'Partner pamphlets, QR pickup', onTap: onOpenShop)),
+                  Expanded(child: _tile(icon: Icons.shopping_bag_outlined, tint: IconChipTint.amber, title: l10n.shopTitle, subtitle: l10n.shopSubtitle, onTap: onOpenShop)),
                 ],
               ),
               const SizedBox(height: AppSpacing.space6),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Partner pamphlets', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
-                  GestureDetector(onTap: onOpenShop, child: Text('Shop', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.gold700))),
+                  Text(l10n.partnerPamphletsTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
+                  GestureDetector(onTap: onOpenShop, child: Text(l10n.shopTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.gold700))),
                 ],
               ),
               const SizedBox(height: AppSpacing.space3),
@@ -216,7 +218,7 @@ class HomeScreen extends StatelessWidget {
                     return Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                      child: Text('No featured pamphlet right now.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                      child: Text(l10n.homeNoPamphlet, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                     );
                   }
                   return InkWell(
@@ -234,7 +236,7 @@ class HomeScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(pamphlet.title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                Text('Sold by ${pamphlet.partner} · pick up with a QR code.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                Text(l10n.homePamphletSoldBy(pamphlet.partner), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
@@ -245,7 +247,7 @@ class HomeScreen extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 10),
-                                    SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onOpenPamphlet, child: const Text('Buy')),
+                                    SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onOpenPamphlet, child: Text(l10n.buy)),
                                   ],
                                 ),
                               ],
@@ -258,24 +260,24 @@ class HomeScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: AppSpacing.space6),
-              Text('SIGN UP ONLY WHEN YOU WANT TO…', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.7)),
+              Text(l10n.homeSignUpPrompt, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.7)),
               const SizedBox(height: AppSpacing.space3),
               Container(
                 decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   children: [
-                    _lockedRow(Icons.local_fire_department_outlined, 'Earn & redeem contributor credits'),
+                    _lockedRow(Icons.local_fire_department_outlined, l10n.homeLockedCredits),
                     const Divider(height: 1),
-                    _lockedRow(Icons.fact_check_outlined, 'Track your contributions'),
+                    _lockedRow(Icons.fact_check_outlined, l10n.homeLockedTrackContributions),
                     const Divider(height: 1),
-                    _lockedRow(Icons.notifications_none, 'Get instructor status alerts'),
+                    _lockedRow(Icons.notifications_none, l10n.homeLockedInstructorAlerts),
                   ],
                 ),
               ),
               const SizedBox(height: AppSpacing.space4),
               Text(
-                'Reading papers stays open to everyone — 3 free views a day, no account needed.',
+                l10n.homeReadingOpenNote,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary, height: 1.5),
               ),

@@ -45,5 +45,75 @@
   "authErrorLogin": "Login failed. Check your email and password.",
   "authErrorRegisterReferral": "Registration failed. Check your details, and that the referral code is correct.",
   "authErrorRegisterGeneric": "Registration failed. That email may already be in use.",
-  "authErrorUnknown": "Something went wrong. Check your connection and try again."
+  "authErrorUnknown": "Something went wrong. Check your connection and try again.",
+
+  "homeWelcomeGreeting": "Welcome",
+  "guestLabel": "Guest",
+  "joinFree": "Join free",
+  "homeExploringBadge": "Exploring — no account",
+  "homeFreeViewsLabel": "FREE PAPER VIEWS",
+  "homeFreeViewsCount": "3 a day",
+  "homeFreeViewsHint": "No account needed. Sign up to track usage and unlock more.",
+  "goPro": "Go Pro",
+  "homeNoPapersYet": "No papers published yet — check back soon.",
+  "homePaperLabelWithYear": "{label} {year}",
+  "@homePaperLabelWithYear": {
+    "placeholders": {"label": {"type": "String"}, "year": {"type": "int"}}
+  },
+  "homeFreeToView": "Free to view — marking guide sold separately",
+  "homeContributionTitle": "Contribution — earn credit",
+  "homeContributionPrompt": "Got a past paper or report we don't have?",
+  "homeContributionSubtitle": "Snap a photo, tag it, earn bonus credit once it's verified — first contribution counts.",
+  "notesTitle": "Notes",
+  "notesSubtitle": "Topic study notes by subject",
+  "shopTitle": "Shop",
+  "shopSubtitle": "Partner pamphlets, QR pickup",
+  "partnerPamphletsTitle": "Partner pamphlets",
+  "homeNoPamphlet": "No featured pamphlet right now.",
+  "homePamphletSoldBy": "Sold by {partner} · pick up with a QR code.",
+  "@homePamphletSoldBy": {
+    "placeholders": {"partner": {"type": "String"}}
+  },
+  "buy": "Buy",
+  "homeSignUpPrompt": "SIGN UP ONLY WHEN YOU WANT TO…",
+  "homeLockedCredits": "Earn & redeem contributor credits",
+  "homeLockedTrackContributions": "Track your contributions",
+  "homeLockedInstructorAlerts": "Get instructor status alerts",
+  "homeReadingOpenNote": "Reading papers stays open to everyone — 3 free views a day, no account needed.",
+
+  "greetingMorning": "Good morning",
+  "greetingAfternoon": "Good afternoon",
+  "greetingEvening": "Good evening",
+  "practiceModeLabel": "PRACTICE MODE",
+  "practiceModeTitle": "Learn without countdown pressure",
+  "practiceModeSubtitle": "Browse real past papers by subject and year.",
+  "trialLabel": "YOUR FREE TRIAL",
+  "trialFirstUnlockFree": "Open your first marking guide free",
+  "trialUnlimitedViews": "Unlimited paper views during your trial",
+  "trialDaysLeft": "{days} days left",
+  "@trialDaysLeft": {
+    "placeholders": {"days": {"type": "int"}}
+  },
+  "trialFeatures": "Unlimited paper views · AI assistant",
+  "trialKeepAccess": "Keep my access",
+  "quickActionContribute": "Contribute",
+  "dailyChallengeLabel": "Daily challenge",
+  "dailyChallengeLoading": "Loading…",
+  "dailyChallengeInfo": "{title} · {count} questions",
+  "@dailyChallengeInfo": {
+    "placeholders": {"title": {"type": "String"}, "count": {"type": "int"}}
+  },
+  "playNow": "Play now",
+  "streakDayCount": "{count}-DAY STREAK",
+  "@streakDayCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "startAStreak": "START A STREAK",
+  "streakDaysCount": "{count} days",
+  "@streakDaysCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "streakStart": "Start",
+  "streakKeepGoing": "Keep it going",
+  "streakPlayToBegin": "Play a quiz to begin"
 }

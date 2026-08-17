@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repositories/quizzes_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/quiz.dart';
 import '../../models/spekooh_user.dart';
 import '../../theme/app_colors.dart';
@@ -42,15 +43,16 @@ class LoggedInHomeScreen extends StatelessWidget {
   final ProfileRepository profileRepository;
   final QuizzesRepository quizzesRepository;
 
-  String get _greeting {
+  String _greeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return l10n.greetingMorning;
+    if (hour < 18) return l10n.greetingAfternoon;
+    return l10n.greetingEvening;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -98,7 +100,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(_greeting, style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
+                                          Text(_greeting(l10n), style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
                                           Text(user?.name ?? '…', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.white)),
                                         ],
                                       ),
@@ -146,7 +148,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                                         const Icon(Icons.local_fire_department, size: 12, color: AppColors.ink900),
                                         const SizedBox(width: 4),
                                         Text(
-                                          streak > 0 ? '$streak-DAY STREAK' : 'START A STREAK',
+                                          streak > 0 ? l10n.streakDayCount(streak) : l10n.startAStreak,
                                           style: const TextStyle(color: AppColors.ink900, fontSize: 11, fontWeight: FontWeight.w800),
                                         ),
                                       ],
@@ -189,9 +191,9 @@ class LoggedInHomeScreen extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('PRACTICE MODE', style: TextStyle(color: AppColors.green600, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-                                    Text('Learn without countdown pressure', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
-                                    Text('Browse real past papers by subject and year.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                    Text(l10n.practiceModeLabel, style: TextStyle(color: AppColors.green600, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+                                    Text(l10n.practiceModeTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
+                                    Text(l10n.practiceModeSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                                   ],
                                 ),
                               ),
@@ -214,7 +216,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('YOUR FREE TRIAL', style: TextStyle(color: AppColors.gold700, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+                                Text(l10n.trialLabel, style: TextStyle(color: AppColors.gold700, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
                                 const SizedBox(height: 4),
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,21 +232,21 @@ class LoggedInHomeScreen extends StatelessWidget {
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        user.firstUnlockFreeEligible ? 'Open your first marking guide free' : 'Unlimited paper views during your trial',
+                                        user.firstUnlockFreeEligible ? l10n.trialFirstUnlockFree : l10n.trialUnlimitedViews,
                                         style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary),
                                       ),
                                     ),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(color: AppColors.surfaceSunken, borderRadius: BorderRadius.circular(999)),
-                                      child: Text('${user.trialDaysRemaining} days left', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                                      child: Text(l10n.trialDaysLeft(user.trialDaysRemaining), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                Text('Unlimited paper views · AI assistant', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                Text(l10n.trialFeatures, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                                 const SizedBox(height: 10),
-                                SizedBox(width: double.infinity, child: SpekoohButton(onPressed: onOpenPaywall, child: const Text('Keep my access'))),
+                                SizedBox(width: double.infinity, child: SpekoohButton(onPressed: onOpenPaywall, child: Text(l10n.trialKeepAccess))),
                               ],
                             ),
                           );
@@ -261,12 +263,12 @@ class LoggedInHomeScreen extends StatelessWidget {
                         mainAxisSpacing: 8,
                         childAspectRatio: 1.5,
                         children: [
-                          _quickAction(Icons.description_outlined, 'Papers', onOpenPapers),
-                          _quickAction(Icons.menu_book_outlined, 'Notes', onOpenNotes),
-                          _quickAction(Icons.upload_outlined, 'Contribute', onOpenSubmit),
-                          _quickAction(Icons.shopping_bag_outlined, 'Shop', onOpenShop),
-                          _quickAction(Icons.chat_bubble_outline, 'Forum', onOpenForum),
-                          _quickAction(Icons.bolt_outlined, 'Quizzes', onOpenQuizzes),
+                          _quickAction(Icons.description_outlined, l10n.navPapers, onOpenPapers),
+                          _quickAction(Icons.menu_book_outlined, l10n.notesTitle, onOpenNotes),
+                          _quickAction(Icons.upload_outlined, l10n.quickActionContribute, onOpenSubmit),
+                          _quickAction(Icons.shopping_bag_outlined, l10n.shopTitle, onOpenShop),
+                          _quickAction(Icons.chat_bubble_outline, l10n.navForum, onOpenForum),
+                          _quickAction(Icons.bolt_outlined, l10n.navQuizzes, onOpenQuizzes),
                         ],
                       ),
                     ),
@@ -287,17 +289,17 @@ class LoggedInHomeScreen extends StatelessWidget {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text('Daily challenge', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                                        Text(l10n.dailyChallengeLabel, style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 13)),
                                         const SizedBox(height: 2),
                                         Text(
-                                          quiz == null ? 'Loading…' : '${quiz.title} · ${quiz.questionCount} questions',
+                                          quiz == null ? l10n.dailyChallengeLoading : l10n.dailyChallengeInfo(quiz.title, quiz.questionCount),
                                           style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 11),
                                         ),
                                         const SizedBox(height: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                           decoration: BoxDecoration(color: AppColors.gold500, borderRadius: BorderRadius.circular(999)),
-                                          child: const Text('Play now', style: TextStyle(color: AppColors.ink900, fontWeight: FontWeight.w800, fontSize: 12)),
+                                          child: Text(l10n.playNow, style: const TextStyle(color: AppColors.ink900, fontWeight: FontWeight.w800, fontSize: 12)),
                                         ),
                                       ],
                                     ),
@@ -312,8 +314,8 @@ class LoggedInHomeScreen extends StatelessWidget {
                                           children: [
                                             Icon(Icons.local_fire_department_outlined, size: 22, color: AppColors.gold500),
                                             const SizedBox(height: 4),
-                                            Text(streak > 0 ? '$streak days' : 'Start', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 13)),
-                                            Text(streak > 0 ? 'Keep it going' : 'Play a quiz to begin', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 10)),
+                                            Text(streak > 0 ? l10n.streakDaysCount(streak) : l10n.streakStart, style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                                            Text(streak > 0 ? l10n.streakKeepGoing : l10n.streakPlayToBegin, style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 10)),
                                           ],
                                         ),
                                       );

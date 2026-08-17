@@ -128,4 +128,176 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get authErrorUnknown =>
       'Une erreur s\'est produite. Vérifiez votre connexion et réessayez.';
+
+  @override
+  String get homeWelcomeGreeting => 'Bienvenue';
+
+  @override
+  String get guestLabel => 'Invité';
+
+  @override
+  String get joinFree => 'Inscription gratuite';
+
+  @override
+  String get homeExploringBadge => 'Vous explorez — sans compte';
+
+  @override
+  String get homeFreeViewsLabel => 'ÉPREUVES GRATUITES';
+
+  @override
+  String get homeFreeViewsCount => '3 par jour';
+
+  @override
+  String get homeFreeViewsHint =>
+      'Aucun compte requis. Inscrivez-vous pour suivre votre utilisation et débloquer plus.';
+
+  @override
+  String get goPro => 'Passer à Pro';
+
+  @override
+  String get homeNoPapersYet =>
+      'Aucune épreuve publiée pour l\'instant — revenez bientôt.';
+
+  @override
+  String homePaperLabelWithYear(String label, int year) {
+    return '$label $year';
+  }
+
+  @override
+  String get homeFreeToView =>
+      'Consultation gratuite — corrigé vendu séparément';
+
+  @override
+  String get homeContributionTitle => 'Contribution — gagnez des crédits';
+
+  @override
+  String get homeContributionPrompt =>
+      'Vous avez une ancienne épreuve ou un rapport que nous n\'avons pas ?';
+
+  @override
+  String get homeContributionSubtitle =>
+      'Prenez une photo, identifiez-la, gagnez un bonus une fois vérifiée — la première contribution compte.';
+
+  @override
+  String get notesTitle => 'Notes';
+
+  @override
+  String get notesSubtitle => 'Fiches de révision par matière';
+
+  @override
+  String get shopTitle => 'Boutique';
+
+  @override
+  String get shopSubtitle => 'Fascicules partenaires, retrait par QR code';
+
+  @override
+  String get partnerPamphletsTitle => 'Fascicules partenaires';
+
+  @override
+  String get homeNoPamphlet => 'Aucun fascicule à la une pour le moment.';
+
+  @override
+  String homePamphletSoldBy(String partner) {
+    return 'Vendu par $partner · retrait avec un code QR.';
+  }
+
+  @override
+  String get buy => 'Acheter';
+
+  @override
+  String get homeSignUpPrompt => 'INSCRIVEZ-VOUS SEULEMENT QUAND VOUS VOULEZ…';
+
+  @override
+  String get homeLockedCredits => 'Gagner et utiliser des crédits contributeur';
+
+  @override
+  String get homeLockedTrackContributions => 'Suivre vos contributions';
+
+  @override
+  String get homeLockedInstructorAlerts =>
+      'Recevoir des alertes de statut instructeur';
+
+  @override
+  String get homeReadingOpenNote =>
+      'La lecture des épreuves reste ouverte à tous — 3 consultations gratuites par jour, sans compte.';
+
+  @override
+  String get greetingMorning => 'Bonjour';
+
+  @override
+  String get greetingAfternoon => 'Bonjour';
+
+  @override
+  String get greetingEvening => 'Bonsoir';
+
+  @override
+  String get practiceModeLabel => 'MODE ENTRAÎNEMENT';
+
+  @override
+  String get practiceModeTitle => 'Apprenez sans pression de chronomètre';
+
+  @override
+  String get practiceModeSubtitle =>
+      'Parcourez de vraies épreuves par matière et année.';
+
+  @override
+  String get trialLabel => 'VOTRE ESSAI GRATUIT';
+
+  @override
+  String get trialFirstUnlockFree =>
+      'Ouvrez votre premier corrigé gratuitement';
+
+  @override
+  String get trialUnlimitedViews =>
+      'Consultations illimitées pendant votre essai';
+
+  @override
+  String trialDaysLeft(int days) {
+    return '$days jours restants';
+  }
+
+  @override
+  String get trialFeatures => 'Consultations illimitées · Assistant IA';
+
+  @override
+  String get trialKeepAccess => 'Garder mon accès';
+
+  @override
+  String get quickActionContribute => 'Contribuer';
+
+  @override
+  String get dailyChallengeLabel => 'Défi du jour';
+
+  @override
+  String get dailyChallengeLoading => 'Chargement…';
+
+  @override
+  String dailyChallengeInfo(String title, int count) {
+    return '$title · $count questions';
+  }
+
+  @override
+  String get playNow => 'Jouer maintenant';
+
+  @override
+  String streakDayCount(int count) {
+    return 'SÉRIE DE $count JOURS';
+  }
+
+  @override
+  String get startAStreak => 'COMMENCER UNE SÉRIE';
+
+  @override
+  String streakDaysCount(int count) {
+    return '$count jours';
+  }
+
+  @override
+  String get streakStart => 'Commencer';
+
+  @override
+  String get streakKeepGoing => 'Continuez ainsi';
+
+  @override
+  String get streakPlayToBegin => 'Jouez à un quiz pour commencer';
 }

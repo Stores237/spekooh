@@ -331,6 +331,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Check your connection and try again.'**
   String get authErrorUnknown;
+
+  /// No description provided for @homeWelcomeGreeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get homeWelcomeGreeting;
+
+  /// No description provided for @guestLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest'**
+  String get guestLabel;
+
+  /// No description provided for @joinFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Join free'**
+  String get joinFree;
+
+  /// No description provided for @homeExploringBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Exploring — no account'**
+  String get homeExploringBadge;
+
+  /// No description provided for @homeFreeViewsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'FREE PAPER VIEWS'**
+  String get homeFreeViewsLabel;
+
+  /// No description provided for @homeFreeViewsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'3 a day'**
+  String get homeFreeViewsCount;
+
+  /// No description provided for @homeFreeViewsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No account needed. Sign up to track usage and unlock more.'**
+  String get homeFreeViewsHint;
+
+  /// No description provided for @goPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Pro'**
+  String get goPro;
+
+  /// No description provided for @homeNoPapersYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No papers published yet — check back soon.'**
+  String get homeNoPapersYet;
+
+  /// No description provided for @homePaperLabelWithYear.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} {year}'**
+  String homePaperLabelWithYear(String label, int year);
+
+  /// No description provided for @homeFreeToView.
+  ///
+  /// In en, this message translates to:
+  /// **'Free to view — marking guide sold separately'**
+  String get homeFreeToView;
+
+  /// No description provided for @homeContributionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution — earn credit'**
+  String get homeContributionTitle;
+
+  /// No description provided for @homeContributionPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got a past paper or report we don\'t have?'**
+  String get homeContributionPrompt;
+
+  /// No description provided for @homeContributionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Snap a photo, tag it, earn bonus credit once it\'s verified — first contribution counts.'**
+  String get homeContributionSubtitle;
+
+  /// No description provided for @notesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notesTitle;
+
+  /// No description provided for @notesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic study notes by subject'**
+  String get notesSubtitle;
+
+  /// No description provided for @shopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop'**
+  String get shopTitle;
+
+  /// No description provided for @shopSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner pamphlets, QR pickup'**
+  String get shopSubtitle;
+
+  /// No description provided for @partnerPamphletsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner pamphlets'**
+  String get partnerPamphletsTitle;
+
+  /// No description provided for @homeNoPamphlet.
+  ///
+  /// In en, this message translates to:
+  /// **'No featured pamphlet right now.'**
+  String get homeNoPamphlet;
+
+  /// No description provided for @homePamphletSoldBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold by {partner} · pick up with a QR code.'**
+  String homePamphletSoldBy(String partner);
+
+  /// No description provided for @buy.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy'**
+  String get buy;
+
+  /// No description provided for @homeSignUpPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'SIGN UP ONLY WHEN YOU WANT TO…'**
+  String get homeSignUpPrompt;
+
+  /// No description provided for @homeLockedCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn & redeem contributor credits'**
+  String get homeLockedCredits;
+
+  /// No description provided for @homeLockedTrackContributions.
+  ///
+  /// In en, this message translates to:
+  /// **'Track your contributions'**
+  String get homeLockedTrackContributions;
+
+  /// No description provided for @homeLockedInstructorAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Get instructor status alerts'**
+  String get homeLockedInstructorAlerts;
+
+  /// No description provided for @homeReadingOpenNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading papers stays open to everyone — 3 free views a day, no account needed.'**
+  String get homeReadingOpenNote;
+
+  /// No description provided for @greetingMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get greetingMorning;
+
+  /// No description provided for @greetingAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get greetingAfternoon;
+
+  /// No description provided for @greetingEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get greetingEvening;
+
+  /// No description provided for @practiceModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PRACTICE MODE'**
+  String get practiceModeLabel;
+
+  /// No description provided for @practiceModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn without countdown pressure'**
+  String get practiceModeTitle;
+
+  /// No description provided for @practiceModeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse real past papers by subject and year.'**
+  String get practiceModeSubtitle;
+
+  /// No description provided for @trialLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR FREE TRIAL'**
+  String get trialLabel;
+
+  /// No description provided for @trialFirstUnlockFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Open your first marking guide free'**
+  String get trialFirstUnlockFree;
+
+  /// No description provided for @trialUnlimitedViews.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited paper views during your trial'**
+  String get trialUnlimitedViews;
+
+  /// No description provided for @trialDaysLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days left'**
+  String trialDaysLeft(int days);
+
+  /// No description provided for @trialFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited paper views · AI assistant'**
+  String get trialFeatures;
+
+  /// No description provided for @trialKeepAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my access'**
+  String get trialKeepAccess;
+
+  /// No description provided for @quickActionContribute.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribute'**
+  String get quickActionContribute;
+
+  /// No description provided for @dailyChallengeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily challenge'**
+  String get dailyChallengeLabel;
+
+  /// No description provided for @dailyChallengeLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get dailyChallengeLoading;
+
+  /// No description provided for @dailyChallengeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} · {count} questions'**
+  String dailyChallengeInfo(String title, int count);
+
+  /// No description provided for @playNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Play now'**
+  String get playNow;
+
+  /// No description provided for @streakDayCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}-DAY STREAK'**
+  String streakDayCount(int count);
+
+  /// No description provided for @startAStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'START A STREAK'**
+  String get startAStreak;
+
+  /// No description provided for @streakDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String streakDaysCount(int count);
+
+  /// No description provided for @streakStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get streakStart;
+
+  /// No description provided for @streakKeepGoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it going'**
+  String get streakKeepGoing;
+
+  /// No description provided for @streakPlayToBegin.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a quiz to begin'**
+  String get streakPlayToBegin;
 }
 
 class _AppLocalizationsDelegate

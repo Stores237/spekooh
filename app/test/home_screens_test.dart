@@ -6,18 +6,19 @@ import 'package:spekooh/data/repositories/quizzes_repository.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
 import 'package:spekooh/data/repository_locator.dart';
 import 'package:spekooh/models/paper_entry.dart';
+import 'package:spekooh/data/locale_controller.dart';
+import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/screens/home/home_screen.dart';
 import 'package:spekooh/screens/home/logged_in_home_screen.dart';
-import 'package:spekooh/theme/app_theme.dart';
 import 'package:spekooh/main.dart';
 
+import 'support/l10n_test_app.dart';
 import 'support/mock_repository_locator.dart';
 
 void main() {
   testWidgets('HomeScreen (guest) shows an honest empty state when nothing is published yet', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      theme: appTheme,
-      home: HomeScreen(papersRepository: MockPapersRepository(), shopRepository: MockShopRepository()),
+    await tester.pumpWidget(l10nTestApp(
+      HomeScreen(papersRepository: MockPapersRepository(), shopRepository: MockShopRepository()),
     ));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
@@ -40,9 +41,8 @@ void main() {
       examTypeName: 'Baccalauréat',
     );
     PaperEntry? opened;
-    await tester.pumpWidget(MaterialApp(
-      theme: appTheme,
-      home: HomeScreen(
+    await tester.pumpWidget(l10nTestApp(
+      HomeScreen(
         papersRepository: MockPapersRepository(seedPublished: [seeded]),
         shopRepository: MockShopRepository(),
         onOpenPaper: (p) => opened = p,
@@ -58,9 +58,8 @@ void main() {
   });
 
   testWidgets('LoggedInHomeScreen builds with real profile/streak/daily-challenge data', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      theme: appTheme,
-      home: LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
     ));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
@@ -96,5 +95,33 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Guest'), findsOneWidget); // MockProfileRepository's real (placeholder) name
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 0);
+  });
+
+  testWidgets('HomeScreen (guest) renders in French once that locale is active', (tester) async {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    await LocaleController.instance.setLocale('fr');
+    await tester.pumpWidget(l10nTestApp(
+      HomeScreen(papersRepository: MockPapersRepository(), shopRepository: MockShopRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Invité'), findsOneWidget);
+    expect(find.text("Aucune épreuve publiée pour l'instant — revenez bientôt."), findsOneWidget);
+    expect(find.text('Guest'), findsNothing);
+  });
+
+  testWidgets('LoggedInHomeScreen renders in French once that locale is active', (tester) async {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    await LocaleController.instance.setLocale('fr');
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Défi du jour'), findsOneWidget);
+    expect(find.text('COMMENCER UNE SÉRIE'), findsOneWidget);
+    expect(find.text('Daily challenge'), findsNothing);
   });
 }
