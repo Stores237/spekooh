@@ -177,5 +177,71 @@
     "placeholders": {"error": {"type": "String"}}
   },
   "choosePdfOrImage": "Choose PDF or image",
-  "takePhoto": "Take a photo"
+  "takePhoto": "Take a photo",
+
+  "filterAll": "All",
+  "forumFilterMySubjects": "My subjects",
+  "forumFilterUnanswered": "Unanswered",
+  "forumFilterSolved": "Solved",
+  "forumMySubjectsUnavailable": "Personalizing by subject isn't available yet.",
+  "forumSolvedUnavailable": "Marking questions as solved isn't available yet.",
+  "forumNoUnanswered": "No unanswered questions right now.",
+  "forumNoPosts": "No posts yet — be the first to ask.",
+  "forumAskButton": "+ Question",
+  "forumAnswersCount": "{count} answers",
+  "@forumAnswersCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "questionTitle": "Question",
+  "repliesCount": "{count} replies",
+  "@repliesCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "writeReplyHint": "Write a reply…",
+  "askForumTitle": "Ask the forum",
+  "askSubjectHint": "Subject (e.g. Physics)",
+  "askQuestionTitleHint": "Question title",
+  "askExplainHint": "Explain what you need help with…",
+  "askFormRequiredError": "Title and question are required.",
+  "postingLabel": "Posting…",
+  "postQuestionButton": "Post question",
+
+  "quizzesPageTitle": "Quiz",
+  "dailyChallengeCapsLabel": "DAILY CHALLENGE",
+  "resetsInLabel": "Resets in {hours}h {minutes}m",
+  "@resetsInLabel": {
+    "placeholders": {"hours": {"type": "int"}, "minutes": {"type": "int"}}
+  },
+  "dailyQuestionsAndPlayed": "{count} questions · {played} students played",
+  "@dailyQuestionsAndPlayed": {
+    "placeholders": {"count": {"type": "int"}, "played": {"type": "int"}}
+  },
+  "dailyStreakLabel": "{count}-day streak",
+  "@dailyStreakLabel": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "playDailyChallenge": "Play daily challenge",
+  "timedPracticeTitle": "Timed practice",
+  "timedPracticeSubtitle": "Exam conditions",
+  "revisionModeTitle": "Revision mode",
+  "revisionModeSubtitle": "No timer, hints on",
+  "pastPaperPracticeTitle": "Past-paper practice",
+  "pastPaperPracticeSubtitle": "Auto-generated from submitted papers — coming soon",
+  "fridayArenaTitle": "Friday Arena",
+  "fridayArenaSubtitle": "Live elimination quiz — coming soon",
+  "topPlayers": "Top players",
+  "bySubjectTitle": "By subject",
+  "statQuestionsLabel": "questions",
+  "statSuggestedLabel": "suggested",
+  "statPlayedLabel": "played",
+  "timerRowLabel": "Timer 8:00",
+  "hintsRowLabel": "Hints  2 available",
+  "shuffleRowLabel": "Shuffle questions",
+  "quizScoreLine": "You scored {score} / {total}",
+  "@quizScoreLine": {
+    "placeholders": {"score": {"type": "int"}, "total": {"type": "int"}}
+  },
+  "startQuizButton": "Start quiz",
+  "submittingLabel": "Submitting…",
+  "doneLabel": "Done"
 }

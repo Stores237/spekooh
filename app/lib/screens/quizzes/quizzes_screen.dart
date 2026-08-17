@@ -3,6 +3,7 @@ import '../../data/auth_session.dart';
 import '../../data/mock/mock_quizzes.dart';
 import '../../data/repositories/quizzes_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/quiz.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
@@ -41,11 +42,11 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
 
   /// Real countdown to local midnight — no backend field exists for this,
   /// but it doesn't need one: it's a pure function of the current time.
-  String get _resetsInLabel {
+  String _resetsInLabel(AppLocalizations l10n) {
     final now = DateTime.now();
     final midnight = DateTime(now.year, now.month, now.day + 1);
     final remaining = midnight.difference(now);
-    return 'Resets in ${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m';
+    return l10n.resetsInLabel(remaining.inHours, remaining.inMinutes.remainder(60));
   }
 
   Quiz? _openQuiz;
@@ -53,7 +54,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
   final _searchController = TextEditingController();
   String _query = '';
 
-  static const _filters = ['All', 'Sciences', 'Arts', 'Commercial'];
+  List<String> _filters(AppLocalizations l10n) => [l10n.filterAll, 'Sciences', 'Arts', 'Commercial'];
   static const _iconByTitle = {
     'Biology quiz': (Icons.eco_outlined, IconChipTint.green),
     'Chemistry quizzes': (Icons.science_outlined, IconChipTint.purple),
@@ -74,11 +75,12 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_openQuiz != null) return _buildDetail(_openQuiz!);
-    return _buildList();
+    final l10n = AppLocalizations.of(context)!;
+    if (_openQuiz != null) return _buildDetail(l10n, _openQuiz!);
+    return _buildList(l10n);
   }
 
-  Widget _buildDetail(Quiz quiz) {
+  Widget _buildDetail(AppLocalizations l10n, Quiz quiz) {
     var timerOn = true;
     var hintsOn = true;
     var shuffleOn = false;
@@ -119,9 +121,9 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                 ),
                 const SizedBox(height: AppSpacing.space4),
                 StatRow(stats: [
-                  SpekoohStat(value: '${quiz.questionCount}', label: 'questions'),
-                  SpekoohStat(value: quiz.suggestedTime, label: 'suggested'),
-                  SpekoohStat(value: '${quiz.playedCount}', label: 'played'),
+                  SpekoohStat(value: '${quiz.questionCount}', label: l10n.statQuestionsLabel),
+                  SpekoohStat(value: quiz.suggestedTime, label: l10n.statSuggestedLabel),
+                  SpekoohStat(value: '${quiz.playedCount}', label: l10n.statPlayedLabel),
                 ]),
                 const SizedBox(height: AppSpacing.space4),
                 Container(
@@ -129,11 +131,11 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     children: [
-                      _settingRow(Icons.timer_outlined, 'Timer 8:00', timerOn, (v) => setLocalState(() => timerOn = v)),
+                      _settingRow(Icons.timer_outlined, l10n.timerRowLabel, timerOn, (v) => setLocalState(() => timerOn = v)),
                       const Divider(height: 1),
-                      _settingRow(Icons.lightbulb_outline, 'Hints  2 available', hintsOn, (v) => setLocalState(() => hintsOn = v)),
+                      _settingRow(Icons.lightbulb_outline, l10n.hintsRowLabel, hintsOn, (v) => setLocalState(() => hintsOn = v)),
                       const Divider(height: 1),
-                      _settingRow(Icons.shuffle, 'Shuffle questions', shuffleOn, (v) => setLocalState(() => shuffleOn = v)),
+                      _settingRow(Icons.shuffle, l10n.shuffleRowLabel, shuffleOn, (v) => setLocalState(() => shuffleOn = v)),
                     ],
                   ),
                 ),
@@ -163,7 +165,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                   ],
                 ],
                 if (score != null) ...[
-                  Text('You scored $score / ${quiz.questions.length}', textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
+                  Text(l10n.quizScoreLine(score!, quiz.questions.length), textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
                   const SizedBox(height: AppSpacing.space3),
                 ],
                 const SizedBox(height: AppSpacing.space5),
@@ -187,7 +189,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                     decoration: BoxDecoration(color: AppColors.gold500, borderRadius: BorderRadius.circular(999)),
                     alignment: Alignment.center,
                     child: Text(
-                      score != null ? 'Done' : (isSubmitting ? 'Submitting…' : 'Start quiz'),
+                      score != null ? l10n.doneLabel : (isSubmitting ? l10n.submittingLabel : l10n.startQuizButton),
                       style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 15),
                     ),
                   ),
@@ -215,7 +217,8 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
     );
   }
 
-  Widget _buildList() {
+  Widget _buildList(AppLocalizations l10n) {
+    final filters = _filters(l10n);
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -225,7 +228,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppSpacing.space2),
-              Text('Quiz', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
+              Text(l10n.quizzesPageTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
               const SizedBox(height: AppSpacing.space4),
               FutureBuilder<Quiz>(
                 future: _dailyFuture,
@@ -242,14 +245,14 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('DAILY CHALLENGE', style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 11)),
-                              Text(_resetsInLabel, style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 11)),
+                              Text(l10n.dailyChallengeCapsLabel, style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 11)),
+                              Text(_resetsInLabel(l10n), style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 11)),
                             ],
                           ),
                           const SizedBox(height: 6),
                           Text(daily.title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.white)),
                           const SizedBox(height: 2),
-                          Text('${daily.questionCount} questions · ${daily.playedCount} students played', style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
+                          Text(l10n.dailyQuestionsAndPlayed(daily.questionCount, daily.playedCount), style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
                           const SizedBox(height: 8),
                           FutureBuilder<({int currentStreak, bool playedToday})>(
                             future: _streakFuture,
@@ -262,7 +265,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                                   children: [
                                     const Icon(Icons.local_fire_department, size: 14, color: AppColors.gold500),
                                     const SizedBox(width: 4),
-                                    Text('$streak-day streak', style: const TextStyle(color: AppColors.gold500, fontSize: 12, fontWeight: FontWeight.w700)),
+                                    Text(l10n.dailyStreakLabel(streak), style: const TextStyle(color: AppColors.gold500, fontSize: 12, fontWeight: FontWeight.w700)),
                                   ],
                                 ),
                               );
@@ -274,7 +277,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             decoration: BoxDecoration(color: AppColors.gold500, borderRadius: BorderRadius.circular(999)),
                             alignment: Alignment.center,
-                            child: Text('Play daily challenge', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.ink900, fontWeight: FontWeight.w800, fontSize: 14)),
+                            child: Text(l10n.playDailyChallenge, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.ink900, fontWeight: FontWeight.w800, fontSize: 14)),
                           ),
                         ],
                       ),
@@ -285,9 +288,9 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
               const SizedBox(height: AppSpacing.space4),
               Row(
                 children: [
-                  Expanded(child: _modeCard(Icons.timer_outlined, 'Timed practice', 'Exam conditions')),
+                  Expanded(child: _modeCard(Icons.timer_outlined, l10n.timedPracticeTitle, l10n.timedPracticeSubtitle)),
                   const SizedBox(width: AppSpacing.space2),
-                  Expanded(child: _modeCard(Icons.shuffle, 'Revision mode', 'No timer, hints on')),
+                  Expanded(child: _modeCard(Icons.shuffle, l10n.revisionModeTitle, l10n.revisionModeSubtitle)),
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
@@ -300,9 +303,9 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                     // paper-to-quiz generation pipeline, no live/scheduled
                     // quiz session model — so they're shown honestly as
                     // upcoming rather than wired to an arbitrary real quiz.
-                    _comingSoonRow(Icons.bolt_outlined, 'Past-paper practice', 'Auto-generated from submitted papers — coming soon'),
+                    _comingSoonRow(Icons.bolt_outlined, l10n.pastPaperPracticeTitle, l10n.pastPaperPracticeSubtitle),
                     const Divider(height: 1),
-                    _comingSoonRow(Icons.emoji_events_outlined, 'Friday Arena', 'Live elimination quiz — coming soon'),
+                    _comingSoonRow(Icons.emoji_events_outlined, l10n.fridayArenaTitle, l10n.fridayArenaSubtitle),
                   ],
                 ),
               ),
@@ -319,7 +322,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                       children: [
                         // No "See all" link — the leaderboard endpoint already
                         // returns its full top-10, there's nothing more to reveal.
-                        const Text('Top players', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                        Text(l10n.topPlayers, style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 14)),
                         const SizedBox(height: AppSpacing.space3),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -340,15 +343,15 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space6),
-              Text('By subject', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
+              Text(l10n.bySubjectTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
               const SizedBox(height: AppSpacing.space3),
-              SearchInput(placeholder: 'Search subjects...', controller: _searchController, onChanged: (v) => setState(() => _query = v)),
+              SearchInput(placeholder: l10n.searchSubjects, controller: _searchController, onChanged: (v) => setState(() => _query = v)),
               const SizedBox(height: AppSpacing.space3),
               SizedBox(
                 height: 32,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _filters.length,
+                  itemCount: filters.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (context, i) {
                     final active = i == _filter;
@@ -362,7 +365,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                           boxShadow: active ? null : AppShadows.card,
                         ),
                         alignment: Alignment.center,
-                        child: Text(_filters[i], style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: active ? AppColors.white : AppColors.textSecondary)),
+                        child: Text(filters[i], style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: active ? AppColors.white : AppColors.textSecondary)),
                       ),
                     );
                   },

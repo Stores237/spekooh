@@ -437,4 +437,157 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get takePhoto => 'Take a photo';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get forumFilterMySubjects => 'My subjects';
+
+  @override
+  String get forumFilterUnanswered => 'Unanswered';
+
+  @override
+  String get forumFilterSolved => 'Solved';
+
+  @override
+  String get forumMySubjectsUnavailable =>
+      'Personalizing by subject isn\'t available yet.';
+
+  @override
+  String get forumSolvedUnavailable =>
+      'Marking questions as solved isn\'t available yet.';
+
+  @override
+  String get forumNoUnanswered => 'No unanswered questions right now.';
+
+  @override
+  String get forumNoPosts => 'No posts yet — be the first to ask.';
+
+  @override
+  String get forumAskButton => '+ Question';
+
+  @override
+  String forumAnswersCount(int count) {
+    return '$count answers';
+  }
+
+  @override
+  String get questionTitle => 'Question';
+
+  @override
+  String repliesCount(int count) {
+    return '$count replies';
+  }
+
+  @override
+  String get writeReplyHint => 'Write a reply…';
+
+  @override
+  String get askForumTitle => 'Ask the forum';
+
+  @override
+  String get askSubjectHint => 'Subject (e.g. Physics)';
+
+  @override
+  String get askQuestionTitleHint => 'Question title';
+
+  @override
+  String get askExplainHint => 'Explain what you need help with…';
+
+  @override
+  String get askFormRequiredError => 'Title and question are required.';
+
+  @override
+  String get postingLabel => 'Posting…';
+
+  @override
+  String get postQuestionButton => 'Post question';
+
+  @override
+  String get quizzesPageTitle => 'Quiz';
+
+  @override
+  String get dailyChallengeCapsLabel => 'DAILY CHALLENGE';
+
+  @override
+  String resetsInLabel(int hours, int minutes) {
+    return 'Resets in ${hours}h ${minutes}m';
+  }
+
+  @override
+  String dailyQuestionsAndPlayed(int count, int played) {
+    return '$count questions · $played students played';
+  }
+
+  @override
+  String dailyStreakLabel(int count) {
+    return '$count-day streak';
+  }
+
+  @override
+  String get playDailyChallenge => 'Play daily challenge';
+
+  @override
+  String get timedPracticeTitle => 'Timed practice';
+
+  @override
+  String get timedPracticeSubtitle => 'Exam conditions';
+
+  @override
+  String get revisionModeTitle => 'Revision mode';
+
+  @override
+  String get revisionModeSubtitle => 'No timer, hints on';
+
+  @override
+  String get pastPaperPracticeTitle => 'Past-paper practice';
+
+  @override
+  String get pastPaperPracticeSubtitle =>
+      'Auto-generated from submitted papers — coming soon';
+
+  @override
+  String get fridayArenaTitle => 'Friday Arena';
+
+  @override
+  String get fridayArenaSubtitle => 'Live elimination quiz — coming soon';
+
+  @override
+  String get topPlayers => 'Top players';
+
+  @override
+  String get bySubjectTitle => 'By subject';
+
+  @override
+  String get statQuestionsLabel => 'questions';
+
+  @override
+  String get statSuggestedLabel => 'suggested';
+
+  @override
+  String get statPlayedLabel => 'played';
+
+  @override
+  String get timerRowLabel => 'Timer 8:00';
+
+  @override
+  String get hintsRowLabel => 'Hints  2 available';
+
+  @override
+  String get shuffleRowLabel => 'Shuffle questions';
+
+  @override
+  String quizScoreLine(int score, int total) {
+    return 'You scored $score / $total';
+  }
+
+  @override
+  String get startQuizButton => 'Start quiz';
+
+  @override
+  String get submittingLabel => 'Submitting…';
+
+  @override
+  String get doneLabel => 'Done';
 }

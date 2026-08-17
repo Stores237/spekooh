@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/repositories/forum_repository.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
@@ -32,8 +33,9 @@ class _AskForumPostSheetState extends State<AskForumPostSheet> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_titleController.text.trim().isEmpty || _bodyController.text.trim().isEmpty) {
-      setState(() => _error = 'Title and question are required.');
+      setState(() => _error = l10n.askFormRequiredError);
       return;
     }
     setState(() {
@@ -48,7 +50,7 @@ class _AskForumPostSheetState extends State<AskForumPostSheet> {
       );
       if (mounted) Navigator.of(context).pop(post);
     } catch (_) {
-      setState(() => _error = 'Something went wrong. Check your connection and try again.');
+      if (mounted) setState(() => _error = l10n.authErrorUnknown);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -56,6 +58,7 @@ class _AskForumPostSheetState extends State<AskForumPostSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 10, 22, 26),
       decoration: const BoxDecoration(
@@ -72,19 +75,19 @@ class _AskForumPostSheetState extends State<AskForumPostSheet> {
               child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.borderSubtle, borderRadius: BorderRadius.circular(2))),
             ),
             const SizedBox(height: AppSpacing.space4),
-            Text('Ask the forum', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
+            Text(l10n.askForumTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
             const SizedBox(height: AppSpacing.space4),
-            _Field(controller: _tagController, hint: 'Subject (e.g. Physics)'),
+            _Field(controller: _tagController, hint: l10n.askSubjectHint),
             const SizedBox(height: AppSpacing.space3),
-            _Field(controller: _titleController, hint: 'Question title'),
+            _Field(controller: _titleController, hint: l10n.askQuestionTitleHint),
             const SizedBox(height: AppSpacing.space3),
-            _Field(controller: _bodyController, hint: 'Explain what you need help with…', maxLines: 4),
+            _Field(controller: _bodyController, hint: l10n.askExplainHint, maxLines: 4),
             if (_error != null) ...[
               const SizedBox(height: AppSpacing.space3),
               Text(_error!, style: const TextStyle(color: AppColors.red500, fontSize: 12)),
             ],
             const SizedBox(height: AppSpacing.space4),
-            SpekoohButton(onPressed: _isSubmitting ? null : _submit, child: Text(_isSubmitting ? 'Posting…' : 'Post question')),
+            SpekoohButton(onPressed: _isSubmitting ? null : _submit, child: Text(_isSubmitting ? l10n.postingLabel : l10n.postQuestionButton)),
           ],
         ),
       ),

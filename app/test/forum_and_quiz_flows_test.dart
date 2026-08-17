@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/forum_repository.dart';
 import 'package:spekooh/data/repositories/quizzes_repository.dart';
+import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/screens/forum/forum_screen.dart';
 import 'package:spekooh/screens/quizzes/quizzes_screen.dart';
-import 'package:spekooh/theme/app_theme.dart';
+
+import 'support/l10n_test_app.dart';
 
 void main() {
+  tearDown(() {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+  });
+
   testWidgets('Forum: Ask button posts a new question that appears in the list', (tester) async {
     final repo = MockForumRepository();
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: ForumScreen(repository: repo)));
+    await tester.pumpWidget(l10nTestApp(ForumScreen(repository: repo)));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    await tester.tap(find.text('+ Ask'));
+    await tester.tap(find.text('+ Question'));
     await tester.pumpAndSettle();
 
     final fields = find.byType(TextField);
@@ -28,7 +35,7 @@ void main() {
 
   testWidgets('Forum: tapping a post opens detail, upvote toggles, reply posts', (tester) async {
     final repo = MockForumRepository();
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: ForumScreen(repository: repo)));
+    await tester.pumpWidget(l10nTestApp(ForumScreen(repository: repo)));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
@@ -54,7 +61,7 @@ void main() {
     // The mock posts are all pre-answered, so a genuinely-real "Unanswered"
     // filter should empty the list, not just relabel the same content.
     await repo.createPost(tag: 'Chemistry', title: 'Freshly asked, zero replies', body: 'x');
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: ForumScreen(repository: repo)));
+    await tester.pumpWidget(l10nTestApp(ForumScreen(repository: repo)));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
@@ -83,7 +90,7 @@ void main() {
 
   testWidgets('Quizzes: opening a quiz and submitting answers shows a score', (tester) async {
     final repo = MockQuizzesRepository();
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: QuizzesScreen(repository: repo)));
+    await tester.pumpWidget(l10nTestApp(QuizzesScreen(repository: repo)));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
@@ -114,7 +121,7 @@ void main() {
 
   testWidgets('Quizzes: unbuilt features (past-paper practice, Friday Arena) are shown as coming soon, not fake content', (tester) async {
     final repo = MockQuizzesRepository();
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: QuizzesScreen(repository: repo)));
+    await tester.pumpWidget(l10nTestApp(QuizzesScreen(repository: repo)));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
@@ -128,11 +135,35 @@ void main() {
 
   testWidgets('Quizzes: daily challenge shows a real computed reset countdown, not a hardcoded one', (tester) async {
     final repo = MockQuizzesRepository();
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: QuizzesScreen(repository: repo)));
+    await tester.pumpWidget(l10nTestApp(QuizzesScreen(repository: repo)));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.textContaining('Resets in'), findsOneWidget);
     expect(find.text('Resets in 7h 23m'), findsNothing); // the old hardcoded literal
+  });
+
+  testWidgets('ForumScreen renders in French once that locale is active', (tester) async {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    await LocaleController.instance.setLocale('fr');
+    await tester.pumpWidget(l10nTestApp(ForumScreen(repository: MockForumRepository())));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Forum'), findsOneWidget); // same word in both languages
+    expect(find.text('Sans réponse'), findsOneWidget);
+    expect(find.text('Unanswered'), findsNothing);
+  });
+
+  testWidgets('QuizzesScreen renders in French once that locale is active', (tester) async {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    await LocaleController.instance.setLocale('fr');
+    await tester.pumpWidget(l10nTestApp(QuizzesScreen(repository: MockQuizzesRepository())));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('DÉFI DU JOUR'), findsOneWidget);
+    expect(find.text('Meilleurs joueurs'), findsOneWidget);
+    expect(find.text('DAILY CHALLENGE'), findsNothing);
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/repositories/forum_repository.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/forum_post.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
@@ -64,6 +65,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -75,7 +77,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                 children: [
                   CircularBackButton(onTap: () => Navigator.of(context).pop()),
                   const SizedBox(width: 12),
-                  Text('Question', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary)),
+                  Text(l10n.questionTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary)),
                 ],
               ),
             ),
@@ -120,7 +122,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space4),
-                  Text('${_post.answers} replies', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
+                  Text(l10n.repliesCount(_post.answers), style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
                   const SizedBox(height: AppSpacing.space2),
                   FutureBuilder<List<ForumReply>>(
                     future: _repliesFuture,
@@ -161,7 +163,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                       decoration: BoxDecoration(color: AppColors.white, border: Border.all(color: AppColors.borderSubtle), borderRadius: BorderRadius.circular(999)),
                       child: TextField(
                         controller: _replyController,
-                        decoration: const InputDecoration(hintText: 'Write a reply…', border: InputBorder.none, isDense: true),
+                        decoration: InputDecoration(hintText: l10n.writeReplyHint, border: InputBorder.none, isDense: true),
                         style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13),
                       ),
                     ),

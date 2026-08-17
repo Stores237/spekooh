@@ -883,6 +883,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Take a photo'**
   String get takePhoto;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @forumFilterMySubjects.
+  ///
+  /// In en, this message translates to:
+  /// **'My subjects'**
+  String get forumFilterMySubjects;
+
+  /// No description provided for @forumFilterUnanswered.
+  ///
+  /// In en, this message translates to:
+  /// **'Unanswered'**
+  String get forumFilterUnanswered;
+
+  /// No description provided for @forumFilterSolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Solved'**
+  String get forumFilterSolved;
+
+  /// No description provided for @forumMySubjectsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Personalizing by subject isn\'t available yet.'**
+  String get forumMySubjectsUnavailable;
+
+  /// No description provided for @forumSolvedUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Marking questions as solved isn\'t available yet.'**
+  String get forumSolvedUnavailable;
+
+  /// No description provided for @forumNoUnanswered.
+  ///
+  /// In en, this message translates to:
+  /// **'No unanswered questions right now.'**
+  String get forumNoUnanswered;
+
+  /// No description provided for @forumNoPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'No posts yet — be the first to ask.'**
+  String get forumNoPosts;
+
+  /// No description provided for @forumAskButton.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Question'**
+  String get forumAskButton;
+
+  /// No description provided for @forumAnswersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} answers'**
+  String forumAnswersCount(int count);
+
+  /// No description provided for @questionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get questionTitle;
+
+  /// No description provided for @repliesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} replies'**
+  String repliesCount(int count);
+
+  /// No description provided for @writeReplyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a reply…'**
+  String get writeReplyHint;
+
+  /// No description provided for @askForumTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the forum'**
+  String get askForumTitle;
+
+  /// No description provided for @askSubjectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject (e.g. Physics)'**
+  String get askSubjectHint;
+
+  /// No description provided for @askQuestionTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Question title'**
+  String get askQuestionTitleHint;
+
+  /// No description provided for @askExplainHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain what you need help with…'**
+  String get askExplainHint;
+
+  /// No description provided for @askFormRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'Title and question are required.'**
+  String get askFormRequiredError;
+
+  /// No description provided for @postingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting…'**
+  String get postingLabel;
+
+  /// No description provided for @postQuestionButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Post question'**
+  String get postQuestionButton;
+
+  /// No description provided for @quizzesPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get quizzesPageTitle;
+
+  /// No description provided for @dailyChallengeCapsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DAILY CHALLENGE'**
+  String get dailyChallengeCapsLabel;
+
+  /// No description provided for @resetsInLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Resets in {hours}h {minutes}m'**
+  String resetsInLabel(int hours, int minutes);
+
+  /// No description provided for @dailyQuestionsAndPlayed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} questions · {played} students played'**
+  String dailyQuestionsAndPlayed(int count, int played);
+
+  /// No description provided for @dailyStreakLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}-day streak'**
+  String dailyStreakLabel(int count);
+
+  /// No description provided for @playDailyChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Play daily challenge'**
+  String get playDailyChallenge;
+
+  /// No description provided for @timedPracticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Timed practice'**
+  String get timedPracticeTitle;
+
+  /// No description provided for @timedPracticeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam conditions'**
+  String get timedPracticeSubtitle;
+
+  /// No description provided for @revisionModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revision mode'**
+  String get revisionModeTitle;
+
+  /// No description provided for @revisionModeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No timer, hints on'**
+  String get revisionModeSubtitle;
+
+  /// No description provided for @pastPaperPracticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Past-paper practice'**
+  String get pastPaperPracticeTitle;
+
+  /// No description provided for @pastPaperPracticeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-generated from submitted papers — coming soon'**
+  String get pastPaperPracticeSubtitle;
+
+  /// No description provided for @fridayArenaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friday Arena'**
+  String get fridayArenaTitle;
+
+  /// No description provided for @fridayArenaSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live elimination quiz — coming soon'**
+  String get fridayArenaSubtitle;
+
+  /// No description provided for @topPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Top players'**
+  String get topPlayers;
+
+  /// No description provided for @bySubjectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'By subject'**
+  String get bySubjectTitle;
+
+  /// No description provided for @statQuestionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'questions'**
+  String get statQuestionsLabel;
+
+  /// No description provided for @statSuggestedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'suggested'**
+  String get statSuggestedLabel;
+
+  /// No description provided for @statPlayedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'played'**
+  String get statPlayedLabel;
+
+  /// No description provided for @timerRowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Timer 8:00'**
+  String get timerRowLabel;
+
+  /// No description provided for @hintsRowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hints  2 available'**
+  String get hintsRowLabel;
+
+  /// No description provided for @shuffleRowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle questions'**
+  String get shuffleRowLabel;
+
+  /// No description provided for @quizScoreLine.
+  ///
+  /// In en, this message translates to:
+  /// **'You scored {score} / {total}'**
+  String quizScoreLine(int score, int total);
+
+  /// No description provided for @startQuizButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Start quiz'**
+  String get startQuizButton;
+
+  /// No description provided for @submittingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting…'**
+  String get submittingLabel;
+
+  /// No description provided for @doneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get doneLabel;
 }
 
 class _AppLocalizationsDelegate

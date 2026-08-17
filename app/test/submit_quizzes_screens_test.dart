@@ -6,12 +6,16 @@ import 'package:spekooh/data/repositories/quizzes_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/screens/submit/submit_screen.dart';
 import 'package:spekooh/screens/quizzes/quizzes_screen.dart';
-import 'package:spekooh/theme/app_theme.dart';
 import 'package:spekooh/widgets/spekooh_button.dart';
 
 import 'support/l10n_test_app.dart';
 
 void main() {
+  tearDown(() {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+  });
+
+
   testWidgets('SubmitScreen builds a real paper-picker flow and the report tab is honest about being unwired', (tester) async {
     await tester.pumpWidget(l10nTestApp(SubmitScreen(repository: MockPapersRepository())));
     await tester.pump();
@@ -64,7 +68,7 @@ void main() {
   });
 
   testWidgets('QuizzesScreen builds and opens/closes quiz detail', (tester) async {
-    await tester.pumpWidget(MaterialApp(theme: appTheme, home: QuizzesScreen(repository: MockQuizzesRepository())));
+    await tester.pumpWidget(l10nTestApp(QuizzesScreen(repository: MockQuizzesRepository())));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(tester.takeException(), isNull);

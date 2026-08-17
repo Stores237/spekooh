@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/forum_post.dart';
 import '../../sheets/ask_forum_post_sheet.dart';
 import '../../theme/app_colors.dart';
@@ -26,7 +27,9 @@ class ForumScreen extends StatefulWidget {
 class _ForumScreenState extends State<ForumScreen> {
   late Future<List<ForumPost>> _postsFuture = widget.repository.getPosts();
   int _filter = 0;
-  static const _filters = ['All', 'My subjects', 'Unanswered', 'Solved'];
+
+  List<String> _filters(AppLocalizations l10n) =>
+      [l10n.filterAll, l10n.forumFilterMySubjects, l10n.forumFilterUnanswered, l10n.forumFilterSolved];
 
   // "My subjects" needs a per-user subject-preference concept that doesn't
   // exist anywhere in the backend (no such field on User, no per-post
@@ -68,6 +71,8 @@ class _ForumScreenState extends State<ForumScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final filters = _filters(l10n);
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -85,7 +90,7 @@ class _ForumScreenState extends State<ForumScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Forum',
+                        l10n.navForum,
                         style: TextStyle(
                           fontFamily: plusJakartaSansFamily,
                           fontWeight: FontWeight.w800,
@@ -107,7 +112,7 @@ class _ForumScreenState extends State<ForumScreen> {
                     height: 32,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      itemCount: _filters.length,
+                      itemCount: filters.length,
                       separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, i) {
                         final active = i == _filter;
@@ -127,7 +132,7 @@ class _ForumScreenState extends State<ForumScreen> {
                             ),
                             alignment: Alignment.center,
                             child: Text(
-                              _filters[i],
+                              filters[i],
                               style: TextStyle(
                                 fontFamily: plusJakartaSansFamily,
                                 fontSize: 12,
@@ -148,8 +153,8 @@ class _ForumScreenState extends State<ForumScreen> {
                         ? Center(
                             child: Text(
                               _filter == 1
-                                  ? 'Personalizing by subject isn\'t available yet.'
-                                  : 'Marking questions as solved isn\'t available yet.',
+                                  ? l10n.forumMySubjectsUnavailable
+                                  : l10n.forumSolvedUnavailable,
                               textAlign: TextAlign.center,
                               style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
                             ),
@@ -160,7 +165,7 @@ class _ForumScreenState extends State<ForumScreen> {
                               final posts = _applyFilter(snapshot.data ?? const []);
                               if (snapshot.connectionState != ConnectionState.waiting && posts.isEmpty) {
                                 return Center(
-                                  child: Text(_filter == 2 ? 'No unanswered questions right now.' : 'No posts yet — be the first to ask.',
+                                  child: Text(_filter == 2 ? l10n.forumNoUnanswered : l10n.forumNoPosts,
                                       style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
                                 );
                               }
@@ -198,7 +203,7 @@ class _ForumScreenState extends State<ForumScreen> {
                       vertical: 13,
                     ),
                     child: Text(
-                      '+ Ask',
+                      l10n.forumAskButton,
                       style: TextStyle(
                         fontFamily: plusJakartaSansFamily,
                         color: AppColors.white,
@@ -223,6 +228,7 @@ class _PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -303,7 +309,7 @@ class _PostCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                '${post.answers} answers',
+                l10n.forumAnswersCount(post.answers),
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.textTertiary,

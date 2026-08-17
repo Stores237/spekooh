@@ -444,4 +444,161 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get takePhoto => 'Prendre une photo';
+
+  @override
+  String get filterAll => 'Toutes';
+
+  @override
+  String get forumFilterMySubjects => 'Mes matières';
+
+  @override
+  String get forumFilterUnanswered => 'Sans réponse';
+
+  @override
+  String get forumFilterSolved => 'Résolu';
+
+  @override
+  String get forumMySubjectsUnavailable =>
+      'La personnalisation par matière n\'est pas encore disponible.';
+
+  @override
+  String get forumSolvedUnavailable =>
+      'Marquer les questions comme résolues n\'est pas encore disponible.';
+
+  @override
+  String get forumNoUnanswered =>
+      'Aucune question sans réponse pour le moment.';
+
+  @override
+  String get forumNoPosts =>
+      'Aucune question pour l\'instant — soyez le premier à en poser une.';
+
+  @override
+  String get forumAskButton => '+ Question';
+
+  @override
+  String forumAnswersCount(int count) {
+    return '$count réponses';
+  }
+
+  @override
+  String get questionTitle => 'Question';
+
+  @override
+  String repliesCount(int count) {
+    return '$count réponses';
+  }
+
+  @override
+  String get writeReplyHint => 'Écrivez une réponse…';
+
+  @override
+  String get askForumTitle => 'Posez une question au forum';
+
+  @override
+  String get askSubjectHint => 'Matière (ex. Physique)';
+
+  @override
+  String get askQuestionTitleHint => 'Titre de la question';
+
+  @override
+  String get askExplainHint => 'Expliquez ce dont vous avez besoin d\'aide…';
+
+  @override
+  String get askFormRequiredError =>
+      'Le titre et la question sont obligatoires.';
+
+  @override
+  String get postingLabel => 'Publication…';
+
+  @override
+  String get postQuestionButton => 'Publier la question';
+
+  @override
+  String get quizzesPageTitle => 'Quiz';
+
+  @override
+  String get dailyChallengeCapsLabel => 'DÉFI DU JOUR';
+
+  @override
+  String resetsInLabel(int hours, int minutes) {
+    return 'Réinitialisation dans ${hours}h ${minutes}m';
+  }
+
+  @override
+  String dailyQuestionsAndPlayed(int count, int played) {
+    return '$count questions · $played étudiants ont participé';
+  }
+
+  @override
+  String dailyStreakLabel(int count) {
+    return 'Série de $count jours';
+  }
+
+  @override
+  String get playDailyChallenge => 'Jouer au défi du jour';
+
+  @override
+  String get timedPracticeTitle => 'Entraînement chronométré';
+
+  @override
+  String get timedPracticeSubtitle => 'Conditions d\'examen';
+
+  @override
+  String get revisionModeTitle => 'Mode révision';
+
+  @override
+  String get revisionModeSubtitle => 'Sans chronomètre, indices activés';
+
+  @override
+  String get pastPaperPracticeTitle => 'Entraînement aux anciennes épreuves';
+
+  @override
+  String get pastPaperPracticeSubtitle =>
+      'Généré automatiquement à partir des épreuves soumises — bientôt disponible';
+
+  @override
+  String get fridayArenaTitle => 'Arène du vendredi';
+
+  @override
+  String get fridayArenaSubtitle =>
+      'Quiz d\'élimination en direct — bientôt disponible';
+
+  @override
+  String get topPlayers => 'Meilleurs joueurs';
+
+  @override
+  String get bySubjectTitle => 'Par matière';
+
+  @override
+  String get statQuestionsLabel => 'questions';
+
+  @override
+  String get statSuggestedLabel => 'suggéré';
+
+  @override
+  String get statPlayedLabel => 'joués';
+
+  @override
+  String get timerRowLabel => 'Minuteur 8:00';
+
+  @override
+  String get hintsRowLabel => 'Indices  2 disponibles';
+
+  @override
+  String get shuffleRowLabel => 'Mélanger les questions';
+
+  @override
+  String quizScoreLine(int score, int total) {
+    return 'Vous avez obtenu $score / $total';
+  }
+
+  @override
+  String get startQuizButton => 'Commencer le quiz';
+
+  @override
+  String get submittingLabel => 'Envoi en cours…';
+
+  @override
+  String get doneLabel => 'Terminé';
 }
