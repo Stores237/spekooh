@@ -1297,6 +1297,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sold by {partner} · QR pickup'**
   String pamphletSoldByQr(String partner);
+
+  /// No description provided for @notesScreenSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic study notes, contributed alongside papers'**
+  String get notesScreenSubtitle;
+
+  /// No description provided for @searchTopics.
+  ///
+  /// In en, this message translates to:
+  /// **'Search topics...'**
+  String get searchTopics;
+
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// No description provided for @allCaughtUp.
+  ///
+  /// In en, this message translates to:
+  /// **'All caught up'**
+  String get allCaughtUp;
 }
 
 class _AppLocalizationsDelegate

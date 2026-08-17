@@ -675,4 +675,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String pamphletSoldByQr(String partner) {
     return 'Sold by $partner · QR pickup';
   }
+
+  @override
+  String get notesScreenSubtitle =>
+      'Topic study notes, contributed alongside papers';
+
+  @override
+  String get searchTopics => 'Search topics...';
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get allCaughtUp => 'All caught up';
 }

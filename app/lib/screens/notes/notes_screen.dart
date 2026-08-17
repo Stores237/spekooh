@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
@@ -36,6 +37,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -49,33 +51,35 @@ class _NotesScreenState extends State<NotesScreen> {
                 children: [
                   CircularBackButton(onTap: () => Navigator.of(context).pop()),
                   const SizedBox(width: AppSpacing.space3),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Notes',
-                        style: TextStyle(
-                          fontFamily: plusJakartaSansFamily,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 19,
-                          color: AppColors.textPrimary,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.notesTitle,
+                          style: TextStyle(
+                            fontFamily: plusJakartaSansFamily,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 19,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Topic study notes, contributed alongside papers',
-                        style: TextStyle(
-                          fontFamily: plusJakartaSansFamily,
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
+                        Text(
+                          l10n.notesScreenSubtitle,
+                          style: TextStyle(
+                            fontFamily: plusJakartaSansFamily,
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
               SearchInput(
-                placeholder: 'Search topics...',
+                placeholder: l10n.searchTopics,
                 controller: _searchController,
                 onChanged: (v) => setState(() => _query = v),
               ),

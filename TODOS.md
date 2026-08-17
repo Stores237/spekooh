@@ -90,8 +90,11 @@ I can write unilaterally. Grouped by what each one unblocks.
   proper names of those systems/exams in either language, not generic UI chrome. Found and
   fixed one real layout bug while translating Shop: the header title+subtitle Column wasn't
   wrapped in `Expanded`, so the longer French subtitle overflowed the Row — same class of
-  fixed-width assumption a wider EN string could hit too, not French-specific. Still hardcoded
-  English — Notes, Notifications, and the remaining sheets/dialogs (paywall, pamphlet, etc.).
+  fixed-width assumption a wider EN string could hit too, not French-specific (applied the same
+  proactive `Expanded` fix to Notes' and Notifications' matching header pattern while there).
+  Notes and Notifications are now translated too. Still hardcoded English — the remaining
+  sheets/dialogs (paywall, pamphlet) and some of PaperDetailScreen's own copy (only its report
+  dialog got translated earlier, as part of the flag/report feature itself).
 - **Why P0:** spec §3.1 lists this as must-have "from launch, not a future add-on."
 
 ### 2. ~~Rewarded-ad unlock~~ — done

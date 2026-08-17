@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/repositories/notifications_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/notification_item.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
@@ -31,6 +32,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -44,12 +46,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 children: [
                   CircularBackButton(onTap: () => Navigator.of(context).pop()),
                   const SizedBox(width: AppSpacing.space3),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Notifications', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
-                      Text('All caught up', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.notificationsTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
+                        Text(l10n.allCaughtUp, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                      ],
+                    ),
                   ),
                 ],
               ),

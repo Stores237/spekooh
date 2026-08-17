@@ -286,5 +286,10 @@
   "pamphletSoldByQr": "Sold by {partner} · QR pickup",
   "@pamphletSoldByQr": {
     "placeholders": {"partner": {"type": "String"}}
-  }
+  },
+
+  "notesScreenSubtitle": "Topic study notes, contributed alongside papers",
+  "searchTopics": "Search topics...",
+  "notificationsTitle": "Notifications",
+  "allCaughtUp": "All caught up"
 }

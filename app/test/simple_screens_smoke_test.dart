@@ -167,4 +167,12 @@ void main() {
     expect(find.text('Boutique'), findsOneWidget);
     expect(find.text('Shop'), findsNothing);
   });
+
+  testWidgets('NotificationsScreen renders in French once that locale is active', (tester) async {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    await LocaleController.instance.setLocale('fr');
+    await _pumpAndCheck(tester, NotificationsScreen(repository: MockNotificationsRepository()));
+    expect(find.text('Tout est à jour'), findsOneWidget);
+    expect(find.text('All caught up'), findsNothing);
+  });
 }
