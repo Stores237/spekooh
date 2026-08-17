@@ -1321,6 +1321,354 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All caught up'**
   String get allCaughtUp;
+
+  /// No description provided for @adNotCompletedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad not completed — no view granted.'**
+  String get adNotCompletedError;
+
+  /// No description provided for @adLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load an ad: {error}'**
+  String adLoadError(String error);
+
+  /// No description provided for @unlockFailedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock failed: {error}'**
+  String unlockFailedError(String error);
+
+  /// No description provided for @couldNotOpenFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the file.'**
+  String get couldNotOpenFile;
+
+  /// No description provided for @reportThanksMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks — the Review Team has been notified.'**
+  String get reportThanksMessage;
+
+  /// No description provided for @reportSendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send report: {error}'**
+  String reportSendError(String error);
+
+  /// No description provided for @noPaperSelectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No paper selected'**
+  String get noPaperSelectedTitle;
+
+  /// No description provided for @noPaperSelectedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse the Papers tab and pick a subject to open a real paper.'**
+  String get noPaperSelectedBody;
+
+  /// No description provided for @backButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get backButton;
+
+  /// No description provided for @publishedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Published'**
+  String get publishedStatus;
+
+  /// No description provided for @reportTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Report an issue with this paper'**
+  String get reportTooltip;
+
+  /// No description provided for @noScannedFileYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No scanned file on this submission yet.'**
+  String get noScannedFileYet;
+
+  /// No description provided for @openScannedPaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Open scanned paper'**
+  String get openScannedPaper;
+
+  /// No description provided for @examBoardLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam board: {board}'**
+  String examBoardLabel(String board);
+
+  /// No description provided for @watchAdForView.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad for +1 view'**
+  String get watchAdForView;
+
+  /// No description provided for @markingGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Marking guide'**
+  String get markingGuideTitle;
+
+  /// No description provided for @markingGuideSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructor-authored + in-house MCQ key'**
+  String get markingGuideSubtitle;
+
+  /// No description provided for @unlockedForAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked for {amount} FCFA.'**
+  String unlockedForAmount(int amount);
+
+  /// No description provided for @unlockButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock — 500 FCFA'**
+  String get unlockButton;
+
+  /// No description provided for @haveRedeemCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Have a redeem code?'**
+  String get haveRedeemCode;
+
+  /// No description provided for @redeemCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem code'**
+  String get redeemCodeHint;
+
+  /// No description provided for @mcqDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Objective/MCQ answers are marked in-house by the Spekooh review team, not the instructor.'**
+  String get mcqDisclaimer;
+
+  /// No description provided for @reportDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report an issue'**
+  String get reportDialogTitle;
+
+  /// No description provided for @reportWhatsWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s wrong?'**
+  String get reportWhatsWrong;
+
+  /// No description provided for @reportDetailsOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Details (optional)'**
+  String get reportDetailsOptional;
+
+  /// No description provided for @cancelButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelButton;
+
+  /// No description provided for @submitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get submitButton;
+
+  /// No description provided for @reasonWrongAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong or missing answers'**
+  String get reasonWrongAnswers;
+
+  /// No description provided for @reasonPoorQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor scan quality / unreadable'**
+  String get reasonPoorQuality;
+
+  /// No description provided for @reasonWrongSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong subject or exam type'**
+  String get reasonWrongSubject;
+
+  /// No description provided for @reasonDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate of another paper'**
+  String get reasonDuplicate;
+
+  /// No description provided for @reasonCopyright.
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright concern'**
+  String get reasonCopyright;
+
+  /// No description provided for @reasonOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get reasonOther;
+
+  /// No description provided for @paywallEnterPhoneError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your MTN MoMo or Orange Money number.'**
+  String get paywallEnterPhoneError;
+
+  /// No description provided for @paywallSubscriptionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription failed: {error}'**
+  String paywallSubscriptionFailed(String error);
+
+  /// No description provided for @paywallYoureProTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re Pro'**
+  String get paywallYoureProTitle;
+
+  /// No description provided for @paywallGetProTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Spekooh Pro'**
+  String get paywallGetProTitle;
+
+  /// No description provided for @paywallRenewsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews {date}.'**
+  String paywallRenewsOn(String date);
+
+  /// No description provided for @paywallDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited question-paper views and an ad-free app. Marking guides are always unlocked separately.'**
+  String get paywallDescription;
+
+  /// No description provided for @paywallBenefitViews.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited question paper views'**
+  String get paywallBenefitViews;
+
+  /// No description provided for @paywallBenefitAds.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero ads while you study'**
+  String get paywallBenefitAds;
+
+  /// No description provided for @paywallBenefitAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructor status alerts'**
+  String get paywallBenefitAlerts;
+
+  /// No description provided for @spekoohProCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'SPEKOOH PRO'**
+  String get spekoohProCaps;
+
+  /// No description provided for @momoOrangeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'MTN MOMO OR ORANGE MONEY NUMBER'**
+  String get momoOrangeLabel;
+
+  /// No description provided for @payButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay 500 FCFA'**
+  String get payButton;
+
+  /// No description provided for @paywallDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Official Spekooh merchant · we never ask for your PIN · receipt + SMS within 2 min'**
+  String get paywallDisclaimer;
+
+  /// No description provided for @pamphletSoldBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold by {partner}'**
+  String pamphletSoldBy(String partner);
+
+  /// No description provided for @escrowExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Spekooh holds your payment in escrow. You\'ll get a one-time QR ticket to collect it at the bookshop — payment only releases to the partner once they scan it.'**
+  String get escrowExplanation;
+
+  /// No description provided for @pickupInStoreLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PICKUP · IN-STORE'**
+  String get pickupInStoreLabel;
+
+  /// No description provided for @payAndReserve.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay & reserve — {amount} FCFA'**
+  String payAndReserve(String amount);
+
+  /// No description provided for @processingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing…'**
+  String get processingLabel;
+
+  /// No description provided for @escrowFooterNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Held in escrow · released to partner only after pickup is confirmed · 5% platform commission'**
+  String get escrowFooterNote;
+
+  /// No description provided for @pickupTicketReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup ticket ready'**
+  String get pickupTicketReady;
+
+  /// No description provided for @showQrAtPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this QR at {partner}. Single-use — expires in 30 days. Payment releases to the partner once they scan it.'**
+  String showQrAtPartner(String partner);
+
+  /// No description provided for @ticketRefLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket ref: {ref}…'**
+  String ticketRefLabel(String ref);
+
+  /// No description provided for @paymentFailedGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment failed. Check your connection and try again.'**
+  String get paymentFailedGeneric;
+
+  /// No description provided for @paywallBlockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily free view limit reached. Watch a rewarded ad or upgrade to Pro.'**
+  String get paywallBlockedMessage;
+
+  /// No description provided for @alreadyReportedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already reported this paper.'**
+  String get alreadyReportedMessage;
 }
 
 class _AppLocalizationsDelegate

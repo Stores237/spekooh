@@ -181,7 +181,7 @@ class HttpPapersRepository implements PapersRepository {
     try {
       await _client.post('/papers/submissions/$paperId/view/');
     } on ApiException catch (e) {
-      if (e.statusCode == 402) throw PaywallException('Daily free view limit reached. Watch a rewarded ad or upgrade to Pro.');
+      if (e.statusCode == 402) throw const PaywallException();
       rethrow;
     }
   }
@@ -209,7 +209,7 @@ class HttpPapersRepository implements PapersRepository {
         if (details.isNotEmpty) 'details': details,
       });
     } on ApiException catch (e) {
-      if (e.statusCode == 409) throw AlreadyReportedException("You've already reported this paper.");
+      if (e.statusCode == 409) throw const AlreadyReportedException();
       rethrow;
     }
   }

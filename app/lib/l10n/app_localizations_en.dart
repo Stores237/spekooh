@@ -688,4 +688,210 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allCaughtUp => 'All caught up';
+
+  @override
+  String get adNotCompletedError => 'Ad not completed — no view granted.';
+
+  @override
+  String adLoadError(String error) {
+    return 'Could not load an ad: $error';
+  }
+
+  @override
+  String unlockFailedError(String error) {
+    return 'Unlock failed: $error';
+  }
+
+  @override
+  String get couldNotOpenFile => 'Could not open the file.';
+
+  @override
+  String get reportThanksMessage =>
+      'Thanks — the Review Team has been notified.';
+
+  @override
+  String reportSendError(String error) {
+    return 'Could not send report: $error';
+  }
+
+  @override
+  String get noPaperSelectedTitle => 'No paper selected';
+
+  @override
+  String get noPaperSelectedBody =>
+      'Browse the Papers tab and pick a subject to open a real paper.';
+
+  @override
+  String get backButton => 'Back';
+
+  @override
+  String get publishedStatus => 'Published';
+
+  @override
+  String get reportTooltip => 'Report an issue with this paper';
+
+  @override
+  String get noScannedFileYet => 'No scanned file on this submission yet.';
+
+  @override
+  String get openScannedPaper => 'Open scanned paper';
+
+  @override
+  String examBoardLabel(String board) {
+    return 'Exam board: $board';
+  }
+
+  @override
+  String get watchAdForView => 'Watch ad for +1 view';
+
+  @override
+  String get markingGuideTitle => 'Marking guide';
+
+  @override
+  String get markingGuideSubtitle => 'Instructor-authored + in-house MCQ key';
+
+  @override
+  String unlockedForAmount(int amount) {
+    return 'Unlocked for $amount FCFA.';
+  }
+
+  @override
+  String get unlockButton => 'Unlock — 500 FCFA';
+
+  @override
+  String get haveRedeemCode => 'Have a redeem code?';
+
+  @override
+  String get redeemCodeHint => 'Redeem code';
+
+  @override
+  String get mcqDisclaimer =>
+      'Objective/MCQ answers are marked in-house by the Spekooh review team, not the instructor.';
+
+  @override
+  String get reportDialogTitle => 'Report an issue';
+
+  @override
+  String get reportWhatsWrong => 'What\'s wrong?';
+
+  @override
+  String get reportDetailsOptional => 'Details (optional)';
+
+  @override
+  String get cancelButton => 'Cancel';
+
+  @override
+  String get submitButton => 'Submit';
+
+  @override
+  String get reasonWrongAnswers => 'Wrong or missing answers';
+
+  @override
+  String get reasonPoorQuality => 'Poor scan quality / unreadable';
+
+  @override
+  String get reasonWrongSubject => 'Wrong subject or exam type';
+
+  @override
+  String get reasonDuplicate => 'Duplicate of another paper';
+
+  @override
+  String get reasonCopyright => 'Copyright concern';
+
+  @override
+  String get reasonOther => 'Other';
+
+  @override
+  String get paywallEnterPhoneError =>
+      'Enter your MTN MoMo or Orange Money number.';
+
+  @override
+  String paywallSubscriptionFailed(String error) {
+    return 'Subscription failed: $error';
+  }
+
+  @override
+  String get paywallYoureProTitle => 'You\'re Pro';
+
+  @override
+  String get paywallGetProTitle => 'Get Spekooh Pro';
+
+  @override
+  String paywallRenewsOn(String date) {
+    return 'Renews $date.';
+  }
+
+  @override
+  String get paywallDescription =>
+      'Unlimited question-paper views and an ad-free app. Marking guides are always unlocked separately.';
+
+  @override
+  String get paywallBenefitViews => 'Unlimited question paper views';
+
+  @override
+  String get paywallBenefitAds => 'Zero ads while you study';
+
+  @override
+  String get paywallBenefitAlerts => 'Instructor status alerts';
+
+  @override
+  String get spekoohProCaps => 'SPEKOOH PRO';
+
+  @override
+  String get momoOrangeLabel => 'MTN MOMO OR ORANGE MONEY NUMBER';
+
+  @override
+  String get payButton => 'Pay 500 FCFA';
+
+  @override
+  String get paywallDisclaimer =>
+      'Official Spekooh merchant · we never ask for your PIN · receipt + SMS within 2 min';
+
+  @override
+  String pamphletSoldBy(String partner) {
+    return 'Sold by $partner';
+  }
+
+  @override
+  String get escrowExplanation =>
+      'Spekooh holds your payment in escrow. You\'ll get a one-time QR ticket to collect it at the bookshop — payment only releases to the partner once they scan it.';
+
+  @override
+  String get pickupInStoreLabel => 'PICKUP · IN-STORE';
+
+  @override
+  String payAndReserve(String amount) {
+    return 'Pay & reserve — $amount FCFA';
+  }
+
+  @override
+  String get processingLabel => 'Processing…';
+
+  @override
+  String get escrowFooterNote =>
+      'Held in escrow · released to partner only after pickup is confirmed · 5% platform commission';
+
+  @override
+  String get pickupTicketReady => 'Pickup ticket ready';
+
+  @override
+  String showQrAtPartner(String partner) {
+    return 'Show this QR at $partner. Single-use — expires in 30 days. Payment releases to the partner once they scan it.';
+  }
+
+  @override
+  String ticketRefLabel(String ref) {
+    return 'Ticket ref: $ref…';
+  }
+
+  @override
+  String get paymentFailedGeneric =>
+      'Payment failed. Check your connection and try again.';
+
+  @override
+  String get paywallBlockedMessage =>
+      'Daily free view limit reached. Watch a rewarded ad or upgrade to Pro.';
+
+  @override
+  String get alreadyReportedMessage => 'You\'ve already reported this paper.';
 }

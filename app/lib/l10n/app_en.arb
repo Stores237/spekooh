@@ -291,5 +291,100 @@
   "notesScreenSubtitle": "Topic study notes, contributed alongside papers",
   "searchTopics": "Search topics...",
   "notificationsTitle": "Notifications",
-  "allCaughtUp": "All caught up"
+  "allCaughtUp": "All caught up",
+
+  "adNotCompletedError": "Ad not completed — no view granted.",
+  "adLoadError": "Could not load an ad: {error}",
+  "@adLoadError": {
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "unlockFailedError": "Unlock failed: {error}",
+  "@unlockFailedError": {
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "couldNotOpenFile": "Could not open the file.",
+  "reportThanksMessage": "Thanks — the Review Team has been notified.",
+  "reportSendError": "Could not send report: {error}",
+  "@reportSendError": {
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "noPaperSelectedTitle": "No paper selected",
+  "noPaperSelectedBody": "Browse the Papers tab and pick a subject to open a real paper.",
+  "backButton": "Back",
+  "publishedStatus": "Published",
+  "reportTooltip": "Report an issue with this paper",
+  "noScannedFileYet": "No scanned file on this submission yet.",
+  "openScannedPaper": "Open scanned paper",
+  "examBoardLabel": "Exam board: {board}",
+  "@examBoardLabel": {
+    "placeholders": {"board": {"type": "String"}}
+  },
+  "watchAdForView": "Watch ad for +1 view",
+  "markingGuideTitle": "Marking guide",
+  "markingGuideSubtitle": "Instructor-authored + in-house MCQ key",
+  "unlockedForAmount": "Unlocked for {amount} FCFA.",
+  "@unlockedForAmount": {
+    "placeholders": {"amount": {"type": "int"}}
+  },
+  "unlockButton": "Unlock — 500 FCFA",
+  "haveRedeemCode": "Have a redeem code?",
+  "redeemCodeHint": "Redeem code",
+  "mcqDisclaimer": "Objective/MCQ answers are marked in-house by the Spekooh review team, not the instructor.",
+  "reportDialogTitle": "Report an issue",
+  "reportWhatsWrong": "What's wrong?",
+  "reportDetailsOptional": "Details (optional)",
+  "cancelButton": "Cancel",
+  "submitButton": "Submit",
+
+  "reasonWrongAnswers": "Wrong or missing answers",
+  "reasonPoorQuality": "Poor scan quality / unreadable",
+  "reasonWrongSubject": "Wrong subject or exam type",
+  "reasonDuplicate": "Duplicate of another paper",
+  "reasonCopyright": "Copyright concern",
+  "reasonOther": "Other",
+
+  "paywallEnterPhoneError": "Enter your MTN MoMo or Orange Money number.",
+  "paywallSubscriptionFailed": "Subscription failed: {error}",
+  "@paywallSubscriptionFailed": {
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "paywallYoureProTitle": "You're Pro",
+  "paywallGetProTitle": "Get Spekooh Pro",
+  "paywallRenewsOn": "Renews {date}.",
+  "@paywallRenewsOn": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "paywallDescription": "Unlimited question-paper views and an ad-free app. Marking guides are always unlocked separately.",
+  "paywallBenefitViews": "Unlimited question paper views",
+  "paywallBenefitAds": "Zero ads while you study",
+  "paywallBenefitAlerts": "Instructor status alerts",
+  "spekoohProCaps": "SPEKOOH PRO",
+  "momoOrangeLabel": "MTN MOMO OR ORANGE MONEY NUMBER",
+  "payButton": "Pay 500 FCFA",
+  "paywallDisclaimer": "Official Spekooh merchant · we never ask for your PIN · receipt + SMS within 2 min",
+
+  "pamphletSoldBy": "Sold by {partner}",
+  "@pamphletSoldBy": {
+    "placeholders": {"partner": {"type": "String"}}
+  },
+  "escrowExplanation": "Spekooh holds your payment in escrow. You'll get a one-time QR ticket to collect it at the bookshop — payment only releases to the partner once they scan it.",
+  "pickupInStoreLabel": "PICKUP · IN-STORE",
+  "payAndReserve": "Pay & reserve — {amount} FCFA",
+  "@payAndReserve": {
+    "placeholders": {"amount": {"type": "String"}}
+  },
+  "processingLabel": "Processing…",
+  "escrowFooterNote": "Held in escrow · released to partner only after pickup is confirmed · 5% platform commission",
+  "pickupTicketReady": "Pickup ticket ready",
+  "showQrAtPartner": "Show this QR at {partner}. Single-use — expires in 30 days. Payment releases to the partner once they scan it.",
+  "@showQrAtPartner": {
+    "placeholders": {"partner": {"type": "String"}}
+  },
+  "ticketRefLabel": "Ticket ref: {ref}…",
+  "@ticketRefLabel": {
+    "placeholders": {"ref": {"type": "String"}}
+  },
+  "paymentFailedGeneric": "Payment failed. Check your connection and try again.",
+  "paywallBlockedMessage": "Daily free view limit reached. Watch a rewarded ad or upgrade to Pro.",
+  "alreadyReportedMessage": "You've already reported this paper."
 }

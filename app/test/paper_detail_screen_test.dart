@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/ads/rewarded_ad_controller.dart';
+import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
+import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/models/paper_entry.dart';
 import 'package:spekooh/screens/papers/paper_detail_screen.dart';
-import 'package:spekooh/theme/app_theme.dart';
+
+import 'support/l10n_test_app.dart';
 
 final _entry = PaperEntry(
   id: 1,
@@ -31,7 +33,7 @@ class _PaywalledPapersRepository implements PapersRepository {
   @override
   Future<void> recordView(int paperId) async {
     if (!grantView) {
-      throw PaywallException('Daily free view limit reached. Watch a rewarded ad or upgrade to Pro.');
+      throw const PaywallException();
     }
   }
 
@@ -46,7 +48,7 @@ class _PaywalledPapersRepository implements PapersRepository {
 
   @override
   Future<void> reportPaper(int paperId, {required String reason, String details = ''}) async {
-    if (throwAlreadyReported) throw AlreadyReportedException("You've already reported this paper.");
+    if (throwAlreadyReported) throw const AlreadyReportedException();
     reportCalls.add((paperId: paperId, reason: reason, details: details));
   }
 
@@ -67,15 +69,18 @@ class _FakeRewardedAdController implements RewardedAdController {
 }
 
 Future<void> _pump(WidgetTester tester, PapersRepository repository, RewardedAdController adController) async {
-  await tester.pumpWidget(MaterialApp(
-    theme: appTheme,
-    home: PaperDetailScreen(paperEntry: _entry, repository: repository, adController: adController),
+  await tester.pumpWidget(l10nTestApp(
+    PaperDetailScreen(paperEntry: _entry, repository: repository, adController: adController),
   ));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
 }
 
 void main() {
+  tearDown(() {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+  });
+
   testWidgets('paywalled paper shows the banner and a real "Watch ad" button', (tester) async {
     final repository = _PaywalledPapersRepository();
     await _pump(tester, repository, _FakeRewardedAdController(grantsReward: true));
@@ -153,5 +158,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text("You've already reported this paper."), findsOneWidget);
+  });
+
+  testWidgets('PaperDetailScreen renders in French once that locale is active', (tester) async {
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    await LocaleController.instance.setLocale('fr');
+    final repository = _PaywalledPapersRepository();
+    await _pump(tester, repository, _FakeRewardedAdController(grantsReward: true));
+
+    expect(find.text('Corrigé'), findsOneWidget);
+    expect(find.text('Marking guide'), findsNothing);
+    await tester.tap(find.byTooltip('Signaler un problème avec cette épreuve'));
+    await tester.pumpAndSettle();
+    expect(find.text('Signaler un problème'), findsOneWidget);
   });
 }

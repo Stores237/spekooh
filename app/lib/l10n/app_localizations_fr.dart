@@ -699,4 +699,213 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get allCaughtUp => 'Tout est à jour';
+
+  @override
+  String get adNotCompletedError =>
+      'Publicité non terminée — aucune consultation accordée.';
+
+  @override
+  String adLoadError(String error) {
+    return 'Impossible de charger la publicité : $error';
+  }
+
+  @override
+  String unlockFailedError(String error) {
+    return 'Échec du déblocage : $error';
+  }
+
+  @override
+  String get couldNotOpenFile => 'Impossible d\'ouvrir le fichier.';
+
+  @override
+  String get reportThanksMessage =>
+      'Merci — l\'équipe de vérification a été notifiée.';
+
+  @override
+  String reportSendError(String error) {
+    return 'Impossible d\'envoyer le signalement : $error';
+  }
+
+  @override
+  String get noPaperSelectedTitle => 'Aucune épreuve sélectionnée';
+
+  @override
+  String get noPaperSelectedBody =>
+      'Parcourez l\'onglet Épreuves et choisissez une matière pour ouvrir une vraie épreuve.';
+
+  @override
+  String get backButton => 'Retour';
+
+  @override
+  String get publishedStatus => 'Publié';
+
+  @override
+  String get reportTooltip => 'Signaler un problème avec cette épreuve';
+
+  @override
+  String get noScannedFileYet =>
+      'Aucun fichier scanné pour cette soumission pour l\'instant.';
+
+  @override
+  String get openScannedPaper => 'Ouvrir l\'épreuve scannée';
+
+  @override
+  String examBoardLabel(String board) {
+    return 'Jury d\'examen : $board';
+  }
+
+  @override
+  String get watchAdForView => 'Regarder une pub pour +1 consultation';
+
+  @override
+  String get markingGuideTitle => 'Corrigé';
+
+  @override
+  String get markingGuideSubtitle =>
+      'Rédigé par l\'instructeur + clé QCM interne';
+
+  @override
+  String unlockedForAmount(int amount) {
+    return 'Débloqué pour $amount FCFA.';
+  }
+
+  @override
+  String get unlockButton => 'Débloquer — 500 FCFA';
+
+  @override
+  String get haveRedeemCode => 'Vous avez un code de réduction ?';
+
+  @override
+  String get redeemCodeHint => 'Code de réduction';
+
+  @override
+  String get mcqDisclaimer =>
+      'Les réponses aux questions à choix multiples sont corrigées en interne par l\'équipe Spekooh, pas par l\'instructeur.';
+
+  @override
+  String get reportDialogTitle => 'Signaler un problème';
+
+  @override
+  String get reportWhatsWrong => 'Quel est le problème ?';
+
+  @override
+  String get reportDetailsOptional => 'Détails (facultatif)';
+
+  @override
+  String get cancelButton => 'Annuler';
+
+  @override
+  String get submitButton => 'Soumettre';
+
+  @override
+  String get reasonWrongAnswers => 'Réponses incorrectes ou manquantes';
+
+  @override
+  String get reasonPoorQuality => 'Mauvaise qualité de scan / illisible';
+
+  @override
+  String get reasonWrongSubject => 'Mauvaise matière ou type d\'examen';
+
+  @override
+  String get reasonDuplicate => 'Doublon d\'une autre épreuve';
+
+  @override
+  String get reasonCopyright => 'Problème de droits d\'auteur';
+
+  @override
+  String get reasonOther => 'Autre';
+
+  @override
+  String get paywallEnterPhoneError =>
+      'Entrez votre numéro MTN MoMo ou Orange Money.';
+
+  @override
+  String paywallSubscriptionFailed(String error) {
+    return 'Échec de l\'abonnement : $error';
+  }
+
+  @override
+  String get paywallYoureProTitle => 'Vous êtes Pro';
+
+  @override
+  String get paywallGetProTitle => 'Passer à Spekooh Pro';
+
+  @override
+  String paywallRenewsOn(String date) {
+    return 'Renouvellement le $date.';
+  }
+
+  @override
+  String get paywallDescription =>
+      'Consultations d\'épreuves illimitées et une application sans publicité. Les corrigés restent toujours débloqués séparément.';
+
+  @override
+  String get paywallBenefitViews => 'Consultations d\'épreuves illimitées';
+
+  @override
+  String get paywallBenefitAds => 'Zéro publicité pendant vos révisions';
+
+  @override
+  String get paywallBenefitAlerts => 'Alertes de statut instructeur';
+
+  @override
+  String get spekoohProCaps => 'SPEKOOH PRO';
+
+  @override
+  String get momoOrangeLabel => 'NUMÉRO MTN MOMO OU ORANGE MONEY';
+
+  @override
+  String get payButton => 'Payer 500 FCFA';
+
+  @override
+  String get paywallDisclaimer =>
+      'Marchand officiel Spekooh · nous ne demandons jamais votre code PIN · reçu + SMS sous 2 min';
+
+  @override
+  String pamphletSoldBy(String partner) {
+    return 'Vendu par $partner';
+  }
+
+  @override
+  String get escrowExplanation =>
+      'Spekooh conserve votre paiement en séquestre. Vous recevrez un ticket QR à usage unique pour le récupérer à la librairie — le paiement n\'est débloqué au partenaire qu\'une fois le ticket scanné.';
+
+  @override
+  String get pickupInStoreLabel => 'RETRAIT · EN BOUTIQUE';
+
+  @override
+  String payAndReserve(String amount) {
+    return 'Payer et réserver — $amount FCFA';
+  }
+
+  @override
+  String get processingLabel => 'Traitement en cours…';
+
+  @override
+  String get escrowFooterNote =>
+      'Conservé en séquestre · débloqué au partenaire seulement après confirmation du retrait · 5 % de commission plateforme';
+
+  @override
+  String get pickupTicketReady => 'Ticket de retrait prêt';
+
+  @override
+  String showQrAtPartner(String partner) {
+    return 'Montrez ce QR à $partner. Usage unique — expire dans 30 jours. Le paiement est débloqué au partenaire une fois scanné.';
+  }
+
+  @override
+  String ticketRefLabel(String ref) {
+    return 'Réf. du ticket : $ref…';
+  }
+
+  @override
+  String get paymentFailedGeneric =>
+      'Échec du paiement. Vérifiez votre connexion et réessayez.';
+
+  @override
+  String get paywallBlockedMessage =>
+      'Limite quotidienne de consultations gratuites atteinte. Regardez une pub ou passez à Pro.';
+
+  @override
+  String get alreadyReportedMessage => 'Vous avez déjà signalé cette épreuve.';
 }

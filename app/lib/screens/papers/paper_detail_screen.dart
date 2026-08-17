@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../ads/rewarded_ad_controller.dart';
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/exam_taxonomy.dart';
 import '../../models/paper_entry.dart';
 import '../../theme/app_colors.dart';
@@ -46,7 +47,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   late Future<PaperEntry?> _detail;
   bool _unlocking = false;
   int? _unlockedAmount;
-  String? _viewError;
+  bool _viewBlocked = false;
   bool _watchingAd = false;
   final _redeemController = TextEditingController();
   bool _showRedeemField = false;
@@ -76,32 +77,34 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   Future<void> _recordView(int paperId) async {
     try {
       await widget.repository.recordView(paperId);
-      if (mounted) setState(() => _viewError = null);
-    } on PaywallException catch (e) {
-      if (mounted) setState(() => _viewError = e.message);
+      if (mounted) setState(() => _viewBlocked = false);
+    } on PaywallException catch (_) {
+      if (mounted) setState(() => _viewBlocked = true);
     } catch (_) {
       // View-tracking failing shouldn't block reading the detail page.
     }
   }
 
   Future<void> _watchAdForView(int paperId) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _watchingAd = true);
     try {
       final earned = await widget.adController.showAd();
       if (!earned) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ad not completed — no view granted.')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adNotCompletedError)));
         return;
       }
       await widget.repository.recordAdWatch();
       await _recordView(paperId);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not load an ad: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adLoadError('$e'))));
     } finally {
       if (mounted) setState(() => _watchingAd = false);
     }
   }
 
   Future<void> _unlock(int paperId) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _unlocking = true);
     try {
       final amount = await widget.repository.unlockPaper(
@@ -111,7 +114,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       if (mounted) setState(() => _unlockedAmount = amount);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Unlock failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.unlockFailedError('$e'))));
       }
     } finally {
       if (mounted) setState(() => _unlocking = false);
@@ -119,13 +122,15 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   }
 
   Future<void> _openFile(String url) async {
+    final l10n = AppLocalizations.of(context)!;
     final uri = Uri.tryParse(url);
     if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the file.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotOpenFile)));
     }
   }
 
   Future<void> _openReportDialog(int paperId) async {
+    final l10n = AppLocalizations.of(context)!;
     final result = await showDialog<({String reason, String details})>(
       context: context,
       builder: (context) => _ReportPaperDialog(paperId: paperId),
@@ -135,18 +140,19 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       await widget.repository.reportPaper(paperId, reason: result.reason, details: result.details);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thanks — the Review Team has been notified.')),
+          SnackBar(content: Text(l10n.reportThanksMessage)),
         );
       }
-    } on AlreadyReportedException catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } on AlreadyReportedException catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.alreadyReportedMessage)));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not send report: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.reportSendError('$e'))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final selection = widget.paper;
     final entry = selection?.entry ?? widget.paperEntry;
     if (entry == null) {
@@ -161,12 +167,12 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                 children: [
                   const Icon(Icons.description_outlined, size: 40, color: AppColors.textTertiary),
                   const SizedBox(height: AppSpacing.space3),
-                  Text('No paper selected', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
+                  Text(l10n.noPaperSelectedTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
                   const SizedBox(height: 4),
-                  Text('Browse the Papers tab and pick a subject to open a real paper.',
+                  Text(l10n.noPaperSelectedBody,
                       textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                   const SizedBox(height: AppSpacing.space4),
-                  SpekoohButton(size: SpekoohButtonSize.sm, onPressed: () => Navigator.of(context).pop(), child: const Text('Back')),
+                  SpekoohButton(size: SpekoohButtonSize.sm, onPressed: () => Navigator.of(context).pop(), child: Text(l10n.backButton)),
                 ],
               ),
             ),
@@ -208,9 +214,9 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                       ],
                     ),
                   ),
-                  SpekoohBadge(text: entry.isPublished ? 'Published' : 'Under review', tone: SpekoohBadgeTone.neutral),
+                  SpekoohBadge(text: entry.isPublished ? l10n.publishedStatus : l10n.paperUnderReview, tone: SpekoohBadgeTone.neutral),
                   IconButton(
-                    tooltip: 'Report an issue with this paper',
+                    tooltip: l10n.reportTooltip,
                     icon: const Icon(Icons.flag_outlined, size: 20, color: AppColors.textSecondary),
                     onPressed: () => _openReportDialog(entry.id),
                   ),
@@ -235,13 +241,13 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                         alignment: Alignment.center,
                         padding: const EdgeInsets.all(16),
                         child: fileUrl == null
-                            ? Text('No scanned file on this submission yet.', textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textTertiary))
+                            ? Text(l10n.noScannedFileYet, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textTertiary))
                             : Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(Icons.picture_as_pdf_outlined, size: 28, color: AppColors.textSecondary),
                                   const SizedBox(height: AppSpacing.space2),
-                                  SpekoohButton(size: SpekoohButtonSize.sm, onPressed: () => _openFile(fileUrl), child: const Text('Open scanned paper')),
+                                  SpekoohButton(size: SpekoohButtonSize.sm, onPressed: () => _openFile(fileUrl), child: Text(l10n.openScannedPaper)),
                                 ],
                               ),
                       ),
@@ -249,10 +255,10 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                       if (detail != null && detail.examBoard.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.space3),
-                          child: Text('Exam board: ${detail.examBoard}', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                          child: Text(l10n.examBoardLabel(detail.examBoard), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                         ),
-                      if (_viewError != null) ...[
-                        SpekoohBanner(tone: SpekoohBannerTone.blue, icon: const Icon(Icons.lock_clock_outlined), message: _viewError!),
+                      if (_viewBlocked) ...[
+                        SpekoohBanner(tone: SpekoohBannerTone.blue, icon: const Icon(Icons.lock_clock_outlined), message: l10n.paywallBlockedMessage),
                         const SizedBox(height: AppSpacing.space2),
                         // google_mobile_ads has no web implementation — this
                         // affordance only appears on mobile builds, not the
@@ -263,7 +269,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                             onPressed: _watchingAd ? null : () => _watchAdForView(entry.id),
                             child: _watchingAd
                                 ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text('Watch ad for +1 view'),
+                                : Text(l10n.watchAdForView),
                           ),
                         const SizedBox(height: AppSpacing.space3),
                       ],
@@ -280,8 +286,8 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Marking guide', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                      Text('Instructor-authored + in-house MCQ key', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                      Text(l10n.markingGuideTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                      Text(l10n.markingGuideSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                                     ],
                                   ),
                                 ),
@@ -290,19 +296,19 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                             ),
                             const SizedBox(height: 12),
                             if (_unlockedAmount != null)
-                              Text('Unlocked for $_unlockedAmount FCFA.', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600))
+                              Text(l10n.unlockedForAmount(_unlockedAmount!), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600))
                             else ...[
                               Row(
                                 children: [
                                   SpekoohButton(
                                     size: SpekoohButtonSize.sm,
                                     onPressed: _unlocking ? null : () => _unlock(entry.id),
-                                    child: _unlocking ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Unlock — 500 FCFA'),
+                                    child: _unlocking ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)) : Text(l10n.unlockButton),
                                   ),
                                   const SizedBox(width: 12),
                                   GestureDetector(
                                     onTap: () => setState(() => _showRedeemField = !_showRedeemField),
-                                    child: Text('Have a redeem code?', style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700, fontWeight: FontWeight.w700, fontSize: 12)),
+                                    child: Text(l10n.haveRedeemCode, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700, fontWeight: FontWeight.w700, fontSize: 12)),
                                   ),
                                 ],
                               ),
@@ -310,7 +316,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                 const SizedBox(height: 10),
                                 TextField(
                                   controller: _redeemController,
-                                  decoration: const InputDecoration(hintText: 'Redeem code', isDense: true, border: OutlineInputBorder()),
+                                  decoration: InputDecoration(hintText: l10n.redeemCodeHint, isDense: true, border: const OutlineInputBorder()),
                                 ),
                               ],
                             ],
@@ -325,7 +331,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
               SpekoohBanner(
                 tone: SpekoohBannerTone.blue,
                 icon: const Icon(Icons.info_outline),
-                message: 'Objective/MCQ answers are marked in-house by the Spekooh review team, not the instructor.',
+                message: l10n.mcqDisclaimer,
               ),
               const SizedBox(height: AppSpacing.space6),
             ],
@@ -336,9 +342,21 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   }
 }
 
+/// Mirrors backend PaperFlagReason (see paperFlagReasonKeys) with real
+/// localized labels — the map itself can't be a compile-time const since
+/// AppLocalizations needs a BuildContext, so this is a function instead.
+Map<String, String> _reasonLabels(AppLocalizations l10n) => {
+      'WRONG_ANSWERS': l10n.reasonWrongAnswers,
+      'POOR_QUALITY': l10n.reasonPoorQuality,
+      'WRONG_SUBJECT': l10n.reasonWrongSubject,
+      'DUPLICATE': l10n.reasonDuplicate,
+      'COPYRIGHT': l10n.reasonCopyright,
+      'OTHER': l10n.reasonOther,
+    };
+
 /// Pick a reason (mirrors backend PaperFlagReason) + optional free-text
-/// details, mirroring paper_flag_reasons. Pops null on cancel, or the
-/// selected (reason, details) record on submit.
+/// details. Pops null on cancel, or the selected (reason, details) record
+/// on submit.
 class _ReportPaperDialog extends StatefulWidget {
   const _ReportPaperDialog({required this.paperId});
   final int paperId;
@@ -348,7 +366,7 @@ class _ReportPaperDialog extends StatefulWidget {
 }
 
 class _ReportPaperDialogState extends State<_ReportPaperDialog> {
-  String _reason = paperFlagReasons.keys.first;
+  String _reason = paperFlagReasonKeys.first;
   final _detailsController = TextEditingController();
 
   @override
@@ -359,8 +377,10 @@ class _ReportPaperDialogState extends State<_ReportPaperDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final reasonLabels = _reasonLabels(l10n);
     return AlertDialog(
-      title: const Text('Report an issue'),
+      title: Text(l10n.reportDialogTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,8 +388,8 @@ class _ReportPaperDialogState extends State<_ReportPaperDialog> {
           DropdownButtonFormField<String>(
             initialValue: _reason,
             isExpanded: true,
-            decoration: const InputDecoration(labelText: 'What\'s wrong?', isDense: true),
-            items: paperFlagReasons.entries
+            decoration: InputDecoration(labelText: l10n.reportWhatsWrong, isDense: true),
+            items: reasonLabels.entries
                 .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
                 .toList(),
             onChanged: (value) {
@@ -379,16 +399,16 @@ class _ReportPaperDialogState extends State<_ReportPaperDialog> {
           const SizedBox(height: 12),
           TextField(
             controller: _detailsController,
-            decoration: const InputDecoration(labelText: 'Details (optional)', isDense: true, border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: l10n.reportDetailsOptional, isDense: true, border: const OutlineInputBorder()),
             maxLines: 3,
           ),
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.cancelButton)),
         TextButton(
           onPressed: () => Navigator.of(context).pop((reason: _reason, details: _detailsController.text.trim())),
-          child: const Text('Submit'),
+          child: Text(l10n.submitButton),
         ),
       ],
     );

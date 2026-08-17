@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/repositories/shop_repository.dart';
 import '../data/repository_locator.dart';
+import '../l10n/app_localizations.dart';
 import '../models/pamphlet.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
@@ -37,6 +38,7 @@ class _PamphletSheetState extends State<PamphletSheet> {
   }
 
   Future<void> _pay() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isPaying = true;
       _error = null;
@@ -52,7 +54,7 @@ class _PamphletSheetState extends State<PamphletSheet> {
         _paid = true;
       });
     } catch (_) {
-      setState(() => _error = 'Payment failed. Check your connection and try again.');
+      if (mounted) setState(() => _error = l10n.paymentFailedGeneric);
     } finally {
       if (mounted) setState(() => _isPaying = false);
     }
@@ -60,6 +62,7 @@ class _PamphletSheetState extends State<PamphletSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 10, 22, 26),
       decoration: const BoxDecoration(
@@ -73,14 +76,14 @@ class _PamphletSheetState extends State<PamphletSheet> {
           children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.borderSubtle, borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: AppSpacing.space4),
-            if (!_paid) ..._summary() else ..._ticket(),
+            if (!_paid) ..._summary(l10n) else ..._ticket(l10n),
           ],
         ),
       ),
     );
   }
 
-  List<Widget> _summary() {
+  List<Widget> _summary(AppLocalizations l10n) {
     return [
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +96,7 @@ class _PamphletSheetState extends State<PamphletSheet> {
               children: [
                 Text(widget.pamphlet.title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
                 const SizedBox(height: 2),
-                Text('Sold by ${widget.pamphlet.partner}', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                Text(l10n.pamphletSoldBy(widget.pamphlet.partner), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),
@@ -101,7 +104,7 @@ class _PamphletSheetState extends State<PamphletSheet> {
       ),
       const SizedBox(height: AppSpacing.space4),
       Text(
-        'Spekooh holds your payment in escrow. You\'ll get a one-time QR ticket to collect it at the bookshop — payment only releases to the partner once they scan it.',
+        l10n.escrowExplanation,
         style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary, height: 1.5),
       ),
       const SizedBox(height: AppSpacing.space4),
@@ -111,7 +114,7 @@ class _PamphletSheetState extends State<PamphletSheet> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('PICKUP · IN-STORE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textSecondary, letterSpacing: 0.4)),
+            Text(l10n.pickupInStoreLabel, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textSecondary, letterSpacing: 0.4)),
             RichText(
               text: TextSpan(
                 style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary),
@@ -127,7 +130,7 @@ class _PamphletSheetState extends State<PamphletSheet> {
       const SizedBox(height: AppSpacing.space4),
       Align(
         alignment: Alignment.centerLeft,
-        child: Text('MTN MOMO OR ORANGE MONEY NUMBER', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.4)),
+        child: Text(l10n.momoOrangeLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.4)),
       ),
       const SizedBox(height: 6),
       Container(
@@ -157,19 +160,19 @@ class _PamphletSheetState extends State<PamphletSheet> {
         width: double.infinity,
         child: SpekoohButton(
           onPressed: _isPaying ? null : _pay,
-          child: Text(_isPaying ? 'Processing…' : 'Pay & reserve — ${widget.pamphlet.priceFcfa} FCFA'),
+          child: Text(_isPaying ? l10n.processingLabel : l10n.payAndReserve(widget.pamphlet.priceFcfa)),
         ),
       ),
       const SizedBox(height: AppSpacing.space3),
       Text(
-        'Held in escrow · released to partner only after pickup is confirmed · 5% platform commission',
+        l10n.escrowFooterNote,
         textAlign: TextAlign.center,
         style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textTertiary),
       ),
     ];
   }
 
-  List<Widget> _ticket() {
+  List<Widget> _ticket(AppLocalizations l10n) {
     return [
       Container(
         width: 150,
@@ -179,22 +182,22 @@ class _PamphletSheetState extends State<PamphletSheet> {
         child: const Icon(Icons.qr_code_2, color: AppColors.white, size: 96),
       ),
       const SizedBox(height: AppSpacing.space3),
-      Text('Pickup ticket ready', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
+      Text(l10n.pickupTicketReady, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
       const SizedBox(height: 6),
       Text(
-        'Show this QR at ${widget.pamphlet.partner}. Single-use — expires in 30 days. Payment releases to the partner once they scan it.',
+        l10n.showQrAtPartner(widget.pamphlet.partner),
         textAlign: TextAlign.center,
         style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
       ),
       if (_qrToken != null) ...[
         const SizedBox(height: 6),
-        Text('Ticket ref: ${_qrToken!.substring(0, _qrToken!.length.clamp(0, 12))}…', style: const TextStyle(fontSize: 10, color: AppColors.textTertiary)),
+        Text(l10n.ticketRefLabel(_qrToken!.substring(0, _qrToken!.length.clamp(0, 12))), style: const TextStyle(fontSize: 10, color: AppColors.textTertiary)),
       ],
       const SizedBox(height: AppSpacing.space4),
       SpekoohButton(
         variant: SpekoohButtonVariant.secondary,
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Done'),
+        child: Text(l10n.doneLabel),
       ),
     ];
   }

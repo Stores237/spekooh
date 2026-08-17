@@ -68,35 +68,34 @@ abstract class PapersRepository {
   Future<int> unlockPaper(int paperId, {String? redeemCode});
 
   /// Flags a paper for Review Team attention (spec §3.2). [reason] must be
-  /// one of [paperFlagReasons]' keys. Throws [AlreadyReportedException] if
+  /// one of [paperFlagReasonKeys]. Throws [AlreadyReportedException] if
   /// this user already reported this paper — one flag per user per paper.
   Future<void> reportPaper(int paperId, {required String reason, String details});
 }
 
+/// Carries no message — there's exactly one reason this fires (the daily
+/// free-view limit), so the UI supplies the localized text at the catch
+/// site rather than this data layer baking in fixed English.
 class PaywallException implements Exception {
-  PaywallException(this.message);
-  final String message;
-  @override
-  String toString() => message;
+  const PaywallException();
 }
 
+/// Carries no message — see PaywallException.
 class AlreadyReportedException implements Exception {
-  AlreadyReportedException(this.message);
-  final String message;
-  @override
-  String toString() => message;
+  const AlreadyReportedException();
 }
 
-/// Mirrors apps.papers.models.PaperFlagReason on the backend — key sent to
-/// the API, label shown in the report dialog.
-const paperFlagReasons = <String, String>{
-  'WRONG_ANSWERS': 'Wrong or missing answers',
-  'POOR_QUALITY': 'Poor scan quality / unreadable',
-  'WRONG_SUBJECT': 'Wrong subject or exam type',
-  'DUPLICATE': 'Duplicate of another paper',
-  'COPYRIGHT': 'Copyright concern',
-  'OTHER': 'Other',
-};
+/// Mirrors apps.papers.models.PaperFlagReason on the backend — sent to the
+/// API as-is. Display labels are a UI/l10n concern (see paper_detail_screen's
+/// reasonLabels), not this data layer's, so only the ordered keys live here.
+const paperFlagReasonKeys = <String>[
+  'WRONG_ANSWERS',
+  'POOR_QUALITY',
+  'WRONG_SUBJECT',
+  'DUPLICATE',
+  'COPYRIGHT',
+  'OTHER',
+];
 
 class MockPapersRepository implements PapersRepository {
   /// [seedPublished] lets widget tests exercise the "tap a real paper"
@@ -179,7 +178,7 @@ class MockPapersRepository implements PapersRepository {
   @override
   Future<void> reportPaper(int paperId, {required String reason, String details = ''}) async {
     if (!_reportedPaperIds.add(paperId)) {
-      throw AlreadyReportedException("You've already reported this paper.");
+      throw const AlreadyReportedException();
     }
   }
 }

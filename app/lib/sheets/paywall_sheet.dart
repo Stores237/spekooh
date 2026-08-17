@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/repositories/payments_repository.dart';
 import '../data/repository_locator.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
 import '../theme/app_shadows.dart';
@@ -20,11 +21,11 @@ class PaywallSheet extends StatefulWidget {
 }
 
 class _PaywallSheetState extends State<PaywallSheet> {
-  static const _benefits = [
-    (Icons.visibility_outlined, 'Unlimited question paper views'),
-    (Icons.block, 'Zero ads while you study'),
-    (Icons.notifications_none, 'Instructor status alerts'),
-  ];
+  List<(IconData, String)> _benefits(AppLocalizations l10n) => [
+        (Icons.visibility_outlined, l10n.paywallBenefitViews),
+        (Icons.block, l10n.paywallBenefitAds),
+        (Icons.notifications_none, l10n.paywallBenefitAlerts),
+      ];
 
   final _phoneController = TextEditingController();
   bool _subscribing = false;
@@ -38,9 +39,10 @@ class _PaywallSheetState extends State<PaywallSheet> {
   }
 
   Future<void> _subscribe() async {
+    final l10n = AppLocalizations.of(context)!;
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      setState(() => _error = 'Enter your MTN MoMo or Orange Money number.');
+      setState(() => _error = l10n.paywallEnterPhoneError);
       return;
     }
     setState(() {
@@ -53,7 +55,7 @@ class _PaywallSheetState extends State<PaywallSheet> {
     } on SubscriptionError catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (e) {
-      if (mounted) setState(() => _error = 'Subscription failed: $e');
+      if (mounted) setState(() => _error = l10n.paywallSubscriptionFailed('$e'));
     } finally {
       if (mounted) setState(() => _subscribing = false);
     }
@@ -61,6 +63,8 @@ class _PaywallSheetState extends State<PaywallSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final benefits = _benefits(l10n);
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 10, 22, 26),
       decoration: const BoxDecoration(
@@ -82,17 +86,17 @@ class _PaywallSheetState extends State<PaywallSheet> {
               child: Icon(_renewsAt != null ? Icons.check : Icons.star, color: AppColors.white, size: 26),
             ),
             const SizedBox(height: AppSpacing.space3),
-            Text(_renewsAt != null ? "You're Pro" : 'Get Spekooh Pro', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
+            Text(_renewsAt != null ? l10n.paywallYoureProTitle : l10n.paywallGetProTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
             const SizedBox(height: 6),
             if (_renewsAt != null)
               Text(
-                'Renews ${_renewsAt!.year}-${_renewsAt!.month.toString().padLeft(2, '0')}-${_renewsAt!.day.toString().padLeft(2, '0')}.',
+                l10n.paywallRenewsOn('${_renewsAt!.year}-${_renewsAt!.month.toString().padLeft(2, '0')}-${_renewsAt!.day.toString().padLeft(2, '0')}'),
                 textAlign: TextAlign.center,
                 style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
               )
             else
               Text(
-                'Unlimited question-paper views and an ad-free app. Marking guides are always unlocked separately.',
+                l10n.paywallDescription,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
               ),
@@ -103,7 +107,7 @@ class _PaywallSheetState extends State<PaywallSheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   children: [
-                    for (var i = 0; i < _benefits.length; i++) ...[
+                    for (var i = 0; i < benefits.length; i++) ...[
                       if (i > 0) const Divider(height: 1),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 11),
@@ -114,10 +118,10 @@ class _PaywallSheetState extends State<PaywallSheet> {
                               height: 26,
                               decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.green100),
                               alignment: Alignment.center,
-                              child: Icon(_benefits[i].$1, size: 14, color: AppColors.green600),
+                              child: Icon(benefits[i].$1, size: 14, color: AppColors.green600),
                             ),
                             const SizedBox(width: 10),
-                            Text(_benefits[i].$2, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textPrimary)),
+                            Text(benefits[i].$2, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textPrimary)),
                           ],
                         ),
                       ),
@@ -132,7 +136,7 @@ class _PaywallSheetState extends State<PaywallSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('SPEKOOH PRO', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textSecondary, letterSpacing: 0.4)),
+                    Text(l10n.spekoohProCaps, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textSecondary, letterSpacing: 0.4)),
                     RichText(
                       text: TextSpan(
                         style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary),
@@ -145,7 +149,7 @@ class _PaywallSheetState extends State<PaywallSheet> {
               const SizedBox(height: AppSpacing.space4),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text('MTN MOMO OR ORANGE MONEY NUMBER', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.4)),
+                child: Text(l10n.momoOrangeLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.4)),
               ),
               const SizedBox(height: 6),
               Container(
@@ -175,17 +179,17 @@ class _PaywallSheetState extends State<PaywallSheet> {
                 width: double.infinity,
                 child: SpekoohButton(
                   onPressed: _subscribing ? null : _subscribe,
-                  child: _subscribing ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Pay 500 FCFA'),
+                  child: _subscribing ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : Text(l10n.payButton),
                 ),
               ),
               const SizedBox(height: AppSpacing.space3),
               Text(
-                'Official Spekooh merchant · we never ask for your PIN · receipt + SMS within 2 min',
+                l10n.paywallDisclaimer,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textTertiary),
               ),
             ] else
-              SizedBox(width: double.infinity, child: SpekoohButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Done'))),
+              SizedBox(width: double.infinity, child: SpekoohButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.doneLabel))),
           ],
         ),
       ),

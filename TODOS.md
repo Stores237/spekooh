@@ -57,7 +57,7 @@ I can write unilaterally. Grouped by what each one unblocks.
 
 ## P0 — Must-have, confirmed in scope, still not fully live
 
-### 1. Bilingual UI (English + French) — infrastructure done, string coverage in progress
+### 1. ~~Bilingual UI (English + French)~~ — done
 - **Register/tone decision (researched, not guessed):** standard/formal French, not Camfranglais
   (the Douala/Yaoundé youth slang blend) — Cameroonian educators actively discourage Camfranglais
   as undermining real French acquisition, and real local apps in this space (Orange Money) use
@@ -92,10 +92,22 @@ I can write unilaterally. Grouped by what each one unblocks.
   wrapped in `Expanded`, so the longer French subtitle overflowed the Row — same class of
   fixed-width assumption a wider EN string could hit too, not French-specific (applied the same
   proactive `Expanded` fix to Notes' and Notifications' matching header pattern while there).
-  Notes and Notifications are now translated too. Still hardcoded English — the remaining
-  sheets/dialogs (paywall, pamphlet) and some of PaperDetailScreen's own copy (only its report
-  dialog got translated earlier, as part of the flag/report feature itself).
+  Notes and Notifications, PaperDetailScreen (unlock/view/report flows, not just the report
+  dialog), and the Paywall + Pamphlet-purchase sheets. Every hardcoded English literal in the
+  app's real screens/sheets has an ARB key now — full coverage, not partial.
+- **Real UI-layer exceptions carry no message (fixed while doing this pass):**
+  `PaywallException`/`AlreadyReportedException` used to hardcode English text in the data layer
+  and get displayed as-is; each has exactly one cause, so they're now parameterless marker
+  classes and the widget supplies the localized string at the catch site — the data layer no
+  longer bakes in a language. Dynamic/backend-echoed error text (e.g. `SubscriptionError`,
+  which interpolates the real HTTP response body) intentionally stays English-only — that's
+  genuinely variable content, not a fixed UI string to translate.
 - **Why P0:** spec §3.1 lists this as must-have "from launch, not a future add-on."
+- **What's NOT covered by design, not oversight:** real backend-driven content (post/quiz/
+  paper titles, exam names like BEPC/O Level, notification bodies) — these are data, and Subject
+  already has its own `language` field for bilingual *content* independent of UI chrome.
+  Camfranglais slang was deliberately avoided (see the register note above) — this is standard
+  French throughout, matching how real Cameroonian apps in this space (Orange Money) present.
 
 ### 2. ~~Rewarded-ad unlock~~ — done
 - Live: `google_mobile_ads` integrated (real AdMob App ID + rewarded-video ad unit); "Watch ad
