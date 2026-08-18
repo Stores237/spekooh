@@ -10,7 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  test:
+    name: app
     runs-on: ubuntu-latest
 
     defaults:
