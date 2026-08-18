@@ -10,6 +10,7 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/spekooh_button.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Ported from ui_kits/spekooh-app/LoggedInHomeScreen.jsx.
 class LoggedInHomeScreen extends StatelessWidget {
@@ -127,9 +128,9 @@ class LoggedInHomeScreen extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    _darkIconButton(Icons.settings_outlined, onOpenSettings),
+                                    _darkIconButton(LucideIcons.settings, onOpenSettings),
                                     const SizedBox(width: 8),
-                                    _darkIconButton(Icons.notifications_none, onOpenNotifications),
+                                    _darkIconButton(LucideIcons.bell, onOpenNotifications),
                                   ],
                                 ),
                               ],
@@ -145,7 +146,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.local_fire_department, size: 12, color: AppColors.ink900),
+                                        const Icon(LucideIcons.flame, size: 12, color: AppColors.ink900),
                                         const SizedBox(width: 4),
                                         Text(
                                           streak > 0 ? l10n.streakDayCount(streak) : l10n.startAStreak,
@@ -184,7 +185,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                                 height: 48,
                                 decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.green500, width: 3)),
                                 alignment: Alignment.center,
-                                child: const Icon(Icons.track_changes_outlined, size: 20, color: AppColors.green500),
+                                child: const Icon(LucideIcons.target, size: 20, color: AppColors.green500),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -197,7 +198,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                              const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
                             ],
                           ),
                         ),
@@ -227,7 +228,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                                       margin: const EdgeInsets.only(top: 2),
                                       decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold50),
                                       alignment: Alignment.center,
-                                      child: const Icon(Icons.check, size: 12, color: AppColors.gold700),
+                                      child: const Icon(LucideIcons.check, size: 12, color: AppColors.gold700),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
@@ -263,12 +264,12 @@ class LoggedInHomeScreen extends StatelessWidget {
                         mainAxisSpacing: 8,
                         childAspectRatio: 1.5,
                         children: [
-                          _quickAction(Icons.description_outlined, l10n.navPapers, onOpenPapers),
-                          _quickAction(Icons.menu_book_outlined, l10n.notesTitle, onOpenNotes),
-                          _quickAction(Icons.upload_outlined, l10n.quickActionContribute, onOpenSubmit),
-                          _quickAction(Icons.shopping_bag_outlined, l10n.shopTitle, onOpenShop),
-                          _quickAction(Icons.chat_bubble_outline, l10n.navForum, onOpenForum),
-                          _quickAction(Icons.bolt_outlined, l10n.navQuizzes, onOpenQuizzes),
+                          _quickAction(LucideIcons.fileText, l10n.navPapers, onOpenPapers),
+                          _quickAction(LucideIcons.bookOpen, l10n.notesTitle, onOpenNotes),
+                          _quickAction(LucideIcons.upload, l10n.quickActionContribute, onOpenSubmit),
+                          _quickAction(LucideIcons.shoppingBag, l10n.shopTitle, onOpenShop),
+                          _quickAction(LucideIcons.messageCircle, l10n.navForum, onOpenForum),
+                          _quickAction(LucideIcons.zap, l10n.navQuizzes, onOpenQuizzes),
                         ],
                       ),
                     ),
@@ -312,7 +313,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                                       return Expanded(
                                         child: Column(
                                           children: [
-                                            Icon(Icons.local_fire_department_outlined, size: 22, color: AppColors.gold500),
+                                            Icon(LucideIcons.flame, size: 22, color: AppColors.gold500),
                                             const SizedBox(height: 4),
                                             Text(streak > 0 ? l10n.streakDaysCount(streak) : l10n.streakStart, style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 13)),
                                             Text(streak > 0 ? l10n.streakKeepGoing : l10n.streakPlayToBegin, style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 10)),

@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import '../../models/achievement.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 const mockAchievements = [
-  Achievement(icon: Icons.local_fire_department_outlined, label: 'Spark', earned: true),
-  Achievement(icon: Icons.local_fire_department_outlined, label: 'Ember', earned: true),
-  Achievement(icon: Icons.local_fire_department_outlined, label: 'Inferno', earned: false),
-  Achievement(icon: Icons.menu_book_outlined, label: 'Scholar I', earned: false),
+  Achievement(icon: LucideIcons.flame, label: 'Spark', earned: true),
+  Achievement(icon: LucideIcons.flame, label: 'Ember', earned: true),
+  Achievement(icon: LucideIcons.flame, label: 'Inferno', earned: false),
+  Achievement(icon: LucideIcons.bookOpen, label: 'Scholar I', earned: false),
 ];

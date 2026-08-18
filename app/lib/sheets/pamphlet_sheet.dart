@@ -9,6 +9,7 @@ import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
 import '../widgets/spekooh_button.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Ported from ui_kits/spekooh-app/PamphletSheet.jsx. Two internal states:
 /// summary+pay, then a QR pickup ticket. Shown via
@@ -179,7 +180,7 @@ class _PamphletSheetState extends State<PamphletSheet> {
         height: 150,
         decoration: BoxDecoration(color: AppColors.ink900, borderRadius: BorderRadius.circular(12)),
         alignment: Alignment.center,
-        child: const Icon(Icons.qr_code_2, color: AppColors.white, size: 96),
+        child: const Icon(LucideIcons.qrCode, color: AppColors.white, size: 96),
       ),
       const SizedBox(height: AppSpacing.space3),
       Text(l10n.pickupTicketReady, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),

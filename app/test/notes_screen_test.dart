@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/notes_repository.dart';
@@ -6,6 +5,7 @@ import 'package:spekooh/data/repository_locator.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/main.dart';
 import 'package:spekooh/screens/notes/notes_screen.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'support/l10n_test_app.dart';
 import 'support/mock_repository_locator.dart';
@@ -27,7 +27,7 @@ void main() {
     expect(find.text('Notes'), findsOneWidget);
     expect(find.text('Mechanics — Newton’s Laws'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.tap(find.byIcon(LucideIcons.chevronLeft));
     await tester.pumpAndSettle();
 
     expect(find.text('Guest'), findsOneWidget);

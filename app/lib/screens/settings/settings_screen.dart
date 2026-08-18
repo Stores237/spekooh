@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:flutter/material.dart';
 import '../../data/auth_session.dart';
@@ -80,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         height: 44,
                         decoration: BoxDecoration(color: AppColors.gold200, borderRadius: BorderRadius.circular(12)),
                         alignment: Alignment.center,
-                        child: const Icon(Icons.star, size: 20),
+                        child: const Icon(LucideIcons.star, size: 20),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -92,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                      const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
                     ],
                   ),
                 ),
@@ -105,17 +106,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ]),
               _sectionLabel(l10n.helpSection),
               _card([
-                ListItemRow(icon: const IconChip(icon: Icons.phone_outlined, tint: IconChipTint.blue, size: 38), title: l10n.helpSupportTitle, subtitle: l10n.helpSupportSubtitle),
+                ListItemRow(icon: const IconChip(icon: LucideIcons.phone, tint: IconChipTint.blue, size: 38), title: l10n.helpSupportTitle, subtitle: l10n.helpSupportSubtitle),
                 const Divider(height: 1),
-                ListItemRow(icon: const IconChip(icon: Icons.chat_bubble_outline, tint: IconChipTint.blue, size: 38), title: l10n.helpWhatsappTitle, subtitle: l10n.helpWhatsappSubtitle),
+                ListItemRow(icon: const IconChip(icon: LucideIcons.messageCircle, tint: IconChipTint.blue, size: 38), title: l10n.helpWhatsappTitle, subtitle: l10n.helpWhatsappSubtitle),
                 const Divider(height: 1),
-                ListItemRow(icon: const IconChip(icon: Icons.person_outline, tint: IconChipTint.blue, size: 38), title: l10n.helpContactTitle, subtitle: l10n.helpContactSubtitle),
+                ListItemRow(icon: const IconChip(icon: LucideIcons.user, tint: IconChipTint.blue, size: 38), title: l10n.helpContactTitle, subtitle: l10n.helpContactSubtitle),
               ]),
               _sectionLabel(l10n.aboutSection),
               _card([
-                ListItemRow(icon: const IconChip(icon: Icons.language_outlined, tint: IconChipTint.blue, size: 38), title: l10n.aboutWebsiteTitle, subtitle: 'spekooh.app'),
+                ListItemRow(icon: const IconChip(icon: LucideIcons.globe, tint: IconChipTint.blue, size: 38), title: l10n.aboutWebsiteTitle, subtitle: 'spekooh.app'),
                 const Divider(height: 1),
-                ListItemRow(icon: const IconChip(icon: Icons.lock_outline, tint: IconChipTint.blue, size: 38), title: l10n.aboutPrivacyTitle),
+                ListItemRow(icon: const IconChip(icon: LucideIcons.lock, tint: IconChipTint.blue, size: 38), title: l10n.aboutPrivacyTitle),
               ]),
               const SizedBox(height: AppSpacing.space6),
               if (AuthSession.instance.isLoggedIn)
@@ -181,10 +182,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.symmetric(vertical: 13),
         child: Row(
           children: [
-            const Icon(Icons.language_outlined),
+            const Icon(LucideIcons.globe),
             const SizedBox(width: 12),
             Expanded(child: Text(label, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary))),
-            if (active) const Icon(Icons.check),
+            if (active) const Icon(LucideIcons.check),
           ],
         ),
       ),

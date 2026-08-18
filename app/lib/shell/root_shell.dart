@@ -22,6 +22,7 @@ import '../screens/quizzes/quizzes_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/shop/shop_screen.dart';
 import '../screens/submit/submit_screen.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Single source of truth for cross-screen state: which bottom tab is
 /// active, and whether the user is "logged in" (a local boolean flipped by
@@ -167,11 +168,11 @@ class RootShellState extends State<RootShell> {
         active: _activeTab,
         onChanged: goToTab,
         items: [
-          SpekoohNavItem(icon: const Icon(Icons.home_outlined), label: l10n.navHome),
-          SpekoohNavItem(icon: const Icon(Icons.description_outlined), label: l10n.navPapers),
-          const SpekoohNavItem(icon: Icon(Icons.upload_outlined), center: true),
-          SpekoohNavItem(icon: const Icon(Icons.chat_bubble_outline), label: l10n.navForum),
-          SpekoohNavItem(icon: const Icon(Icons.bolt_outlined), label: l10n.navQuizzes),
+          SpekoohNavItem(icon: const Icon(LucideIcons.home), label: l10n.navHome),
+          SpekoohNavItem(icon: const Icon(LucideIcons.fileText), label: l10n.navPapers),
+          const SpekoohNavItem(icon: Icon(LucideIcons.upload), center: true),
+          SpekoohNavItem(icon: const Icon(LucideIcons.messageCircle), label: l10n.navForum),
+          SpekoohNavItem(icon: const Icon(LucideIcons.zap), label: l10n.navQuizzes),
         ],
       ),
       floatingActionButton: _isLoggedIn ? const AIAssistantFab() : null,

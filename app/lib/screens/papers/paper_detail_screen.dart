@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../ads/rewarded_ad_controller.dart';
 import '../../data/repositories/papers_repository.dart';
@@ -165,7 +166,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.description_outlined, size: 40, color: AppColors.textTertiary),
+                  const Icon(LucideIcons.fileText, size: 40, color: AppColors.textTertiary),
                   const SizedBox(height: AppSpacing.space3),
                   Text(l10n.noPaperSelectedTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
                   const SizedBox(height: 4),
@@ -203,7 +204,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(onTap: () => Navigator.of(context).pop(), child: const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.chevron_left))),
+                  GestureDetector(onTap: () => Navigator.of(context).pop(), child: const Padding(padding: EdgeInsets.only(top: 2), child: Icon(LucideIcons.chevronLeft))),
                   const SizedBox(width: AppSpacing.space2),
                   Expanded(
                     child: Column(
@@ -217,7 +218,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                   SpekoohBadge(text: entry.isPublished ? l10n.publishedStatus : l10n.paperUnderReview, tone: SpekoohBadgeTone.neutral),
                   IconButton(
                     tooltip: l10n.reportTooltip,
-                    icon: const Icon(Icons.flag_outlined, size: 20, color: AppColors.textSecondary),
+                    icon: const Icon(LucideIcons.flag, size: 20, color: AppColors.textSecondary),
                     onPressed: () => _openReportDialog(entry.id),
                   ),
                 ],
@@ -245,7 +246,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                             : Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.picture_as_pdf_outlined, size: 28, color: AppColors.textSecondary),
+                                  const Icon(LucideIcons.fileText, size: 28, color: AppColors.textSecondary),
                                   const SizedBox(height: AppSpacing.space2),
                                   SpekoohButton(size: SpekoohButtonSize.sm, onPressed: () => _openFile(fileUrl), child: Text(l10n.openScannedPaper)),
                                 ],
@@ -258,7 +259,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                           child: Text(l10n.examBoardLabel(detail.examBoard), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                         ),
                       if (_viewBlocked) ...[
-                        SpekoohBanner(tone: SpekoohBannerTone.blue, icon: const Icon(Icons.lock_clock_outlined), message: l10n.paywallBlockedMessage),
+                        SpekoohBanner(tone: SpekoohBannerTone.blue, icon: const Icon(LucideIcons.lock), message: l10n.paywallBlockedMessage),
                         const SizedBox(height: AppSpacing.space2),
                         // google_mobile_ads has no web implementation — this
                         // affordance only appears on mobile builds, not the
@@ -291,7 +292,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                     ],
                                   ),
                                 ),
-                                Icon(_unlockedAmount != null ? Icons.lock_open : Icons.lock_outline, size: 18),
+                                Icon(_unlockedAmount != null ? LucideIcons.unlock : LucideIcons.lock, size: 18),
                               ],
                             ),
                             const SizedBox(height: 12),
@@ -330,7 +331,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
               const SizedBox(height: AppSpacing.space4),
               SpekoohBanner(
                 tone: SpekoohBannerTone.blue,
-                icon: const Icon(Icons.info_outline),
+                icon: const Icon(LucideIcons.info),
                 message: l10n.mcqDisclaimer,
               ),
               const SizedBox(height: AppSpacing.space6),

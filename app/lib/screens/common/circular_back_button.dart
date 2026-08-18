@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// The small circular chevron-left back button reused at the top of most
 /// pushed screens (Notes, Notifications, Shop, Profile, ...).
@@ -21,7 +22,7 @@ class CircularBackButton extends StatelessWidget {
           border: Border.all(color: AppColors.borderSubtle),
         ),
         alignment: Alignment.center,
-        child: const Icon(Icons.chevron_left, size: 20, color: AppColors.textPrimary),
+        child: const Icon(LucideIcons.chevronLeft, size: 20, color: AppColors.textPrimary),
       ),
     );
   }

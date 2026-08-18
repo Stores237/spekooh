@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/note.dart';
 import '../../../widgets/icon_chip.dart';
@@ -19,7 +19,7 @@ class HttpNotesRepository implements NotesRepository {
         subtitle: row['subtitle'] as String? ?? '',
         // The backend note model carries no icon/tint (cosmetic-only, spec §-unconfirmed feature) — fixed placeholder.
         tint: IconChipTint.blue,
-        icon: Icons.description_outlined,
+        icon: LucideIcons.fileText,
       );
     }).toList();
   }

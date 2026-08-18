@@ -8,6 +8,7 @@ import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
 import '../widgets/spekooh_button.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Ported from ui_kits/spekooh-app/PaywallSheet.jsx. Shown via
 /// `showModalBottomSheet(isScrollControlled: true, ...)`.
@@ -22,9 +23,9 @@ class PaywallSheet extends StatefulWidget {
 
 class _PaywallSheetState extends State<PaywallSheet> {
   List<(IconData, String)> _benefits(AppLocalizations l10n) => [
-        (Icons.visibility_outlined, l10n.paywallBenefitViews),
-        (Icons.block, l10n.paywallBenefitAds),
-        (Icons.notifications_none, l10n.paywallBenefitAlerts),
+        (LucideIcons.eye, l10n.paywallBenefitViews),
+        (LucideIcons.ban, l10n.paywallBenefitAds),
+        (LucideIcons.bell, l10n.paywallBenefitAlerts),
       ];
 
   final _phoneController = TextEditingController();
@@ -83,7 +84,7 @@ class _PaywallSheetState extends State<PaywallSheet> {
               height: 60,
               decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(16)),
               alignment: Alignment.center,
-              child: Icon(_renewsAt != null ? Icons.check : Icons.star, color: AppColors.white, size: 26),
+              child: Icon(_renewsAt != null ? LucideIcons.check : LucideIcons.star, color: AppColors.white, size: 26),
             ),
             const SizedBox(height: AppSpacing.space3),
             Text(_renewsAt != null ? l10n.paywallYoureProTitle : l10n.paywallGetProTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),

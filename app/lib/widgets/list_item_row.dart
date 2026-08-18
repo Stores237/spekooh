@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// The single most repeated pattern in Spekooh — settings rows, help rows,
 /// subject rows, download rows. Rows are usually grouped inside one white
@@ -62,7 +63,7 @@ class ListItemRow extends StatelessWidget {
                 ],
               ),
             ),
-            trailing ?? const Icon(Icons.chevron_right, size: 18, color: AppColors.textTertiary),
+            trailing ?? const Icon(LucideIcons.chevronRight, size: 18, color: AppColors.textTertiary),
           ],
         ),
       ),

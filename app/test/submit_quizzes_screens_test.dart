@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
@@ -7,6 +6,7 @@ import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/screens/submit/submit_screen.dart';
 import 'package:spekooh/screens/quizzes/quizzes_screen.dart';
 import 'package:spekooh/widgets/spekooh_button.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'support/l10n_test_app.dart';
 
@@ -40,7 +40,7 @@ void main() {
       await tester.tap(subjectOption.last);
       await tester.pumpAndSettle();
     } else {
-      await tester.tap(find.byIcon(Icons.chevron_left).evaluate().isNotEmpty ? find.byIcon(Icons.chevron_left) : find.text('Nothing available.'));
+      await tester.tap(find.byIcon(LucideIcons.chevronLeft).evaluate().isNotEmpty ? find.byIcon(LucideIcons.chevronLeft) : find.text('Nothing available.'));
       await tester.pumpAndSettle();
     }
 
@@ -82,7 +82,7 @@ void main() {
     expect(find.text('Biology quiz'), findsOneWidget);
     expect(find.text('Start quiz'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.tap(find.byIcon(LucideIcons.chevronLeft));
     await tester.pump();
     expect(find.text('Quiz'), findsOneWidget);
   });

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/quiz.dart';
 import '../../api_client.dart';
@@ -15,7 +15,7 @@ class HttpQuizzesRepository implements QuizzesRepository {
       title: row['title'] as String,
       subtitle: row['subtitle'] as String? ?? '',
       // The backend quiz model carries no icon (cosmetic-only) — fixed placeholder.
-      icon: Icons.bolt_outlined,
+      icon: LucideIcons.zap,
       questionCount: row['question_count'] as int? ?? 0,
       suggestedTime: '${((row['suggested_time_seconds'] as int? ?? 0) / 60).round()} min',
       playedCount: row['played_count'] as int? ?? 0,

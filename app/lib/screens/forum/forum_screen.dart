@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/spekooh_avatar.dart';
 import '../../widgets/spekooh_badge.dart';
 import 'forum_post_detail_screen.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Ported from ui_kits/spekooh-app/ForumScreen.jsx. One of the 5 bottom
 /// tabs — lives directly in RootShell's IndexedStack, not pushed.
@@ -100,9 +101,9 @@ class _ForumScreenState extends State<ForumScreen> {
                       ),
                       const Row(
                         children: [
-                          Icon(Icons.search),
+                          Icon(LucideIcons.search),
                           SizedBox(width: 10),
-                          Icon(Icons.notifications_none),
+                          Icon(LucideIcons.bell),
                         ],
                       ),
                     ],
@@ -303,7 +304,7 @@ class _PostCard extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               const Icon(
-                Icons.chat_bubble_outline,
+                LucideIcons.messageCircle,
                 size: 14,
                 color: AppColors.textTertiary,
               ),

@@ -14,6 +14,7 @@ import '../../widgets/search_input.dart';
 import '../../widgets/spekooh_avatar.dart';
 import '../../widgets/spekooh_toggle.dart';
 import '../../widgets/stat_row.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Ported from ui_kits/spekooh-app/QuizzesScreen.jsx. One of the 5 bottom
 /// tabs. QuizDetail is in-tab local state (`_openQuiz`), not a pushed
@@ -56,10 +57,10 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
 
   List<String> _filters(AppLocalizations l10n) => [l10n.filterAll, 'Sciences', 'Arts', 'Commercial'];
   static const _iconByTitle = {
-    'Biology quiz': (Icons.eco_outlined, IconChipTint.green),
-    'Chemistry quizzes': (Icons.science_outlined, IconChipTint.purple),
-    'Geography quizzes': (Icons.public_outlined, IconChipTint.amber),
-    'Computer science': (Icons.memory_outlined, IconChipTint.blue),
+    'Biology quiz': (LucideIcons.leaf, IconChipTint.green),
+    'Chemistry quizzes': (LucideIcons.flaskConical, IconChipTint.purple),
+    'Geography quizzes': (LucideIcons.globe, IconChipTint.amber),
+    'Computer science': (LucideIcons.cpu, IconChipTint.blue),
   };
 
   @override
@@ -99,7 +100,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                 const SizedBox(height: AppSpacing.space2),
                 GestureDetector(
                   onTap: () => setState(() => _openQuiz = null),
-                  child: const Icon(Icons.chevron_left),
+                  child: const Icon(LucideIcons.chevronLeft),
                 ),
                 const SizedBox(height: AppSpacing.space2),
                 Center(
@@ -131,11 +132,11 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     children: [
-                      _settingRow(Icons.timer_outlined, l10n.timerRowLabel, timerOn, (v) => setLocalState(() => timerOn = v)),
+                      _settingRow(LucideIcons.timer, l10n.timerRowLabel, timerOn, (v) => setLocalState(() => timerOn = v)),
                       const Divider(height: 1),
-                      _settingRow(Icons.lightbulb_outline, l10n.hintsRowLabel, hintsOn, (v) => setLocalState(() => hintsOn = v)),
+                      _settingRow(LucideIcons.lightbulb, l10n.hintsRowLabel, hintsOn, (v) => setLocalState(() => hintsOn = v)),
                       const Divider(height: 1),
-                      _settingRow(Icons.shuffle, l10n.shuffleRowLabel, shuffleOn, (v) => setLocalState(() => shuffleOn = v)),
+                      _settingRow(LucideIcons.shuffle, l10n.shuffleRowLabel, shuffleOn, (v) => setLocalState(() => shuffleOn = v)),
                     ],
                   ),
                 ),
@@ -263,7 +264,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                                 padding: const EdgeInsets.only(bottom: 4),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.local_fire_department, size: 14, color: AppColors.gold500),
+                                    const Icon(LucideIcons.flame, size: 14, color: AppColors.gold500),
                                     const SizedBox(width: 4),
                                     Text(l10n.dailyStreakLabel(streak), style: const TextStyle(color: AppColors.gold500, fontSize: 12, fontWeight: FontWeight.w700)),
                                   ],
@@ -288,9 +289,9 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
               const SizedBox(height: AppSpacing.space4),
               Row(
                 children: [
-                  Expanded(child: _modeCard(Icons.timer_outlined, l10n.timedPracticeTitle, l10n.timedPracticeSubtitle)),
+                  Expanded(child: _modeCard(LucideIcons.timer, l10n.timedPracticeTitle, l10n.timedPracticeSubtitle)),
                   const SizedBox(width: AppSpacing.space2),
-                  Expanded(child: _modeCard(Icons.shuffle, l10n.revisionModeTitle, l10n.revisionModeSubtitle)),
+                  Expanded(child: _modeCard(LucideIcons.shuffle, l10n.revisionModeTitle, l10n.revisionModeSubtitle)),
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
@@ -303,9 +304,9 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                     // paper-to-quiz generation pipeline, no live/scheduled
                     // quiz session model — so they're shown honestly as
                     // upcoming rather than wired to an arbitrary real quiz.
-                    _comingSoonRow(Icons.bolt_outlined, l10n.pastPaperPracticeTitle, l10n.pastPaperPracticeSubtitle),
+                    _comingSoonRow(LucideIcons.zap, l10n.pastPaperPracticeTitle, l10n.pastPaperPracticeSubtitle),
                     const Divider(height: 1),
-                    _comingSoonRow(Icons.emoji_events_outlined, l10n.fridayArenaTitle, l10n.fridayArenaSubtitle),
+                    _comingSoonRow(LucideIcons.trophy, l10n.fridayArenaTitle, l10n.fridayArenaSubtitle),
                   ],
                 ),
               ),
@@ -402,7 +403,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                                     ],
                                   ),
                                 ),
-                                const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                                const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
                               ],
                             ),
                           ),

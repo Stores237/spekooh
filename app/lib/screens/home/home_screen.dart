@@ -13,6 +13,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/icon_chip.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Ported from ui_kits/spekooh-app/HomeScreen.jsx — the guest (logged-out)
 /// Home tab. Callbacks are optional so this screen previews standalone in
@@ -90,7 +91,7 @@ class HomeScreen extends StatelessWidget {
                           height: 38,
                           decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.white, border: Border.all(color: AppColors.borderSubtle)),
                           alignment: Alignment.center,
-                          child: const Icon(Icons.settings_outlined, size: 18),
+                          child: const Icon(LucideIcons.settings, size: 18),
                         ),
                       ),
                     ],
@@ -149,7 +150,7 @@ class HomeScreen extends StatelessWidget {
                       decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
                       child: Row(
                         children: [
-                          const IconChip(icon: Icons.functions, tint: IconChipTint.purple),
+                          const IconChip(icon: LucideIcons.sigma, tint: IconChipTint.purple),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -160,7 +161,7 @@ class HomeScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                          const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
                         ],
                       ),
                     ),
@@ -176,7 +177,7 @@ class HomeScreen extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const IconChip(icon: Icons.upload_outlined, tint: IconChipTint.amber, size: 48),
+                    const IconChip(icon: LucideIcons.upload, tint: IconChipTint.amber, size: 48),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -193,9 +194,9 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.space5),
               Row(
                 children: [
-                  Expanded(child: _tile(icon: Icons.menu_book_outlined, tint: IconChipTint.green, title: l10n.notesTitle, subtitle: l10n.notesSubtitle, onTap: onOpenNotes)),
+                  Expanded(child: _tile(icon: LucideIcons.bookOpen, tint: IconChipTint.green, title: l10n.notesTitle, subtitle: l10n.notesSubtitle, onTap: onOpenNotes)),
                   const SizedBox(width: AppSpacing.space3),
-                  Expanded(child: _tile(icon: Icons.shopping_bag_outlined, tint: IconChipTint.amber, title: l10n.shopTitle, subtitle: l10n.shopSubtitle, onTap: onOpenShop)),
+                  Expanded(child: _tile(icon: LucideIcons.shoppingBag, tint: IconChipTint.amber, title: l10n.shopTitle, subtitle: l10n.shopSubtitle, onTap: onOpenShop)),
                 ],
               ),
               const SizedBox(height: AppSpacing.space6),
@@ -267,11 +268,11 @@ class HomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   children: [
-                    _lockedRow(Icons.local_fire_department_outlined, l10n.homeLockedCredits),
+                    _lockedRow(LucideIcons.flame, l10n.homeLockedCredits),
                     const Divider(height: 1),
-                    _lockedRow(Icons.fact_check_outlined, l10n.homeLockedTrackContributions),
+                    _lockedRow(LucideIcons.clipboardCheck, l10n.homeLockedTrackContributions),
                     const Divider(height: 1),
-                    _lockedRow(Icons.notifications_none, l10n.homeLockedInstructorAlerts),
+                    _lockedRow(LucideIcons.bell, l10n.homeLockedInstructorAlerts),
                   ],
                 ),
               ),
@@ -318,7 +319,7 @@ class HomeScreen extends StatelessWidget {
           IconChip(icon: icon, tint: IconChipTint.blue, size: 36),
           const SizedBox(width: 12),
           Expanded(child: Text(label, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary))),
-          const Icon(Icons.lock_outline, size: 16, color: AppColors.textTertiary),
+          const Icon(LucideIcons.lock, size: 16, color: AppColors.textTertiary),
         ],
       ),
     );

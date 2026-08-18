@@ -15,6 +15,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../common/circular_back_button.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Ported from ui_kits/spekooh-app/ProfileScreen.jsx.
 class ProfileScreen extends StatefulWidget {
@@ -158,7 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ],
                                   ),
                                 ),
-                                const Icon(Icons.confirmation_number_outlined),
+                                const Icon(LucideIcons.ticket),
                               ],
                             ),
                             if (user.redeemCode.isNotEmpty) ...[
@@ -212,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ],
                                     ),
                                   ),
-                                  const Icon(Icons.person_add_alt_1_outlined),
+                                  const Icon(LucideIcons.userPlus),
                                 ],
                               ),
                               const SizedBox(height: 12),
@@ -336,7 +337,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
         children: [
-          const Icon(Icons.person_outline, size: 40, color: AppColors.textTertiary),
+          const Icon(LucideIcons.user, size: 40, color: AppColors.textTertiary),
           const SizedBox(height: AppSpacing.space3),
           Text(l10n.profileLoginPrompt, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
           const SizedBox(height: 4),

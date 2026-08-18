@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
@@ -185,12 +186,12 @@ class _SubmitScreenState extends State<SubmitScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.upload_file_outlined),
+              leading: const Icon(LucideIcons.fileUp),
               title: Text(l10n.choosePdfOrImage),
               onTap: () => Navigator.of(context).pop('file'),
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
+              leading: const Icon(LucideIcons.camera),
               title: Text(l10n.takePhoto),
               onTap: () => Navigator.of(context).pop('camera'),
             ),
@@ -284,7 +285,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const IconChip(icon: Icons.check, tint: IconChipTint.green, size: 64),
+                  const IconChip(icon: LucideIcons.check, tint: IconChipTint.green, size: 64),
                   const SizedBox(height: AppSpacing.space4),
                   Text(l10n.contributionReceivedTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
                   const SizedBox(height: AppSpacing.space2),
@@ -344,7 +345,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.hourglass_empty, size: 28, color: AppColors.textTertiary),
+            const Icon(LucideIcons.hourglass, size: 28, color: AppColors.textTertiary),
             const SizedBox(height: AppSpacing.space2),
             Text(l10n.notAvailableYet, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
             const SizedBox(height: 4),
@@ -371,7 +372,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
           ),
           child: Column(
             children: [
-              IconChip(icon: _file == null ? Icons.camera_alt_outlined : Icons.check_circle_outline, tint: IconChipTint.amber, size: 52),
+              IconChip(icon: _file == null ? LucideIcons.camera : LucideIcons.checkCircle, tint: IconChipTint.amber, size: 52),
               const SizedBox(height: 8),
               Text(_file == null ? l10n.takePhotoOrUploadPdf : _file!.fileName,
                   style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
@@ -399,12 +400,12 @@ class _SubmitScreenState extends State<SubmitScreen> {
         ),
       ),
       SpekoohBanner(
-        icon: const Icon(Icons.card_giftcard_outlined),
+        icon: const Icon(LucideIcons.gift),
         message: l10n.contributionBonusBanner,
       ),
       if (_submitError != null) ...[
         const SizedBox(height: AppSpacing.space3),
-        SpekoohBanner(tone: SpekoohBannerTone.blue, icon: const Icon(Icons.error_outline), message: _submitError!),
+        SpekoohBanner(tone: SpekoohBannerTone.blue, icon: const Icon(LucideIcons.alertCircle), message: _submitError!),
       ],
       const SizedBox(height: AppSpacing.space5),
       SizedBox(
@@ -434,7 +435,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
                 Text(value ?? (enabled ? l10n.selectPlaceholder : '—'),
                     style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: value == null ? AppColors.textTertiary : AppColors.textPrimary)),
                 const SizedBox(width: 6),
-                Icon(Icons.chevron_right, size: 14, color: enabled ? AppColors.textTertiary : AppColors.textTertiary.withValues(alpha: 0.4)),
+                Icon(LucideIcons.chevronRight, size: 14, color: enabled ? AppColors.textTertiary : AppColors.textTertiary.withValues(alpha: 0.4)),
               ],
             ),
           ],

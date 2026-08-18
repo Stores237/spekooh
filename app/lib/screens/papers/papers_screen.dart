@@ -13,6 +13,7 @@ import '../../widgets/icon_chip.dart';
 import '../../widgets/search_input.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/subject_card.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// A fully-resolved paper selection (subject + exam type + the real,
 /// already-submitted [PaperEntry]), handed to `onOpenPaper` when the user
@@ -93,7 +94,7 @@ class _PapersScreenState extends State<PapersScreen> {
       children: [
         GestureDetector(
           onTap: () => _select(() => _selection.stepBack()),
-          child: const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.chevron_left)),
+          child: const Padding(padding: EdgeInsets.only(top: 2), child: Icon(LucideIcons.chevronLeft)),
         ),
         const SizedBox(width: AppSpacing.space2),
         Expanded(
@@ -359,7 +360,7 @@ class _PapersScreenState extends State<PapersScreen> {
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                              const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
                             ],
                           ),
                         ),
@@ -380,7 +381,7 @@ class _PapersScreenState extends State<PapersScreen> {
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         children: [
-          Icon(Icons.inbox_outlined, size: 40, color: AppColors.textTertiary),
+          Icon(LucideIcons.inbox, size: 40, color: AppColors.textTertiary),
           const SizedBox(height: AppSpacing.space3),
           Text(l10n.noPapersYetTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
           const SizedBox(height: 4),
@@ -409,7 +410,7 @@ class _PapersScreenState extends State<PapersScreen> {
                 if (subtitle != null) Text(subtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary)),
               ],
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+            const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
           ],
         ),
       ),

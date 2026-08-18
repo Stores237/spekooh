@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/notification_item.dart';
 import '../../../widgets/icon_chip.dart';
@@ -10,10 +10,10 @@ class HttpNotificationsRepository implements NotificationsRepository {
   final ApiClient _client;
 
   static const _iconByKind = {
-    'ONBOARDING': Icons.auto_awesome_outlined,
-    'SUBMISSION_STATUS': Icons.check,
-    'CREDIT_AWARDED': Icons.stars_outlined,
-    'GENERIC': Icons.notifications_none,
+    'ONBOARDING': LucideIcons.sparkles,
+    'SUBMISSION_STATUS': LucideIcons.check,
+    'CREDIT_AWARDED': LucideIcons.sparkles,
+    'GENERIC': LucideIcons.bell,
   };
 
   static const _tintByKind = {
@@ -39,7 +39,7 @@ class HttpNotificationsRepository implements NotificationsRepository {
       final kind = row['kind'] as String;
       return NotificationItem(
         id: row['id'] as int,
-        icon: _iconByKind[kind] ?? Icons.notifications_none,
+        icon: _iconByKind[kind] ?? LucideIcons.bell,
         tint: _tintByKind[kind] ?? IconChipTint.blue,
         title: row['title'] as String,
         body: row['body'] as String,

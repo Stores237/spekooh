@@ -5,6 +5,7 @@ import 'package:spekooh/data/repository_locator.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/main.dart';
 import 'package:spekooh/widgets/ai_assistant_fab.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'support/l10n_test_app.dart';
 import 'support/mock_repository_locator.dart';
@@ -17,12 +18,12 @@ void main() {
   testWidgets('AI assistant FAB is hidden for guest, appears after login, and opens its sheet', (tester) async {
     RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
     await tester.pumpWidget(const SpekoohApp());
-    expect(find.byIcon(Icons.auto_awesome), findsNothing);
+    expect(find.byIcon(LucideIcons.sparkles), findsNothing);
 
     // Log in via Settings.
-    await tester.ensureVisible(find.byIcon(Icons.settings_outlined));
+    await tester.ensureVisible(find.byIcon(LucideIcons.settings));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.tap(find.byIcon(LucideIcons.settings));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Log in'));
     await tester.pumpAndSettle();
@@ -36,9 +37,9 @@ void main() {
     await tester.tap(find.text('Log in').last);
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
+    expect(find.byIcon(LucideIcons.sparkles), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.auto_awesome));
+    await tester.tap(find.byIcon(LucideIcons.sparkles));
     await tester.pumpAndSettle();
 
     expect(find.text('Spekooh Assistant'), findsOneWidget);
@@ -53,7 +54,7 @@ void main() {
     ));
     await tester.pump();
 
-    await tester.tap(find.byIcon(Icons.auto_awesome));
+    await tester.tap(find.byIcon(LucideIcons.sparkles));
     await tester.pumpAndSettle();
 
     expect(find.text('Assistant Spekooh'), findsOneWidget);

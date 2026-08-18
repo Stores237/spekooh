@@ -5,6 +5,7 @@ import '../theme/app_gradients.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Ported from ui_kits/spekooh-app/AIAssistant.jsx. A floating action
 /// button, bottom-right above the bottom nav, shown only when logged in.
@@ -32,7 +33,7 @@ class AIAssistantFab extends StatelessWidget {
         height: 52,
         decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(16), boxShadow: AppShadows.button),
         alignment: Alignment.center,
-        child: const Icon(Icons.auto_awesome, color: AppColors.white, size: 22),
+        child: const Icon(LucideIcons.sparkles, color: AppColors.white, size: 22),
       ),
     );
   }
@@ -64,7 +65,7 @@ class _AIAssistantSheet extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(12)),
                 alignment: Alignment.center,
-                child: const Icon(Icons.auto_awesome, color: AppColors.white, size: 16),
+                child: const Icon(LucideIcons.sparkles, color: AppColors.white, size: 16),
               ),
               const SizedBox(width: 10),
               Column(
@@ -98,7 +99,7 @@ class _AIAssistantSheet extends StatelessWidget {
                     style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13),
                   ),
                 ),
-                const Icon(Icons.send, size: 16, color: AppColors.gold700),
+                const Icon(LucideIcons.send, size: 16, color: AppColors.gold700),
               ],
             ),
           ),

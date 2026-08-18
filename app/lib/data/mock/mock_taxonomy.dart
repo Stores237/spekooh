@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import '../../models/exam_taxonomy.dart';
 import '../../models/subject.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/spekooh_badge.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Static exam-taxonomy lookup tables — sourced from
 /// ui_kits/spekooh-app/PapersScreen.jsx. Composable fields (category ->
@@ -15,14 +15,14 @@ class MockTaxonomy {
     ExamCategory(
       key: ExamCategoryKey.primary,
       title: 'Primary',
-      icon: Icons.child_care_outlined,
+      icon: LucideIcons.baby,
       tint: IconChipTint.blue,
       subtitle: 'FSLC · CEP · Common Entrance',
     ),
     ExamCategory(
       key: ExamCategoryKey.secondary,
       title: 'Secondary',
-      icon: Icons.school_outlined,
+      icon: LucideIcons.graduationCap,
       tint: IconChipTint.amber,
       subtitle: 'BEPC · Probatoire · Bac · O/A Level',
       requiresSystem: true,
@@ -30,7 +30,7 @@ class MockTaxonomy {
     ExamCategory(
       key: ExamCategoryKey.university,
       title: 'University',
-      icon: Icons.account_balance_outlined,
+      icon: LucideIcons.landmark,
       tint: IconChipTint.blue,
       subtitle: 'Semester exams · Resits — State & Private',
       requiresSystem: true,
@@ -38,21 +38,21 @@ class MockTaxonomy {
     ExamCategory(
       key: ExamCategoryKey.tertiary,
       title: 'Tertiary',
-      icon: Icons.business_outlined,
+      icon: LucideIcons.building2,
       tint: IconChipTint.green,
       subtitle: 'HND · BTS · AQP/CQP/DQP',
     ),
     ExamCategory(
       key: ExamCategoryKey.concours,
       title: 'Concours',
-      icon: Icons.emoji_events_outlined,
+      icon: LucideIcons.trophy,
       tint: IconChipTint.purple,
       subtitle: 'ENAM · ENSP · UCAC · ESSEC & more',
     ),
     ExamCategory(
       key: ExamCategoryKey.reports,
       title: 'Academic Reports',
-      icon: Icons.menu_book_outlined,
+      icon: LucideIcons.bookOpen,
       tint: IconChipTint.red,
       subtitle: 'Internship · Mémoire · Thèse — no marking guide',
     ),
@@ -196,21 +196,21 @@ class MockTaxonomy {
   ];
 
   static const subjectsEn = [
-    Subject(key: 'accounting', title: 'Accounting', tint: IconChipTint.amber, icon: Icons.description_outlined, code: '0505'),
-    Subject(key: 'biology', title: 'Biology', tint: IconChipTint.green, icon: Icons.eco_outlined, code: '0510'),
-    Subject(key: 'chemistry', title: 'Chemistry', tint: IconChipTint.purple, icon: Icons.science_outlined, code: '0515'),
-    Subject(key: 'computer_science', title: 'Computer science', tint: IconChipTint.blue, icon: Icons.memory_outlined, code: '0595'),
-    Subject(key: 'economics', title: 'Economics', tint: IconChipTint.amber, icon: Icons.trending_up_outlined, code: '0525'),
-    Subject(key: 'physics', title: 'Physics', tint: IconChipTint.blue, icon: Icons.bolt_outlined, code: '0580'),
+    Subject(key: 'accounting', title: 'Accounting', tint: IconChipTint.amber, icon: LucideIcons.fileText, code: '0505'),
+    Subject(key: 'biology', title: 'Biology', tint: IconChipTint.green, icon: LucideIcons.leaf, code: '0510'),
+    Subject(key: 'chemistry', title: 'Chemistry', tint: IconChipTint.purple, icon: LucideIcons.flaskConical, code: '0515'),
+    Subject(key: 'computer_science', title: 'Computer science', tint: IconChipTint.blue, icon: LucideIcons.cpu, code: '0595'),
+    Subject(key: 'economics', title: 'Economics', tint: IconChipTint.amber, icon: LucideIcons.trendingUp, code: '0525'),
+    Subject(key: 'physics', title: 'Physics', tint: IconChipTint.blue, icon: LucideIcons.zap, code: '0580'),
   ];
 
   static const subjectsFr = [
-    Subject(key: 'maths', title: 'Mathématiques', tint: IconChipTint.blue, icon: Icons.functions, code: 'MAT'),
-    Subject(key: 'philo', title: 'Philosophie', tint: IconChipTint.purple, icon: Icons.menu_book_outlined, code: 'PHI'),
-    Subject(key: 'hist_geo', title: 'Histoire-Géo', tint: IconChipTint.amber, icon: Icons.public_outlined, code: 'HGE'),
-    Subject(key: 'svt', title: 'SVT', tint: IconChipTint.green, icon: Icons.eco_outlined, code: 'SVT'),
-    Subject(key: 'physique_chimie', title: 'Physique-Chimie', tint: IconChipTint.blue, icon: Icons.bolt_outlined, code: 'PC'),
-    Subject(key: 'anglais', title: 'Anglais', tint: IconChipTint.amber, icon: Icons.language_outlined, code: 'ANG'),
+    Subject(key: 'maths', title: 'Mathématiques', tint: IconChipTint.blue, icon: LucideIcons.sigma, code: 'MAT'),
+    Subject(key: 'philo', title: 'Philosophie', tint: IconChipTint.purple, icon: LucideIcons.bookOpen, code: 'PHI'),
+    Subject(key: 'hist_geo', title: 'Histoire-Géo', tint: IconChipTint.amber, icon: LucideIcons.globe, code: 'HGE'),
+    Subject(key: 'svt', title: 'SVT', tint: IconChipTint.green, icon: LucideIcons.leaf, code: 'SVT'),
+    Subject(key: 'physique_chimie', title: 'Physique-Chimie', tint: IconChipTint.blue, icon: LucideIcons.zap, code: 'PC'),
+    Subject(key: 'anglais', title: 'Anglais', tint: IconChipTint.amber, icon: LucideIcons.globe, code: 'ANG'),
   ];
 
   static const _francophoneExamNames = {

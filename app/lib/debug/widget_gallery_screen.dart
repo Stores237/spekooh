@@ -14,6 +14,7 @@ import '../widgets/search_input.dart';
 import '../widgets/segmented_tabs.dart';
 import '../widgets/stat_row.dart';
 import '../widgets/subject_card.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Debug-only "kitchen sink" screen — every design-system widget gets a
 /// small preview here as it's built, for a quick visual diff against the
@@ -103,11 +104,11 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
               Wrap(
                 spacing: AppSpacing.space2,
                 children: const [
-                  IconChip(icon: Icons.functions, tint: IconChipTint.blue),
-                  IconChip(icon: Icons.eco_outlined, tint: IconChipTint.green),
-                  IconChip(icon: Icons.science_outlined, tint: IconChipTint.purple),
-                  IconChip(icon: Icons.emoji_events_outlined, tint: IconChipTint.amber),
-                  IconChip(icon: Icons.close, tint: IconChipTint.red),
+                  IconChip(icon: LucideIcons.sigma, tint: IconChipTint.blue),
+                  IconChip(icon: LucideIcons.leaf, tint: IconChipTint.green),
+                  IconChip(icon: LucideIcons.flaskConical, tint: IconChipTint.purple),
+                  IconChip(icon: LucideIcons.trophy, tint: IconChipTint.amber),
+                  IconChip(icon: LucideIcons.x, tint: IconChipTint.red),
                 ],
               ),
 
@@ -132,13 +133,13 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
                 child: Column(
                   children: [
                     ListItemRow(
-                      icon: const IconChip(icon: Icons.language_outlined, tint: IconChipTint.blue),
+                      icon: const IconChip(icon: LucideIcons.globe, tint: IconChipTint.blue),
                       title: 'English',
-                      trailing: const Icon(Icons.check, size: 18),
+                      trailing: const Icon(LucideIcons.check, size: 18),
                     ),
                     const Divider(height: 1),
                     ListItemRow(
-                      icon: const IconChip(icon: Icons.language_outlined, tint: IconChipTint.blue),
+                      icon: const IconChip(icon: LucideIcons.globe, tint: IconChipTint.blue),
                       title: 'Français',
                     ),
                   ],
@@ -157,7 +158,7 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
                 children: [
                   Expanded(
                     child: SubjectCard(
-                      icon: const IconChip(icon: Icons.eco_outlined, tint: IconChipTint.green),
+                      icon: const IconChip(icon: LucideIcons.leaf, tint: IconChipTint.green),
                       title: 'Biology',
                       subtitle: 'Past papers by year',
                       badgeText: 'Papers',
@@ -168,7 +169,7 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
                   const SizedBox(width: AppSpacing.space3),
                   Expanded(
                     child: SubjectCard(
-                      icon: const IconChip(icon: Icons.science_outlined, tint: IconChipTint.purple),
+                      icon: const IconChip(icon: LucideIcons.flaskConical, tint: IconChipTint.purple),
                       title: 'Chemistry',
                       subtitle: 'Past papers by year',
                       badgeText: 'Papers',
@@ -183,13 +184,13 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
               Column(
                 children: [
                   SpekoohBanner(
-                    icon: const Icon(Icons.download_outlined),
+                    icon: const Icon(LucideIcons.download),
                     message: 'Saved papers open without internet — even in the village.',
                   ),
                   const SizedBox(height: AppSpacing.space2),
                   SpekoohBanner(
                     tone: SpekoohBannerTone.blue,
-                    icon: const Icon(Icons.auto_awesome_outlined),
+                    icon: const Icon(LucideIcons.sparkles),
                     message: 'Summarize with Spekooh Bot',
                   ),
                 ],
@@ -221,11 +222,11 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
                   active: _navActive,
                   onChanged: (i) => setState(() => _navActive = i),
                   items: const [
-                    SpekoohNavItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-                    SpekoohNavItem(icon: Icon(Icons.description_outlined), label: 'Papers'),
-                    SpekoohNavItem(icon: Icon(Icons.auto_awesome_outlined), center: true),
-                    SpekoohNavItem(icon: Icon(Icons.chat_bubble_outline), label: 'Forum'),
-                    SpekoohNavItem(icon: Icon(Icons.bolt_outlined), label: 'Quizzes'),
+                    SpekoohNavItem(icon: Icon(LucideIcons.home), label: 'Home'),
+                    SpekoohNavItem(icon: Icon(LucideIcons.fileText), label: 'Papers'),
+                    SpekoohNavItem(icon: Icon(LucideIcons.sparkles), center: true),
+                    SpekoohNavItem(icon: Icon(LucideIcons.messageCircle), label: 'Forum'),
+                    SpekoohNavItem(icon: Icon(LucideIcons.zap), label: 'Quizzes'),
                   ],
                 ),
               ),

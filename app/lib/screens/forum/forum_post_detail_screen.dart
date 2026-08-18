@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/spekooh_avatar.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../common/circular_back_button.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Post detail + reply thread — reached by tapping a [ForumPost] card.
 class ForumPostDetailScreen extends StatefulWidget {
@@ -113,7 +114,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                         GestureDetector(
                           onTap: _toggleUpvote,
                           child: Row(children: [
-                            Icon(_post.hasUpvoted ? Icons.arrow_upward : Icons.arrow_upward_outlined, size: 16, color: _post.hasUpvoted ? AppColors.gold700 : AppColors.textTertiary),
+                            Icon(_post.hasUpvoted ? LucideIcons.arrowUp : LucideIcons.arrowUp, size: 16, color: _post.hasUpvoted ? AppColors.gold700 : AppColors.textTertiary),
                             const SizedBox(width: 4),
                             Text('${_post.upvotes}', style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)),
                           ]),
@@ -176,7 +177,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                       height: 40,
                       decoration: const BoxDecoration(color: AppColors.ink900, shape: BoxShape.circle),
                       alignment: Alignment.center,
-                      child: const Icon(Icons.send, size: 16, color: AppColors.white),
+                      child: const Icon(LucideIcons.send, size: 16, color: AppColors.white),
                     ),
                   ),
                 ],

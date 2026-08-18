@@ -11,6 +11,7 @@ import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/screens/home/home_screen.dart';
 import 'package:spekooh/screens/home/logged_in_home_screen.dart';
 import 'package:spekooh/main.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'support/l10n_test_app.dart';
 import 'support/mock_repository_locator.dart';
@@ -73,9 +74,9 @@ void main() {
     RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
     await tester.pumpWidget(const SpekoohApp());
 
-    await tester.ensureVisible(find.byIcon(Icons.settings_outlined));
+    await tester.ensureVisible(find.byIcon(LucideIcons.settings));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.tap(find.byIcon(LucideIcons.settings));
     await tester.pumpAndSettle();
 
     expect(find.text('Settings'), findsOneWidget);

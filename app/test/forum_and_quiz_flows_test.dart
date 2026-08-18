@@ -6,6 +6,7 @@ import 'package:spekooh/data/repositories/quizzes_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/screens/forum/forum_screen.dart';
 import 'package:spekooh/screens/quizzes/quizzes_screen.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'support/l10n_test_app.dart';
 
@@ -45,13 +46,13 @@ void main() {
     expect(find.text('Question'), findsOneWidget);
 
     // Upvote.
-    await tester.tap(find.byIcon(Icons.arrow_upward_outlined));
+    await tester.tap(find.byIcon(LucideIcons.arrowUp));
     await tester.pump();
-    expect(find.byIcon(Icons.arrow_upward), findsOneWidget);
+    expect(find.byIcon(LucideIcons.arrowUp), findsOneWidget);
 
     // Reply.
     await tester.enterText(find.byType(TextField), 'Great question!');
-    await tester.tap(find.byIcon(Icons.send));
+    await tester.tap(find.byIcon(LucideIcons.send));
     await tester.pumpAndSettle();
     expect(find.text('Great question!'), findsOneWidget);
   });

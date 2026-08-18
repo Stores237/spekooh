@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/models/paper_entry.dart';
 import 'package:spekooh/screens/papers/papers_screen.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'support/l10n_test_app.dart';
 
@@ -75,7 +75,7 @@ void main() {
     expect(opened!.entry.year, 2026);
 
     // Step back from paperList -> clears subject only, returns to subject step.
-    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.tap(find.byIcon(LucideIcons.chevronLeft));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('A Level'), findsOneWidget); // subject-step header shows examType name
