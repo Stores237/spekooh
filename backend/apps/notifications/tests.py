@@ -2,7 +2,6 @@ import pytest
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
-from apps.credits.services import award_contributor_bonus
 from apps.instructors.factories import InstructorSubjectQueueFactory
 from apps.instructors.services import (
     handle_instructor_response,

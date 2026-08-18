@@ -1,8 +1,15 @@
+import datetime
+
 import pytest
+from django.core.management import call_command
+from django.test import Client
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
+from apps.admin_queue.models import AdminFlagQueue, FlagCategory
 
+from .escrow import AlreadyRedeemedError, EscrowError, dispute, issue_qr, redeem_qr, self_confirm_receipt
 from .factories import PamphletFactory
 from .models import PamphletOrder, PamphletOrderStatus
 from .services import place_order
@@ -91,16 +98,6 @@ def test_featured_endpoint_404s_when_none_configured(api_client):
 
 
 # --- Escrow + QR state machine (Stage 6) ---
-
-import datetime
-
-from django.core.management import call_command
-from django.test import Client
-from django.utils import timezone
-
-from apps.admin_queue.models import AdminFlagQueue, FlagCategory
-
-from .escrow import AlreadyRedeemedError, EscrowError, dispute, issue_qr, redeem_qr, self_confirm_receipt
 
 
 @pytest.mark.django_db

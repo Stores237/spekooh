@@ -5,10 +5,13 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
+from apps.papers.factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory, SubjectFactory
+from apps.papers.models import PaperStatus
 
 from .factories import CreditLedgerEntryFactory, RedeemCodeFactory
-from .models import ReferralBonusConfig, RedeemCodeStatus
-from .services import RedeemCodeError, award_referral_bonus, redeem_code
+from .models import ContributorBonusConfig, CreditLedgerEntry, ReferralBonusConfig, RedeemCodeStatus, SubjectDemandFactor
+from .rules_engine import ComplexityLevel, CreditRulesError, MarkingQuestion, PaperCreditCalculator, QuestionType
+from .services import RedeemCodeError, RedeemCodeIssuer, award_contributor_bonus, award_referral_bonus, redeem_code
 
 
 @pytest.fixture
@@ -78,13 +81,6 @@ def test_apply_unknown_code_returns_400(api_client):
 
 
 # --- Credit rules engine (Stage 7) ---
-
-from apps.papers.factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory, SubjectFactory
-from apps.papers.models import PaperStatus
-
-from .models import ContributorBonusConfig, CreditLedgerEntry, SubjectDemandFactor
-from .rules_engine import ComplexityLevel, CreditRulesError, MarkingQuestion, PaperCreditCalculator, QuestionType
-from .services import CreditEngineError, RedeemCodeIssuer, award_contributor_bonus
 
 
 @pytest.mark.django_db

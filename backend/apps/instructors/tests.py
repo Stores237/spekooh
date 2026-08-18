@@ -11,11 +11,10 @@ from apps.accounts.factories import UserFactory
 from apps.admin_queue.models import AdminFlagQueue, FlagCategory
 from apps.credits.models import CreditLedgerEntry
 from apps.papers.factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory, SubjectFactory
-from apps.papers.models import MCQAnswerKey, PaperStatus, PaperSubmission, PublishedGuide
+from apps.papers.models import MCQAnswerKey, PaperStatus
 
 from .factories import InstructorSubjectQueueFactory, PartnerCredentialFactory
 from .models import (
-    ACTIVE_INSTRUCTOR_REQUEST_STATUSES,
     InstructorCreditLedger,
     InstructorMarkingGuide,
     InstructorRequest,

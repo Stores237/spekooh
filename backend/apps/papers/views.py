@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
 
-from .models import AdWatchEvent, ExamCategory, ExamType, PaperStatus, PaperSubmission, Subject
+from .models import ExamCategory, ExamType, PaperStatus, PaperSubmission, Subject
 from .serializers import (
     AdWatchEventSerializer,
     ExamCategorySerializer,

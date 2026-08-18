@@ -12,7 +12,6 @@ from apps.notifications.services import notify
 from apps.papers.models import PaperStatus, PaperSubmission, PublishedGuide
 
 from .models import (
-    ACTIVE_INSTRUCTOR_REQUEST_STATUSES,
     InstructorCreditLedger,
     InstructorMarkingGuide,
     InstructorRequest,
@@ -222,7 +221,7 @@ def merge_and_publish(paper: PaperSubmission) -> PublishedGuide:
         kind=NotificationKind.SUBMISSION_STATUS,
         title="Your paper is published!",
         body=(
-            f"Your submission's marking guide is live"
+            "Your submission's marking guide is live"
             + (f" — you earned {bonus_entry.amount} credits" if bonus_entry else "")
             + "."
         ),
