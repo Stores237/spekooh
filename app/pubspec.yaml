@@ -44,7 +44,7 @@ dependencies:
   # HTTP client for the real backend, and secure JWT token storage.
   http: ^1.2.0
   http_parser: ^4.0.2
-  flutter_secure_storage: ^9.0.0
+  flutter_secure_storage: ^10.3.1
 
   # Real file picking for paper/report uploads (camera photo or PDF/doc pick).
   file_picker: ^11.0.3
