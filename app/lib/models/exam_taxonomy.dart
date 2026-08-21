@@ -19,8 +19,7 @@ class ExamCategory {
     this.requiresSystem = false,
   });
 
-  /// Real backend primary key — 0 for the static mock/report-type entries
-  /// that have no backend row (see ReportType, which is never sent to the API).
+  /// Real backend primary key.
   final int id;
   final ExamCategoryKey key;
   final String title;
@@ -53,13 +52,6 @@ class ExamType {
   final SpekoohBadgeTone badgeTone;
 
   bool get requiresTrack => tracks != null && tracks!.isNotEmpty;
-}
-
-class ReportType {
-  const ReportType({required this.key, required this.title, required this.subtitle});
-  final String key;
-  final String title;
-  final String subtitle;
 }
 
 /// Which step of the Papers drill-down is showing, derived purely from what

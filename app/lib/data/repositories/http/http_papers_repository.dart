@@ -5,7 +5,6 @@ import '../../../widgets/icon_chip.dart';
 import '../../../widgets/spekooh_badge.dart';
 import '../../api_client.dart';
 import '../../icon_lookup.dart';
-import '../../mock/mock_taxonomy.dart';
 import '../papers_repository.dart';
 
 /// Exam type names whose subjects are drawn from the French-language set —
@@ -77,9 +76,6 @@ class HttpPapersRepository implements PapersRepository {
   }
 
   @override
-  Future<List<ReportType>> getReportTypes() => Future.value(MockTaxonomy.reportTypes);
-
-  @override
   Future<List<Subject>> getSubjects(String examTypeName) async {
     final language = _francophoneExamNames.contains(examTypeName) ? 'fr' : 'en';
     final rows = await _client.get('/papers/subjects/', query: {'language': language}) as List;
@@ -106,6 +102,9 @@ class HttpPapersRepository implements PapersRepository {
         examBoard: row['exam_board'] as String? ?? '',
         subjectTitle: row['subject_title'] as String?,
         examTypeName: row['exam_type_name'] as String?,
+        institution: row['institution'] as String? ?? '',
+        discipline: row['discipline'] as String? ?? '',
+        supervisorName: row['supervisor_name'] as String? ?? '',
       );
 
   @override
@@ -153,6 +152,9 @@ class HttpPapersRepository implements PapersRepository {
     String? track,
     required int year,
     String examBoard = '',
+    String institution = '',
+    String discipline = '',
+    String supervisorName = '',
     required SubmissionFile file,
   }) async {
     final fields = <String, String>{
@@ -164,6 +166,9 @@ class HttpPapersRepository implements PapersRepository {
     if (subjectId != null) fields['subject'] = '$subjectId';
     if (system != null) fields['system'] = system.name;
     if (track != null && track.isNotEmpty) fields['track'] = track;
+    if (institution.isNotEmpty) fields['institution'] = institution;
+    if (discipline.isNotEmpty) fields['discipline'] = discipline;
+    if (supervisorName.isNotEmpty) fields['supervisor_name'] = supervisorName;
 
     final row = await _client.postMultipart(
       '/papers/submissions/',

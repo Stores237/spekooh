@@ -423,6 +423,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get submitPaperButton => 'Submit paper';
 
   @override
+  String get reportTypeLabel => 'Report type';
+
+  @override
+  String get institutionLabel => 'Institution / University';
+
+  @override
+  String get disciplineLabel => 'Discipline / Department';
+
+  @override
+  String get supervisorOptionalLabel => 'Supervisor (optional)';
+
+  @override
+  String get submitReportButton => 'Submit report';
+
+  @override
   String get selectPlaceholder => 'Select';
 
   @override

@@ -430,6 +430,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get submitPaperButton => 'Soumettre l\'épreuve';
 
   @override
+  String get reportTypeLabel => 'Type de rapport';
+
+  @override
+  String get institutionLabel => 'Établissement / Université';
+
+  @override
+  String get disciplineLabel => 'Discipline / Département';
+
+  @override
+  String get supervisorOptionalLabel => 'Encadreur (facultatif)';
+
+  @override
+  String get submitReportButton => 'Soumettre le rapport';
+
+  @override
   String get selectPlaceholder => 'Choisir';
 
   @override

@@ -15,8 +15,11 @@ class SubmissionFile {
 
 abstract class PapersRepository {
   Future<List<ExamCategory>> getCategories();
+
+  /// Also how "Academic report" types are fetched — [ExamCategoryKey.reports]
+  /// is a real category with real ExamType rows now (Internship/Mémoire/
+  /// Thèse/etc.), not a separate concept.
   Future<List<ExamType>> getExamTypes(ExamCategoryKey category, ExamSystem? system);
-  Future<List<ReportType>> getReportTypes();
   Future<List<Subject>> getSubjects(String examTypeName);
 
   /// Real submitted papers for a resolved subject — not the taxonomy, the
@@ -37,6 +40,10 @@ abstract class PapersRepository {
     String? track,
     required int year,
     String examBoard,
+    // Only meaningful for the "reports" category — see PaperEntry.
+    String institution = '',
+    String discipline = '',
+    String supervisorName = '',
     required SubmissionFile file,
   });
 
@@ -115,9 +122,6 @@ class MockPapersRepository implements PapersRepository {
       Future.value(MockTaxonomy.examTypesFor(category, system));
 
   @override
-  Future<List<ReportType>> getReportTypes() => Future.value(MockTaxonomy.reportTypes);
-
-  @override
   Future<List<Subject>> getSubjects(String examTypeName) =>
       Future.value(MockTaxonomy.subjectsForExamType(examTypeName));
 
@@ -141,6 +145,9 @@ class MockPapersRepository implements PapersRepository {
     String? track,
     required int year,
     String examBoard = '',
+    String institution = '',
+    String discipline = '',
+    String supervisorName = '',
     required SubmissionFile file,
   }) async {
     final entry = PaperEntry(
@@ -151,6 +158,9 @@ class MockPapersRepository implements PapersRepository {
       status: 'PENDING_REVIEW',
       fileUrl: null,
       createdAt: DateTime.now(),
+      institution: institution,
+      discipline: discipline,
+      supervisorName: supervisorName,
     );
     _submitted.add(entry);
     return entry;

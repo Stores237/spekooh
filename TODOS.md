@@ -31,9 +31,6 @@ I can write unilaterally. Grouped by what each one unblocks.
 - **Real papers to seed the app**: the papers database is genuinely empty right now
   (`getLatestPublished()` correctly shows "no papers yet"). The app won't feel real until actual
   exam papers are submitted and pushed to `PUBLISHED` — via the Django admin, or real users.
-- **Academic Reports taxonomy**: the "reports" category exists with zero exam-type rows and no
-  discipline/institution fields — the field shape (internship? mémoire? thèse? by what
-  institution?) needs a decision before this can be built for real instead of "coming soon."
 - **French translations**: the biggest P0 gap (bilingual UI, below) needs real French copy for
   every string in the app. A first draft can be AI-assisted, but a native-speaker review for the
   Cameroon market should happen before shipping.
@@ -174,7 +171,37 @@ I can write unilaterally. Grouped by what each one unblocks.
   (toggle save/remove, failed download surfaces a real error), 2 new `LoggedInHomeScreen`
   widget tests (section absent when empty, present with real data — EN + FR).
 
-### 5. ~~Referral bonuses~~ — done
+### 5. ~~Academic Reports contribution page~~ — done
+- Previously blocked on a real decision (no spec guidance existed at all — the field shape
+  wasn't invented): **type + institution + discipline**, with supervisor genuinely optional —
+  decided with the owner before building.
+- **Backend:** the "reports" `ExamCategory` existed since the initial taxonomy seed with zero
+  `ExamType` rows under it — 5 real report types now seeded (Internship Report, Bachelor's
+  Report/Mémoire de Licence, HND Report, Master's Thesis/Mémoire, PhD Thesis/Thèse), ported
+  1:1 from the Flutter mock taxonomy that had already anticipated these names. `PaperSubmission`
+  gained `institution`/`discipline`/`supervisor_name` (all free text — reports have no `Subject`
+  taxonomy of their own, unlike exam papers).
+- **Client:** removed the parallel, never-wired `ReportType`/`getReportTypes()` concept (the
+  real `HttpPapersRepository` implementation was silently returning hardcoded mock data even in
+  "real" mode) — Academic Reports now reuses the same `getExamTypes()` taxonomy lookup as exam
+  papers, since `reports` is a real category like any other. Submit's "Academic report" tab
+  (previously an honest "coming soon" placeholder) is now a real form: report type picker,
+  institution/discipline text fields (required), supervisor (optional), year, file upload —
+  posts a real multipart submission via the same `submitPaper()` path as exam papers.
+- Verified live end-to-end against the real backend (not just tests): registered a user,
+  fetched the real seeded report types via the API, submitted a real report with a real file to
+  real Supabase Storage, confirmed the response — institution/discipline round-tripped, subject
+  stayed null, supervisor stayed empty (genuinely optional). Also caught and fixed a real bug
+  during this pass: the migration seeded `badge_tone="red"`, a value the Flutter client's
+  `SpekoohBadgeTone.values.byName()` doesn't recognize — would have crashed the picker the
+  first time a real user opened it. Fixed to `"neutral"` in both the migration and the
+  already-seeded dev rows.
+- Verified with a real debug APK build too.
+- Tests: 2 new backend tests (real submission round-trip, exam types seeded correctly), 2
+  updated Flutter widget tests (exam-paper flow split out, new report-flow test walks the real
+  taxonomy picker end to end).
+
+### 6. ~~Referral bonuses~~ — done
 - Spec only listed this as a one-liner with no mechanics, so the trigger and reward were
   decided with the owner before building (not invented): **trigger** = referred user's first
   real action (their first paper unlock, not bare signup — resists fake-account abuse);
@@ -201,28 +228,28 @@ I can write unilaterally. Grouped by what each one unblocks.
 
 ## P2 — Explicitly future/speculative in spec, or invented UI with no spec backing at all
 
-### 6. In-app practice quiz auto-generated from submitted papers ("Past-paper practice")
+### 7. In-app practice quiz auto-generated from submitted papers ("Past-paper practice")
 - **Backend:** not built — no paper→quiz generation pipeline; `Quiz`/`QuizQuestion` are
   manually authored rows only.
 - **Client:** shown honestly as "coming soon" (fixed this session — previously opened a
   hardcoded fake quiz regardless of what was tapped).
 - Matches spec §3.3 P2 exactly ("in-app practice/quiz mode generated from paper content").
 
-### 7. "Friday Arena" live elimination quiz
+### 8. "Friday Arena" live elimination quiz
 - **Backend:** not built — no live/scheduled quiz-session model, no real-time transport.
 - **Client:** shown honestly as "coming soon" (fixed this session — previously a dead tap).
 - **Not in the confirmed spec at all** — pure UI-mockup invention (closest real-world analogue
   is Kawlo's "live 1v1 quiz battles," which the spec itself flags in §12.4 as a P2 idea worth
   revisiting post-MVP, not committed scope). Lowest priority on this whole list.
 
-### 8. Quiz anti-cheat / answer-hiding
+### 9. Quiz anti-cheat / answer-hiding
 - **Backend:** `correct_choice_index` is stripped from the list/detail serializer response
   (confirmed not sent to the client) but there's no protection against a user inspecting network
   traffic before answering, since the full grading logic still lives client-adjacent in spirit.
   Documented as a known, accepted gap in `apps/quizzes/models.py`'s own docstring — quizzes are
   P2/non-spec'd, so this was a deliberate corner-cut, not an oversight.
 
-### 9. Subscription tier for marking-guide access
+### 10. Subscription tier for marking-guide access
 - Distinct from the already-real "Spekooh Pro" (ad-free + unlimited paper *views*, per §5.3 —
   confirmed to explicitly exclude marking guides). This P2 item is a *different*, not-yet-decided
   product idea (bundling marking-guide access into a subscription) — not started, and shouldn't

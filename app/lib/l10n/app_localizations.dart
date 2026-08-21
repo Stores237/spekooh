@@ -854,6 +854,36 @@ abstract class AppLocalizations {
   /// **'Submit paper'**
   String get submitPaperButton;
 
+  /// No description provided for @reportTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Report type'**
+  String get reportTypeLabel;
+
+  /// No description provided for @institutionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Institution / University'**
+  String get institutionLabel;
+
+  /// No description provided for @disciplineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Discipline / Department'**
+  String get disciplineLabel;
+
+  /// No description provided for @supervisorOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Supervisor (optional)'**
+  String get supervisorOptionalLabel;
+
+  /// No description provided for @submitReportButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit report'**
+  String get submitReportButton;
+
   /// No description provided for @selectPlaceholder.
   ///
   /// In en, this message translates to:

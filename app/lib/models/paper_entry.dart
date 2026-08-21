@@ -13,6 +13,9 @@ class PaperEntry {
     this.examBoard = '',
     this.subjectTitle,
     this.examTypeName,
+    this.institution = '',
+    this.discipline = '',
+    this.supervisorName = '',
   });
 
   final int id;
@@ -32,6 +35,12 @@ class PaperEntry {
   /// for the "reports" category, which has no subject).
   final String? subjectTitle;
   final String? examTypeName;
+
+  /// Only meaningful for the "reports" category (internship/mémoire/thèse) —
+  /// blank for every other submission. supervisorName is genuinely optional.
+  final String institution;
+  final String discipline;
+  final String supervisorName;
 
   bool get isPublished => status == 'PUBLISHED';
 }
