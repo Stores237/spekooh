@@ -441,7 +441,11 @@ class _SubmitScreenState extends State<SubmitScreen> {
               ),
               const SizedBox(height: AppSpacing.space4),
               if (_type == _SubmitType.report) ..._reportForm(l10n) else ..._paperForm(l10n),
-              const SizedBox(height: AppSpacing.space6),
+              // BottomNav's center item pokes ~24px above the bar via
+              // Transform.translate, which doesn't reserve layout space —
+              // without extra clearance here the Submit button (this
+              // screen's primary CTA) ends up visually covered by it.
+              const SizedBox(height: AppSpacing.space9 + AppSpacing.space9),
             ],
           ),
         ),
