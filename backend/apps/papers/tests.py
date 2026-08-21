@@ -141,6 +141,45 @@ def test_submit_requires_a_real_file(authed_client):
 
 
 @pytest.mark.django_db
+def test_submit_academic_report_with_no_subject_but_real_institution_fields(authed_client):
+    """Reports have no Subject taxonomy of their own — institution/discipline
+    are free text instead, and supervisor_name is genuinely optional."""
+    client, user = authed_client
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Mémoire")
+    upload = SimpleUploadedFile("memoire.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf")
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": reports_category.id,
+            "exam_type": report_type.id,
+            "year": 2024,
+            "institution": "Université de Douala",
+            "discipline": "Computer Engineering",
+            "uploaded_file": upload,
+        },
+        format="multipart",
+    )
+    assert response.status_code == 201
+    submission = PaperSubmission.objects.get(id=response.data["id"])
+    assert submission.subject is None
+    assert submission.institution == "Université de Douala"
+    assert submission.discipline == "Computer Engineering"
+    assert submission.supervisor_name == ""  # never sent, genuinely optional
+
+
+@pytest.mark.django_db
+def test_report_exam_types_were_seeded_by_migration():
+    reports = ExamType.objects.filter(category__key="reports").order_by("sort_order")
+    assert reports.count() == 5
+    assert list(reports.values_list("name", flat=True))[:2] == [
+        "Internship Report",
+        "Bachelor’s Report (Mémoire de Licence)",
+    ]
+    assert all(t.system is None for t in reports)
+
+
+@pytest.mark.django_db
 def test_list_shows_only_summary_fields(authed_client):
     client, user = authed_client
     PaperSubmissionFactory(submitted_by=user)

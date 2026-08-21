@@ -100,6 +100,14 @@ class PaperSubmission(TimeStampedModel):
     exam_board = models.CharField(max_length=120, blank=True)
     year = models.PositiveIntegerField()
 
+    # Only meaningful for the "reports" category (internship/mémoire/thèse/
+    # PFE) — blank for every other submission. Reports have no Subject
+    # taxonomy of their own (see the comment above), so discipline is free
+    # text rather than a Subject FK.
+    institution = models.CharField(max_length=200, blank=True)
+    discipline = models.CharField(max_length=150, blank=True)
+    supervisor_name = models.CharField(max_length=150, blank=True)
+
     # Real uploaded file — local disk in dev, Supabase Storage (S3-compatible)
     # when AWS_STORAGE_BUCKET_NAME is set (see config/settings/base.py).
     # file_ref mirrors uploaded_file.path when the storage backend actually
