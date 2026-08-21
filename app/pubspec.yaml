@@ -59,6 +59,8 @@ dependencies:
   lucide_icons_flutter: ^3.1.15
   path_provider: ^2.1.6
   open_filex: ^4.7.0
+  pdfx: ^2.11.0
+  photo_view: ^0.15.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

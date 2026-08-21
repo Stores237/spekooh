@@ -105,6 +105,9 @@ class HttpPapersRepository implements PapersRepository {
         institution: row['institution'] as String? ?? '',
         discipline: row['discipline'] as String? ?? '',
         supervisorName: row['supervisor_name'] as String? ?? '',
+        categoryKey: row['category_key'] as String?,
+        requiresUnlock: row['requires_unlock'] as bool? ?? false,
+        isUnlocked: row['is_unlocked'] as bool? ?? false,
       );
 
   @override

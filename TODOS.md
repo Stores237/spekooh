@@ -45,9 +45,7 @@ I can write unilaterally. Grouped by what each one unblocks.
   and `mark_published` on submissions — a manual admin action by design.
 
 ### Decisions still open
-- **Offline downloads platform target** (blocks P1 #4 below): mobile-only (standard
-  `path_provider` approach) or web too (needs browser storage, a different implementation)?
-- **Marking-guide subscription tier** (P2 #9 below): still wanted, or does pay-per-unlock stay
+- **Marking-guide subscription tier** (P2 #11 below): still wanted, or does pay-per-unlock stay
   the only path?
 
 ---
@@ -201,7 +199,55 @@ I can write unilaterally. Grouped by what each one unblocks.
   updated Flutter widget tests (exam-paper flow split out, new report-flow test walks the real
   taxonomy picker end to end).
 
-### 6. ~~Referral bonuses~~ — done
+### 6. ~~Report watermarking + payment-gated viewing/downloading~~ — done
+- Owner decisions (not invented): a static Spekooh watermark, applied once at upload — not
+  personalized per-viewer. Viewing is free for Internship/Bachelor's/HND reports, but
+  Master's Thesis and PhD Thesis require payment even to view, not just download. Downloading
+  *any* report always requires payment, regardless of view-tier. "Free to view" is enforced by
+  a real in-app document viewer (not an OS handoff, which would let the user just hit that
+  app's own Save button) — building that, not just gating the existing external-open flow, was
+  itself an owner decision.
+- **Backend:** `ExamType.requires_payment_to_view` (true only for the two thesis-tier report
+  types, set via a data migration). `apps.papers.services.watermark_report_submission()` runs
+  automatically on every "reports"-category submission — PDFs get a real diagonal overlay
+  (`pypdf` + `reportlab`, merged via `PdfWriter(clone_from=...)`), images get one drawn
+  directly (`PIL.ImageDraw`); a corrupt/unsupported upload falls back to the original bytes
+  rather than failing the whole submission. The unwatermarked original is deleted from storage
+  after the watermarked version is saved — checked for the case where the storage backend
+  reuses the same key (S3's overwrite-by-default behavior), so cleanup can't delete the file it
+  just wrote. `PaperSubmissionListSerializer`/`DetailSerializer`/`CreateSerializer` gained
+  `category_key`, `requires_unlock` (server-withholds `file_url` entirely, not just a
+  client-side flag — computed by `user_can_view_file()`, which exempts the submitter and staff)
+  and `is_unlocked` (a real `PaperUnlock` exists — independent of `requires_unlock`, since even
+  a free-to-view report needs one to download). Both gates reuse the exact same `PaperUnlock`/
+  `unlock_paper()` mechanism exam papers' marking-guide unlock already uses — one real payment
+  satisfies both the view-gate (if any) and the download-gate together.
+- **Client:** `ReportViewerScreen` (new) renders PDFs via `pdfx` and images via `photo_view`
+  entirely in-app — the actual mechanism behind "free to view, no download," since it never
+  hands the user a file the OS could offer to save. `PaperDetailScreen`: a gated report shows a
+  real locked message instead of the file preview; an accessible report's "View" pushes the
+  real viewer (exam papers keep the existing external-open behavior, untouched); the
+  Save-offline action (built earlier this session) is now hidden behind a real "Unlock below to
+  download" hint until `is_unlocked` is genuinely true, for every report regardless of
+  view-tier; the existing unlock card's copy switches from "Marking guide" to "Download access"
+  for reports.
+- Verified live end-to-end against the real backend, not just tests: submitted a real PhD
+  thesis PDF, confirmed the submitter sees their own file immediately
+  (`requires_unlock: false`) despite the thesis-tier gate, downloaded the stored file and
+  confirmed it's genuinely watermarked (`pypdf` text extraction found both the original content
+  and "Spekooh"), published it, confirmed a *different* user is correctly gated
+  (`requires_unlock: true`, `file_url: null`), created a real `PaperUnlock` for that user, and
+  confirmed access opened up (`file_url` now present, `is_unlocked: true`). Also verified with
+  a real `flutter build apk --debug` (the two new native plugins, `pdfx`/`photo_view`, needed a
+  real Android build to prove they integrate, not just `flutter analyze`).
+- Tests: 8 new backend tests (real watermarking on a real PDF/verified via `pypdf` extraction,
+  exam papers stay untouched, gated-until-unlocked, submitter/staff exemptions, serializer
+  field exposure) — all against the real seeded taxonomy, not mocks. 3 new Flutter widget
+  tests (locked message for gated reports, free-tier View pushes the real viewer — checked via
+  a `NavigatorObserver` rather than letting `pdfx`'s native plugin actually render in a widget
+  test, which it can't without a real device/platform, Save-offline gated until a real unlock).
+
+### 7. ~~Referral bonuses~~ — done
 - Spec only listed this as a one-liner with no mechanics, so the trigger and reward were
   decided with the owner before building (not invented): **trigger** = referred user's first
   real action (their first paper unlock, not bare signup — resists fake-account abuse);
@@ -228,28 +274,28 @@ I can write unilaterally. Grouped by what each one unblocks.
 
 ## P2 — Explicitly future/speculative in spec, or invented UI with no spec backing at all
 
-### 7. In-app practice quiz auto-generated from submitted papers ("Past-paper practice")
+### 8. In-app practice quiz auto-generated from submitted papers ("Past-paper practice")
 - **Backend:** not built — no paper→quiz generation pipeline; `Quiz`/`QuizQuestion` are
   manually authored rows only.
 - **Client:** shown honestly as "coming soon" (fixed this session — previously opened a
   hardcoded fake quiz regardless of what was tapped).
 - Matches spec §3.3 P2 exactly ("in-app practice/quiz mode generated from paper content").
 
-### 8. "Friday Arena" live elimination quiz
+### 9. "Friday Arena" live elimination quiz
 - **Backend:** not built — no live/scheduled quiz-session model, no real-time transport.
 - **Client:** shown honestly as "coming soon" (fixed this session — previously a dead tap).
 - **Not in the confirmed spec at all** — pure UI-mockup invention (closest real-world analogue
   is Kawlo's "live 1v1 quiz battles," which the spec itself flags in §12.4 as a P2 idea worth
   revisiting post-MVP, not committed scope). Lowest priority on this whole list.
 
-### 9. Quiz anti-cheat / answer-hiding
+### 10. Quiz anti-cheat / answer-hiding
 - **Backend:** `correct_choice_index` is stripped from the list/detail serializer response
   (confirmed not sent to the client) but there's no protection against a user inspecting network
   traffic before answering, since the full grading logic still lives client-adjacent in spirit.
   Documented as a known, accepted gap in `apps/quizzes/models.py`'s own docstring — quizzes are
   P2/non-spec'd, so this was a deliberate corner-cut, not an oversight.
 
-### 10. Subscription tier for marking-guide access
+### 11. Subscription tier for marking-guide access
 - Distinct from the already-real "Spekooh Pro" (ad-free + unlimited paper *views*, per §5.3 —
   confirmed to explicitly exclude marking guides). This P2 item is a *different*, not-yet-decided
   product idea (bundling marking-guide access into a subscription) — not started, and shouldn't

@@ -314,6 +314,7 @@
     "placeholders": {"error": {"type": "String"}}
   },
   "couldNotOpenFile": "Could not open the file.",
+  "viewOnlyNotice": "View only — unlock to download a copy",
   "reportThanksMessage": "Thanks — the Review Team has been notified.",
   "reportSendError": "Could not send report: {error}",
   "@reportSendError": {
@@ -339,11 +340,18 @@
   "watchAdForView": "Watch ad for +1 view",
   "markingGuideTitle": "Marking guide",
   "markingGuideSubtitle": "Instructor-authored + in-house MCQ key",
+  "reportDownloadTitle": "Download access",
+  "reportDownloadSubtitle": "Viewing in the app is free — unlock once to save a copy for offline reading",
   "unlockedForAmount": "Unlocked for {amount} FCFA.",
   "@unlockedForAmount": {
     "placeholders": {"amount": {"type": "int"}}
   },
   "unlockButton": "Unlock — 500 FCFA",
+  "alreadyUnlocked": "Unlocked.",
+  "viewButton": "View",
+  "reportLockedTitle": "This report requires unlocking",
+  "reportLockedMessage": "PhD and Master's theses require payment to view — unlock below to read it.",
+  "unlockToDownloadHint": "Unlock below to save a copy for offline reading.",
   "haveRedeemCode": "Have a redeem code?",
   "redeemCodeHint": "Redeem code",
   "mcqDisclaimer": "Objective/MCQ answers are marked in-house by the Spekooh review team, not the instructor.",

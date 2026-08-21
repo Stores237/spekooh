@@ -732,6 +732,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotOpenFile => 'Could not open the file.';
 
   @override
+  String get viewOnlyNotice => 'View only — unlock to download a copy';
+
+  @override
   String get reportThanksMessage =>
       'Thanks — the Review Team has been notified.';
 
@@ -788,12 +791,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get markingGuideSubtitle => 'Instructor-authored + in-house MCQ key';
 
   @override
+  String get reportDownloadTitle => 'Download access';
+
+  @override
+  String get reportDownloadSubtitle =>
+      'Viewing in the app is free — unlock once to save a copy for offline reading';
+
+  @override
   String unlockedForAmount(int amount) {
     return 'Unlocked for $amount FCFA.';
   }
 
   @override
   String get unlockButton => 'Unlock — 500 FCFA';
+
+  @override
+  String get alreadyUnlocked => 'Unlocked.';
+
+  @override
+  String get viewButton => 'View';
+
+  @override
+  String get reportLockedTitle => 'This report requires unlocking';
+
+  @override
+  String get reportLockedMessage =>
+      'PhD and Master\'s theses require payment to view — unlock below to read it.';
+
+  @override
+  String get unlockToDownloadHint =>
+      'Unlock below to save a copy for offline reading.';
 
   @override
   String get haveRedeemCode => 'Have a redeem code?';

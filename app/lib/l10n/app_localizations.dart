@@ -1394,6 +1394,12 @@ abstract class AppLocalizations {
   /// **'Could not open the file.'**
   String get couldNotOpenFile;
 
+  /// No description provided for @viewOnlyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'View only — unlock to download a copy'**
+  String get viewOnlyNotice;
+
   /// No description provided for @reportThanksMessage.
   ///
   /// In en, this message translates to:
@@ -1490,6 +1496,18 @@ abstract class AppLocalizations {
   /// **'Instructor-authored + in-house MCQ key'**
   String get markingGuideSubtitle;
 
+  /// No description provided for @reportDownloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download access'**
+  String get reportDownloadTitle;
+
+  /// No description provided for @reportDownloadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewing in the app is free — unlock once to save a copy for offline reading'**
+  String get reportDownloadSubtitle;
+
   /// No description provided for @unlockedForAmount.
   ///
   /// In en, this message translates to:
@@ -1501,6 +1519,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlock — 500 FCFA'**
   String get unlockButton;
+
+  /// No description provided for @alreadyUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked.'**
+  String get alreadyUnlocked;
+
+  /// No description provided for @viewButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get viewButton;
+
+  /// No description provided for @reportLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This report requires unlocking'**
+  String get reportLockedTitle;
+
+  /// No description provided for @reportLockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'PhD and Master\'s theses require payment to view — unlock below to read it.'**
+  String get reportLockedMessage;
+
+  /// No description provided for @unlockToDownloadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock below to save a copy for offline reading.'**
+  String get unlockToDownloadHint;
 
   /// No description provided for @haveRedeemCode.
   ///

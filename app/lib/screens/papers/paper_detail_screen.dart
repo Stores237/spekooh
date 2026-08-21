@@ -19,6 +19,7 @@ import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/spekooh_banner.dart';
 import 'papers_screen.dart';
+import 'report_viewer_screen.dart';
 
 /// Ported from ui_kits/spekooh-app/PaperDetailScreen.jsx. Pushed as a
 /// full-screen overlay when a paper is tapped in PapersScreen's paper list.
@@ -143,6 +144,15 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     }
   }
 
+  /// Reports render in-app (see ReportViewerScreen) instead of handing off
+  /// to the OS's own PDF/photo app — that handoff is exactly what would let
+  /// someone "view for free" and just use the OS's own Save option,
+  /// defeating "free to view, paid to download" (owner decision). Exam
+  /// papers keep the existing external-open behavior via _openFile.
+  void _openReportViewer(String title, String fileUrl) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => ReportViewerScreen(title: title, fileUrl: fileUrl)));
+  }
+
   Future<void> _toggleOffline({required int paperId, required String title, required String subtitle, required String? fileUrl}) async {
     final l10n = AppLocalizations.of(context)!;
     final store = OfflinePapersStore.instance;
@@ -264,57 +274,83 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                   }
                   final detail = snapshot.data;
                   final fileUrl = detail?.fileUrl;
+                  // Owner decision: PhD/Master's-tier reports require payment
+                  // even to view; every other report is free to view but
+                  // still requires a real unlock to download — see the
+                  // Download-access card below, which drives both gates
+                  // through the same PaperUnlock the marking-guide flow uses.
+                  final isReport = detail?.categoryKey == 'reports' || selection?.category.key == ExamCategoryKey.reports;
+                  final locked = isReport && (detail?.requiresUnlock ?? false);
+                  final downloadUnlocked = detail?.isUnlocked ?? false;
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         width: double.infinity,
-                        height: 140,
+                        constraints: const BoxConstraints(minHeight: 140),
                         decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
                         alignment: Alignment.center,
                         padding: const EdgeInsets.all(16),
-                        child: fileUrl == null
+                        child: locked
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(LucideIcons.lock, size: 28, color: AppColors.textSecondary),
+                                  const SizedBox(height: AppSpacing.space2),
+                                  Text(l10n.reportLockedTitle, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                  const SizedBox(height: 4),
+                                  Text(l10n.reportLockedMessage, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                ],
+                              )
+                            : fileUrl == null
                             ? Text(l10n.noScannedFileYet, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textTertiary))
                             : Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(LucideIcons.fileText, size: 28, color: AppColors.textSecondary),
                                   const SizedBox(height: AppSpacing.space2),
-                                  SpekoohButton(size: SpekoohButtonSize.sm, onPressed: () => _openFile(entry.id, fileUrl), child: Text(l10n.openScannedPaper)),
+                                  SpekoohButton(
+                                    size: SpekoohButtonSize.sm,
+                                    onPressed: () => isReport ? _openReportViewer(title, fileUrl) : _openFile(entry.id, fileUrl),
+                                    child: Text(isReport ? l10n.viewButton : l10n.openScannedPaper),
+                                  ),
                                   // path_provider has no meaningful web implementation, and
                                   // web isn't the ship target (spec §6) — mobile-only.
                                   if (!kIsWeb) ...[
                                     const SizedBox(height: AppSpacing.space2),
-                                    ListenableBuilder(
-                                      listenable: OfflinePapersStore.instance,
-                                      builder: (context, _) {
-                                        final saved = OfflinePapersStore.instance.isSaved(entry.id);
-                                        return GestureDetector(
-                                          onTap: _savingOffline
-                                              ? null
-                                              : () => _toggleOffline(paperId: entry.id, title: title, subtitle: meta, fileUrl: fileUrl),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              if (_savingOffline)
-                                                const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                                              else
-                                                Icon(saved ? LucideIcons.checkCircle : LucideIcons.download, size: 14, color: saved ? AppColors.green600 : AppColors.gold700),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                saved ? l10n.offlineSaved : l10n.saveOffline,
-                                                style: TextStyle(
-                                                  fontFamily: plusJakartaSansFamily,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: saved ? AppColors.green600 : AppColors.gold700,
+                                    if (isReport && !downloadUnlocked)
+                                      Text(l10n.unlockToDownloadHint, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textTertiary))
+                                    else
+                                      ListenableBuilder(
+                                        listenable: OfflinePapersStore.instance,
+                                        builder: (context, _) {
+                                          final saved = OfflinePapersStore.instance.isSaved(entry.id);
+                                          return GestureDetector(
+                                            onTap: _savingOffline
+                                                ? null
+                                                : () => _toggleOffline(paperId: entry.id, title: title, subtitle: meta, fileUrl: fileUrl),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (_savingOffline)
+                                                  const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                                                else
+                                                  Icon(saved ? LucideIcons.checkCircle : LucideIcons.download, size: 14, color: saved ? AppColors.green600 : AppColors.gold700),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  saved ? l10n.offlineSaved : l10n.saveOffline,
+                                                  style: TextStyle(
+                                                    fontFamily: plusJakartaSansFamily,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: saved ? AppColors.green600 : AppColors.gold700,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
                                   ],
                                 ],
                               ),
@@ -354,17 +390,19 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(l10n.markingGuideTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                      Text(l10n.markingGuideSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                      Text(isReport ? l10n.reportDownloadTitle : l10n.markingGuideTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                      Text(isReport ? l10n.reportDownloadSubtitle : l10n.markingGuideSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                                     ],
                                   ),
                                 ),
-                                Icon(_unlockedAmount != null ? LucideIcons.unlock : LucideIcons.lock, size: 18),
+                                Icon(_unlockedAmount != null || downloadUnlocked ? LucideIcons.unlock : LucideIcons.lock, size: 18),
                               ],
                             ),
                             const SizedBox(height: 12),
                             if (_unlockedAmount != null)
                               Text(l10n.unlockedForAmount(_unlockedAmount!), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600))
+                            else if (downloadUnlocked)
+                              Text(l10n.alreadyUnlocked, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600))
                             else ...[
                               Row(
                                 children: [

@@ -744,6 +744,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get couldNotOpenFile => 'Impossible d\'ouvrir le fichier.';
 
   @override
+  String get viewOnlyNotice =>
+      'Consultation uniquement — débloquez pour télécharger une copie';
+
+  @override
   String get reportThanksMessage =>
       'Merci — l\'équipe de vérification a été notifiée.';
 
@@ -802,12 +806,36 @@ class AppLocalizationsFr extends AppLocalizations {
       'Rédigé par l\'instructeur + clé QCM interne';
 
   @override
+  String get reportDownloadTitle => 'Accès au téléchargement';
+
+  @override
+  String get reportDownloadSubtitle =>
+      'La consultation dans l\'application est gratuite — débloquez une fois pour enregistrer une copie hors ligne';
+
+  @override
   String unlockedForAmount(int amount) {
     return 'Débloqué pour $amount FCFA.';
   }
 
   @override
   String get unlockButton => 'Débloquer — 500 FCFA';
+
+  @override
+  String get alreadyUnlocked => 'Débloqué.';
+
+  @override
+  String get viewButton => 'Consulter';
+
+  @override
+  String get reportLockedTitle => 'Ce rapport nécessite un déblocage';
+
+  @override
+  String get reportLockedMessage =>
+      'Les thèses de Master et de Doctorat nécessitent un paiement pour être consultées — débloquez ci-dessous pour la lire.';
+
+  @override
+  String get unlockToDownloadHint =>
+      'Débloquez ci-dessous pour enregistrer une copie hors ligne.';
 
   @override
   String get haveRedeemCode => 'Vous avez un code de réduction ?';
