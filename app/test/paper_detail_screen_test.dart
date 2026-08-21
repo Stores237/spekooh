@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/ads/rewarded_ad_controller.dart';
 import 'package:spekooh/data/locale_controller.dart';
+import 'package:spekooh/data/offline_file_store.dart';
+import 'package:spekooh/data/offline_papers_store.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/models/paper_entry.dart';
@@ -56,6 +58,24 @@ class _PaywalledPapersRepository implements PapersRepository {
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by PaperDetailScreen tests');
 }
 
+/// Returns whichever [PaperEntry] it's given from getPaperDetail — the
+/// save-offline UI reads `fileUrl` off the resolved detail, not the
+/// synchronous paperEntry the screen opens with, so tests exercising it
+/// need a real (non-null) fileUrl to come back from the async call.
+class _FileBackedPapersRepository implements PapersRepository {
+  _FileBackedPapersRepository(this.entry);
+  final PaperEntry entry;
+
+  @override
+  Future<PaperEntry> getPaperDetail(int paperId) async => entry;
+
+  @override
+  Future<void> recordView(int paperId) async {}
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by save-offline tests');
+}
+
 class _FakeRewardedAdController implements RewardedAdController {
   _FakeRewardedAdController({required this.grantsReward});
   final bool grantsReward;
@@ -79,6 +99,7 @@ Future<void> _pump(WidgetTester tester, PapersRepository repository, RewardedAdC
 void main() {
   tearDown(() {
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    OfflinePapersStore.debugSetInstance(OfflinePapersStore());
   });
 
   testWidgets('paywalled paper shows the banner and a real "Watch ad" button', (tester) async {
@@ -171,5 +192,73 @@ void main() {
     await tester.tap(find.byTooltip('Signaler un problème avec cette épreuve'));
     await tester.pumpAndSettle();
     expect(find.text('Signaler un problème'), findsOneWidget);
+  });
+
+  group('save offline', () {
+    final entryWithFile = PaperEntry(
+      id: 2,
+      year: 2024,
+      system: null,
+      track: '',
+      status: 'PUBLISHED',
+      fileUrl: 'https://cdn.example.com/paper2.pdf',
+      createdAt: DateTime(2024, 1, 1),
+      subjectTitle: 'Biology',
+      examTypeName: 'GCE O Level',
+    );
+
+    Future<void> pumpWithFile(WidgetTester tester) async {
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: entryWithFile, repository: _FileBackedPapersRepository(entryWithFile), adController: _FakeRewardedAdController(grantsReward: true)),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    testWidgets('shows "Save offline" once a scanned file exists, saves for real on tap', (tester) async {
+      OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
+      await pumpWithFile(tester);
+
+      expect(find.text('Save offline'), findsOneWidget);
+      expect(find.text('Saved offline'), findsNothing);
+
+      await tester.tap(find.text('Save offline'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Saved offline'), findsOneWidget);
+      expect(find.text('Save offline'), findsNothing);
+      expect(OfflinePapersStore.instance.isSaved(2), isTrue);
+    });
+
+    testWidgets('tapping again removes it from offline storage', (tester) async {
+      OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
+      await pumpWithFile(tester);
+
+      await tester.tap(find.text('Save offline'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Saved offline'), findsOneWidget);
+
+      await tester.tap(find.text('Saved offline'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Save offline'), findsOneWidget);
+      expect(OfflinePapersStore.instance.isSaved(2), isFalse);
+    });
+
+    testWidgets('a failed download surfaces a real error, not a silent "saved" state', (tester) async {
+      OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => throw Exception('offline')));
+      await pumpWithFile(tester);
+
+      await tester.tap(find.text('Save offline'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Save offline'), findsOneWidget);
+      expect(find.textContaining('Could not save for offline'), findsOneWidget);
+      expect(OfflinePapersStore.instance.isSaved(2), isFalse);
+    });
   });
 }

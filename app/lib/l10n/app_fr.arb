@@ -84,6 +84,12 @@
   "trialFeatures": "Consultations illimitées · Assistant IA",
   "trialKeepAccess": "Garder mon accès",
   "quickActionContribute": "Contribuer",
+  "readyOfflineTitle": "Disponible hors ligne",
+  "offlineDownloadsCount": "Téléchargements · {count}",
+  "@offlineDownloadsCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "offlineReadyTag": "PRÊT HORS LIGNE",
   "dailyChallengeLabel": "Défi du jour",
   "dailyChallengeLoading": "Chargement…",
   "dailyChallengeInfo": "{title} · {count} questions",
@@ -230,6 +236,12 @@
   "reportTooltip": "Signaler un problème avec cette épreuve",
   "noScannedFileYet": "Aucun fichier scanné pour cette soumission pour l'instant.",
   "openScannedPaper": "Ouvrir l'épreuve scannée",
+  "saveOffline": "Enregistrer hors ligne",
+  "offlineSaved": "Enregistré hors ligne",
+  "offlineSaveError": "Impossible d'enregistrer hors ligne : {error}",
+  "@offlineSaveError": {
+    "placeholders": {"error": {"type": "String"}}
+  },
   "examBoardLabel": "Jury d'examen : {board}",
   "watchAdForView": "Regarder une pub pour +1 consultation",
   "markingGuideTitle": "Corrigé",

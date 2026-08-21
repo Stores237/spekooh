@@ -148,17 +148,31 @@ I can write unilaterally. Grouped by what each one unblocks.
 
 ## P1 — Nice-to-have, confirmed in scope, not built
 
-### 4. Offline-saved papers for later access
-- **Backend:** N/A (inherently client-side).
-- **Client:** not built. Explicitly scoped out of the Home-screen fix earlier this session (the
-  fabricated "Ready offline — Downloads · 1" section was removed rather than faked) because
-  this app is only tested via `flutter build web`, and the standard mobile approach
-  (`path_provider` + local file writes) doesn't work in a browser.
-- **Needs a platform decision first:** if Spekooh ships mobile, use `path_provider`; if web
-  matters too, a real implementation needs browser storage (IndexedDB/Cache API) via a
-  conditional/platform-specific implementation. Don't build either until that's decided — see
-  spec §6 ("No web app in v1 (mobile-first)"), which suggests the mobile path is the real target
-  and this Flutter Web testing setup is a dev-environment convenience, not the ship target.
+### 4. ~~Offline-saved papers for later access~~ — done
+- **Platform decision (made by the owner):** mobile-only, via `path_provider` — matches spec §6
+  ("no web app in v1"); no browser-storage fallback was built.
+- **Backend:** N/A (inherently client-side) — downloads the same signed file URL
+  `PaperDetailScreen` already uses to open a paper (`PaperEntry.fileUrl`).
+- **Client:** `OfflinePapersStore` (`app/lib/data/offline_papers_store.dart`) downloads a
+  paper's real scanned file to on-device storage and keeps a small on-device JSON index so
+  saved papers survive app restarts. Storage is behind an `OfflineFileStore` seam
+  (`app/lib/data/offline_file_store.dart`) — `LocalOfflineFileStore` is the real
+  `path_provider`-backed implementation, `InMemoryOfflineFileStore` lets tests run without
+  touching real device storage or the network. `PaperDetailScreen` gets a real "Save
+  offline"/"Saved offline" toggle (mobile-only, next to "Open scanned paper") and now prefers
+  the local copy over re-fetching the remote URL once one exists — the actual point of saving
+  for later. `LoggedInHomeScreen`'s "Ready offline" section (previously fabricated, then
+  removed rather than faked) is now real: only appears once something's actually saved, shows
+  the true download count, and opens the local file via `open_filex` (added alongside
+  `path_provider` — `url_launcher`, already a dependency, explicitly isn't recommended for
+  local `file://` URIs on Android per its own docs).
+- Verified with a real debug APK build (`flutter build apk --debug`), not just `flutter
+  analyze`/tests — confirms the two new native plugins integrate cleanly into the actual
+  Android build, not just the Dart layer.
+- Tests: 9 new `OfflinePapersStore` unit tests (save/remove/overwrite/persistence-across-
+  bootstrap/failed-download/listener notifications), 3 new `PaperDetailScreen` widget tests
+  (toggle save/remove, failed download surfaces a real error), 2 new `LoggedInHomeScreen`
+  widget tests (section absent when empty, present with real data — EN + FR).
 
 ### 5. ~~Referral bonuses~~ — done
 - Spec only listed this as a one-liner with no mechanics, so the trigger and reward were

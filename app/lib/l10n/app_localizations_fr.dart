@@ -266,6 +266,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get quickActionContribute => 'Contribuer';
 
   @override
+  String get readyOfflineTitle => 'Disponible hors ligne';
+
+  @override
+  String offlineDownloadsCount(int count) {
+    return 'Téléchargements · $count';
+  }
+
+  @override
+  String get offlineReadyTag => 'PRÊT HORS LIGNE';
+
+  @override
   String get dailyChallengeLabel => 'Défi du jour';
 
   @override
@@ -748,6 +759,17 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get openScannedPaper => 'Ouvrir l\'épreuve scannée';
+
+  @override
+  String get saveOffline => 'Enregistrer hors ligne';
+
+  @override
+  String get offlineSaved => 'Enregistré hors ligne';
+
+  @override
+  String offlineSaveError(String error) {
+    return 'Impossible d\'enregistrer hors ligne : $error';
+  }
 
   @override
   String examBoardLabel(String board) {

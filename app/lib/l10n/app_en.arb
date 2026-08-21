@@ -97,6 +97,12 @@
   "trialFeatures": "Unlimited paper views · AI assistant",
   "trialKeepAccess": "Keep my access",
   "quickActionContribute": "Contribute",
+  "readyOfflineTitle": "Ready offline",
+  "offlineDownloadsCount": "Downloads · {count}",
+  "@offlineDownloadsCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "offlineReadyTag": "OFFLINE READY",
   "dailyChallengeLabel": "Daily challenge",
   "dailyChallengeLoading": "Loading…",
   "dailyChallengeInfo": "{title} · {count} questions",
@@ -315,6 +321,12 @@
   "reportTooltip": "Report an issue with this paper",
   "noScannedFileYet": "No scanned file on this submission yet.",
   "openScannedPaper": "Open scanned paper",
+  "saveOffline": "Save offline",
+  "offlineSaved": "Saved offline",
+  "offlineSaveError": "Could not save for offline: {error}",
+  "@offlineSaveError": {
+    "placeholders": {"error": {"type": "String"}}
+  },
   "examBoardLabel": "Exam board: {board}",
   "@examBoardLabel": {
     "placeholders": {"board": {"type": "String"}}

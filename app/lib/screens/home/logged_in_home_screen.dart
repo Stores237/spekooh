@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../data/offline_papers_store.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repositories/quizzes_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/offline_paper.dart';
 import '../../models/quiz.dart';
 import '../../models/spekooh_user.dart';
 import '../../theme/app_colors.dart';
@@ -11,6 +13,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/spekooh_button.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:open_filex/open_filex.dart';
 
 /// Ported from ui_kits/spekooh-app/LoggedInHomeScreen.jsx.
 class LoggedInHomeScreen extends StatelessWidget {
@@ -329,6 +332,69 @@ class LoggedInHomeScreen extends StatelessWidget {
                         },
                       ),
                     ),
+                    // Empty when nothing's been saved offline yet (or on
+                    // web, where OfflinePapersStore never bootstraps —
+                    // path_provider has no meaningful web implementation
+                    // and this isn't the ship target, spec §6) — no
+                    // section at all rather than an empty-state card, since
+                    // this is a bonus surface for something saved
+                    // elsewhere (PaperDetailScreen), not a primary flow.
+                    ListenableBuilder(
+                      listenable: OfflinePapersStore.instance,
+                      builder: (context, _) {
+                        final saved = OfflinePapersStore.instance.papers;
+                        if (saved.isEmpty) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.space2),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(l10n.readyOfflineTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
+                                  Text(l10n.offlineDownloadsCount(saved.length), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.gold700)),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.space2),
+                              for (final paper in saved) ...[
+                                InkWell(
+                                  onTap: () => _openOfflinePaper(context, paper),
+                                  borderRadius: BorderRadius.circular(18),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(color: AppColors.green100, borderRadius: BorderRadius.circular(12)),
+                                          alignment: Alignment.center,
+                                          child: const Icon(LucideIcons.download, size: 18, color: AppColors.green600),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(paper.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
+                                              Text(l10n.offlineReadyTag, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.green600, fontWeight: FontWeight.w700)),
+                                            ],
+                                          ),
+                                        ),
+                                        const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.space2),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: AppSpacing.space6),
                   ],
                 ),
@@ -338,6 +404,16 @@ class LoggedInHomeScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openOfflinePaper(BuildContext context, OfflinePaper paper) async {
+    final l10n = AppLocalizations.of(context)!;
+    final path = await OfflinePapersStore.instance.absolutePathFor(paper.paperId);
+    if (path == null) return;
+    final result = await OpenFilex.open(path);
+    if (result.type != ResultType.done && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotOpenFile)));
+    }
   }
 
   Widget _darkIconButton(IconData icon, VoidCallback? onTap) {
