@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/search_input.dart';
 import '../../widgets/spekooh_badge.dart';
@@ -130,7 +131,7 @@ class _PapersScreenState extends State<PapersScreen> {
             builder: (context, snapshot) {
               final categories = snapshot.data ?? const [];
               return GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: responsiveCrossAxisCount(context, 2),
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: AppSpacing.space3,
@@ -199,7 +200,7 @@ class _PapersScreenState extends State<PapersScreen> {
             builder: (context, snapshot) {
               final examTypes = snapshot.data ?? const [];
               return GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: responsiveCrossAxisCount(context, 2),
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: AppSpacing.space3,
@@ -269,7 +270,7 @@ class _PapersScreenState extends State<PapersScreen> {
             builder: (context, snapshot) {
               final subjects = snapshot.data ?? const [];
               return GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: responsiveCrossAxisCount(context, 2),
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: AppSpacing.space3,

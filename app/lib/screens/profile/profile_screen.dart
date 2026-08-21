@@ -12,6 +12,7 @@ import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../common/circular_back_button.dart';
@@ -252,7 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 builder: (context, snapshot) {
                   final items = snapshot.data ?? const [];
                   return GridView.count(
-                    crossAxisCount: 4,
+                    crossAxisCount: responsiveCrossAxisCount(context, 4),
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 8,
