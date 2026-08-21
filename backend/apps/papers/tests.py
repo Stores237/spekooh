@@ -1,13 +1,26 @@
+import io
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from pypdf import PdfReader
+from reportlab.pdfgen import canvas
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
 from apps.payments.factories import SubscriptionFactory
+from apps.payments.models import PaperUnlock
 
 from .factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory, SubjectFactory
 from .models import AdWatchEvent, ExamCategory, ExamType, PaperStatus, PaperSubmission, PaperViewLog, Subject
-from .services import DAILY_FREE_VIEWS, PaywallError, record_ad_watch, record_paper_view
+from .services import DAILY_FREE_VIEWS, PaywallError, record_ad_watch, record_paper_view, user_can_view_file
+
+
+def _real_pdf_bytes(text: str = "Original report content") -> bytes:
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=(400, 300))
+    c.drawString(50, 150, text)
+    c.save()
+    return buf.getvalue()
 
 
 @pytest.fixture
@@ -177,6 +190,160 @@ def test_report_exam_types_were_seeded_by_migration():
         "Bachelor’s Report (Mémoire de Licence)",
     ]
     assert all(t.system is None for t in reports)
+
+
+@pytest.mark.django_db
+def test_only_masters_and_phd_reports_require_payment_to_view():
+    gated = set(
+        ExamType.objects.filter(category__key="reports", requires_payment_to_view=True).values_list(
+            "name", flat=True
+        )
+    )
+    assert gated == {"Master’s Thesis (Mémoire)", "PhD Thesis (Thèse)"}
+
+
+@pytest.mark.django_db
+def test_submitting_a_report_watermarks_the_real_file(authed_client):
+    client, user = authed_client
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    original = _real_pdf_bytes()
+    upload = SimpleUploadedFile("internship.pdf", original, content_type="application/pdf")
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": reports_category.id,
+            "exam_type": report_type.id,
+            "year": 2024,
+            "institution": "ENSP Yaoundé",
+            "discipline": "Software Engineering",
+            "uploaded_file": upload,
+        },
+        format="multipart",
+    )
+    assert response.status_code == 201
+    submission = PaperSubmission.objects.get(id=response.data["id"])
+
+    submission.uploaded_file.open("rb")
+    try:
+        stored_bytes = submission.uploaded_file.read()
+    finally:
+        submission.uploaded_file.close()
+
+    assert stored_bytes != original  # a real watermark was actually applied
+    text = PdfReader(io.BytesIO(stored_bytes)).pages[0].extract_text()
+    assert "Original report content" in text  # the real submission survives
+    assert "Spekooh" in text  # the watermark is really there
+
+
+@pytest.mark.django_db
+def test_submitting_an_exam_paper_is_not_watermarked(authed_client):
+    """Watermarking is a reports-only behavior — marking guides aren't a
+    shareable document the way a report is."""
+    client, user = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    original = _real_pdf_bytes()
+    upload = SimpleUploadedFile("gce-bio-2024.pdf", original, content_type="application/pdf")
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "uploaded_file": upload,
+        },
+        format="multipart",
+    )
+    submission = PaperSubmission.objects.get(id=response.data["id"])
+    submission.uploaded_file.open("rb")
+    try:
+        stored_bytes = submission.uploaded_file.read()
+    finally:
+        submission.uploaded_file.close()
+    assert stored_bytes == original
+
+
+@pytest.mark.django_db
+def test_free_tier_report_is_viewable_by_anyone_without_unlock():
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    internship = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    submission = PaperSubmissionFactory(category=reports_category, exam_type=internship, subject=None)
+    other_user = UserFactory()
+    assert user_can_view_file(other_user, submission) is True
+
+
+@pytest.mark.django_db
+def test_masters_and_phd_reports_are_hidden_until_unlocked(authed_client):
+    client, user = authed_client
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    phd = ExamTypeFactory(category=reports_category, system=None, name="PhD Thesis (Thèse)", requires_payment_to_view=True)
+    submission = PaperSubmissionFactory(
+        category=reports_category,
+        exam_type=phd,
+        subject=None,
+        status=PaperStatus.PUBLISHED,
+        uploaded_file=SimpleUploadedFile("thesis.pdf", _real_pdf_bytes(), content_type="application/pdf"),
+    )
+    other_user = UserFactory()
+
+    # Not unlocked yet — the file is real, but withheld — for anyone,
+    # including `other_user` (checked directly) and `user` (checked via the
+    # real API response `client` is authed as).
+    assert user_can_view_file(other_user, submission) is False
+    response = client.get(f"/api/papers/submissions/{submission.id}/")
+    assert response.data["requires_unlock"] is True
+    assert response.data["file_url"] is None
+
+    PaperUnlock.objects.create(user=user, paper_submission=submission, amount_paid=500)
+    response = client.get(f"/api/papers/submissions/{submission.id}/")
+    assert response.data["requires_unlock"] is False
+    assert response.data["file_url"] is not None
+
+
+@pytest.mark.django_db
+def test_submitter_always_sees_their_own_gated_report(authed_client):
+    """Nobody should have to pay to see the report they themselves uploaded."""
+    client, user = authed_client
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    masters = ExamTypeFactory(
+        category=reports_category, system=None, name="Master’s Thesis (Mémoire)", requires_payment_to_view=True
+    )
+    submission = PaperSubmissionFactory(
+        submitted_by=user,
+        category=reports_category,
+        exam_type=masters,
+        subject=None,
+        uploaded_file=SimpleUploadedFile("thesis.pdf", _real_pdf_bytes(), content_type="application/pdf"),
+    )
+    assert user_can_view_file(user, submission) is True
+    response = client.get(f"/api/papers/submissions/{submission.id}/")
+    assert response.data["requires_unlock"] is False
+    assert response.data["file_url"] is not None
+
+
+@pytest.mark.django_db
+def test_staff_always_sees_gated_reports_without_unlocking():
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    phd = ExamTypeFactory(category=reports_category, system=None, name="PhD Thesis (Thèse)", requires_payment_to_view=True)
+    submission = PaperSubmissionFactory(category=reports_category, exam_type=phd, subject=None)
+    staff_user = UserFactory(is_staff=True)
+    assert user_can_view_file(staff_user, submission) is True
+
+
+@pytest.mark.django_db
+def test_exam_type_serializer_exposes_requires_payment_to_view(api_client):
+    category = ExamCategoryFactory(key="reports", requires_system=False)
+    phd = ExamTypeFactory(category=category, system=None, name="PhD Thesis (Thèse)", requires_payment_to_view=True)
+    response = api_client.get(f"/api/papers/exam-types/?category={category.id}")
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    row = next(r for r in rows if r["id"] == phd.id)
+    assert row["requires_payment_to_view"] is True
 
 
 @pytest.mark.django_db

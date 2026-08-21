@@ -1,15 +1,34 @@
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
 
 from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
-from apps.payments.models import Subscription
+from apps.payments.models import PaperUnlock, Subscription
 
 from .duplicate_detection import DuplicateDetector, TfidfDuplicateDetector, exact_duplicate_hash
 from .models import AdWatchEvent, PaperFlag, PaperStatus, PaperSubmission, PaperViewLog
 from .ocr import extract_text, extract_text_from_fieldfile
+from .watermark import watermark_bytes
 
 DAILY_FREE_VIEWS = 3
+
+
+def user_can_view_file(user, paper_submission: PaperSubmission) -> bool:
+    """
+    Owner decision: PhD/Master's-tier academic reports require payment even
+    to view (ExamType.requires_payment_to_view) — everything else (exam
+    papers, and lower-tier reports) is free to view. The submitter and
+    staff always see the real file regardless — nobody should have to pay
+    to see their own upload, or to review it.
+    """
+    if not paper_submission.exam_type.requires_payment_to_view:
+        return True
+    if not user.is_authenticated:
+        return False
+    if user.is_staff or paper_submission.submitted_by_id == user.id:
+        return True
+    return PaperUnlock.objects.has_unlocked(user, paper_submission)
 
 
 class PaywallError(Exception):
@@ -35,6 +54,42 @@ def report_paper(*, user, paper_submission, reason, details="") -> PaperFlag:
         + (f": {details}" if details else ""),
     )
     return paper_flag
+
+
+def watermark_report_submission(paper_submission: PaperSubmission) -> PaperSubmission:
+    """
+    Owner decision: Academic Report uploads get an automatic, static Spekooh
+    watermark — applied once here at submission time, not per-viewer.
+    Exam papers are untouched (marking guides aren't meant to be
+    redistributed the way a shareable report is).
+    """
+    if paper_submission.category.key != "reports" or not paper_submission.uploaded_file:
+        return paper_submission
+
+    field_file = paper_submission.uploaded_file
+    field_file.open("rb")
+    try:
+        original_bytes = field_file.read()
+    finally:
+        field_file.close()
+
+    old_name = field_file.name
+    storage = field_file.storage
+    watermarked = watermark_bytes(original_bytes, old_name)
+    # save=False: the caller decides when to persist — see perform_create,
+    # which needs this done before the response serializes file_url.
+    paper_submission.uploaded_file.save(old_name.rsplit("/", 1)[-1], ContentFile(watermarked), save=False)
+    paper_submission.save(update_fields=["uploaded_file", "updated_at"])
+    # Storage backends with overwrite-on-save enabled (the default for
+    # django-storages' S3Storage) reuse the exact same key for the new
+    # upload — deleting old_name there would delete the watermarked file
+    # that now lives at that same key. Only clean up when the storage
+    # actually generated a distinct key (overwrite disabled, or a
+    # collision-avoidance suffix got appended).
+    new_name = paper_submission.uploaded_file.name
+    if new_name != old_name:
+        storage.delete(old_name)
+    return paper_submission
 
 
 def _today_start():

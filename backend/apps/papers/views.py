@@ -30,6 +30,7 @@ from .services import (
     record_ad_watch,
     record_paper_view,
     report_paper,
+    watermark_report_submission,
 )
 
 
@@ -98,6 +99,7 @@ class PaperSubmissionViewSet(
         # verification ticket rather than sitting silently in PENDING_REVIEW
         # until someone happens to look.
         paper = serializer.save()
+        watermark_report_submission(paper)
         flag(
             subject=paper,
             category=FlagCategory.PAPER_VERIFICATION,

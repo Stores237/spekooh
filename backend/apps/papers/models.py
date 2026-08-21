@@ -46,6 +46,12 @@ class ExamType(TimeStampedModel):
     badge_tone = models.CharField(max_length=20, blank=True, default="neutral")
     sort_order = models.PositiveIntegerField(default=0)
 
+    # Owner decision: PhD/Master's-tier academic reports require payment even
+    # to view (not just download) — everything else defaults to free viewing.
+    # A per-ExamType flag rather than per-category since it's specific to
+    # exactly two report types, not the whole "reports" category.
+    requires_payment_to_view = models.BooleanField(default=False)
+
     class Meta:
         ordering = ["sort_order", "name"]
         constraints = [
