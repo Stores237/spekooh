@@ -54,7 +54,7 @@ dependencies:
   url_launcher: ^6.3.1
 
   # Real native share sheet for the redeem code on Profile.
-  share_plus: ^10.1.4
+  share_plus: ^12.0.2
   google_mobile_ads: ^9.1.0
   lucide_icons_flutter: ^3.1.15
   path_provider: ^2.1.6
