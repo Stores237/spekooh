@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:open_filex/open_filex.dart';
 
 import '../../ads/rewarded_ad_controller.dart';
+import '../../data/offline_papers_store.dart';
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
@@ -52,6 +54,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   bool _watchingAd = false;
   final _redeemController = TextEditingController();
   bool _showRedeemField = false;
+  bool _savingOffline = false;
 
   int? get _entryId => widget.paper?.entry.id ?? widget.paperEntry?.id;
 
@@ -122,11 +125,40 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     }
   }
 
-  Future<void> _openFile(String url) async {
+  Future<void> _openFile(int paperId, String url) async {
     final l10n = AppLocalizations.of(context)!;
+    // Prefer the offline copy when one's saved — the whole point of saving
+    // for later is not needing a connection to view it again.
+    final localPath = !kIsWeb ? await OfflinePapersStore.instance.absolutePathFor(paperId) : null;
+    if (localPath != null) {
+      final result = await OpenFilex.open(localPath);
+      if (result.type != ResultType.done && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotOpenFile)));
+      }
+      return;
+    }
     final uri = Uri.tryParse(url);
     if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotOpenFile)));
+    }
+  }
+
+  Future<void> _toggleOffline({required int paperId, required String title, required String subtitle, required String? fileUrl}) async {
+    final l10n = AppLocalizations.of(context)!;
+    final store = OfflinePapersStore.instance;
+    if (store.isSaved(paperId)) {
+      await store.remove(paperId);
+      return;
+    }
+    setState(() => _savingOffline = true);
+    try {
+      await store.save(paperId: paperId, title: title, subtitle: subtitle, fileUrl: fileUrl);
+    } on NoOfflineFileAvailableError {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noScannedFileYet)));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.offlineSaveError('$e'))));
+    } finally {
+      if (mounted) setState(() => _savingOffline = false);
     }
   }
 
@@ -248,7 +280,42 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                 children: [
                                   const Icon(LucideIcons.fileText, size: 28, color: AppColors.textSecondary),
                                   const SizedBox(height: AppSpacing.space2),
-                                  SpekoohButton(size: SpekoohButtonSize.sm, onPressed: () => _openFile(fileUrl), child: Text(l10n.openScannedPaper)),
+                                  SpekoohButton(size: SpekoohButtonSize.sm, onPressed: () => _openFile(entry.id, fileUrl), child: Text(l10n.openScannedPaper)),
+                                  // path_provider has no meaningful web implementation, and
+                                  // web isn't the ship target (spec §6) — mobile-only.
+                                  if (!kIsWeb) ...[
+                                    const SizedBox(height: AppSpacing.space2),
+                                    ListenableBuilder(
+                                      listenable: OfflinePapersStore.instance,
+                                      builder: (context, _) {
+                                        final saved = OfflinePapersStore.instance.isSaved(entry.id);
+                                        return GestureDetector(
+                                          onTap: _savingOffline
+                                              ? null
+                                              : () => _toggleOffline(paperId: entry.id, title: title, subtitle: meta, fileUrl: fileUrl),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (_savingOffline)
+                                                const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                                              else
+                                                Icon(saved ? LucideIcons.checkCircle : LucideIcons.download, size: 14, color: saved ? AppColors.green600 : AppColors.gold700),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                saved ? l10n.offlineSaved : l10n.saveOffline,
+                                                style: TextStyle(
+                                                  fontFamily: plusJakartaSansFamily,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: saved ? AppColors.green600 : AppColors.gold700,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ],
                               ),
                       ),

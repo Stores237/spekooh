@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spekooh/data/offline_file_store.dart';
+import 'package:spekooh/data/offline_papers_store.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
 import 'package:spekooh/data/repositories/quizzes_repository.dart';
@@ -17,6 +19,10 @@ import 'support/l10n_test_app.dart';
 import 'support/mock_repository_locator.dart';
 
 void main() {
+  tearDown(() {
+    OfflinePapersStore.debugSetInstance(OfflinePapersStore());
+  });
+
   testWidgets('HomeScreen (guest) shows an honest empty state when nothing is published yet', (tester) async {
     await tester.pumpWidget(l10nTestApp(
       HomeScreen(papersRepository: MockPapersRepository(), shopRepository: MockShopRepository()),
@@ -68,6 +74,25 @@ void main() {
     expect(find.text('Guest'), findsOneWidget); // MockProfileRepository's real (if placeholder) name
     expect(find.text('Daily challenge'), findsOneWidget);
     expect(find.text('START A STREAK'), findsOneWidget); // MockQuizzesRepository starts at zero — honest, not fabricated
+    expect(find.text('Ready offline'), findsNothing); // nothing saved yet — section shouldn't fabricate itself
+  });
+
+  testWidgets('LoggedInHomeScreen shows a real "Ready offline" section once a paper is actually saved', (tester) async {
+    final store = OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]);
+    await store.bootstrap();
+    await store.save(paperId: 5, title: 'Biology O-Level', subtitle: 'GCE · 2024', fileUrl: 'https://cdn.example.com/paper5.pdf');
+    OfflinePapersStore.debugSetInstance(store);
+
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Ready offline'), findsOneWidget);
+    expect(find.text('Downloads · 1'), findsOneWidget);
+    expect(find.text('Biology O-Level'), findsOneWidget);
+    expect(find.text('OFFLINE READY'), findsOneWidget);
   });
 
   testWidgets('Full login flow: Settings -> Log in -> LoggedInHomeScreen on Home tab', (tester) async {
@@ -124,5 +149,25 @@ void main() {
     expect(find.text('Défi du jour'), findsOneWidget);
     expect(find.text('COMMENCER UNE SÉRIE'), findsOneWidget);
     expect(find.text('Daily challenge'), findsNothing);
+  });
+
+  testWidgets('the "Ready offline" section renders in French once that locale is active', (tester) async {
+    final store = OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]);
+    await store.bootstrap();
+    await store.save(paperId: 5, title: 'Biologie O-Level', subtitle: 'GCE · 2024', fileUrl: 'https://cdn.example.com/paper5.pdf');
+    OfflinePapersStore.debugSetInstance(store);
+
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    await LocaleController.instance.setLocale('fr');
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Disponible hors ligne'), findsOneWidget);
+    expect(find.text('Téléchargements · 1'), findsOneWidget);
+    expect(find.text('PRÊT HORS LIGNE'), findsOneWidget);
+    expect(find.text('Ready offline'), findsNothing);
   });
 }

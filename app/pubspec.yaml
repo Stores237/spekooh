@@ -57,6 +57,8 @@ dependencies:
   share_plus: ^10.1.4
   google_mobile_ads: ^9.1.0
   lucide_icons_flutter: ^3.1.15
+  path_provider: ^2.1.6
+  open_filex: ^4.7.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

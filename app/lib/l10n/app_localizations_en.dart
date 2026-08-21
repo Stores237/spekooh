@@ -260,6 +260,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quickActionContribute => 'Contribute';
 
   @override
+  String get readyOfflineTitle => 'Ready offline';
+
+  @override
+  String offlineDownloadsCount(int count) {
+    return 'Downloads · $count';
+  }
+
+  @override
+  String get offlineReadyTag => 'OFFLINE READY';
+
+  @override
   String get dailyChallengeLabel => 'Daily challenge';
 
   @override
@@ -735,6 +746,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openScannedPaper => 'Open scanned paper';
+
+  @override
+  String get saveOffline => 'Save offline';
+
+  @override
+  String get offlineSaved => 'Saved offline';
+
+  @override
+  String offlineSaveError(String error) {
+    return 'Could not save for offline: $error';
+  }
 
   @override
   String examBoardLabel(String board) {
