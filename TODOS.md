@@ -20,9 +20,12 @@ I can write unilaterally. Grouped by what each one unblocks.
   documented as such in the code) for subscriptions, marking-guide unlocks, and pamphlet
   payments. Going live needs a real MTN MoMo / Orange Money merchant integration, or an
   aggregator (Flutterwave, Notch Pay) that bundles both — business registration + API keys.
-- **File/media storage**: uploaded papers currently save to local disk on the dev server
-  (documented as a placeholder for Supabase Storage). Production needs a real Supabase Storage
-  bucket or S3-compatible bucket with credentials.
+- ~~**File/media storage**~~ — done. Real Supabase Storage bucket (`spekooh-media`, S3-compatible
+  API) is configured via `AWS_*` env vars in `.env` and verified live (round-tripped a real
+  save/exists/signed-url/delete against it, 2026-08-23) — this is what the watermarking and
+  report-viewer work earlier this session was already tested against. `STORAGES` in
+  `config/settings/base.py` falls back to local disk only when `AWS_STORAGE_BUCKET_NAME` is
+  unset, so a fresh clone without these credentials still works out of the box.
 - **Firebase project** — only if real push notifications are wanted (current notifications are
   in-app only, which may be enough for v1 per spec).
 - **App store accounts** — Apple Developer + Google Play Console, once a build is ready to ship.
