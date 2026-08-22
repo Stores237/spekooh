@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flutter/material.dart';
 import '../../data/auth_session.dart';
@@ -33,6 +34,20 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  // Real support destinations (owner-provided, 2026-08-23) — the same phone
+  // number doubles as the WhatsApp support line, so "Help & support" places
+  // a call while the WhatsApp row opens a chat on that same number, rather
+  // than the two rows duplicating one action.
+  static const _supportPhone = '+237659802679';
+  static const _supportWhatsapp = '237659802679';
+  static const _supportEmail = 'storefix237@gmail.com';
+
+  Future<void> _launch(Uri uri) async {
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.couldNotOpenLink)));
+    }
+  }
+
   Future<void> _changeLanguage(String code) async {
     await LocaleController.instance.setLocale(code);
     if (AuthSession.instance.isLoggedIn) {
@@ -106,15 +121,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ]),
               _sectionLabel(l10n.helpSection),
               _card([
-                ListItemRow(icon: const IconChip(icon: LucideIcons.phone, tint: IconChipTint.blue, size: 38), title: l10n.helpSupportTitle, subtitle: l10n.helpSupportSubtitle),
+                ListItemRow(
+                  icon: const IconChip(icon: LucideIcons.phone, tint: IconChipTint.blue, size: 38),
+                  title: l10n.helpSupportTitle,
+                  subtitle: l10n.helpSupportSubtitle,
+                  onTap: () => _launch(Uri(scheme: 'tel', path: _supportPhone)),
+                ),
                 const Divider(height: 1),
-                ListItemRow(icon: const IconChip(icon: LucideIcons.messageCircle, tint: IconChipTint.blue, size: 38), title: l10n.helpWhatsappTitle, subtitle: l10n.helpWhatsappSubtitle),
+                ListItemRow(
+                  icon: const IconChip(icon: LucideIcons.messageCircle, tint: IconChipTint.blue, size: 38),
+                  title: l10n.helpWhatsappTitle,
+                  subtitle: l10n.helpWhatsappSubtitle,
+                  onTap: () => _launch(Uri.parse('https://wa.me/$_supportWhatsapp')),
+                ),
                 const Divider(height: 1),
-                ListItemRow(icon: const IconChip(icon: LucideIcons.user, tint: IconChipTint.blue, size: 38), title: l10n.helpContactTitle, subtitle: l10n.helpContactSubtitle),
+                ListItemRow(
+                  icon: const IconChip(icon: LucideIcons.user, tint: IconChipTint.blue, size: 38),
+                  title: l10n.helpContactTitle,
+                  subtitle: l10n.helpContactSubtitle,
+                  onTap: () => _launch(Uri(scheme: 'mailto', path: _supportEmail)),
+                ),
               ]),
               _sectionLabel(l10n.aboutSection),
               _card([
-                ListItemRow(icon: const IconChip(icon: LucideIcons.globe, tint: IconChipTint.blue, size: 38), title: l10n.aboutWebsiteTitle, subtitle: 'spekooh.app'),
+                // No live site yet (owner-confirmed, 2026-08-23) — honest
+                // "not available" subtitle instead of a domain that doesn't
+                // resolve to anything, and no onTap until one exists.
+                ListItemRow(icon: const IconChip(icon: LucideIcons.globe, tint: IconChipTint.blue, size: 38), title: l10n.aboutWebsiteTitle, subtitle: l10n.notAvailableYet),
                 const Divider(height: 1),
                 ListItemRow(icon: const IconChip(icon: LucideIcons.lock, tint: IconChipTint.blue, size: 38), title: l10n.aboutPrivacyTitle),
               ]),

@@ -173,13 +173,13 @@ abstract class AppLocalizations {
   /// No description provided for @helpWhatsappTitle.
   ///
   /// In en, this message translates to:
-  /// **'Join our WhatsApp group'**
+  /// **'WhatsApp support'**
   String get helpWhatsappTitle;
 
   /// No description provided for @helpWhatsappSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Tips & updates'**
+  /// **'Chat with us on WhatsApp'**
   String get helpWhatsappSubtitle;
 
   /// No description provided for @helpContactTitle.
@@ -1393,6 +1393,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open the file.'**
   String get couldNotOpenFile;
+
+  /// No description provided for @couldNotOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the link.'**
+  String get couldNotOpenLink;
 
   /// No description provided for @viewOnlyNotice.
   ///

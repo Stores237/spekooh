@@ -18,8 +18,8 @@
   "helpSection": "Help",
   "helpSupportTitle": "Help & support",
   "helpSupportSubtitle": "Chat with a real person",
-  "helpWhatsappTitle": "Join our WhatsApp group",
-  "helpWhatsappSubtitle": "Tips & updates",
+  "helpWhatsappTitle": "WhatsApp support",
+  "helpWhatsappSubtitle": "Chat with us on WhatsApp",
   "helpContactTitle": "Contact us",
   "helpContactSubtitle": "Questions or feedback",
   "aboutSection": "About",
@@ -314,6 +314,7 @@
     "placeholders": {"error": {"type": "String"}}
   },
   "couldNotOpenFile": "Could not open the file.",
+  "couldNotOpenLink": "Could not open the link.",
   "viewOnlyNotice": "View only — unlock to download a copy",
   "reportThanksMessage": "Thanks — the Review Team has been notified.",
   "reportSendError": "Could not send report: {error}",

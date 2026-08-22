@@ -37,8 +37,14 @@ I can write unilaterally. Grouped by what each one unblocks.
 - **French translations**: the biggest P0 gap (bilingual UI, below) needs real French copy for
   every string in the app. A first draft can be AI-assisted, but a native-speaker review for the
   Cameroon market should happen before shipping.
-- **Support destinations**: a real WhatsApp group link, support contact, and live website URL —
-  Settings currently has five dead links because none of these exist yet to point at.
+- ~~**Support destinations**~~ — mostly done (2026-08-23, owner-provided). "Help & support" now
+  calls `+237659802679`, "WhatsApp support" opens a chat on the same number (`wa.me`) — there
+  was never a real WhatsApp *group*, so the row was honestly retitled from "Join our WhatsApp
+  group" rather than pointing a group-shaped label at a 1:1 chat — and "Contact us" opens
+  `mailto:storefix237@gmail.com`. Still open: **live website URL** (owner confirmed not ready
+  yet — "Visit our website" now shows an honest "Not available yet" instead of the previously
+  fabricated `spekooh.app` subtitle) and **Privacy policy** (still a fully dead link, no content
+  provided).
 - **Privacy policy / terms content** — legal text, not something that should be drafted as if real.
 
 ### People/ops
@@ -313,10 +319,9 @@ unfixed because "fixing" them for real would mean fabricating something that doe
 (a support inbox, a WhatsApp group, a public website), which is exactly the dishonesty this
 whole pass was hunting:
 
-- **Settings → Help & support / WhatsApp group / Contact us / Website / Privacy policy**: five
-  dead links with no real destination URL. Needs the business to actually stand up a support
-  channel, WhatsApp group, and public site before these can be wired to `url_launcher` (already
-  in the app) instead of guessed-at placeholder URLs.
+- **Settings → Visit our website / Privacy policy**: two still-dead links (down from five —
+  Help & support/WhatsApp/Contact us are wired to real destinations, see above). Needs a live
+  site and real legal text before these can point anywhere real.
 - **Forum header search icon and notification bell**: purely decorative, no `onTap`. Forum
   already has a working list; wiring real search would need a `?search=` query param the backend
   doesn't currently expose on `/forum/posts/`.

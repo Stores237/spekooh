@@ -45,10 +45,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get helpSupportSubtitle => 'Discutez avec une vraie personne';
 
   @override
-  String get helpWhatsappTitle => 'Rejoignez notre groupe WhatsApp';
+  String get helpWhatsappTitle => 'Assistance WhatsApp';
 
   @override
-  String get helpWhatsappSubtitle => 'Astuces et actualités';
+  String get helpWhatsappSubtitle => 'Discutez avec nous sur WhatsApp';
 
   @override
   String get helpContactTitle => 'Contactez-nous';
@@ -742,6 +742,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get couldNotOpenFile => 'Impossible d\'ouvrir le fichier.';
+
+  @override
+  String get couldNotOpenLink => 'Impossible d\'ouvrir le lien.';
 
   @override
   String get viewOnlyNotice =>
