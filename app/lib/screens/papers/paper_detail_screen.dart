@@ -15,6 +15,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/report_covers.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/spekooh_banner.dart';
@@ -282,6 +283,12 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                   final isReport = detail?.categoryKey == 'reports' || selection?.category.key == ExamCategoryKey.reports;
                   final locked = isReport && (detail?.requiresUnlock ?? false);
                   final downloadUnlocked = detail?.isUnlocked ?? false;
+                  // Branded default cover art (owner-supplied) — a submitted
+                  // report's file has no cover page of its own, so this is
+                  // shown in its place, in both the locked and unlocked
+                  // states, above the existing message/button content.
+                  final reportTypeName = selection?.examType.name ?? detail?.examTypeName ?? entry.examTypeName;
+                  final reportCoverAsset = isReport && reportTypeName != null ? reportCoverAssetFor(reportTypeName) : null;
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -289,10 +296,21 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                         width: double.infinity,
                         constraints: const BoxConstraints(minHeight: 140),
                         decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.all(16),
-                        child: locked
-                            ? Column(
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Fixed height, not the source's full ~0.707
+                            // document aspect ratio — a full-bleed page
+                            // reproduction at card width would balloon this
+                            // card past a screen's height (same class of bug
+                            // fixed elsewhere this session for the grids).
+                            if (reportCoverAsset != null) SizedBox(height: 160, width: double.infinity, child: Image.asset(reportCoverAsset, fit: BoxFit.cover)),
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Center(
+                                child: locked
+                                    ? Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(LucideIcons.lock, size: 28, color: AppColors.textSecondary),
@@ -354,6 +372,10 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                   ],
                                 ],
                               ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.space3),
                       if (detail != null && detail.examBoard.isNotEmpty)

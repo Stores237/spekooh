@@ -232,6 +232,9 @@ void main() {
 
       expect(find.text('Save offline'), findsOneWidget);
       expect(find.text('Saved offline'), findsNothing);
+      // The report cover art is reports-only — an exam paper's file preview
+      // never gets one, branded or otherwise.
+      expect(find.byType(Image), findsNothing);
 
       await tester.tap(find.text('Save offline'));
       await tester.pump();
@@ -302,6 +305,11 @@ void main() {
       expect(find.textContaining('PhD and Master\'s theses require payment'), findsOneWidget);
       expect(find.text('View'), findsNothing);
       expect(find.text('Save offline'), findsNothing);
+
+      // The branded cover shows even while locked — it's the report's
+      // visual identity, not part of the gated file content.
+      final cover = tester.widget<Image>(find.byType(Image));
+      expect((cover.image as AssetImage).assetName, 'assets/report_covers/phd_thesis.jpg');
     });
 
     testWidgets('a free-tier report shows View and pushes the real in-app viewer', (tester) async {
@@ -339,6 +347,9 @@ void main() {
       // replaced by a hint, not silently allowed.
       expect(find.text('Save offline'), findsNothing);
       expect(find.textContaining('Unlock below to save a copy'), findsOneWidget);
+
+      final cover = tester.widget<Image>(find.byType(Image));
+      expect((cover.image as AssetImage).assetName, 'assets/report_covers/internship_report.jpg');
 
       await tester.tap(find.text('View'));
       final pushed = observer.lastPushed;
