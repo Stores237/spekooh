@@ -126,6 +126,7 @@
   "academicReportComingSoon": "Les soumissions de rapports académiques ne sont pas encore connectées au serveur — seules les épreuves d'examen peuvent être soumises pour l'instant. Revenez bientôt.",
   "takePhotoOrUploadPdf": "Prenez une photo ou téléversez un PDF",
   "fileFormatsHint": "JPG, PNG ou PDF · jusqu'à 20 Mo",
+  "fileFormatsHintWithSize": "JPG, PNG ou PDF · jusqu'à {maxMb} Mo",
   "tapToReplace": "Appuyez pour remplacer",
   "educationLevelLabel": "Niveau d'étude",
   "systemLabel": "Système",
@@ -147,6 +148,7 @@
   "contributionReceivedTitle": "Contribution reçue",
   "contributionReceivedBody": "Nous la vérifierons d'abord par rapport aux épreuves existantes — si elle est nouvelle, elle passe en revue par l'instructeur. Suivez-la depuis Profil.",
   "submissionFailed": "Échec de la soumission : {error}",
+  "fileTooLargeError": "Le fichier est trop volumineux — ce type de rapport autorise jusqu'à {maxMb} Mo.",
   "choosePdfOrImage": "Choisir un PDF ou une image",
   "takePhoto": "Prendre une photo",
 

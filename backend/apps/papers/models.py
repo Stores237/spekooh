@@ -52,6 +52,11 @@ class ExamType(TimeStampedModel):
     # exactly two report types, not the whole "reports" category.
     requires_payment_to_view = models.BooleanField(default=False)
 
+    # Owner decision: PhD/Master's-tier reports run far more pages than a
+    # standard exam paper or shorter report, so they get a larger upload
+    # allowance (50MB vs the 20MB default) rather than one size fitting all.
+    max_upload_mb = models.PositiveIntegerField(default=20)
+
     class Meta:
         ordering = ["sort_order", "name"]
         constraints = [

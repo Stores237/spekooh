@@ -37,6 +37,7 @@ class ExamType {
     this.mockVariantLabel,
     this.tracks,
     this.badgeTone = SpekoohBadgeTone.neutral,
+    this.maxUploadMb = 20,
   });
 
   final int id;
@@ -50,6 +51,10 @@ class ExamType {
   final List<String>? tracks;
 
   final SpekoohBadgeTone badgeTone;
+
+  /// Backend-enforced upload cap for this exam type (e.g. 50 for thesis-tier
+  /// reports vs the 20MB default) — mirrors ExamType.max_upload_mb.
+  final int maxUploadMb;
 
   bool get requiresTrack => tracks != null && tracks!.isNotEmpty;
 }

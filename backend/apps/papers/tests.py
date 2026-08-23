@@ -347,6 +347,75 @@ def test_exam_type_serializer_exposes_requires_payment_to_view(api_client):
 
 
 @pytest.mark.django_db
+def test_thesis_reports_seeded_with_a_larger_upload_limit_than_standard():
+    reports = {t.name: t.max_upload_mb for t in ExamType.objects.filter(category__key="reports")}
+    assert reports["Internship Report"] == 20
+    assert reports["Bachelor’s Report (Mémoire de Licence)"] == 20
+    assert reports["HND Report"] == 20
+    assert reports["Master’s Thesis (Mémoire)"] == 50
+    assert reports["PhD Thesis (Thèse)"] == 50
+
+
+@pytest.mark.django_db
+def test_exam_type_serializer_exposes_max_upload_mb(api_client):
+    category = ExamCategoryFactory(key="reports", requires_system=False)
+    phd = ExamTypeFactory(category=category, system=None, name="PhD Thesis (Thèse)", max_upload_mb=50)
+    response = api_client.get(f"/api/papers/exam-types/?category={category.id}")
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    row = next(r for r in rows if r["id"] == phd.id)
+    assert row["max_upload_mb"] == 50
+
+
+@pytest.mark.django_db
+def test_upload_over_its_exam_types_limit_is_rejected(authed_client):
+    client, user = authed_client
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    internship = ExamTypeFactory(category=reports_category, system=None, name="Internship Report", max_upload_mb=20)
+    oversized = SimpleUploadedFile("internship.pdf", b"x" * (21 * 1024 * 1024), content_type="application/pdf")
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": reports_category.id,
+            "exam_type": internship.id,
+            "year": 2024,
+            "institution": "ENSP Yaoundé",
+            "discipline": "Software Engineering",
+            "uploaded_file": oversized,
+        },
+        format="multipart",
+    )
+    assert response.status_code == 400
+    assert "uploaded_file" in response.data
+    assert "20MB" in str(response.data["uploaded_file"])
+
+
+@pytest.mark.django_db
+def test_thesis_tier_report_accepts_upload_that_would_be_rejected_for_standard_tier(authed_client):
+    """Proves the limit is genuinely per-exam-type, not a fixed global cap —
+    the same file size that gets rejected for a standard report succeeds
+    here purely because this exam_type has a higher max_upload_mb."""
+    client, user = authed_client
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    phd = ExamTypeFactory(category=reports_category, system=None, name="PhD Thesis (Thèse)", max_upload_mb=50)
+    between_20_and_50mb = SimpleUploadedFile("thesis.pdf", b"x" * (35 * 1024 * 1024), content_type="application/pdf")
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": reports_category.id,
+            "exam_type": phd.id,
+            "year": 2024,
+            "institution": "Université de Yaoundé I",
+            "discipline": "Physics",
+            "uploaded_file": between_20_and_50mb,
+        },
+        format="multipart",
+    )
+    assert response.status_code == 201
+
+
+@pytest.mark.django_db
 def test_list_shows_only_summary_fields(authed_client):
     client, user = authed_client
     PaperSubmissionFactory(submitted_by=user)

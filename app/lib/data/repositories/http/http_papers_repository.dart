@@ -71,6 +71,7 @@ class HttpPapersRepository implements PapersRepository {
         mockVariantLabel: (row['mock_variant_label'] as String?)?.isEmpty ?? true ? null : row['mock_variant_label'] as String,
         tracks: tracks.isEmpty ? null : tracks,
         badgeTone: SpekoohBadgeTone.values.byName(row['badge_tone'] as String? ?? 'neutral'),
+        maxUploadMb: row['max_upload_mb'] as int? ?? 20,
       );
     }).toList();
   }

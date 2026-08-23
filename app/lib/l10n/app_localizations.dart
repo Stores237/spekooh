@@ -794,6 +794,12 @@ abstract class AppLocalizations {
   /// **'JPG, PNG or PDF · up to 20MB'**
   String get fileFormatsHint;
 
+  /// No description provided for @fileFormatsHintWithSize.
+  ///
+  /// In en, this message translates to:
+  /// **'JPG, PNG or PDF · up to {maxMb}MB'**
+  String fileFormatsHintWithSize(int maxMb);
+
   /// No description provided for @tapToReplace.
   ///
   /// In en, this message translates to:
@@ -919,6 +925,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submission failed: {error}'**
   String submissionFailed(String error);
+
+  /// No description provided for @fileTooLargeError.
+  ///
+  /// In en, this message translates to:
+  /// **'File is too large — this report type allows up to {maxMb}MB.'**
+  String fileTooLargeError(int maxMb);
 
   /// No description provided for @choosePdfOrImage.
   ///

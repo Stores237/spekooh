@@ -314,6 +314,14 @@ class _SubmitScreenState extends State<SubmitScreen> {
   }
 
   Future<void> _submitReport() async {
+    // Fast, local check before the network round-trip — the backend is the
+    // real source of truth (PaperSubmissionCreateSerializer.validate()
+    // rejects it the same way), but there's no reason to make the user wait
+    // for a response we can already tell will fail.
+    if (_reportFile!.bytes.length > _reportType!.maxUploadMb * 1024 * 1024) {
+      setState(() => _reportSubmitError = AppLocalizations.of(context)!.fileTooLargeError(_reportType!.maxUploadMb));
+      return;
+    }
     setState(() {
       _submittingReport = true;
       _reportSubmitError = null;
@@ -470,7 +478,14 @@ class _SubmitScreenState extends State<SubmitScreen> {
               const SizedBox(height: 8),
               Text(_reportFile == null ? l10n.takePhotoOrUploadPdf : _reportFile!.fileName,
                   style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-              Text(_reportFile == null ? l10n.fileFormatsHint : l10n.tapToReplace, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+              Text(
+                _reportFile != null
+                    ? l10n.tapToReplace
+                    : _reportType != null
+                        ? l10n.fileFormatsHintWithSize(_reportType!.maxUploadMb)
+                        : l10n.fileFormatsHint,
+                style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
+              ),
             ],
           ),
         ),

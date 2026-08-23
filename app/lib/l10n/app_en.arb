@@ -163,6 +163,10 @@
   "academicReportComingSoon": "Academic report submissions aren't wired to the backend yet — only exam papers can be submitted right now. Check back soon.",
   "takePhotoOrUploadPdf": "Take a photo or upload a PDF",
   "fileFormatsHint": "JPG, PNG or PDF · up to 20MB",
+  "fileFormatsHintWithSize": "JPG, PNG or PDF · up to {maxMb}MB",
+  "@fileFormatsHintWithSize": {
+    "placeholders": {"maxMb": {"type": "int"}}
+  },
   "tapToReplace": "Tap to replace",
   "educationLevelLabel": "Education level",
   "systemLabel": "System",
@@ -186,6 +190,10 @@
   "submissionFailed": "Submission failed: {error}",
   "@submissionFailed": {
     "placeholders": {"error": {"type": "String"}}
+  },
+  "fileTooLargeError": "File is too large — this report type allows up to {maxMb}MB.",
+  "@fileTooLargeError": {
+    "placeholders": {"maxMb": {"type": "int"}}
   },
   "choosePdfOrImage": "Choose PDF or image",
   "takePhoto": "Take a photo",

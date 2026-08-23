@@ -399,6 +399,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get fileFormatsHint => 'JPG, PNG ou PDF · jusqu\'à 20 Mo';
 
   @override
+  String fileFormatsHintWithSize(int maxMb) {
+    return 'JPG, PNG ou PDF · jusqu\'à $maxMb Mo';
+  }
+
+  @override
   String get tapToReplace => 'Appuyez pour remplacer';
 
   @override
@@ -463,6 +468,11 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String submissionFailed(String error) {
     return 'Échec de la soumission : $error';
+  }
+
+  @override
+  String fileTooLargeError(int maxMb) {
+    return 'Le fichier est trop volumineux — ce type de rapport autorise jusqu\'à $maxMb Mo.';
   }
 
   @override

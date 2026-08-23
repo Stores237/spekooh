@@ -30,6 +30,7 @@ class ExamTypeSerializer(serializers.ModelSerializer):
             "badge_tone",
             "sort_order",
             "requires_payment_to_view",
+            "max_upload_mb",
         ]
 
 
@@ -199,6 +200,17 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
         ]
         read_only_fields = ["id", "file_url", "status", "created_at"]
         extra_kwargs = {"uploaded_file": {"required": True, "write_only": True}}
+
+    def validate(self, attrs):
+        exam_type = attrs.get("exam_type")
+        uploaded_file = attrs.get("uploaded_file")
+        if exam_type is not None and uploaded_file is not None:
+            max_bytes = exam_type.max_upload_mb * 1024 * 1024
+            if uploaded_file.size > max_bytes:
+                raise serializers.ValidationError(
+                    {"uploaded_file": f"File is too large — {exam_type.name} allows up to {exam_type.max_upload_mb}MB."}
+                )
+        return attrs
 
     def create(self, validated_data):
         validated_data["submitted_by"] = self.context["request"].user
