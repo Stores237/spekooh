@@ -171,11 +171,11 @@ class MockTaxonomy {
   // Mirrors backend apps/papers/migrations/0009_seed_report_exam_types.py —
   // same names, same order.
   static const _reports = [
-    ExamType(name: 'Internship Report', subtitle: 'HND / Bachelor / Master', badgeTone: SpekoohBadgeTone.neutral),
+    ExamType(name: 'Internship Report', subtitle: 'Year 1, Year 2', badgeTone: SpekoohBadgeTone.neutral),
     ExamType(name: 'Bachelor’s Report (Mémoire de Licence)', subtitle: 'Bachelor / Licence', badgeTone: SpekoohBadgeTone.neutral),
     ExamType(name: 'HND Report', subtitle: 'Rapport de fin d’études', badgeTone: SpekoohBadgeTone.neutral),
-    ExamType(name: 'Master’s Thesis (Mémoire)', subtitle: 'Master', badgeTone: SpekoohBadgeTone.neutral),
-    ExamType(name: 'PhD Thesis (Thèse)', subtitle: 'Doctorat', badgeTone: SpekoohBadgeTone.neutral),
+    ExamType(name: 'Master’s Thesis (Mémoire)', subtitle: 'Master', badgeTone: SpekoohBadgeTone.neutral, maxUploadMb: 50),
+    ExamType(name: 'PhD Thesis (Thèse)', subtitle: 'Doctorat', badgeTone: SpekoohBadgeTone.neutral, maxUploadMb: 50),
   ];
 
   /// Mirrors examTypesByCat in the source: keyed by category, and by system

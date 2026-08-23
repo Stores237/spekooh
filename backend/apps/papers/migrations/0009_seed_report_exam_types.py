@@ -13,7 +13,7 @@ from django.db import migrations
 
 REPORT_TYPES = [
     # (name, subtitle)
-    ("Internship Report", "HND / Bachelor / Master"),
+    ("Internship Report", "Year 1, Year 2"),
     ("Bachelor’s Report (Mémoire de Licence)", "Bachelor / Licence"),
     ("HND Report", "Rapport de fin d’études"),
     ("Master’s Thesis (Mémoire)", "Master"),
