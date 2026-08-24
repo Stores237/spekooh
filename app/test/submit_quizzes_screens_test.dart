@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/data/repositories/quizzes_repository.dart';
@@ -9,11 +10,13 @@ import 'package:spekooh/screens/quizzes/quizzes_screen.dart';
 import 'package:spekooh/widgets/spekooh_button.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'support/fake_auth_session.dart';
 import 'support/l10n_test_app.dart';
 
 void main() {
   tearDown(() {
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
   });
 
 
@@ -82,6 +85,30 @@ void main() {
     // the submit button stays disabled even with every other real field set.
     final submitButton = tester.widget<SpekoohButton>(find.widgetWithText(SpekoohButton, 'Submit report'));
     expect(submitButton.disabled, isTrue);
+  });
+
+  testWidgets('a guest is asked to identify themselves; a logged-in contributor is not', (tester) async {
+    // Owner decision: contributing doesn't require an account, but every
+    // contributor still has to be identified by a real name — the field
+    // shows for guests and gates the submit button, but a real account
+    // already carries its own identity, so it stays hidden for them.
+    await tester.pumpWidget(l10nTestApp(SubmitScreen(repository: MockPapersRepository())));
+    await tester.pump();
+    expect(find.text('Contributor name'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Your name'), findsOneWidget);
+
+    await tester.tap(find.text('Academic report'));
+    await tester.pumpAndSettle();
+    expect(find.text('Contributor name'), findsOneWidget);
+
+    final authSession = buildFakeAuthSession();
+    await authSession.login(email: 'test@example.com', password: 'whatever');
+    AuthSession.debugSetInstance(authSession);
+
+    await tester.pumpWidget(l10nTestApp(SubmitScreen(repository: MockPapersRepository())));
+    await tester.pump();
+    expect(find.text('Contributor name'), findsNothing);
+    expect(find.widgetWithText(TextField, 'Your name'), findsNothing);
   });
 
   testWidgets('SubmitScreen renders in French once that locale is active', (tester) async {

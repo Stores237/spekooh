@@ -41,6 +41,7 @@
   "authErrorLogin": "Échec de la connexion. Vérifiez votre email et votre mot de passe.",
   "authErrorRegisterReferral": "Échec de l'inscription. Vérifiez vos informations et que le code de parrainage est correct.",
   "authErrorRegisterGeneric": "Échec de l'inscription. Cet email est peut-être déjà utilisé.",
+  "authErrorGuest": "Impossible de continuer en tant qu'invité. Vérifiez votre connexion et réessayez.",
   "authErrorUnknown": "Une erreur s'est produite. Vérifiez votre connexion et réessayez.",
 
   "homeWelcomeGreeting": "Bienvenue",
@@ -121,6 +122,9 @@
 
   "contributionTitle": "Contribution",
   "contributionSubtitle": "Partagez une ancienne épreuve ou un rapport académique — chaque contribution aide un autre étudiant.",
+  "contributorNameTitle": "Nom du contributeur",
+  "contributorNameSubtitle": "Aucun compte n'est nécessaire pour contribuer — nous créditerons le nom que vous nous donnez.",
+  "contributorNameLabel": "Votre nom",
   "examPaperTab": "Épreuve d'examen",
   "academicReportTab": "Rapport académique",
   "notAvailableYet": "Pas encore disponible",

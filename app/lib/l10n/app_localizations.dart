@@ -326,6 +326,12 @@ abstract class AppLocalizations {
   /// **'Registration failed. That email may already be in use.'**
   String get authErrorRegisterGeneric;
 
+  /// No description provided for @authErrorGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not continue as guest. Check your connection and try again.'**
+  String get authErrorGuest;
+
   /// No description provided for @authErrorUnknown.
   ///
   /// In en, this message translates to:
@@ -763,6 +769,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share a past paper or an academic report — every contribution helps another student.'**
   String get contributionSubtitle;
+
+  /// No description provided for @contributorNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contributor name'**
+  String get contributorNameTitle;
+
+  /// No description provided for @contributorNameSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No account needed to contribute — we\'ll credit this to the name you give us.'**
+  String get contributorNameSubtitle;
+
+  /// No description provided for @contributorNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get contributorNameLabel;
 
   /// No description provided for @examPaperTab.
   ///
