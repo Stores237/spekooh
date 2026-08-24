@@ -1,8 +1,9 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework import mixins, permissions, status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import IsAuthenticatedNotGuest
 from apps.papers.models import PaperSubmission
 
 from .models import PaperUnlock, PaymentTransaction, Subscription
@@ -17,7 +18,7 @@ from .services import PaperUnlockError, SubscriptionError, subscribe, unlock_pap
 
 
 class PaymentTransactionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
     serializer_class = PaymentTransactionSerializer
 
     def get_queryset(self):
@@ -27,7 +28,7 @@ class PaymentTransactionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 class SubscriptionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
     serializer_class = SubscriptionSerializer
 
     def get_queryset(self):
@@ -37,7 +38,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 class SubscribeView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
 
     @extend_schema(request=SubscribeRequestSerializer, responses=SubscriptionSerializer)
     def post(self, request):
@@ -51,7 +52,7 @@ class SubscribeView(APIView):
 
 
 class PaperUnlockViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
     serializer_class = PaperUnlockSerializer
 
     def get_queryset(self):
@@ -61,7 +62,7 @@ class PaperUnlockViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 class UnlockPaperView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
 
     @extend_schema(request=UnlockRequestSerializer, responses=PaperUnlockSerializer)
     def post(self, request):

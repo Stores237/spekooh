@@ -1,7 +1,9 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework import mixins, permissions, status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.accounts.permissions import IsAuthenticatedNotGuest
 
 from .models import CreditLedgerEntry, RedeemCode
 from .serializers import CreditLedgerEntrySerializer, RedeemCodeApplySerializer, RedeemCodeSerializer
@@ -9,7 +11,7 @@ from .services import CreditEngineError, RedeemCodeError, RedeemCodeIssuer, rede
 
 
 class CreditLedgerEntryViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
     serializer_class = CreditLedgerEntrySerializer
 
     def get_queryset(self):
@@ -19,7 +21,7 @@ class CreditLedgerEntryViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 class RedeemCodeViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
     serializer_class = RedeemCodeSerializer
 
     def get_queryset(self):
@@ -29,7 +31,7 @@ class RedeemCodeViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewse
 
 
 class RedeemCodeApplyView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
 
     @extend_schema(request=RedeemCodeApplySerializer, responses=RedeemCodeSerializer)
     def post(self, request):
@@ -45,7 +47,7 @@ class RedeemCodeApplyView(APIView):
 class RedeemCodeIssueView(APIView):
     """Request a new redeem code sized to the caller's own accepted-submission tier."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
 
     @extend_schema(request=None, responses=RedeemCodeSerializer)
     def post(self, request):

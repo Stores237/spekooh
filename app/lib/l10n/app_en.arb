@@ -45,6 +45,7 @@
   "authErrorLogin": "Login failed. Check your email and password.",
   "authErrorRegisterReferral": "Registration failed. Check your details, and that the referral code is correct.",
   "authErrorRegisterGeneric": "Registration failed. That email may already be in use.",
+  "authErrorGuest": "Could not continue as guest. Check your connection and try again.",
   "authErrorUnknown": "Something went wrong. Check your connection and try again.",
 
   "homeWelcomeGreeting": "Welcome",
@@ -161,6 +162,9 @@
 
   "contributionTitle": "Contribution",
   "contributionSubtitle": "Share a past paper or an academic report — every contribution helps another student.",
+  "contributorNameTitle": "Contributor name",
+  "contributorNameSubtitle": "No account needed to contribute — we'll credit this to the name you give us.",
+  "contributorNameLabel": "Your name",
   "examPaperTab": "Exam paper",
   "academicReportTab": "Academic report",
   "notAvailableYet": "Not available yet",

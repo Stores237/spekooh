@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../data/auth_session.dart';
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
@@ -61,17 +62,31 @@ class _SubmitScreenState extends State<SubmitScreen> {
   bool _submittingReport = false;
   String? _reportSubmitError;
 
+  // Owner decision: contributing shouldn't require an account, but every
+  // contributor still has to be identified by a real name — shared across
+  // both tabs (not duplicated per form) since it's one person's identity,
+  // not a per-submission-type detail. mintGuestAccessToken() (called from
+  // _submit/_submitReport) mints a one-off guest token from it — this is
+  // never a real app login: isLoggedIn/AuthSession stay untouched, so
+  // every other action still requires a real account, and nothing about
+  // this identity survives the app closing.
+  final _contributorNameController = TextEditingController();
+
+  bool get _isGuest => !AuthSession.instance.isLoggedIn;
+
   @override
   void dispose() {
     _examBoardController.dispose();
     _institutionController.dispose();
     _disciplineController.dispose();
     _supervisorController.dispose();
+    _contributorNameController.dispose();
     super.dispose();
   }
 
   bool get _canSubmit =>
       !_submitting &&
+      (!_isGuest || _contributorNameController.text.trim().isNotEmpty) &&
       _category != null &&
       (!_category!.requiresSystem || _system != null) &&
       _examType != null &&
@@ -82,6 +97,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
 
   bool get _canSubmitReport =>
       !_submittingReport &&
+      (!_isGuest || _contributorNameController.text.trim().isNotEmpty) &&
       _reportType != null &&
       _institutionController.text.trim().isNotEmpty &&
       _disciplineController.text.trim().isNotEmpty &&
@@ -327,6 +343,9 @@ class _SubmitScreenState extends State<SubmitScreen> {
       _reportSubmitError = null;
     });
     try {
+      final guestToken = _isGuest
+          ? await AuthSession.instance.mintGuestAccessToken(name: _contributorNameController.text.trim())
+          : null;
       final categories = await widget.repository.getCategories();
       final reportsCategory = categories.firstWhere((c) => c.key == ExamCategoryKey.reports);
       final entry = await widget.repository.submitPaper(
@@ -337,6 +356,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
         discipline: _disciplineController.text.trim(),
         supervisorName: _supervisorController.text.trim(),
         file: _reportFile!,
+        guestAccessToken: guestToken,
       );
       if (mounted) setState(() => _submitted = entry);
     } catch (e) {
@@ -352,6 +372,9 @@ class _SubmitScreenState extends State<SubmitScreen> {
       _submitError = null;
     });
     try {
+      final guestToken = _isGuest
+          ? await AuthSession.instance.mintGuestAccessToken(name: _contributorNameController.text.trim())
+          : null;
       final entry = await widget.repository.submitPaper(
         categoryId: _category!.id,
         examTypeId: _examType!.id,
@@ -361,6 +384,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
         year: _year!,
         examBoard: _examBoardController.text.trim(),
         file: _file!,
+        guestAccessToken: guestToken,
       );
       if (mounted) setState(() => _submitted = entry);
     } catch (e) {
@@ -448,6 +472,14 @@ class _SubmitScreenState extends State<SubmitScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space4),
+              if (_isGuest) ...[
+                Text(l10n.contributorNameTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                const SizedBox(height: 4),
+                Text(l10n.contributorNameSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                const SizedBox(height: AppSpacing.space3),
+                _textFieldRow(controller: _contributorNameController, label: l10n.contributorNameLabel),
+                const SizedBox(height: AppSpacing.space2),
+              ],
               if (_type == _SubmitType.report) ..._reportForm(l10n) else ..._paperForm(l10n),
               // BottomNav's center item pokes ~24px above the bar via
               // Transform.translate, which doesn't reserve layout space —

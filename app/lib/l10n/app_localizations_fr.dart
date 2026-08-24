@@ -126,6 +126,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Échec de l\'inscription. Cet email est peut-être déjà utilisé.';
 
   @override
+  String get authErrorGuest =>
+      'Impossible de continuer en tant qu\'invité. Vérifiez votre connexion et réessayez.';
+
+  @override
   String get authErrorUnknown =>
       'Une erreur s\'est produite. Vérifiez votre connexion et réessayez.';
 
@@ -383,6 +387,16 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get contributionSubtitle =>
       'Partagez une ancienne épreuve ou un rapport académique — chaque contribution aide un autre étudiant.';
+
+  @override
+  String get contributorNameTitle => 'Nom du contributeur';
+
+  @override
+  String get contributorNameSubtitle =>
+      'Aucun compte n\'est nécessaire pour contribuer — nous créditerons le nom que vous nous donnez.';
+
+  @override
+  String get contributorNameLabel => 'Votre nom';
 
   @override
   String get examPaperTab => 'Épreuve d\'examen';

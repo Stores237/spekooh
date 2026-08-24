@@ -46,12 +46,19 @@ class UserManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True.")
         return self._create_user(email, password, **extra_fields)
 
-    def create_guest(self):
-        """A guest is a real User row (account_type=guest), not a session-only concept."""
+    def create_guest(self, name=None):
+        """A guest is a real User row (account_type=guest), not a session-only concept.
+
+        Owner decision: a contributor without an account still has to be
+        identified by a real name they typed (see Submit's contributor-name
+        field) — an auto-generated "Guest xxxxxx" label is only a fallback
+        for guest flows that don't collect one.
+        """
         guest_ref = uuid.uuid4().hex[:12]
+        clean_name = name.strip()[:150] if name and name.strip() else f"Guest {guest_ref[:6]}"
         user = self.model(
             email=None,
-            name=f"Guest {guest_ref[:6]}",
+            name=clean_name,
             account_type=AccountType.GUEST,
             guest_ref=guest_ref,
         )

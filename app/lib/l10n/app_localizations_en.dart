@@ -125,6 +125,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Registration failed. That email may already be in use.';
 
   @override
+  String get authErrorGuest =>
+      'Could not continue as guest. Check your connection and try again.';
+
+  @override
   String get authErrorUnknown =>
       'Something went wrong. Check your connection and try again.';
 
@@ -376,6 +380,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get contributionSubtitle =>
       'Share a past paper or an academic report — every contribution helps another student.';
+
+  @override
+  String get contributorNameTitle => 'Contributor name';
+
+  @override
+  String get contributorNameSubtitle =>
+      'No account needed to contribute — we\'ll credit this to the name you give us.';
+
+  @override
+  String get contributorNameLabel => 'Your name';
 
   @override
   String get examPaperTab => 'Exam paper';

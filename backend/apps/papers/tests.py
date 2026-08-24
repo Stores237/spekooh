@@ -2,18 +2,43 @@ import io
 from pathlib import Path
 
 import pytest
+from django.contrib.admin.sites import AdminSite
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import RequestFactory
 from pypdf import PdfReader
 from reportlab.pdfgen import canvas
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
+from apps.credits.models import CreditLedgerEntry
 from apps.payments.factories import SubscriptionFactory
 from apps.payments.models import PaperUnlock
 
+from .admin import AcademicReportSubmissionAdmin, PaperSubmissionAdmin, PaperViewLogAdmin
 from .factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory, SubjectFactory
-from .models import AdWatchEvent, ExamCategory, ExamType, PaperStatus, PaperSubmission, PaperViewLog, Subject
+from .models import (
+    AcademicReportSubmission,
+    AdWatchEvent,
+    ExamCategory,
+    ExamType,
+    PaperStatus,
+    PaperSubmission,
+    PaperViewLog,
+    Subject,
+)
 from .services import DAILY_FREE_VIEWS, PaywallError, record_ad_watch, record_paper_view, user_can_view_file
+
+
+def _admin_action_request():
+    """message_user() needs a real messages storage attached, or it raises —
+    RequestFactory doesn't wire that up on its own (no middleware runs).
+    FallbackStorage's session-backed layer just needs something dict-like
+    at request.session, not a real session middleware."""
+    request = RequestFactory().post("/admin/papers/papersubmission/")
+    request.session = {}
+    request._messages = FallbackStorage(request)
+    return request
 
 
 def _real_pdf_bytes(text: str = "Original report content") -> bytes:
@@ -708,6 +733,42 @@ def test_report_paper_requires_authentication(api_client):
 
 
 @pytest.mark.django_db
+def test_guest_can_submit_a_paper_but_not_report_one():
+    """A guest token (see AuthSession.mintGuestAccessToken) is minted for a
+    single upload — reporting a paper is a real-account-only action, unlike
+    create which explicitly allows guests (PaperSubmissionViewSet.get_permissions)."""
+    from apps.accounts.models import User
+
+    guest = User.objects.create_guest(name="Live Verify Guest")
+    client = APIClient()
+    client.force_authenticate(user=guest)
+
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    upload = SimpleUploadedFile("gce-bio-2024.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf")
+    create_response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "uploaded_file": upload,
+        },
+        format="multipart",
+    )
+    assert create_response.status_code == 201
+    assert PaperSubmission.objects.get(id=create_response.data["id"]).submitted_by == guest
+
+    report_response = client.post(
+        f"/api/papers/submissions/{create_response.data['id']}/report/", {"reason": "OTHER"}, format="json"
+    )
+    assert report_response.status_code == 403
+
+
+@pytest.mark.django_db
 def test_report_paper_creates_flag_and_ticket(authed_client):
     """Spec §3.2 flag/report an existing paper — creates both the flag row
     and a Review Team ticket in the same §2.1 queue every other event uses."""
@@ -756,3 +817,110 @@ def test_report_paper_by_different_users_both_succeed(authed_client, api_client)
     api_client.force_authenticate(user=other_user)
     second = api_client.post(f"/api/papers/submissions/{paper.id}/report/", {"reason": "COPYRIGHT"}, format="json")
     assert second.status_code == 201
+
+
+@pytest.mark.django_db
+def test_admin_publish_selected_publishes_reports_regardless_of_guide_status():
+    """Regression: reports have no marking-guide/instructor pipeline at all
+    (see the "no marking guide" copy on the Academic Reports category) —
+    they default to PENDING_REVIEW and can never reach GUIDE_SUBMITTED or
+    MERGED, so gating them on that status meant a report could never be
+    published through the admin at all ("Skipped 1 not in Guide submitted/
+    Merged status." on every single one, forever)."""
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    report = PaperSubmissionFactory(
+        category=reports_category, exam_type=report_type, subject=None, status=PaperStatus.PENDING_REVIEW
+    )
+
+    admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
+    admin_instance.publish_selected(_admin_action_request(), PaperSubmission.objects.filter(id=report.id))
+
+    report.refresh_from_db()
+    assert report.status == PaperStatus.PUBLISHED
+    assert CreditLedgerEntry.objects.filter(paper_submission=report).exists()
+
+
+@pytest.mark.django_db
+def test_admin_publish_selected_still_gates_exam_papers_on_guide_status():
+    """The real instructor/marking-guide pipeline gate stays intact for
+    exam papers — only reports get the relaxed rule above."""
+    paper = PaperSubmissionFactory(status=PaperStatus.PENDING_REVIEW)
+
+    admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
+    admin_instance.publish_selected(_admin_action_request(), PaperSubmission.objects.filter(id=paper.id))
+
+    paper.refresh_from_db()
+    assert paper.status == PaperStatus.PENDING_REVIEW
+    assert not CreditLedgerEntry.objects.filter(paper_submission=paper).exists()
+
+
+@pytest.mark.django_db
+def test_admin_publish_selected_does_not_republish_an_already_published_report():
+    """award_contributor_bonus isn't itself idempotent — re-selecting an
+    already-published report must stay excluded, or staff re-running the
+    action double-credits the contributor."""
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    report = PaperSubmissionFactory(
+        category=reports_category, exam_type=report_type, subject=None, status=PaperStatus.PUBLISHED
+    )
+
+    admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
+    admin_instance.publish_selected(_admin_action_request(), PaperSubmission.objects.filter(id=report.id))
+
+    assert CreditLedgerEntry.objects.filter(paper_submission=report).count() == 0
+
+
+@pytest.mark.django_db
+def test_academic_report_admin_section_only_shows_reports():
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    report = PaperSubmissionFactory(category=reports_category, exam_type=report_type, subject=None)
+    exam_paper = PaperSubmissionFactory()
+
+    admin_instance = AcademicReportSubmissionAdmin(AcademicReportSubmission, AdminSite())
+    ids = set(admin_instance.get_queryset(_admin_action_request()).values_list("id", flat=True))
+
+    assert report.id in ids
+    assert exam_paper.id not in ids
+
+
+@pytest.mark.django_db
+def test_admin_file_link_renders_a_real_download_link_when_a_file_exists():
+    from django.utils.html import escape
+
+    paper = PaperSubmissionFactory(uploaded_file=SimpleUploadedFile("thesis.pdf", b"%PDF-1.4 x"))
+    admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
+    # format_html HTML-escapes the URL (the real Supabase URL has `&` in its
+    # query string), so compare against the escaped form, not the raw one.
+    assert escape(paper.uploaded_file.url) in admin_instance.file_link(paper)
+
+
+@pytest.mark.django_db
+def test_admin_file_link_shows_a_placeholder_when_there_is_no_file():
+    paper = PaperSubmissionFactory(uploaded_file=None)
+    admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
+    assert admin_instance.file_link(paper) == "—"
+
+
+@pytest.mark.django_db
+def test_paper_view_log_admin_labels_a_report_view_with_institution_not_subject():
+    """Regression: paper_submission's own __str__ always says "no subject"
+    for a report (reports have no Subject taxonomy), which told an admin
+    nothing about which report was actually viewed."""
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    report = PaperSubmissionFactory(
+        category=reports_category,
+        exam_type=report_type,
+        subject=None,
+        institution="University of Buea",
+    )
+    log = PaperViewLog.objects.create(user=UserFactory(), paper_submission=report)
+
+    admin_instance = PaperViewLogAdmin(PaperViewLog, AdminSite())
+    label = admin_instance.paper_label(log)
+
+    assert "University of Buea" in label
+    assert "no subject" not in label

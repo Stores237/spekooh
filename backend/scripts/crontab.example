@@ -11,3 +11,6 @@
 
 # Pamphlet 30-day expiry flags + 3-day courier self-confirm fallback — hourly.
 0 * * * * cd /home/lucien/Spekooh/backend && /home/lucien/Spekooh/backend/.venv/bin/python manage.py process_pamphlet_expiry >> /var/log/spekooh/cron.log 2>&1
+
+# Prune guest accounts older than 24h that never went on to own a submission — hourly.
+0 * * * * cd /home/lucien/Spekooh/backend && /home/lucien/Spekooh/backend/.venv/bin/python manage.py prune_stale_guest_accounts >> /var/log/spekooh/cron.log 2>&1

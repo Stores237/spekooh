@@ -3,6 +3,8 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.accounts.permissions import IsAuthenticatedNotGuest
+
 from .models import ForumPost, ForumReply, ForumUpvote
 from .serializers import (
     ForumPostCreateSerializer,
@@ -16,8 +18,12 @@ class ForumPostViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet
 ):
     def get_permissions(self):
-        if self.action == "create" or self.action in ("reply", "upvote"):
-            return [permissions.IsAuthenticated()]
+        if self.action in ("create", "upvote"):
+            return [IsAuthenticatedNotGuest()]
+        # `replies` handles GET (read, open to everyone) and POST
+        # (posting a reply, gated) in one action — see the method below
+        # for the POST-only check, since get_permissions only sees the
+        # action name, not the HTTP method.
         return [permissions.AllowAny()]
 
     def get_queryset(self):
@@ -36,6 +42,10 @@ class ForumPostViewSet(
         post = self.get_object()
         if request.method == "GET":
             return Response(ForumReplySerializer(post.replies.select_related("author"), many=True).data)
+
+        permission = IsAuthenticatedNotGuest()
+        if not permission.has_permission(request, self):
+            self.permission_denied(request, message=getattr(permission, "message", None))
 
         serializer = ForumReplyCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

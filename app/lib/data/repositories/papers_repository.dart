@@ -45,6 +45,10 @@ abstract class PapersRepository {
     String discipline = '',
     String supervisorName = '',
     required SubmissionFile file,
+    // Set only when the caller isn't logged in — see
+    // AuthSession.mintGuestAccessToken. Authorizes this one request without
+    // this being (or becoming) a real app login.
+    String? guestAccessToken,
   });
 
   /// Fetches the full record for one paper (adds file_url/exam_board, not
@@ -149,6 +153,7 @@ class MockPapersRepository implements PapersRepository {
     String discipline = '',
     String supervisorName = '',
     required SubmissionFile file,
+    String? guestAccessToken,
   }) async {
     final entry = PaperEntry(
       id: _nextId++,

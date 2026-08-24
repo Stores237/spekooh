@@ -15,7 +15,7 @@ const String _authBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue:
 /// (which has a BuildContext, so can reach AppLocalizations) maps this to a
 /// real localized message rather than AuthSession carrying pre-built,
 /// English-only text.
-enum AuthErrorCode { loginFailed, registerFailedReferral, registerFailedGeneric }
+enum AuthErrorCode { loginFailed, registerFailedReferral, registerFailedGeneric, guestFailed }
 
 class AuthException implements Exception {
   AuthException(this.code, this.debugMessage);
@@ -101,6 +101,31 @@ class AuthSession extends ChangeNotifier {
       throw AuthException(AuthErrorCode.registerFailedGeneric, 'Registration failed. That email may already be in use.');
     }
     await _storeTokens(jsonDecode(response.body));
+  }
+
+  /// Owner decision: contributing (Submit) shouldn't require a real
+  /// account, but every contributor still has to be identified by a real
+  /// name they typed. This is deliberately NOT a login: it mints a real
+  /// guest User row on the backend (so the submission has a real owner
+  /// and the contributor bonus has somewhere to land) but returns the raw
+  /// access token to the caller instead of storing it on this session —
+  /// [isLoggedIn], [accessToken], and secure-storage persistence are all
+  /// untouched. The token exists only for whatever single request the
+  /// caller passes it to (see PapersRepository.submitPaper's
+  /// guestAccessToken param); nothing about this guest identity survives
+  /// the app closing, and every other action in the app still requires a
+  /// real account. Each call mints a fresh, separate guest — there's
+  /// nothing to reuse across calls by design.
+  Future<String> mintGuestAccessToken({required String name}) async {
+    final response = await _client.post(
+      Uri.parse('$_authBaseUrl/auth/guest/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name}),
+    );
+    if (response.statusCode != 201) {
+      throw AuthException(AuthErrorCode.guestFailed, 'Could not continue as guest.');
+    }
+    return (jsonDecode(response.body) as Map<String, dynamic>)['access'] as String;
   }
 
   Future<void> _storeTokens(Map<String, dynamic> data) async {

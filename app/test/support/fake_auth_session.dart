@@ -21,6 +21,18 @@ AuthSession buildFakeAuthSession() {
         headers: {'content-type': 'application/json'},
       );
     }
+    if (request.url.path.endsWith('/auth/guest/')) {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      return http.Response(
+        jsonEncode({
+          'access': 'fake-guest-access-token',
+          'refresh': 'fake-guest-refresh-token',
+          'user': {'id': 'fake-guest-id', 'name': body['name'], 'account_type': 'guest'},
+        }),
+        201,
+        headers: {'content-type': 'application/json'},
+      );
+    }
     return http.Response('not found', 404);
   });
 
