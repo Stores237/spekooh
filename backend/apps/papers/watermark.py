@@ -69,7 +69,6 @@ def _watermark_pdf(content: bytes) -> bytes:
 def _watermark_image(content: bytes, suffix: str) -> bytes:
     image = Image.open(io.BytesIO(content)).convert("RGBA")
     overlay = Image.new("RGBA", image.size, (255, 255, 255, 0))
-    draw = ImageDraw.Draw(overlay)
 
     font_size = max(18, min(image.size) // 12)
     try:

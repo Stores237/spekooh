@@ -38,7 +38,6 @@ def seed(apps, schema_editor):
 
 
 def unseed(apps, schema_editor):
-    ExamCategory = apps.get_model("papers", "ExamCategory")
     ExamType = apps.get_model("papers", "ExamType")
     ExamType.objects.filter(category__key="reports").delete()
 
