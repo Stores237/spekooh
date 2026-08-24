@@ -7,6 +7,7 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import IsAuthenticatedNotGuest
 from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
 
@@ -65,7 +66,10 @@ class PaperSubmissionViewSet(
     # requires auth. process_ocr/mark_published set their own IsAdminUser
     # via @action(permission_classes=...) — defer to super() there instead
     # of hardcoding, or those per-action overrides get silently clobbered.
-    permission_classes = [permissions.IsAuthenticated]
+    # `create` is the one exception where a guest account is welcome
+    # (see get_permissions) — everything else, including `report`, falls
+    # through to this class-level IsAuthenticatedNotGuest.
+    permission_classes = [IsAuthenticatedNotGuest]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ["status", "category", "exam_type", "subject", "system", "track", "submitted_by"]
     ordering_fields = ["created_at", "year"]
@@ -73,6 +77,8 @@ class PaperSubmissionViewSet(
     def get_permissions(self):
         if self.action in ("list", "retrieve", "view"):
             return [permissions.AllowAny()]
+        if self.action == "create":
+            return [permissions.IsAuthenticated()]
         return super().get_permissions()
 
     def get_queryset(self):
@@ -154,7 +160,7 @@ class PaperSubmissionViewSet(
 
 
 class AdWatchView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
 
     @extend_schema(request=None, responses=AdWatchEventSerializer)
     def post(self, request):

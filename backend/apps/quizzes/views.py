@@ -6,6 +6,8 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.accounts.permissions import IsAuthenticatedNotGuest
+
 from .models import Quiz
 from .serializers import (
     LeaderboardEntrySerializer,
@@ -50,7 +52,7 @@ class QuizViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         return Response(LeaderboardEntrySerializer(entries, many=True).data)
 
     @extend_schema(request=SubmitAttemptRequestSerializer, responses=QuizAttemptSerializer)
-    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticatedNotGuest])
     def submit(self, request, pk=None):
         quiz = self.get_object()
         serializer = SubmitAttemptRequestSerializer(data=request.data)
@@ -62,12 +64,12 @@ class QuizViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         return Response(QuizAttemptSerializer(attempt).data, status=status.HTTP_201_CREATED)
 
     @extend_schema(responses=None)
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticatedNotGuest])
     def my_stats(self, request):
         return Response({"quizzes_played": request.user.quiz_attempts.count()})
 
     @extend_schema(responses=None)
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticatedNotGuest])
     def streak(self, request):
         played_today = request.user.quiz_attempts.filter(
             quiz__is_daily_challenge=True, completed_at__date=timezone.localdate()

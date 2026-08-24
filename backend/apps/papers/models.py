@@ -168,6 +168,19 @@ class PaperSubmission(TimeStampedModel):
         super().save(*args, **kwargs)
 
 
+class AcademicReportSubmission(PaperSubmission):
+    """Same table as PaperSubmission, scoped to the "reports" category —
+    exists purely to give admin its own "Academic reports" section (see
+    AcademicReportSubmissionAdmin.get_queryset) instead of reports being
+    buried in the general exam-papers list, where their institution/
+    discipline/supervisor fields aren't even shown."""
+
+    class Meta:
+        proxy = True
+        verbose_name = "Academic report"
+        verbose_name_plural = "Academic reports"
+
+
 class PaperFlagReason(models.TextChoices):
     WRONG_ANSWERS = "WRONG_ANSWERS", "Wrong or missing answers"
     POOR_QUALITY = "POOR_QUALITY", "Poor scan quality / unreadable"

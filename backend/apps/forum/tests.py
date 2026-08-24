@@ -58,6 +58,34 @@ def test_create_post_sets_author_from_request(api_client):
 
 
 @pytest.mark.django_db
+def test_reply_endpoint_reading_is_public_but_posting_requires_authentication(api_client):
+    """Regression: the `replies` action's own name (plural, from the method)
+    didn't match the "reply" (singular) check in get_permissions, so an
+    unauthenticated POST silently fell through to AllowAny."""
+    post = ForumPostFactory()
+    ForumReplyFactory(post=post)
+
+    list_response = api_client.get(f"/api/forum/posts/{post.id}/replies/")
+    assert list_response.status_code == 200
+
+    create_response = api_client.post(f"/api/forum/posts/{post.id}/replies/", {"body": "Anon reply"}, format="json")
+    assert create_response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_reply_endpoint_rejects_a_guest_account():
+    from apps.accounts.models import User
+
+    guest = User.objects.create_guest(name="Guest Poster")
+    api_client = APIClient()
+    api_client.force_authenticate(user=guest)
+    post = ForumPostFactory()
+
+    response = api_client.post(f"/api/forum/posts/{post.id}/replies/", {"body": "Guest reply"}, format="json")
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
 def test_reply_endpoint_lists_and_creates(api_client):
     post = ForumPostFactory()
     ForumReplyFactory(post=post, body="First reply")

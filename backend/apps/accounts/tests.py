@@ -1,4 +1,8 @@
+import datetime
+
 import pytest
+from django.core.management import call_command
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from .factories import UserFactory
@@ -163,3 +167,48 @@ def test_register_rejects_an_unknown_referral_code(api_client):
     )
     assert response.status_code == 400
     assert not User.objects.filter(email="bad-code@example.com").exists()
+
+
+@pytest.mark.django_db
+def test_prune_stale_guest_accounts_deletes_an_orphaned_guest_past_the_ttl():
+    guest = User.objects.create_guest(name="Abandoned Upload")
+    User.objects.filter(id=guest.id).update(created_at=timezone.now() - datetime.timedelta(hours=25))
+
+    call_command("prune_stale_guest_accounts")
+
+    assert not User.objects.filter(id=guest.id).exists()
+
+
+@pytest.mark.django_db
+def test_prune_stale_guest_accounts_keeps_a_guest_within_the_ttl():
+    """An upload in progress right now must not get its identity yanked
+    out from under it — see AuthSession.mintGuestAccessToken, which
+    creates this row before the submission itself is known to succeed."""
+    guest = User.objects.create_guest(name="Mid Upload")
+
+    call_command("prune_stale_guest_accounts")
+
+    assert User.objects.filter(id=guest.id).exists()
+
+
+@pytest.mark.django_db
+def test_prune_stale_guest_accounts_never_deletes_a_guest_that_owns_a_submission():
+    from apps.papers.factories import PaperSubmissionFactory
+
+    guest = User.objects.create_guest(name="Real Contributor")
+    User.objects.filter(id=guest.id).update(created_at=timezone.now() - datetime.timedelta(hours=25))
+    PaperSubmissionFactory(submitted_by=guest)
+
+    call_command("prune_stale_guest_accounts")
+
+    assert User.objects.filter(id=guest.id).exists()
+
+
+@pytest.mark.django_db
+def test_prune_stale_guest_accounts_never_touches_registered_users():
+    old_registered = UserFactory()
+    User.objects.filter(id=old_registered.id).update(created_at=timezone.now() - datetime.timedelta(days=30))
+
+    call_command("prune_stale_guest_accounts")
+
+    assert User.objects.filter(id=old_registered.id).exists()
