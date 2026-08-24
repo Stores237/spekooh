@@ -366,6 +366,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String noReportsYetBody(String examType) {
+    return 'Nobody has submitted a $examType yet. Be the first — submit one from the Submit tab.';
+  }
+
+  @override
   String get contributionTitle => 'Contribution';
 
   @override

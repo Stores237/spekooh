@@ -373,6 +373,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String noReportsYetBody(String examType) {
+    return 'Personne n\'a encore soumis de $examType. Soyez le premier — soumettez-en un depuis l\'onglet Contribuer.';
+  }
+
+  @override
   String get contributionTitle => 'Contribution';
 
   @override

@@ -746,6 +746,12 @@ abstract class AppLocalizations {
   /// **'Nobody has submitted a {subject} paper for this exam type yet. Be the first — submit one from the Submit tab.'**
   String noPapersYetBody(String subject);
 
+  /// No description provided for @noReportsYetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has submitted a {examType} yet. Be the first — submit one from the Submit tab.'**
+  String noReportsYetBody(String examType);
+
   /// No description provided for @contributionTitle.
   ///
   /// In en, this message translates to:

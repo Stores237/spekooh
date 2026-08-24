@@ -130,7 +130,11 @@ class PaperBrowseSelection {
     if (category!.requiresSystem && system == null) return PaperBrowseStep.system;
     if (examType == null) return PaperBrowseStep.examType;
     if (examType!.requiresTrack && track == null) return PaperBrowseStep.track;
-    if (subjectKey == null) return PaperBrowseStep.subject;
+    // Reports have no Subject taxonomy of their own (PaperSubmission.subject
+    // stays null for them, same as the Submit form) — forcing a subject pick
+    // here would filter the paper list against a subject no report actually
+    // has, so it never finds anything real. Go straight to the paper list.
+    if (category!.key != ExamCategoryKey.reports && subjectKey == null) return PaperBrowseStep.subject;
     return PaperBrowseStep.paperList;
   }
 }

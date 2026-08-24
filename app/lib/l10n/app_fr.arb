@@ -117,6 +117,7 @@
   "paperUnderReview": "En cours de vérification",
   "noPapersYetTitle": "Aucune épreuve pour l'instant",
   "noPapersYetBody": "Personne n'a encore soumis d'épreuve de {subject} pour ce type d'examen. Soyez le premier — soumettez-en une depuis l'onglet Contribuer.",
+  "noReportsYetBody": "Personne n'a encore soumis de {examType}. Soyez le premier — soumettez-en un depuis l'onglet Contribuer.",
 
   "contributionTitle": "Contribution",
   "contributionSubtitle": "Partagez une ancienne épreuve ou un rapport académique — chaque contribution aide un autre étudiant.",

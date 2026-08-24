@@ -154,6 +154,10 @@
   "@noPapersYetBody": {
     "placeholders": {"subject": {"type": "String"}}
   },
+  "noReportsYetBody": "Nobody has submitted a {examType} yet. Be the first — submit one from the Submit tab.",
+  "@noReportsYetBody": {
+    "placeholders": {"examType": {"type": "String"}}
+  },
 
   "contributionTitle": "Contribution",
   "contributionSubtitle": "Share a past paper or an academic report — every contribution helps another student.",
