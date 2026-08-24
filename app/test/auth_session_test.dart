@@ -7,26 +7,30 @@ import 'package:spekooh/data/token_storage.dart';
 import 'support/fake_auth_session.dart';
 
 void main() {
-  test('continueAsGuest mints a real, logged-in guest session with the given name', () async {
+  test('mintGuestAccessToken returns a real token for the given name, without logging the app in', () async {
+    // This is deliberately not a login: a guest contributing a paper isn't
+    // the same as an app-wide "logged in" state — see SubmitScreen, the
+    // only caller.
     final session = buildFakeAuthSession();
     expect(session.isLoggedIn, isFalse);
 
-    await session.continueAsGuest(name: 'Aïcha Mballa');
+    final token = await session.mintGuestAccessToken(name: 'Aïcha Mballa');
 
-    expect(session.isLoggedIn, isTrue);
-    expect(session.accessToken, 'fake-guest-access-token');
-    expect(session.refreshToken, 'fake-guest-refresh-token');
-    expect(session.currentUserId, 'fake-guest-id');
+    expect(token, 'fake-guest-access-token');
+    expect(session.isLoggedIn, isFalse);
+    expect(session.accessToken, isNull);
+    expect(session.refreshToken, isNull);
+    expect(session.currentUserId, isNull);
   });
 
-  test('continueAsGuest throws AuthException on failure, without logging in', () async {
+  test('mintGuestAccessToken throws AuthException on failure', () async {
     final session = AuthSession(
       storage: InMemoryTokenStorage(),
       httpClient: MockClient((request) async => http.Response('server error', 500)),
     );
 
     await expectLater(
-      () => session.continueAsGuest(name: 'Someone'),
+      () => session.mintGuestAccessToken(name: 'Someone'),
       throwsA(isA<AuthException>().having((e) => e.code, 'code', AuthErrorCode.guestFailed)),
     );
     expect(session.isLoggedIn, isFalse);

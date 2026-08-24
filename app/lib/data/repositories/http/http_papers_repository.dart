@@ -160,6 +160,7 @@ class HttpPapersRepository implements PapersRepository {
     String discipline = '',
     String supervisorName = '',
     required SubmissionFile file,
+    String? guestAccessToken,
   }) async {
     final fields = <String, String>{
       'category': '$categoryId',
@@ -181,6 +182,7 @@ class HttpPapersRepository implements PapersRepository {
       fileName: file.fileName,
       mimeType: file.mimeType,
       fields: fields,
+      bearerTokenOverride: guestAccessToken,
     );
     return _paperFromJson(row as Map<String, dynamic>);
   }

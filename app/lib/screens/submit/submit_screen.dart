@@ -65,8 +65,11 @@ class _SubmitScreenState extends State<SubmitScreen> {
   // Owner decision: contributing shouldn't require an account, but every
   // contributor still has to be identified by a real name — shared across
   // both tabs (not duplicated per form) since it's one person's identity,
-  // not a per-submission-type detail. continueAsGuest() (called from
-  // _submit/_submitReport) mints a real guest account from it.
+  // not a per-submission-type detail. mintGuestAccessToken() (called from
+  // _submit/_submitReport) mints a one-off guest token from it — this is
+  // never a real app login: isLoggedIn/AuthSession stay untouched, so
+  // every other action still requires a real account, and nothing about
+  // this identity survives the app closing.
   final _contributorNameController = TextEditingController();
 
   bool get _isGuest => !AuthSession.instance.isLoggedIn;
@@ -340,9 +343,9 @@ class _SubmitScreenState extends State<SubmitScreen> {
       _reportSubmitError = null;
     });
     try {
-      if (_isGuest) {
-        await AuthSession.instance.continueAsGuest(name: _contributorNameController.text.trim());
-      }
+      final guestToken = _isGuest
+          ? await AuthSession.instance.mintGuestAccessToken(name: _contributorNameController.text.trim())
+          : null;
       final categories = await widget.repository.getCategories();
       final reportsCategory = categories.firstWhere((c) => c.key == ExamCategoryKey.reports);
       final entry = await widget.repository.submitPaper(
@@ -353,6 +356,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
         discipline: _disciplineController.text.trim(),
         supervisorName: _supervisorController.text.trim(),
         file: _reportFile!,
+        guestAccessToken: guestToken,
       );
       if (mounted) setState(() => _submitted = entry);
     } catch (e) {
@@ -368,9 +372,9 @@ class _SubmitScreenState extends State<SubmitScreen> {
       _submitError = null;
     });
     try {
-      if (_isGuest) {
-        await AuthSession.instance.continueAsGuest(name: _contributorNameController.text.trim());
-      }
+      final guestToken = _isGuest
+          ? await AuthSession.instance.mintGuestAccessToken(name: _contributorNameController.text.trim())
+          : null;
       final entry = await widget.repository.submitPaper(
         categoryId: _category!.id,
         examTypeId: _examType!.id,
@@ -380,6 +384,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
         year: _year!,
         examBoard: _examBoardController.text.trim(),
         file: _file!,
+        guestAccessToken: guestToken,
       );
       if (mounted) setState(() => _submitted = entry);
     } catch (e) {

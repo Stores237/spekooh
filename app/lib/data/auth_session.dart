@@ -105,13 +105,18 @@ class AuthSession extends ChangeNotifier {
 
   /// Owner decision: contributing (Submit) shouldn't require a real
   /// account, but every contributor still has to be identified by a real
-  /// name they typed — this mints a real guest User row (not a
-  /// session-only concept, see the backend) and logs the app into it, the
-  /// same as [login]/[register]. Idempotent to call again: a second call
-  /// mints a second, separate guest — callers should check [isLoggedIn]
-  /// first so an already-logged-in contributor (guest or real) isn't
-  /// silently replaced.
-  Future<void> continueAsGuest({required String name}) async {
+  /// name they typed. This is deliberately NOT a login: it mints a real
+  /// guest User row on the backend (so the submission has a real owner
+  /// and the contributor bonus has somewhere to land) but returns the raw
+  /// access token to the caller instead of storing it on this session —
+  /// [isLoggedIn], [accessToken], and secure-storage persistence are all
+  /// untouched. The token exists only for whatever single request the
+  /// caller passes it to (see PapersRepository.submitPaper's
+  /// guestAccessToken param); nothing about this guest identity survives
+  /// the app closing, and every other action in the app still requires a
+  /// real account. Each call mints a fresh, separate guest — there's
+  /// nothing to reuse across calls by design.
+  Future<String> mintGuestAccessToken({required String name}) async {
     final response = await _client.post(
       Uri.parse('$_authBaseUrl/auth/guest/'),
       headers: {'Content-Type': 'application/json'},
@@ -120,7 +125,7 @@ class AuthSession extends ChangeNotifier {
     if (response.statusCode != 201) {
       throw AuthException(AuthErrorCode.guestFailed, 'Could not continue as guest.');
     }
-    await _storeTokens(jsonDecode(response.body));
+    return (jsonDecode(response.body) as Map<String, dynamic>)['access'] as String;
   }
 
   Future<void> _storeTokens(Map<String, dynamic> data) async {

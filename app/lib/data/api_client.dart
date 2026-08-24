@@ -48,6 +48,11 @@ class ApiClient {
 
   /// Multipart POST for real file uploads (e.g. paper submission scans).
   /// [fields] are form fields sent alongside the file as plain strings.
+  /// [bearerTokenOverride] authorizes just this call with a token that
+  /// isn't this session's own (e.g. a guest contributor's — see
+  /// AuthSession.mintGuestAccessToken) instead of [authSession]'s; a guest
+  /// token has no refresh token behind it, so the 401-refresh-retry below
+  /// is skipped whenever an override is given.
   Future<dynamic> postMultipart(
     String path, {
     required String fileFieldName,
@@ -55,6 +60,7 @@ class ApiClient {
     required String fileName,
     String? mimeType,
     Map<String, String> fields = const {},
+    String? bearerTokenOverride,
     bool isRetry = false,
   }) async {
     final uri = _uri(path);
@@ -66,13 +72,13 @@ class ApiClient {
         filename: fileName,
         contentType: mimeType != null ? MediaType.parse(mimeType) : null,
       ));
-    final access = authSession.accessToken;
+    final access = bearerTokenOverride ?? authSession.accessToken;
     if (access != null) request.headers['Authorization'] = 'Bearer $access';
 
     final streamed = await _client.send(request);
     final response = await http.Response.fromStream(streamed);
 
-    if (response.statusCode == 401 && !isRetry && authSession.refreshToken != null) {
+    if (response.statusCode == 401 && !isRetry && bearerTokenOverride == null && authSession.refreshToken != null) {
       final refreshed = await authSession.refreshAccessToken();
       if (refreshed) {
         return postMultipart(
