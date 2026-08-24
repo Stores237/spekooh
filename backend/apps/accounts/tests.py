@@ -77,6 +77,26 @@ def test_guest_endpoint_creates_real_guest_user_row(api_client):
 
 
 @pytest.mark.django_db
+def test_guest_endpoint_uses_a_real_contributor_name_when_given(api_client):
+    """A contributor without an account still has to be identified by the
+    real name they typed (Submit's contributor-name field) — not left as
+    an anonymous auto-generated 'Guest xxxxxx' label."""
+    response = api_client.post("/api/auth/guest/", {"name": "Aïcha Mballa"}, format="json")
+    assert response.status_code == 201
+    assert response.data["user"]["name"] == "Aïcha Mballa"
+    guest = User.objects.get(id=response.data["user"]["id"])
+    assert guest.name == "Aïcha Mballa"
+    assert guest.is_guest
+
+
+@pytest.mark.django_db
+def test_guest_endpoint_falls_back_to_generated_name_for_blank_input(api_client):
+    response = api_client.post("/api/auth/guest/", {"name": "   "}, format="json")
+    assert response.status_code == 201
+    assert response.data["user"]["name"].startswith("Guest ")
+
+
+@pytest.mark.django_db
 def test_me_requires_authentication(api_client):
     response = api_client.get("/api/auth/me/")
     assert response.status_code == 401

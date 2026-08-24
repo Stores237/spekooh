@@ -45,7 +45,10 @@ class GuestView(APIView):
 
     @extend_schema(request=None, responses=UserSerializer)
     def post(self, request):
-        user = User.objects.create_guest()
+        # Optional — e.g. a contributor without an account typed their real
+        # name on Submit before it called this. Falls back to an
+        # auto-generated "Guest xxxxxx" label when absent (see create_guest).
+        user = User.objects.create_guest(name=request.data.get("name"))
         return Response(
             {"user": UserSerializer(user).data, **tokens_for_user(user)},
             status=status.HTTP_201_CREATED,
