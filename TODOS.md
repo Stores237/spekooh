@@ -20,9 +20,12 @@ I can write unilaterally. Grouped by what each one unblocks.
   documented as such in the code) for subscriptions, marking-guide unlocks, and pamphlet
   payments. Going live needs a real MTN MoMo / Orange Money merchant integration, or an
   aggregator (Flutterwave, Notch Pay) that bundles both — business registration + API keys.
-- **File/media storage**: uploaded papers currently save to local disk on the dev server
-  (documented as a placeholder for Supabase Storage). Production needs a real Supabase Storage
-  bucket or S3-compatible bucket with credentials.
+- ~~**File/media storage**~~ — done. Real Supabase Storage bucket (`spekooh-media`, S3-compatible
+  API) is configured via `AWS_*` env vars in `.env` and verified live (round-tripped a real
+  save/exists/signed-url/delete against it, 2026-08-23) — this is what the watermarking and
+  report-viewer work earlier this session was already tested against. `STORAGES` in
+  `config/settings/base.py` falls back to local disk only when `AWS_STORAGE_BUCKET_NAME` is
+  unset, so a fresh clone without these credentials still works out of the box.
 - **Firebase project** — only if real push notifications are wanted (current notifications are
   in-app only, which may be enough for v1 per spec).
 - **App store accounts** — Apple Developer + Google Play Console, once a build is ready to ship.
@@ -31,14 +34,17 @@ I can write unilaterally. Grouped by what each one unblocks.
 - **Real papers to seed the app**: the papers database is genuinely empty right now
   (`getLatestPublished()` correctly shows "no papers yet"). The app won't feel real until actual
   exam papers are submitted and pushed to `PUBLISHED` — via the Django admin, or real users.
-- **Academic Reports taxonomy**: the "reports" category exists with zero exam-type rows and no
-  discipline/institution fields — the field shape (internship? mémoire? thèse? by what
-  institution?) needs a decision before this can be built for real instead of "coming soon."
 - **French translations**: the biggest P0 gap (bilingual UI, below) needs real French copy for
   every string in the app. A first draft can be AI-assisted, but a native-speaker review for the
   Cameroon market should happen before shipping.
-- **Support destinations**: a real WhatsApp group link, support contact, and live website URL —
-  Settings currently has five dead links because none of these exist yet to point at.
+- ~~**Support destinations**~~ — mostly done (2026-08-23, owner-provided). "Help & support" now
+  calls `+237659802679`, "WhatsApp support" opens a chat on the same number (`wa.me`) — there
+  was never a real WhatsApp *group*, so the row was honestly retitled from "Join our WhatsApp
+  group" rather than pointing a group-shaped label at a 1:1 chat — and "Contact us" opens
+  `mailto:storefix237@gmail.com`. Still open: **live website URL** (owner confirmed not ready
+  yet — "Visit our website" now shows an honest "Not available yet" instead of the previously
+  fabricated `spekooh.app` subtitle) and **Privacy policy** (still a fully dead link, no content
+  provided).
 - **Privacy policy / terms content** — legal text, not something that should be drafted as if real.
 
 ### People/ops
@@ -48,9 +54,7 @@ I can write unilaterally. Grouped by what each one unblocks.
   and `mark_published` on submissions — a manual admin action by design.
 
 ### Decisions still open
-- **Offline downloads platform target** (blocks P1 #4 below): mobile-only (standard
-  `path_provider` approach) or web too (needs browser storage, a different implementation)?
-- **Marking-guide subscription tier** (P2 #9 below): still wanted, or does pay-per-unlock stay
+- **Marking-guide subscription tier** (P2 #11 below): still wanted, or does pay-per-unlock stay
   the only path?
 
 ---
@@ -174,7 +178,85 @@ I can write unilaterally. Grouped by what each one unblocks.
   (toggle save/remove, failed download surfaces a real error), 2 new `LoggedInHomeScreen`
   widget tests (section absent when empty, present with real data — EN + FR).
 
-### 5. ~~Referral bonuses~~ — done
+### 5. ~~Academic Reports contribution page~~ — done
+- Previously blocked on a real decision (no spec guidance existed at all — the field shape
+  wasn't invented): **type + institution + discipline**, with supervisor genuinely optional —
+  decided with the owner before building.
+- **Backend:** the "reports" `ExamCategory` existed since the initial taxonomy seed with zero
+  `ExamType` rows under it — 5 real report types now seeded (Internship Report, Bachelor's
+  Report/Mémoire de Licence, HND Report, Master's Thesis/Mémoire, PhD Thesis/Thèse), ported
+  1:1 from the Flutter mock taxonomy that had already anticipated these names. `PaperSubmission`
+  gained `institution`/`discipline`/`supervisor_name` (all free text — reports have no `Subject`
+  taxonomy of their own, unlike exam papers).
+- **Client:** removed the parallel, never-wired `ReportType`/`getReportTypes()` concept (the
+  real `HttpPapersRepository` implementation was silently returning hardcoded mock data even in
+  "real" mode) — Academic Reports now reuses the same `getExamTypes()` taxonomy lookup as exam
+  papers, since `reports` is a real category like any other. Submit's "Academic report" tab
+  (previously an honest "coming soon" placeholder) is now a real form: report type picker,
+  institution/discipline text fields (required), supervisor (optional), year, file upload —
+  posts a real multipart submission via the same `submitPaper()` path as exam papers.
+- Verified live end-to-end against the real backend (not just tests): registered a user,
+  fetched the real seeded report types via the API, submitted a real report with a real file to
+  real Supabase Storage, confirmed the response — institution/discipline round-tripped, subject
+  stayed null, supervisor stayed empty (genuinely optional). Also caught and fixed a real bug
+  during this pass: the migration seeded `badge_tone="red"`, a value the Flutter client's
+  `SpekoohBadgeTone.values.byName()` doesn't recognize — would have crashed the picker the
+  first time a real user opened it. Fixed to `"neutral"` in both the migration and the
+  already-seeded dev rows.
+- Verified with a real debug APK build too.
+- Tests: 2 new backend tests (real submission round-trip, exam types seeded correctly), 2
+  updated Flutter widget tests (exam-paper flow split out, new report-flow test walks the real
+  taxonomy picker end to end).
+
+### 6. ~~Report watermarking + payment-gated viewing/downloading~~ — done
+- Owner decisions (not invented): a static Spekooh watermark, applied once at upload — not
+  personalized per-viewer. Viewing is free for Internship/Bachelor's/HND reports, but
+  Master's Thesis and PhD Thesis require payment even to view, not just download. Downloading
+  *any* report always requires payment, regardless of view-tier. "Free to view" is enforced by
+  a real in-app document viewer (not an OS handoff, which would let the user just hit that
+  app's own Save button) — building that, not just gating the existing external-open flow, was
+  itself an owner decision.
+- **Backend:** `ExamType.requires_payment_to_view` (true only for the two thesis-tier report
+  types, set via a data migration). `apps.papers.services.watermark_report_submission()` runs
+  automatically on every "reports"-category submission — PDFs get a real diagonal overlay
+  (`pypdf` + `reportlab`, merged via `PdfWriter(clone_from=...)`), images get one drawn
+  directly (`PIL.ImageDraw`); a corrupt/unsupported upload falls back to the original bytes
+  rather than failing the whole submission. The unwatermarked original is deleted from storage
+  after the watermarked version is saved — checked for the case where the storage backend
+  reuses the same key (S3's overwrite-by-default behavior), so cleanup can't delete the file it
+  just wrote. `PaperSubmissionListSerializer`/`DetailSerializer`/`CreateSerializer` gained
+  `category_key`, `requires_unlock` (server-withholds `file_url` entirely, not just a
+  client-side flag — computed by `user_can_view_file()`, which exempts the submitter and staff)
+  and `is_unlocked` (a real `PaperUnlock` exists — independent of `requires_unlock`, since even
+  a free-to-view report needs one to download). Both gates reuse the exact same `PaperUnlock`/
+  `unlock_paper()` mechanism exam papers' marking-guide unlock already uses — one real payment
+  satisfies both the view-gate (if any) and the download-gate together.
+- **Client:** `ReportViewerScreen` (new) renders PDFs via `pdfx` and images via `photo_view`
+  entirely in-app — the actual mechanism behind "free to view, no download," since it never
+  hands the user a file the OS could offer to save. `PaperDetailScreen`: a gated report shows a
+  real locked message instead of the file preview; an accessible report's "View" pushes the
+  real viewer (exam papers keep the existing external-open behavior, untouched); the
+  Save-offline action (built earlier this session) is now hidden behind a real "Unlock below to
+  download" hint until `is_unlocked` is genuinely true, for every report regardless of
+  view-tier; the existing unlock card's copy switches from "Marking guide" to "Download access"
+  for reports.
+- Verified live end-to-end against the real backend, not just tests: submitted a real PhD
+  thesis PDF, confirmed the submitter sees their own file immediately
+  (`requires_unlock: false`) despite the thesis-tier gate, downloaded the stored file and
+  confirmed it's genuinely watermarked (`pypdf` text extraction found both the original content
+  and "Spekooh"), published it, confirmed a *different* user is correctly gated
+  (`requires_unlock: true`, `file_url: null`), created a real `PaperUnlock` for that user, and
+  confirmed access opened up (`file_url` now present, `is_unlocked: true`). Also verified with
+  a real `flutter build apk --debug` (the two new native plugins, `pdfx`/`photo_view`, needed a
+  real Android build to prove they integrate, not just `flutter analyze`).
+- Tests: 8 new backend tests (real watermarking on a real PDF/verified via `pypdf` extraction,
+  exam papers stay untouched, gated-until-unlocked, submitter/staff exemptions, serializer
+  field exposure) — all against the real seeded taxonomy, not mocks. 3 new Flutter widget
+  tests (locked message for gated reports, free-tier View pushes the real viewer — checked via
+  a `NavigatorObserver` rather than letting `pdfx`'s native plugin actually render in a widget
+  test, which it can't without a real device/platform, Save-offline gated until a real unlock).
+
+### 7. ~~Referral bonuses~~ — done
 - Spec only listed this as a one-liner with no mechanics, so the trigger and reward were
   decided with the owner before building (not invented): **trigger** = referred user's first
   real action (their first paper unlock, not bare signup — resists fake-account abuse);
@@ -201,28 +283,28 @@ I can write unilaterally. Grouped by what each one unblocks.
 
 ## P2 — Explicitly future/speculative in spec, or invented UI with no spec backing at all
 
-### 6. In-app practice quiz auto-generated from submitted papers ("Past-paper practice")
+### 8. In-app practice quiz auto-generated from submitted papers ("Past-paper practice")
 - **Backend:** not built — no paper→quiz generation pipeline; `Quiz`/`QuizQuestion` are
   manually authored rows only.
 - **Client:** shown honestly as "coming soon" (fixed this session — previously opened a
   hardcoded fake quiz regardless of what was tapped).
 - Matches spec §3.3 P2 exactly ("in-app practice/quiz mode generated from paper content").
 
-### 7. "Friday Arena" live elimination quiz
+### 9. "Friday Arena" live elimination quiz
 - **Backend:** not built — no live/scheduled quiz-session model, no real-time transport.
 - **Client:** shown honestly as "coming soon" (fixed this session — previously a dead tap).
 - **Not in the confirmed spec at all** — pure UI-mockup invention (closest real-world analogue
   is Kawlo's "live 1v1 quiz battles," which the spec itself flags in §12.4 as a P2 idea worth
   revisiting post-MVP, not committed scope). Lowest priority on this whole list.
 
-### 8. Quiz anti-cheat / answer-hiding
+### 10. Quiz anti-cheat / answer-hiding
 - **Backend:** `correct_choice_index` is stripped from the list/detail serializer response
   (confirmed not sent to the client) but there's no protection against a user inspecting network
   traffic before answering, since the full grading logic still lives client-adjacent in spirit.
   Documented as a known, accepted gap in `apps/quizzes/models.py`'s own docstring — quizzes are
   P2/non-spec'd, so this was a deliberate corner-cut, not an oversight.
 
-### 9. Subscription tier for marking-guide access
+### 11. Subscription tier for marking-guide access
 - Distinct from the already-real "Spekooh Pro" (ad-free + unlimited paper *views*, per §5.3 —
   confirmed to explicitly exclude marking guides). This P2 item is a *different*, not-yet-decided
   product idea (bundling marking-guide access into a subscription) — not started, and shouldn't
@@ -237,10 +319,9 @@ unfixed because "fixing" them for real would mean fabricating something that doe
 (a support inbox, a WhatsApp group, a public website), which is exactly the dishonesty this
 whole pass was hunting:
 
-- **Settings → Help & support / WhatsApp group / Contact us / Website / Privacy policy**: five
-  dead links with no real destination URL. Needs the business to actually stand up a support
-  channel, WhatsApp group, and public site before these can be wired to `url_launcher` (already
-  in the app) instead of guessed-at placeholder URLs.
+- **Settings → Visit our website / Privacy policy**: two still-dead links (down from five —
+  Help & support/WhatsApp/Contact us are wired to real destinations, see above). Needs a live
+  site and real legal text before these can point anywhere real.
 - **Forum header search icon and notification bell**: purely decorative, no `onTap`. Forum
   already has a working list; wiring real search would need a `?search=` query param the backend
   doesn't currently expose on `/forum/posts/`.

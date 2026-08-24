@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
+from apps.payments.models import PaperUnlock
+
 from .models import AdWatchEvent, ExamCategory, ExamType, PaperFlag, PaperSubmission, PaperViewLog, Subject
+from .services import user_can_view_file
 
 
 class ExamCategorySerializer(serializers.ModelSerializer):
@@ -26,6 +29,8 @@ class ExamTypeSerializer(serializers.ModelSerializer):
             "subject_language",
             "badge_tone",
             "sort_order",
+            "requires_payment_to_view",
+            "max_upload_mb",
         ]
 
 
@@ -35,15 +40,63 @@ class SubjectSerializer(serializers.ModelSerializer):
         fields = ["id", "key", "title", "code", "icon_name", "tint", "language"]
 
 
-class PaperSubmissionListSerializer(serializers.ModelSerializer):
+class PaperAccessFieldsMixin:
+    """Shared by every PaperSubmission serializer that exposes the file —
+    keeps the view-gate (requires_unlock/file_url) and the separate
+    download-gate (is_unlocked) consistent in one place instead of
+    triplicated per serializer.
+
+    requires_unlock: can this request's user see the file at all (server-
+    side withheld file_url for PhD/Master's-tier reports until paid — see
+    apps.papers.services.user_can_view_file).
+
+    is_unlocked: has this user actually completed a real PaperUnlock for
+    this paper — independent of requires_unlock, since even a free-to-view
+    report still requires payment to *download* (owner decision). Exam
+    papers reuse the same PaperUnlock rows their marking-guide unlock
+    already creates, so this doubles as "has the marking guide been paid
+    for" there too.
+    """
+
+    def get_requires_unlock(self, obj) -> bool:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        return user is None or not user_can_view_file(user, obj)
+
+    def get_is_unlocked(self, obj) -> bool:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is None or not user.is_authenticated:
+            return False
+        return PaperUnlock.objects.has_unlocked(user, obj)
+
+    def get_category_key(self, obj) -> str:
+        return obj.category.key
+
+    def get_file_url(self, obj) -> str | None:
+        if not obj.uploaded_file:
+            return None
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is None or not user_can_view_file(user, obj):
+            return None
+        url = obj.uploaded_file.url
+        return request.build_absolute_uri(url) if request else url
+
+
+class PaperSubmissionListSerializer(PaperAccessFieldsMixin, serializers.ModelSerializer):
     subject_title = serializers.CharField(source="subject.title", default=None, read_only=True)
     exam_type_name = serializers.CharField(source="exam_type.name", read_only=True)
+    category_key = serializers.SerializerMethodField()
+    requires_unlock = serializers.SerializerMethodField()
+    is_unlocked = serializers.SerializerMethodField()
 
     class Meta:
         model = PaperSubmission
         fields = [
             "id",
             "category",
+            "category_key",
             "exam_type",
             "exam_type_name",
             "subject",
@@ -51,13 +104,21 @@ class PaperSubmissionListSerializer(serializers.ModelSerializer):
             "system",
             "track",
             "year",
+            "institution",
+            "discipline",
+            "supervisor_name",
+            "requires_unlock",
+            "is_unlocked",
             "status",
             "created_at",
         ]
 
 
-class PaperSubmissionDetailSerializer(serializers.ModelSerializer):
+class PaperSubmissionDetailSerializer(PaperAccessFieldsMixin, serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
+    category_key = serializers.SerializerMethodField()
+    requires_unlock = serializers.SerializerMethodField()
+    is_unlocked = serializers.SerializerMethodField()
 
     class Meta:
         model = PaperSubmission
@@ -65,13 +126,19 @@ class PaperSubmissionDetailSerializer(serializers.ModelSerializer):
             "id",
             "submitted_by",
             "category",
+            "category_key",
             "exam_type",
             "system",
             "track",
             "subject",
             "exam_board",
             "year",
+            "institution",
+            "discipline",
+            "supervisor_name",
             "file_url",
+            "requires_unlock",
+            "is_unlocked",
             "ocr_text",
             "duplicate_hash",
             "is_duplicate",
@@ -93,34 +160,39 @@ class PaperSubmissionDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def get_file_url(self, obj) -> str | None:
-        if not obj.uploaded_file:
-            return None
-        request = self.context.get("request")
-        url = obj.uploaded_file.url
-        return request.build_absolute_uri(url) if request else url
 
-
-class PaperSubmissionCreateSerializer(serializers.ModelSerializer):
+class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelSerializer):
     # Included so the create response is a real, complete PaperEntry (status,
     # file_url, created_at) instead of an echo of just the input fields —
     # the app shows the freshly-submitted paper immediately, it doesn't
-    # re-fetch.
+    # re-fetch. requires_unlock is always false here — you never need to
+    # pay to see the file you just submitted yourself (is_unlocked stays
+    # real: submitting isn't the same as paying, so a report still needs a
+    # real unlock before it can be downloaded, same as anyone else's).
     file_url = serializers.SerializerMethodField()
+    category_key = serializers.SerializerMethodField()
+    requires_unlock = serializers.SerializerMethodField()
+    is_unlocked = serializers.SerializerMethodField()
 
     class Meta:
         model = PaperSubmission
         fields = [
             "id",
             "category",
+            "category_key",
             "exam_type",
             "system",
             "track",
             "subject",
             "exam_board",
             "year",
+            "institution",
+            "discipline",
+            "supervisor_name",
             "uploaded_file",
             "file_url",
+            "requires_unlock",
+            "is_unlocked",
             "status",
             "created_at",
             "mcq_section",
@@ -129,12 +201,16 @@ class PaperSubmissionCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "file_url", "status", "created_at"]
         extra_kwargs = {"uploaded_file": {"required": True, "write_only": True}}
 
-    def get_file_url(self, obj) -> str | None:
-        if not obj.uploaded_file:
-            return None
-        request = self.context.get("request")
-        url = obj.uploaded_file.url
-        return request.build_absolute_uri(url) if request else url
+    def validate(self, attrs):
+        exam_type = attrs.get("exam_type")
+        uploaded_file = attrs.get("uploaded_file")
+        if exam_type is not None and uploaded_file is not None:
+            max_bytes = exam_type.max_upload_mb * 1024 * 1024
+            if uploaded_file.size > max_bytes:
+                raise serializers.ValidationError(
+                    {"uploaded_file": f"File is too large — {exam_type.name} allows up to {exam_type.max_upload_mb}MB."}
+                )
+        return attrs
 
     def create(self, validated_data):
         validated_data["submitted_by"] = self.context["request"].user

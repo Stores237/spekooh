@@ -20,12 +20,11 @@ import '../../widgets/spekooh_button.dart';
 enum _SubmitType { paper, report }
 
 /// Ported from ui_kits/spekooh-app/SubmitScreen.jsx. One of the 5 bottom
-/// tabs (the elevated center nav item). The "Exam paper" flow is real: it
+/// tabs (the elevated center nav item). Both tabs are real: "Exam paper"
 /// walks the real taxonomy, real-picks a file, and POSTs a real multipart
-/// submission. "Academic report" has no backend support yet — the
-/// PaperSubmission model has no exam-type rows or discipline/institution
-/// fields for the "reports" category — so that tab shows an honest
-/// not-available state instead of faking a submission.
+/// submission; "Academic report" does the same against the "reports"
+/// category's own ExamType rows (Internship/Mémoire/Thèse/etc.) plus the
+/// institution/discipline/supervisor fields specific to that category.
 class SubmitScreen extends StatefulWidget {
   SubmitScreen({super.key, PapersRepository? repository})
       : repository = repository ?? RepositoryLocator.instance.papers;
@@ -51,9 +50,23 @@ class _SubmitScreenState extends State<SubmitScreen> {
   final _examBoardController = TextEditingController();
   SubmissionFile? _file;
 
+  // Academic report tab — deliberately separate state from the exam-paper
+  // fields above so switching tabs never mixes the two in-progress forms.
+  ExamType? _reportType;
+  int? _reportYear;
+  SubmissionFile? _reportFile;
+  final _institutionController = TextEditingController();
+  final _disciplineController = TextEditingController();
+  final _supervisorController = TextEditingController();
+  bool _submittingReport = false;
+  String? _reportSubmitError;
+
   @override
   void dispose() {
     _examBoardController.dispose();
+    _institutionController.dispose();
+    _disciplineController.dispose();
+    _supervisorController.dispose();
     super.dispose();
   }
 
@@ -66,6 +79,14 @@ class _SubmitScreenState extends State<SubmitScreen> {
       _subject != null &&
       _year != null &&
       _file != null;
+
+  bool get _canSubmitReport =>
+      !_submittingReport &&
+      _reportType != null &&
+      _institutionController.text.trim().isNotEmpty &&
+      _disciplineController.text.trim().isNotEmpty &&
+      _reportYear != null &&
+      _reportFile != null;
 
   Future<T?> _pickFromList<T>({
     required String title,
@@ -233,6 +254,98 @@ class _SubmitScreenState extends State<SubmitScreen> {
     }
   }
 
+  Future<void> _pickReportType() async {
+    final title = AppLocalizations.of(context)!.reportTypeLabel;
+    final types = await widget.repository.getExamTypes(ExamCategoryKey.reports, null);
+    if (!mounted) return;
+    final picked = await _pickFromList<ExamType>(title: title, items: types, label: (t) => t.name);
+    if (picked == null) return;
+    setState(() => _reportType = picked);
+  }
+
+  Future<void> _pickReportYear() async {
+    final now = DateTime.now();
+    final years = List.generate(15, (i) => now.year - i);
+    final picked = await _pickFromList<int>(title: AppLocalizations.of(context)!.yearLabel, items: years, label: (y) => '$y');
+    if (picked == null) return;
+    setState(() => _reportYear = picked);
+  }
+
+  Future<void> _pickReportFile() async {
+    final l10n = AppLocalizations.of(context)!;
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LucideIcons.fileUp),
+              title: Text(l10n.choosePdfOrImage),
+              onTap: () => Navigator.of(context).pop('file'),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.camera),
+              title: Text(l10n.takePhoto),
+              onTap: () => Navigator.of(context).pop('camera'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (choice == 'file') {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: true,
+      );
+      final picked = result?.files.single;
+      if (picked?.bytes != null) {
+        setState(() => _reportFile = SubmissionFile(bytes: picked!.bytes!, fileName: picked.name, mimeType: _mimeFor(picked.extension)));
+      }
+    } else if (choice == 'camera') {
+      final xfile = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 90);
+      if (xfile != null) {
+        final bytes = await xfile.readAsBytes();
+        setState(() => _reportFile = SubmissionFile(bytes: bytes, fileName: xfile.name, mimeType: 'image/jpeg'));
+      }
+    }
+  }
+
+  Future<void> _submitReport() async {
+    // Fast, local check before the network round-trip — the backend is the
+    // real source of truth (PaperSubmissionCreateSerializer.validate()
+    // rejects it the same way), but there's no reason to make the user wait
+    // for a response we can already tell will fail.
+    if (_reportFile!.bytes.length > _reportType!.maxUploadMb * 1024 * 1024) {
+      setState(() => _reportSubmitError = AppLocalizations.of(context)!.fileTooLargeError(_reportType!.maxUploadMb));
+      return;
+    }
+    setState(() {
+      _submittingReport = true;
+      _reportSubmitError = null;
+    });
+    try {
+      final categories = await widget.repository.getCategories();
+      final reportsCategory = categories.firstWhere((c) => c.key == ExamCategoryKey.reports);
+      final entry = await widget.repository.submitPaper(
+        categoryId: reportsCategory.id,
+        examTypeId: _reportType!.id,
+        year: _reportYear!,
+        institution: _institutionController.text.trim(),
+        discipline: _disciplineController.text.trim(),
+        supervisorName: _supervisorController.text.trim(),
+        file: _reportFile!,
+      );
+      if (mounted) setState(() => _submitted = entry);
+    } catch (e) {
+      if (mounted) setState(() => _reportSubmitError = AppLocalizations.of(context)!.submissionFailed('$e'));
+    } finally {
+      if (mounted) setState(() => _submittingReport = false);
+    }
+  }
+
   Future<void> _submit() async {
     setState(() {
       _submitting = true;
@@ -269,6 +382,13 @@ class _SubmitScreenState extends State<SubmitScreen> {
       _year = null;
       _file = null;
       _examBoardController.clear();
+      _reportSubmitError = null;
+      _reportType = null;
+      _reportYear = null;
+      _reportFile = null;
+      _institutionController.clear();
+      _disciplineController.clear();
+      _supervisorController.clear();
     });
   }
 
@@ -328,8 +448,12 @@ class _SubmitScreenState extends State<SubmitScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space4),
-              if (_type == _SubmitType.report) ..._reportComingSoon(l10n) else ..._paperForm(l10n),
-              const SizedBox(height: AppSpacing.space6),
+              if (_type == _SubmitType.report) ..._reportForm(l10n) else ..._paperForm(l10n),
+              // BottomNav's center item pokes ~24px above the bar via
+              // Transform.translate, which doesn't reserve layout space —
+              // without extra clearance here the Submit button (this
+              // screen's primary CTA) ends up visually covered by it.
+              const SizedBox(height: AppSpacing.space9 + AppSpacing.space9),
             ],
           ),
         ),
@@ -337,26 +461,72 @@ class _SubmitScreenState extends State<SubmitScreen> {
     );
   }
 
-  List<Widget> _reportComingSoon(AppLocalizations l10n) {
+  List<Widget> _reportForm(AppLocalizations l10n) {
     return [
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(LucideIcons.hourglass, size: 28, color: AppColors.textTertiary),
-            const SizedBox(height: AppSpacing.space2),
-            Text(l10n.notAvailableYet, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-            const SizedBox(height: 4),
-            Text(
-              l10n.academicReportComingSoon,
-              style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
-            ),
-          ],
+      GestureDetector(
+        onTap: _pickReportFile,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 26),
+          decoration: BoxDecoration(
+            color: AppColors.gold50,
+            border: Border.all(color: AppColors.gold400, width: 1.5),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            children: [
+              IconChip(icon: _reportFile == null ? LucideIcons.camera : LucideIcons.checkCircle, tint: IconChipTint.amber, size: 52),
+              const SizedBox(height: 8),
+              Text(_reportFile == null ? l10n.takePhotoOrUploadPdf : _reportFile!.fileName,
+                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+              Text(
+                _reportFile != null
+                    ? l10n.tapToReplace
+                    : _reportType != null
+                        ? l10n.fileFormatsHintWithSize(_reportType!.maxUploadMb)
+                        : l10n.fileFormatsHint,
+                style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: AppSpacing.space5),
+      _fieldRow(l10n, l10n.reportTypeLabel, _reportType?.name, _pickReportType),
+      _textFieldRow(controller: _institutionController, label: l10n.institutionLabel),
+      _textFieldRow(controller: _disciplineController, label: l10n.disciplineLabel),
+      _textFieldRow(controller: _supervisorController, label: l10n.supervisorOptionalLabel),
+      _fieldRow(l10n, l10n.yearLabel, _reportYear?.toString(), _pickReportYear),
+      SpekoohBanner(
+        icon: const Icon(LucideIcons.gift),
+        message: l10n.contributionBonusBanner,
+      ),
+      if (_reportSubmitError != null) ...[
+        const SizedBox(height: AppSpacing.space3),
+        SpekoohBanner(tone: SpekoohBannerTone.blue, icon: const Icon(LucideIcons.alertCircle), message: _reportSubmitError!),
+      ],
+      const SizedBox(height: AppSpacing.space5),
+      SizedBox(
+        width: double.infinity,
+        child: SpekoohButton(
+          onPressed: _canSubmitReport ? _submitReport : null,
+          child: _submittingReport ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : Text(l10n.submitReportButton),
         ),
       ),
     ];
+  }
+
+  Widget _textFieldRow({required TextEditingController controller, required String label}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.space3),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(12), boxShadow: AppShadows.card),
+      child: TextField(
+        controller: controller,
+        onChanged: (_) => setState(() {}), // keeps the submit button's enabled state live as required fields fill in
+        style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textPrimary),
+        decoration: InputDecoration(labelText: label, border: InputBorder.none),
+      ),
+    );
   }
 
   List<Widget> _paperForm(AppLocalizations l10n) {

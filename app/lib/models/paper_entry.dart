@@ -13,6 +13,12 @@ class PaperEntry {
     this.examBoard = '',
     this.subjectTitle,
     this.examTypeName,
+    this.institution = '',
+    this.discipline = '',
+    this.supervisorName = '',
+    this.categoryKey,
+    this.requiresUnlock = false,
+    this.isUnlocked = false,
   });
 
   final int id;
@@ -32,6 +38,29 @@ class PaperEntry {
   /// for the "reports" category, which has no subject).
   final String? subjectTitle;
   final String? examTypeName;
+
+  /// Only meaningful for the "reports" category (internship/mémoire/thèse) —
+  /// blank for every other submission. supervisorName is genuinely optional.
+  final String institution;
+  final String discipline;
+  final String supervisorName;
+
+  /// The real backend ExamCategory.key (e.g. "reports") — lets the client
+  /// tell reports apart from exam papers without name-matching exam types.
+  final String? categoryKey;
+
+  /// Server-decided: can this user see [fileUrl] at all? True only for the
+  /// PhD/Master's report tiers, and only until unlocked (see
+  /// apps.papers.services.user_can_view_file on the backend — the
+  /// submitter and staff are always exempt).
+  final bool requiresUnlock;
+
+  /// Server-decided: has this user actually paid to unlock this paper —
+  /// independent of [requiresUnlock], since even a free-to-view report
+  /// still requires a real unlock to download (owner decision).
+  final bool isUnlocked;
+
+  bool get isReport => categoryKey == 'reports';
 
   bool get isPublished => status == 'PUBLISHED';
 }

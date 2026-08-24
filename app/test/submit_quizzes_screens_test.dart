@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
@@ -16,7 +17,7 @@ void main() {
   });
 
 
-  testWidgets('SubmitScreen builds a real paper-picker flow and the report tab is honest about being unwired', (tester) async {
+  testWidgets('SubmitScreen builds a real paper-picker flow', (tester) async {
     await tester.pumpWidget(l10nTestApp(SubmitScreen(repository: MockPapersRepository())));
     await tester.pump();
     expect(tester.takeException(), isNull);
@@ -49,11 +50,38 @@ void main() {
     // this proves the flow genuinely gates on real state, not fake state.
     final submitButton = tester.widget<SpekoohButton>(find.widgetWithText(SpekoohButton, 'Submit paper'));
     expect(submitButton.disabled, isTrue);
+  });
+
+  testWidgets('SubmitScreen "Academic report" tab walks the real reports taxonomy', (tester) async {
+    await tester.pumpWidget(l10nTestApp(SubmitScreen(repository: MockPapersRepository())));
+    await tester.pump();
 
     await tester.tap(find.text('Academic report'));
+    await tester.pumpAndSettle();
+    expect(find.text('Submit report'), findsOneWidget);
+
+    await tester.tap(find.text('Report type'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Internship Report').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Internship Report'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Institution / University'), 'Université de Douala');
+    await tester.enterText(find.widgetWithText(TextField, 'Discipline / Department'), 'Computer Engineering');
     await tester.pump();
-    expect(find.text('Not available yet'), findsOneWidget);
-    expect(find.textContaining('only exam papers can be submitted right now'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Year'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Year'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('${DateTime.now().year}').last);
+    await tester.pumpAndSettle();
+
+    // Supervisor is genuinely optional and no file has been picked (same
+    // file_picker platform-channel limitation as the exam-paper flow), so
+    // the submit button stays disabled even with every other real field set.
+    final submitButton = tester.widget<SpekoohButton>(find.widgetWithText(SpekoohButton, 'Submit report'));
+    expect(submitButton.disabled, isTrue);
   });
 
   testWidgets('SubmitScreen renders in French once that locale is active', (tester) async {

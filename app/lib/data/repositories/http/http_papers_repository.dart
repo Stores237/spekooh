@@ -5,7 +5,6 @@ import '../../../widgets/icon_chip.dart';
 import '../../../widgets/spekooh_badge.dart';
 import '../../api_client.dart';
 import '../../icon_lookup.dart';
-import '../../mock/mock_taxonomy.dart';
 import '../papers_repository.dart';
 
 /// Exam type names whose subjects are drawn from the French-language set —
@@ -72,12 +71,10 @@ class HttpPapersRepository implements PapersRepository {
         mockVariantLabel: (row['mock_variant_label'] as String?)?.isEmpty ?? true ? null : row['mock_variant_label'] as String,
         tracks: tracks.isEmpty ? null : tracks,
         badgeTone: SpekoohBadgeTone.values.byName(row['badge_tone'] as String? ?? 'neutral'),
+        maxUploadMb: row['max_upload_mb'] as int? ?? 20,
       );
     }).toList();
   }
-
-  @override
-  Future<List<ReportType>> getReportTypes() => Future.value(MockTaxonomy.reportTypes);
 
   @override
   Future<List<Subject>> getSubjects(String examTypeName) async {
@@ -106,6 +103,12 @@ class HttpPapersRepository implements PapersRepository {
         examBoard: row['exam_board'] as String? ?? '',
         subjectTitle: row['subject_title'] as String?,
         examTypeName: row['exam_type_name'] as String?,
+        institution: row['institution'] as String? ?? '',
+        discipline: row['discipline'] as String? ?? '',
+        supervisorName: row['supervisor_name'] as String? ?? '',
+        categoryKey: row['category_key'] as String?,
+        requiresUnlock: row['requires_unlock'] as bool? ?? false,
+        isUnlocked: row['is_unlocked'] as bool? ?? false,
       );
 
   @override
@@ -153,6 +156,9 @@ class HttpPapersRepository implements PapersRepository {
     String? track,
     required int year,
     String examBoard = '',
+    String institution = '',
+    String discipline = '',
+    String supervisorName = '',
     required SubmissionFile file,
   }) async {
     final fields = <String, String>{
@@ -164,6 +170,9 @@ class HttpPapersRepository implements PapersRepository {
     if (subjectId != null) fields['subject'] = '$subjectId';
     if (system != null) fields['system'] = system.name;
     if (track != null && track.isNotEmpty) fields['track'] = track;
+    if (institution.isNotEmpty) fields['institution'] = institution;
+    if (discipline.isNotEmpty) fields['discipline'] = discipline;
+    if (supervisorName.isNotEmpty) fields['supervisor_name'] = supervisorName;
 
     final row = await _client.postMultipart(
       '/papers/submissions/',

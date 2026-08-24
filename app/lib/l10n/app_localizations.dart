@@ -173,13 +173,13 @@ abstract class AppLocalizations {
   /// No description provided for @helpWhatsappTitle.
   ///
   /// In en, this message translates to:
-  /// **'Join our WhatsApp group'**
+  /// **'WhatsApp support'**
   String get helpWhatsappTitle;
 
   /// No description provided for @helpWhatsappSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Tips & updates'**
+  /// **'Chat with us on WhatsApp'**
   String get helpWhatsappSubtitle;
 
   /// No description provided for @helpContactTitle.
@@ -746,6 +746,12 @@ abstract class AppLocalizations {
   /// **'Nobody has submitted a {subject} paper for this exam type yet. Be the first — submit one from the Submit tab.'**
   String noPapersYetBody(String subject);
 
+  /// No description provided for @noReportsYetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has submitted a {examType} yet. Be the first — submit one from the Submit tab.'**
+  String noReportsYetBody(String examType);
+
   /// No description provided for @contributionTitle.
   ///
   /// In en, this message translates to:
@@ -793,6 +799,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'JPG, PNG or PDF · up to 20MB'**
   String get fileFormatsHint;
+
+  /// No description provided for @fileFormatsHintWithSize.
+  ///
+  /// In en, this message translates to:
+  /// **'JPG, PNG or PDF · up to {maxMb}MB'**
+  String fileFormatsHintWithSize(int maxMb);
 
   /// No description provided for @tapToReplace.
   ///
@@ -854,6 +866,36 @@ abstract class AppLocalizations {
   /// **'Submit paper'**
   String get submitPaperButton;
 
+  /// No description provided for @reportTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Report type'**
+  String get reportTypeLabel;
+
+  /// No description provided for @institutionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Institution / University'**
+  String get institutionLabel;
+
+  /// No description provided for @disciplineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Discipline / Department'**
+  String get disciplineLabel;
+
+  /// No description provided for @supervisorOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Supervisor (optional)'**
+  String get supervisorOptionalLabel;
+
+  /// No description provided for @submitReportButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit report'**
+  String get submitReportButton;
+
   /// No description provided for @selectPlaceholder.
   ///
   /// In en, this message translates to:
@@ -889,6 +931,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submission failed: {error}'**
   String submissionFailed(String error);
+
+  /// No description provided for @fileTooLargeError.
+  ///
+  /// In en, this message translates to:
+  /// **'File is too large — this report type allows up to {maxMb}MB.'**
+  String fileTooLargeError(int maxMb);
 
   /// No description provided for @choosePdfOrImage.
   ///
@@ -1364,6 +1412,18 @@ abstract class AppLocalizations {
   /// **'Could not open the file.'**
   String get couldNotOpenFile;
 
+  /// No description provided for @couldNotOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the link.'**
+  String get couldNotOpenLink;
+
+  /// No description provided for @viewOnlyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'View only — unlock to download a copy'**
+  String get viewOnlyNotice;
+
   /// No description provided for @reportThanksMessage.
   ///
   /// In en, this message translates to:
@@ -1460,6 +1520,18 @@ abstract class AppLocalizations {
   /// **'Instructor-authored + in-house MCQ key'**
   String get markingGuideSubtitle;
 
+  /// No description provided for @reportDownloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download access'**
+  String get reportDownloadTitle;
+
+  /// No description provided for @reportDownloadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewing in the app is free — unlock once to save a copy for offline reading'**
+  String get reportDownloadSubtitle;
+
   /// No description provided for @unlockedForAmount.
   ///
   /// In en, this message translates to:
@@ -1471,6 +1543,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlock — 500 FCFA'**
   String get unlockButton;
+
+  /// No description provided for @alreadyUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked.'**
+  String get alreadyUnlocked;
+
+  /// No description provided for @viewButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get viewButton;
+
+  /// No description provided for @reportLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This report requires unlocking'**
+  String get reportLockedTitle;
+
+  /// No description provided for @reportLockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'PhD and Master\'s theses require payment to view — unlock below to read it.'**
+  String get reportLockedMessage;
+
+  /// No description provided for @unlockToDownloadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock below to save a copy for offline reading.'**
+  String get unlockToDownloadHint;
 
   /// No description provided for @haveRedeemCode.
   ///

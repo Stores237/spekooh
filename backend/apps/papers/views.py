@@ -30,6 +30,7 @@ from .services import (
     record_ad_watch,
     record_paper_view,
     report_paper,
+    watermark_report_submission,
 )
 
 
@@ -70,7 +71,7 @@ class PaperSubmissionViewSet(
     ordering_fields = ["created_at", "year"]
 
     def get_permissions(self):
-        if self.action in ("list", "retrieve"):
+        if self.action in ("list", "retrieve", "view"):
             return [permissions.AllowAny()]
         return super().get_permissions()
 
@@ -98,6 +99,7 @@ class PaperSubmissionViewSet(
         # verification ticket rather than sitting silently in PENDING_REVIEW
         # until someone happens to look.
         paper = serializer.save()
+        watermark_report_submission(paper)
         flag(
             subject=paper,
             category=FlagCategory.PAPER_VERIFICATION,
@@ -107,6 +109,16 @@ class PaperSubmissionViewSet(
     @action(detail=True, methods=["post"])
     def view(self, request, pk=None):
         paper = self.get_object()
+        if not request.user.is_authenticated:
+            # Reading stays open to guests (spec) — there's no identity to
+            # rate-limit an anonymous viewer against, so guests are simply
+            # never subject to the daily-view paywall; only signed-in
+            # accounts are. Previously this fell through to the class's
+            # default IsAuthenticated and 401'd on every guest view (the
+            # client silently swallows the failure, so guests already got
+            # unlimited views in practice — this makes that real instead of
+            # accidental, and drops the bogus error from the console).
+            return Response(status=status.HTTP_204_NO_CONTENT)
         try:
             log = record_paper_view(user=request.user, paper_submission=paper)
         except PaywallError as exc:

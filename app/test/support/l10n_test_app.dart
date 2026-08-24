@@ -10,7 +10,7 @@ import 'package:spekooh/theme/app_theme.dart';
 /// mirroring main.dart's SpekoohApp, listens to LocaleController.instance
 /// so a test that calls LocaleController.instance.setLocale(...) actually
 /// sees the rebuild — same reactivity path as the real app.
-Widget l10nTestApp(Widget home) {
+Widget l10nTestApp(Widget home, {List<NavigatorObserver> navigatorObservers = const []}) {
   return ListenableBuilder(
     listenable: LocaleController.instance,
     builder: (context, _) => MaterialApp(
@@ -23,6 +23,7 @@ Widget l10nTestApp(Widget home) {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      navigatorObservers: navigatorObservers,
       home: home,
     ),
   );

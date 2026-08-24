@@ -11,6 +11,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/spekooh_button.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:open_filex/open_filex.dart';
@@ -260,7 +261,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                     Transform.translate(
                       offset: const Offset(0, -8),
                       child: GridView.count(
-                        crossAxisCount: 3,
+                        crossAxisCount: responsiveCrossAxisCount(context, 3),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisSpacing: 8,

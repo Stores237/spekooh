@@ -18,8 +18,8 @@
   "helpSection": "Help",
   "helpSupportTitle": "Help & support",
   "helpSupportSubtitle": "Chat with a real person",
-  "helpWhatsappTitle": "Join our WhatsApp group",
-  "helpWhatsappSubtitle": "Tips & updates",
+  "helpWhatsappTitle": "WhatsApp support",
+  "helpWhatsappSubtitle": "Chat with us on WhatsApp",
   "helpContactTitle": "Contact us",
   "helpContactSubtitle": "Questions or feedback",
   "aboutSection": "About",
@@ -154,6 +154,10 @@
   "@noPapersYetBody": {
     "placeholders": {"subject": {"type": "String"}}
   },
+  "noReportsYetBody": "Nobody has submitted a {examType} yet. Be the first — submit one from the Submit tab.",
+  "@noReportsYetBody": {
+    "placeholders": {"examType": {"type": "String"}}
+  },
 
   "contributionTitle": "Contribution",
   "contributionSubtitle": "Share a past paper or an academic report — every contribution helps another student.",
@@ -163,6 +167,10 @@
   "academicReportComingSoon": "Academic report submissions aren't wired to the backend yet — only exam papers can be submitted right now. Check back soon.",
   "takePhotoOrUploadPdf": "Take a photo or upload a PDF",
   "fileFormatsHint": "JPG, PNG or PDF · up to 20MB",
+  "fileFormatsHintWithSize": "JPG, PNG or PDF · up to {maxMb}MB",
+  "@fileFormatsHintWithSize": {
+    "placeholders": {"maxMb": {"type": "int"}}
+  },
   "tapToReplace": "Tap to replace",
   "educationLevelLabel": "Education level",
   "systemLabel": "System",
@@ -173,6 +181,11 @@
   "examBoardHint": "Exam board / school (optional)",
   "contributionBonusBanner": "New, verified submissions earn bonus credit — redeemable toward marking-guide unlocks.",
   "submitPaperButton": "Submit paper",
+  "reportTypeLabel": "Report type",
+  "institutionLabel": "Institution / University",
+  "disciplineLabel": "Discipline / Department",
+  "supervisorOptionalLabel": "Supervisor (optional)",
+  "submitReportButton": "Submit report",
   "selectPlaceholder": "Select",
   "nothingAvailable": "Nothing available.",
   "submitAnother": "Submit another",
@@ -181,6 +194,10 @@
   "submissionFailed": "Submission failed: {error}",
   "@submissionFailed": {
     "placeholders": {"error": {"type": "String"}}
+  },
+  "fileTooLargeError": "File is too large — this report type allows up to {maxMb}MB.",
+  "@fileTooLargeError": {
+    "placeholders": {"maxMb": {"type": "int"}}
   },
   "choosePdfOrImage": "Choose PDF or image",
   "takePhoto": "Take a photo",
@@ -309,6 +326,8 @@
     "placeholders": {"error": {"type": "String"}}
   },
   "couldNotOpenFile": "Could not open the file.",
+  "couldNotOpenLink": "Could not open the link.",
+  "viewOnlyNotice": "View only — unlock to download a copy",
   "reportThanksMessage": "Thanks — the Review Team has been notified.",
   "reportSendError": "Could not send report: {error}",
   "@reportSendError": {
@@ -334,11 +353,18 @@
   "watchAdForView": "Watch ad for +1 view",
   "markingGuideTitle": "Marking guide",
   "markingGuideSubtitle": "Instructor-authored + in-house MCQ key",
+  "reportDownloadTitle": "Download access",
+  "reportDownloadSubtitle": "Viewing in the app is free — unlock once to save a copy for offline reading",
   "unlockedForAmount": "Unlocked for {amount} FCFA.",
   "@unlockedForAmount": {
     "placeholders": {"amount": {"type": "int"}}
   },
   "unlockButton": "Unlock — 500 FCFA",
+  "alreadyUnlocked": "Unlocked.",
+  "viewButton": "View",
+  "reportLockedTitle": "This report requires unlocking",
+  "reportLockedMessage": "PhD and Master's theses require payment to view — unlock below to read it.",
+  "unlockToDownloadHint": "Unlock below to save a copy for offline reading.",
   "haveRedeemCode": "Have a redeem code?",
   "redeemCodeHint": "Redeem code",
   "mcqDisclaimer": "Objective/MCQ answers are marked in-house by the Spekooh review team, not the instructor.",

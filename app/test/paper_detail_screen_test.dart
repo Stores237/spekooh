@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/ads/rewarded_ad_controller.dart';
 import 'package:spekooh/data/locale_controller.dart';
@@ -7,6 +8,7 @@ import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/models/paper_entry.dart';
 import 'package:spekooh/screens/papers/paper_detail_screen.dart';
+import 'package:spekooh/screens/papers/report_viewer_screen.dart';
 
 import 'support/l10n_test_app.dart';
 
@@ -74,6 +76,43 @@ class _FileBackedPapersRepository implements PapersRepository {
 
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by save-offline tests');
+}
+
+/// getPaperDetail returns [gated] until [unlockPaper] is actually called,
+/// then [unlocked] — mirrors the backend really flipping requires_unlock/
+/// is_unlocked once a real PaperUnlock exists, to catch a screen that
+/// never re-fetches after a successful payment.
+class _UnlockableReportRepository implements PapersRepository {
+  _UnlockableReportRepository({required this.gated, required this.unlocked});
+  final PaperEntry gated;
+  final PaperEntry unlocked;
+  bool paid = false;
+  int unlockCalls = 0;
+
+  @override
+  Future<PaperEntry> getPaperDetail(int paperId) async => paid ? unlocked : gated;
+
+  @override
+  Future<void> recordView(int paperId) async {}
+
+  @override
+  Future<int> unlockPaper(int paperId, {String? redeemCode}) async {
+    unlockCalls++;
+    paid = true;
+    return 500;
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by unlock-refresh tests');
+}
+
+class _RecordingNavigatorObserver extends NavigatorObserver {
+  Route<dynamic>? lastPushed;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    lastPushed = route;
+  }
 }
 
 class _FakeRewardedAdController implements RewardedAdController {
@@ -221,6 +260,9 @@ void main() {
 
       expect(find.text('Save offline'), findsOneWidget);
       expect(find.text('Saved offline'), findsNothing);
+      // The report cover art is reports-only — an exam paper's file preview
+      // never gets one, branded or otherwise.
+      expect(find.byType(Image), findsNothing);
 
       await tester.tap(find.text('Save offline'));
       await tester.pump();
@@ -259,6 +301,167 @@ void main() {
       expect(find.text('Save offline'), findsOneWidget);
       expect(find.textContaining('Could not save for offline'), findsOneWidget);
       expect(OfflinePapersStore.instance.isSaved(2), isFalse);
+    });
+  });
+
+  group('academic report access control', () {
+    Future<void> pumpReport(WidgetTester tester, PaperEntry entry) async {
+      OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: entry, repository: _FileBackedPapersRepository(entry), adController: _FakeRewardedAdController(grantsReward: true)),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    testWidgets('a gated PhD/Master\'s report shows the locked message, not the file', (tester) async {
+      final gated = PaperEntry(
+        id: 3,
+        year: 2024,
+        system: null,
+        track: '',
+        status: 'PUBLISHED',
+        fileUrl: null, // withheld server-side
+        createdAt: DateTime(2024, 1, 1),
+        examTypeName: 'PhD Thesis (Thèse)',
+        categoryKey: 'reports',
+        requiresUnlock: true,
+      );
+      await pumpReport(tester, gated);
+
+      expect(find.text('This report requires unlocking'), findsOneWidget);
+      expect(find.textContaining('PhD and Master\'s theses require payment'), findsOneWidget);
+      expect(find.text('View'), findsNothing);
+      expect(find.text('Save offline'), findsNothing);
+
+      // The branded cover shows even while locked — it's the report's
+      // visual identity, not part of the gated file content.
+      final cover = tester.widget<Image>(find.byType(Image));
+      expect((cover.image as AssetImage).assetName, 'assets/report_covers/phd_thesis.jpg');
+    });
+
+    testWidgets('a free-tier report shows View and pushes the real in-app viewer', (tester) async {
+      final free = PaperEntry(
+        id: 4,
+        year: 2024,
+        system: null,
+        track: '',
+        status: 'PUBLISHED',
+        fileUrl: 'https://cdn.example.com/report4.pdf',
+        createdAt: DateTime(2024, 1, 1),
+        examTypeName: 'Internship Report',
+        categoryKey: 'reports',
+        requiresUnlock: false,
+        isUnlocked: false, // free to view, not yet paid to download
+      );
+      // A recording NavigatorObserver, not tester.pump()ing all the way —
+      // ReportViewerScreen's PdfControllerPinch needs a real platform's pdf
+      // plugin to actually render, which a plain widget test doesn't have.
+      // What's under test here is the navigation itself: tapping "View"
+      // pushes the real viewer with the real fileUrl, not whether pdfx can
+      // render in this environment (that's a manual/device concern).
+      final observer = _RecordingNavigatorObserver();
+      OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: free, repository: _FileBackedPapersRepository(free), adController: _FakeRewardedAdController(grantsReward: true)),
+        navigatorObservers: [observer],
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('View'), findsOneWidget);
+      expect(find.text('Open scanned paper'), findsNothing);
+      // Not download-unlocked yet — the actionable Save-offline row is
+      // replaced by a hint, not silently allowed.
+      expect(find.text('Save offline'), findsNothing);
+      expect(find.textContaining('Unlock below to save a copy'), findsOneWidget);
+
+      final cover = tester.widget<Image>(find.byType(Image));
+      expect((cover.image as AssetImage).assetName, 'assets/report_covers/internship_report.jpg');
+
+      await tester.tap(find.text('View'));
+      final pushed = observer.lastPushed;
+      expect(pushed, isA<MaterialPageRoute>());
+      final builtWidget = (pushed as MaterialPageRoute).builder(tester.element(find.byType(PaperDetailScreen)));
+      expect(builtWidget, isA<ReportViewerScreen>());
+      expect((builtWidget as ReportViewerScreen).fileUrl, 'https://cdn.example.com/report4.pdf');
+    });
+
+    testWidgets('once download-unlocked, Save offline works normally for a report', (tester) async {
+      final unlocked = PaperEntry(
+        id: 5,
+        year: 2024,
+        system: null,
+        track: '',
+        status: 'PUBLISHED',
+        fileUrl: 'https://cdn.example.com/report5.pdf',
+        createdAt: DateTime(2024, 1, 1),
+        examTypeName: 'Internship Report',
+        categoryKey: 'reports',
+        requiresUnlock: false,
+        isUnlocked: true,
+      );
+      await pumpReport(tester, unlocked);
+
+      expect(find.text('Save offline'), findsOneWidget);
+      expect(find.textContaining('Unlock below to save a copy'), findsNothing);
+
+      await tester.tap(find.text('Save offline'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Saved offline'), findsOneWidget);
+      expect(OfflinePapersStore.instance.isSaved(5), isTrue);
+    });
+
+    testWidgets('paying to unlock a gated report grants access immediately, without reopening the screen', (tester) async {
+      // Regression: _unlock() used to only set _unlockedAmount and never
+      // refetch _detail, so requiresUnlock/isUnlocked stayed at their
+      // pre-payment values — a just-paid gated report kept showing the
+      // locked message until the user left and came back.
+      final gated = PaperEntry(
+        id: 6,
+        year: 2024,
+        system: null,
+        track: '',
+        status: 'PUBLISHED',
+        fileUrl: null,
+        createdAt: DateTime(2024, 1, 1),
+        examTypeName: 'PhD Thesis (Thèse)',
+        categoryKey: 'reports',
+        requiresUnlock: true,
+      );
+      final unlockedAfterPayment = PaperEntry(
+        id: 6,
+        year: 2024,
+        system: null,
+        track: '',
+        status: 'PUBLISHED',
+        fileUrl: 'https://cdn.example.com/report6.pdf',
+        createdAt: DateTime(2024, 1, 1),
+        examTypeName: 'PhD Thesis (Thèse)',
+        categoryKey: 'reports',
+        requiresUnlock: false,
+        isUnlocked: true,
+      );
+      final repository = _UnlockableReportRepository(gated: gated, unlocked: unlockedAfterPayment);
+      OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: gated, repository: repository, adController: _FakeRewardedAdController(grantsReward: true)),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('This report requires unlocking'), findsOneWidget);
+      expect(find.text('View'), findsNothing);
+
+      await tester.tap(find.text('Unlock — 500 FCFA'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(repository.unlockCalls, 1);
+      expect(find.text('This report requires unlocking'), findsNothing);
+      expect(find.text('View'), findsOneWidget);
     });
   });
 }

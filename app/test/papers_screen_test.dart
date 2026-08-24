@@ -68,7 +68,7 @@ void main() {
     await tester.tap(find.textContaining('A Level 2026').first);
     await tester.pump();
     expect(opened, isNotNull);
-    expect(opened!.subject.key, 'physics');
+    expect(opened!.subject?.key, 'physics');
     expect(opened!.examType.name, 'A Level');
     expect(opened!.track, 'Science');
     expect(opened!.entry.id, 42);
@@ -80,6 +80,53 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('A Level'), findsOneWidget); // subject-step header shows examType name
     expect(find.text('Science'), findsOneWidget); // ...and the track as subtitle
+  });
+
+  testWidgets('Academic Reports skips the subject step entirely — reports have no Subject taxonomy', (tester) async {
+    // Regression: this drill-down used to force a subject pick that then
+    // filtered the paper list against a subject no report submission
+    // actually has (subject is always null for reports), so a real
+    // published report could never surface here — the list came back
+    // empty no matter which subject was tapped.
+    PaperSelection? opened;
+    final seededReport = PaperEntry(
+      id: 77,
+      year: 2024,
+      system: null,
+      track: '',
+      status: 'PUBLISHED',
+      fileUrl: 'http://testserver/media/paper_submissions/2024/internship.pdf',
+      createdAt: DateTime(2024, 1, 1),
+      examTypeName: 'Internship Report',
+      categoryKey: 'reports',
+    );
+    await tester.pumpWidget(l10nTestApp(
+      PapersScreen(repository: MockPapersRepository(seedPublished: [seededReport]), onOpenPaper: (p) => opened = p),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.ensureVisible(find.text('Academic Reports'));
+    await tester.tap(find.text('Academic Reports'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50)); // exam-type FutureBuilder
+
+    await tester.tap(find.text('Internship Report'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50)); // straight to paperList's getPapers() FutureBuilder
+
+    // No subject-step header ("Search subjects...") ever appeared, and the
+    // seeded report is right there.
+    expect(find.text('Search subjects...'), findsNothing);
+    expect(find.text('Internship Report'), findsWidgets);
+    expect(find.textContaining('Internship Report 2024'), findsWidgets);
+
+    await tester.tap(find.textContaining('Internship Report 2024').first);
+    await tester.pump();
+    expect(opened, isNotNull);
+    expect(opened!.subject, isNull);
+    expect(opened!.examType.name, 'Internship Report');
+    expect(opened!.entry.id, 77);
   });
 
   testWidgets('Category with no system/track requirement goes straight to exam-type then subject step', (tester) async {

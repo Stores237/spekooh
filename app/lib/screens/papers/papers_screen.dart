@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/search_input.dart';
 import '../../widgets/spekooh_badge.dart';
@@ -24,7 +25,7 @@ class PaperSelection {
     required this.system,
     required this.examType,
     required this.track,
-    required this.subject,
+    this.subject,
     required this.entry,
   });
 
@@ -32,7 +33,9 @@ class PaperSelection {
   final ExamSystem? system;
   final ExamType examType;
   final String? track;
-  final Subject subject;
+
+  /// Null for reports — they have no Subject taxonomy of their own.
+  final Subject? subject;
   final PaperEntry entry;
 }
 
@@ -130,7 +133,7 @@ class _PapersScreenState extends State<PapersScreen> {
             builder: (context, snapshot) {
               final categories = snapshot.data ?? const [];
               return GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: responsiveCrossAxisCount(context, 2),
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: AppSpacing.space3,
@@ -199,7 +202,7 @@ class _PapersScreenState extends State<PapersScreen> {
             builder: (context, snapshot) {
               final examTypes = snapshot.data ?? const [];
               return GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: responsiveCrossAxisCount(context, 2),
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: AppSpacing.space3,
@@ -269,7 +272,7 @@ class _PapersScreenState extends State<PapersScreen> {
             builder: (context, snapshot) {
               final subjects = snapshot.data ?? const [];
               return GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: responsiveCrossAxisCount(context, 2),
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: AppSpacing.space3,
@@ -293,9 +296,14 @@ class _PapersScreenState extends State<PapersScreen> {
     );
   }
 
-  // Step 6: real submitted papers for the resolved subject.
+  // Step 6: real submitted papers for the resolved subject — reports have no
+  // Subject taxonomy of their own, so they skip straight to the list.
   Widget _paperListStep(AppLocalizations l10n) {
     final examType = _selection.examType!;
+    final isReports = _selection.category!.key == ExamCategoryKey.reports;
+    if (isReports) {
+      return _paperListBody(l10n, examType: examType, subject: null);
+    }
 
     return FutureBuilder<List<Subject>>(
       future: widget.repository.getSubjects(examType.name),
@@ -303,80 +311,95 @@ class _PapersScreenState extends State<PapersScreen> {
         final subject =
             (subjectSnapshot.data ?? const <Subject>[]).where((s) => s.key == _selection.subjectKey).firstOrNull;
         if (subject == null) return const SizedBox.shrink();
+        return _paperListBody(l10n, examType: examType, subject: subject);
+      },
+    );
+  }
 
-        return FutureBuilder<List<PaperEntry>>(
-          future: widget.repository.getPapers(
-            categoryId: _selection.category!.id,
-            examTypeId: examType.id,
-            subjectId: subject.id,
-            system: _selection.system,
-            track: _selection.track,
-          ),
-          builder: (context, papersSnapshot) {
-            final loading = papersSnapshot.connectionState == ConnectionState.waiting;
-            final papers = papersSnapshot.data ?? const <PaperEntry>[];
+  Widget _paperListBody(AppLocalizations l10n, {required ExamType examType, required Subject? subject}) {
+    return FutureBuilder<List<PaperEntry>>(
+      future: widget.repository.getPapers(
+        categoryId: _selection.category!.id,
+        examTypeId: examType.id,
+        subjectId: subject?.id,
+        system: _selection.system,
+        track: _selection.track,
+      ),
+      builder: (context, papersSnapshot) {
+        final loading = papersSnapshot.connectionState == ConnectionState.waiting;
+        final papers = papersSnapshot.data ?? const <PaperEntry>[];
+        final isReports = subject == null;
 
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: AppSpacing.space2),
-                  _backHeader(subject.title,
-                      subtitle: '${examType.name}${_selection.track != null ? ' · ${_selection.track}' : ''} · ${subject.code}'),
-                  const SizedBox(height: AppSpacing.space4),
-                  if (loading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 48),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (papers.isEmpty)
-                    _noPapersYet(l10n, subject)
-                  else
-                    for (final paper in papers) ...[
-                      InkWell(
-                        onTap: () => widget.onOpenPaper?.call(PaperSelection(
-                          category: _selection.category!,
-                          system: _selection.system,
-                          examType: examType,
-                          track: _selection.track,
-                          subject: subject,
-                          entry: paper,
-                        )),
-                        borderRadius: BorderRadius.circular(18),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                          child: Row(
-                            children: [
-                              IconChip(icon: subject.icon, tint: subject.tint),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('${examType.name} ${paper.year}', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                    Text(paper.isPublished ? l10n.paperMarkingGuideAvailable : l10n.paperUnderReview,
-                                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary)),
-                                  ],
-                                ),
-                              ),
-                              const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.space3),
-                    ],
-                ],
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: AppSpacing.space2),
+              _backHeader(
+                subject?.title ?? examType.name,
+                subtitle: subject != null
+                    ? '${examType.name}${_selection.track != null ? ' · ${_selection.track}' : ''} · ${subject.code}'
+                    : null,
               ),
-            );
-          },
+              const SizedBox(height: AppSpacing.space4),
+              if (loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (papers.isEmpty)
+                _noPapersYet(l10n, subject != null ? l10n.noPapersYetBody(subject.title) : l10n.noReportsYetBody(examType.name))
+              else
+                for (final paper in papers) ...[
+                  InkWell(
+                    onTap: () => widget.onOpenPaper?.call(PaperSelection(
+                      category: _selection.category!,
+                      system: _selection.system,
+                      examType: examType,
+                      track: _selection.track,
+                      subject: subject,
+                      entry: paper,
+                    )),
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                      child: Row(
+                        children: [
+                          IconChip(icon: subject?.icon ?? _selection.category!.icon, tint: subject?.tint ?? _selection.category!.tint),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${examType.name} ${paper.year}', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                // Reports never have a marking guide (see the
+                                // Academic Reports subtitle) — that copy would
+                                // be actively wrong here, not just generic.
+                                Text(
+                                  !paper.isPublished
+                                      ? l10n.paperUnderReview
+                                      : (isReports ? l10n.publishedStatus : l10n.paperMarkingGuideAvailable),
+                                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space3),
+                ],
+            ],
+          ),
         );
       },
     );
   }
 
-  Widget _noPapersYet(AppLocalizations l10n, Subject subject) {
+  Widget _noPapersYet(AppLocalizations l10n, String bodyText) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
@@ -385,9 +408,7 @@ class _PapersScreenState extends State<PapersScreen> {
           const SizedBox(height: AppSpacing.space3),
           Text(l10n.noPapersYetTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
           const SizedBox(height: 4),
-          Text(l10n.noPapersYetBody(subject.title),
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+          Text(bodyText, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
         ],
       ),
     );

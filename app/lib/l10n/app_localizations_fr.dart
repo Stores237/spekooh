@@ -45,10 +45,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get helpSupportSubtitle => 'Discutez avec une vraie personne';
 
   @override
-  String get helpWhatsappTitle => 'Rejoignez notre groupe WhatsApp';
+  String get helpWhatsappTitle => 'Assistance WhatsApp';
 
   @override
-  String get helpWhatsappSubtitle => 'Astuces et actualités';
+  String get helpWhatsappSubtitle => 'Discutez avec nous sur WhatsApp';
 
   @override
   String get helpContactTitle => 'Contactez-nous';
@@ -373,6 +373,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String noReportsYetBody(String examType) {
+    return 'Personne n\'a encore soumis de $examType. Soyez le premier — soumettez-en un depuis l\'onglet Contribuer.';
+  }
+
+  @override
   String get contributionTitle => 'Contribution';
 
   @override
@@ -397,6 +402,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get fileFormatsHint => 'JPG, PNG ou PDF · jusqu\'à 20 Mo';
+
+  @override
+  String fileFormatsHintWithSize(int maxMb) {
+    return 'JPG, PNG ou PDF · jusqu\'à $maxMb Mo';
+  }
 
   @override
   String get tapToReplace => 'Appuyez pour remplacer';
@@ -430,6 +440,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get submitPaperButton => 'Soumettre l\'épreuve';
 
   @override
+  String get reportTypeLabel => 'Type de rapport';
+
+  @override
+  String get institutionLabel => 'Établissement / Université';
+
+  @override
+  String get disciplineLabel => 'Discipline / Département';
+
+  @override
+  String get supervisorOptionalLabel => 'Encadreur (facultatif)';
+
+  @override
+  String get submitReportButton => 'Soumettre le rapport';
+
+  @override
   String get selectPlaceholder => 'Choisir';
 
   @override
@@ -448,6 +473,11 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String submissionFailed(String error) {
     return 'Échec de la soumission : $error';
+  }
+
+  @override
+  String fileTooLargeError(int maxMb) {
+    return 'Le fichier est trop volumineux — ce type de rapport autorise jusqu\'à $maxMb Mo.';
   }
 
   @override
@@ -729,6 +759,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get couldNotOpenFile => 'Impossible d\'ouvrir le fichier.';
 
   @override
+  String get couldNotOpenLink => 'Impossible d\'ouvrir le lien.';
+
+  @override
+  String get viewOnlyNotice =>
+      'Consultation uniquement — débloquez pour télécharger une copie';
+
+  @override
   String get reportThanksMessage =>
       'Merci — l\'équipe de vérification a été notifiée.';
 
@@ -787,12 +824,36 @@ class AppLocalizationsFr extends AppLocalizations {
       'Rédigé par l\'instructeur + clé QCM interne';
 
   @override
+  String get reportDownloadTitle => 'Accès au téléchargement';
+
+  @override
+  String get reportDownloadSubtitle =>
+      'La consultation dans l\'application est gratuite — débloquez une fois pour enregistrer une copie hors ligne';
+
+  @override
   String unlockedForAmount(int amount) {
     return 'Débloqué pour $amount FCFA.';
   }
 
   @override
   String get unlockButton => 'Débloquer — 500 FCFA';
+
+  @override
+  String get alreadyUnlocked => 'Débloqué.';
+
+  @override
+  String get viewButton => 'Consulter';
+
+  @override
+  String get reportLockedTitle => 'Ce rapport nécessite un déblocage';
+
+  @override
+  String get reportLockedMessage =>
+      'Les thèses de Master et de Doctorat nécessitent un paiement pour être consultées — débloquez ci-dessous pour la lire.';
+
+  @override
+  String get unlockToDownloadHint =>
+      'Débloquez ci-dessous pour enregistrer une copie hors ligne.';
 
   @override
   String get haveRedeemCode => 'Vous avez un code de réduction ?';

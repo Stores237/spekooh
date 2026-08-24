@@ -45,10 +45,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helpSupportSubtitle => 'Chat with a real person';
 
   @override
-  String get helpWhatsappTitle => 'Join our WhatsApp group';
+  String get helpWhatsappTitle => 'WhatsApp support';
 
   @override
-  String get helpWhatsappSubtitle => 'Tips & updates';
+  String get helpWhatsappSubtitle => 'Chat with us on WhatsApp';
 
   @override
   String get helpContactTitle => 'Contact us';
@@ -366,6 +366,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String noReportsYetBody(String examType) {
+    return 'Nobody has submitted a $examType yet. Be the first — submit one from the Submit tab.';
+  }
+
+  @override
   String get contributionTitle => 'Contribution';
 
   @override
@@ -390,6 +395,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fileFormatsHint => 'JPG, PNG or PDF · up to 20MB';
+
+  @override
+  String fileFormatsHintWithSize(int maxMb) {
+    return 'JPG, PNG or PDF · up to ${maxMb}MB';
+  }
 
   @override
   String get tapToReplace => 'Tap to replace';
@@ -423,6 +433,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get submitPaperButton => 'Submit paper';
 
   @override
+  String get reportTypeLabel => 'Report type';
+
+  @override
+  String get institutionLabel => 'Institution / University';
+
+  @override
+  String get disciplineLabel => 'Discipline / Department';
+
+  @override
+  String get supervisorOptionalLabel => 'Supervisor (optional)';
+
+  @override
+  String get submitReportButton => 'Submit report';
+
+  @override
   String get selectPlaceholder => 'Select';
 
   @override
@@ -441,6 +466,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String submissionFailed(String error) {
     return 'Submission failed: $error';
+  }
+
+  @override
+  String fileTooLargeError(int maxMb) {
+    return 'File is too large — this report type allows up to ${maxMb}MB.';
   }
 
   @override
@@ -717,6 +747,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotOpenFile => 'Could not open the file.';
 
   @override
+  String get couldNotOpenLink => 'Could not open the link.';
+
+  @override
+  String get viewOnlyNotice => 'View only — unlock to download a copy';
+
+  @override
   String get reportThanksMessage =>
       'Thanks — the Review Team has been notified.';
 
@@ -773,12 +809,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get markingGuideSubtitle => 'Instructor-authored + in-house MCQ key';
 
   @override
+  String get reportDownloadTitle => 'Download access';
+
+  @override
+  String get reportDownloadSubtitle =>
+      'Viewing in the app is free — unlock once to save a copy for offline reading';
+
+  @override
   String unlockedForAmount(int amount) {
     return 'Unlocked for $amount FCFA.';
   }
 
   @override
   String get unlockButton => 'Unlock — 500 FCFA';
+
+  @override
+  String get alreadyUnlocked => 'Unlocked.';
+
+  @override
+  String get viewButton => 'View';
+
+  @override
+  String get reportLockedTitle => 'This report requires unlocking';
+
+  @override
+  String get reportLockedMessage =>
+      'PhD and Master\'s theses require payment to view — unlock below to read it.';
+
+  @override
+  String get unlockToDownloadHint =>
+      'Unlock below to save a copy for offline reading.';
 
   @override
   String get haveRedeemCode => 'Have a redeem code?';

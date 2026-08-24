@@ -168,6 +168,16 @@ class MockTaxonomy {
     ExamType(name: 'EMIA', subtitle: 'Officer entrance'),
   ];
 
+  // Mirrors backend apps/papers/migrations/0009_seed_report_exam_types.py —
+  // same names, same order.
+  static const _reports = [
+    ExamType(name: 'Internship Report', subtitle: 'Year 1, Year 2', badgeTone: SpekoohBadgeTone.neutral),
+    ExamType(name: 'Bachelor’s Report (Mémoire de Licence)', subtitle: 'Bachelor / Licence', badgeTone: SpekoohBadgeTone.neutral),
+    ExamType(name: 'HND Report', subtitle: 'Rapport de fin d’études', badgeTone: SpekoohBadgeTone.neutral),
+    ExamType(name: 'Master’s Thesis (Mémoire)', subtitle: 'Master', badgeTone: SpekoohBadgeTone.neutral, maxUploadMb: 50),
+    ExamType(name: 'PhD Thesis (Thèse)', subtitle: 'Doctorat', badgeTone: SpekoohBadgeTone.neutral, maxUploadMb: 50),
+  ];
+
   /// Mirrors examTypesByCat in the source: keyed by category, and by system
   /// too for the two categories that require one.
   static List<ExamType> examTypesFor(ExamCategoryKey category, ExamSystem? system) {
@@ -183,17 +193,9 @@ class MockTaxonomy {
       case ExamCategoryKey.concours:
         return _concours;
       case ExamCategoryKey.reports:
-        return const [];
+        return _reports;
     }
   }
-
-  static const reportTypes = [
-    ReportType(key: 'internship', title: 'Internship Report', subtitle: 'HND / Bachelor / Master'),
-    ReportType(key: 'bachelor', title: 'Bachelor’s Report (Mémoire de Licence)', subtitle: 'Bachelor / Licence'),
-    ReportType(key: 'hnd', title: 'HND Report', subtitle: 'Rapport de fin d’études'),
-    ReportType(key: 'master', title: 'Master’s Thesis (Mémoire)', subtitle: 'Master'),
-    ReportType(key: 'phd', title: 'PhD Thesis (Thèse)', subtitle: 'Doctorat'),
-  ];
 
   static const subjectsEn = [
     Subject(key: 'accounting', title: 'Accounting', tint: IconChipTint.amber, icon: LucideIcons.fileText, code: '0505'),

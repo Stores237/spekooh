@@ -19,8 +19,7 @@ class ExamCategory {
     this.requiresSystem = false,
   });
 
-  /// Real backend primary key — 0 for the static mock/report-type entries
-  /// that have no backend row (see ReportType, which is never sent to the API).
+  /// Real backend primary key.
   final int id;
   final ExamCategoryKey key;
   final String title;
@@ -38,6 +37,7 @@ class ExamType {
     this.mockVariantLabel,
     this.tracks,
     this.badgeTone = SpekoohBadgeTone.neutral,
+    this.maxUploadMb = 20,
   });
 
   final int id;
@@ -52,14 +52,11 @@ class ExamType {
 
   final SpekoohBadgeTone badgeTone;
 
-  bool get requiresTrack => tracks != null && tracks!.isNotEmpty;
-}
+  /// Backend-enforced upload cap for this exam type (e.g. 50 for thesis-tier
+  /// reports vs the 20MB default) — mirrors ExamType.max_upload_mb.
+  final int maxUploadMb;
 
-class ReportType {
-  const ReportType({required this.key, required this.title, required this.subtitle});
-  final String key;
-  final String title;
-  final String subtitle;
+  bool get requiresTrack => tracks != null && tracks!.isNotEmpty;
 }
 
 /// Which step of the Papers drill-down is showing, derived purely from what
@@ -133,7 +130,11 @@ class PaperBrowseSelection {
     if (category!.requiresSystem && system == null) return PaperBrowseStep.system;
     if (examType == null) return PaperBrowseStep.examType;
     if (examType!.requiresTrack && track == null) return PaperBrowseStep.track;
-    if (subjectKey == null) return PaperBrowseStep.subject;
+    // Reports have no Subject taxonomy of their own (PaperSubmission.subject
+    // stays null for them, same as the Submit form) — forcing a subject pick
+    // here would filter the paper list against a subject no report actually
+    // has, so it never finds anything real. Go straight to the paper list.
+    if (category!.key != ExamCategoryKey.reports && subjectKey == null) return PaperBrowseStep.subject;
     return PaperBrowseStep.paperList;
   }
 }

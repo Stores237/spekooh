@@ -46,6 +46,17 @@ class ExamType(TimeStampedModel):
     badge_tone = models.CharField(max_length=20, blank=True, default="neutral")
     sort_order = models.PositiveIntegerField(default=0)
 
+    # Owner decision: PhD/Master's-tier academic reports require payment even
+    # to view (not just download) — everything else defaults to free viewing.
+    # A per-ExamType flag rather than per-category since it's specific to
+    # exactly two report types, not the whole "reports" category.
+    requires_payment_to_view = models.BooleanField(default=False)
+
+    # Owner decision: PhD/Master's-tier reports run far more pages than a
+    # standard exam paper or shorter report, so they get a larger upload
+    # allowance (50MB vs the 20MB default) rather than one size fitting all.
+    max_upload_mb = models.PositiveIntegerField(default=20)
+
     class Meta:
         ordering = ["sort_order", "name"]
         constraints = [
@@ -99,6 +110,14 @@ class PaperSubmission(TimeStampedModel):
     subject = models.ForeignKey(Subject, on_delete=models.PROTECT, related_name="submissions", null=True, blank=True)
     exam_board = models.CharField(max_length=120, blank=True)
     year = models.PositiveIntegerField()
+
+    # Only meaningful for the "reports" category (internship/mémoire/thèse/
+    # PFE) — blank for every other submission. Reports have no Subject
+    # taxonomy of their own (see the comment above), so discipline is free
+    # text rather than a Subject FK.
+    institution = models.CharField(max_length=200, blank=True)
+    discipline = models.CharField(max_length=150, blank=True)
+    supervisor_name = models.CharField(max_length=150, blank=True)
 
     # Real uploaded file — local disk in dev, Supabase Storage (S3-compatible)
     # when AWS_STORAGE_BUCKET_NAME is set (see config/settings/base.py).
