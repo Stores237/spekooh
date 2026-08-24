@@ -525,6 +525,21 @@ def test_view_endpoint_enforces_paywall(api_client):
 
 
 @pytest.mark.django_db
+def test_view_endpoint_allows_guests_without_tracking_or_paywalling_them(api_client):
+    """Reading stays open to guests (spec) — there's no identity to
+    rate-limit an anonymous viewer against, so the daily-view paywall never
+    applies to them. Previously this 401'd (the endpoint defaulted to the
+    viewset's class-level IsAuthenticated), silently swallowed by the
+    client — guests already got unlimited views in practice, just via a
+    console error instead of a real 204."""
+    paper = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+    for _ in range(DAILY_FREE_VIEWS + 3):
+        response = api_client.post(f"/api/papers/submissions/{paper.id}/view/")
+        assert response.status_code == 204
+    assert PaperViewLog.objects.filter(paper_submission=paper).count() == 0
+
+
+@pytest.mark.django_db
 def test_ad_watch_endpoint_records_event(api_client):
     user = UserFactory()
     api_client.force_authenticate(user=user)
