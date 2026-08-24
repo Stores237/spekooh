@@ -117,7 +117,16 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
         paperId,
         redeemCode: _redeemController.text.trim().isEmpty ? null : _redeemController.text.trim(),
       );
-      if (mounted) setState(() => _unlockedAmount = amount);
+      if (mounted) {
+        setState(() {
+          _unlockedAmount = amount;
+          // Refetch so requiresUnlock/isUnlocked reflect the payment that
+          // just succeeded — without this, a just-paid gated report kept
+          // showing "locked" (or a free-tier report kept hiding Save
+          // offline behind the unlock hint) until the screen was reopened.
+          _detail = widget.repository.getPaperDetail(paperId);
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.unlockFailedError('$e'))));
