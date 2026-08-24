@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -267,6 +268,48 @@ def test_submitting_an_exam_paper_is_not_watermarked(authed_client):
     finally:
         submission.uploaded_file.close()
     assert stored_bytes == original
+
+
+@pytest.mark.django_db
+def test_watermarking_refreshes_file_ref_for_local_disk_storage(authed_client, tmp_path, settings):
+    """file_ref mirrors uploaded_file.path for local-disk storage only (see
+    PaperSubmission.save) — watermarking then swaps uploaded_file to a new
+    path and deletes the old one. Without refreshing file_ref too, it kept
+    pointing at the just-deleted original, so OCR's fast path (which reads
+    file_ref directly) would try to open a file that no longer exists."""
+    settings.MEDIA_ROOT = tmp_path
+    settings.STORAGES = {**settings.STORAGES, "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}}
+    client, user = authed_client
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    upload = SimpleUploadedFile("internship.pdf", _real_pdf_bytes(), content_type="application/pdf")
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": reports_category.id,
+            "exam_type": report_type.id,
+            "year": 2024,
+            "institution": "ENSP Yaoundé",
+            "discipline": "Software Engineering",
+            "uploaded_file": upload,
+        },
+        format="multipart",
+    )
+    assert response.status_code == 201
+    submission = PaperSubmission.objects.get(id=response.data["id"])
+
+    # Confirms this test actually exercises the local-disk path (file_ref
+    # populated) rather than silently no-op'ing against real/S3 storage.
+    assert submission.file_ref
+    assert Path(submission.file_ref).is_file()
+    assert Path(submission.file_ref).name == Path(submission.uploaded_file.name).name
+
+    from .services import process_ocr_and_duplicate_check
+
+    process_ocr_and_duplicate_check(submission)
+    submission.refresh_from_db()
+    assert "Original report content" in submission.ocr_text
 
 
 @pytest.mark.django_db

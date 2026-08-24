@@ -79,7 +79,17 @@ def watermark_report_submission(paper_submission: PaperSubmission) -> PaperSubmi
     # save=False: the caller decides when to persist — see perform_create,
     # which needs this done before the response serializes file_url.
     paper_submission.uploaded_file.save(old_name.rsplit("/", 1)[-1], ContentFile(watermarked), save=False)
-    paper_submission.save(update_fields=["uploaded_file", "updated_at"])
+    update_fields = ["uploaded_file", "updated_at"]
+    # file_ref (local-disk storage only, see PaperSubmission.save) mirrored
+    # the pre-watermark path — refresh it too, or OCR's fast path tries to
+    # read a file this function is about to delete below.
+    if paper_submission.file_ref:
+        try:
+            paper_submission.file_ref = paper_submission.uploaded_file.path
+        except NotImplementedError:
+            paper_submission.file_ref = ""
+        update_fields.append("file_ref")
+    paper_submission.save(update_fields=update_fields)
     # Storage backends with overwrite-on-save enabled (the default for
     # django-storages' S3Storage) reuse the exact same key for the new
     # upload — deleting old_name there would delete the watermarked file
