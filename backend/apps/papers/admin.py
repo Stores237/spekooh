@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.db.models import Q
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
@@ -59,16 +60,33 @@ class PaperSubmissionAdmin(ModelAdmin):
     def status_badge(self, obj):
         return obj.status
 
-    @admin.action(description="Publish selected (guide submitted → published, awards contributor bonus)")
+    @admin.action(description="Publish selected (exam papers: guide submitted/merged; reports: any reviewed status — awards contributor bonus)")
     def publish_selected(self, request, queryset):
-        eligible = queryset.filter(status__in=[PaperStatus.GUIDE_SUBMITTED, PaperStatus.MERGED])
+        # Reports have no marking-guide/instructor pipeline at all (see the
+        # "no marking guide" copy on the Academic Reports category) — they
+        # default to PENDING_REVIEW and can never reach GUIDE_SUBMITTED/
+        # MERGED, so gating them on that status meant a report could never
+        # be published through this action. Exam papers keep the real
+        # pipeline gate; reports just need a real review (any status short
+        # of already-PUBLISHED, so re-selecting one doesn't double-award
+        # the contributor bonus — see award_contributor_bonus, not itself
+        # idempotent).
+        is_report = Q(category__key="reports")
+        eligible = queryset.filter(
+            (~is_report & Q(status__in=[PaperStatus.GUIDE_SUBMITTED, PaperStatus.MERGED]))
+            | (is_report & ~Q(status=PaperStatus.PUBLISHED))
+        )
         for paper in eligible:
             mark_published(paper)
         skipped = queryset.count() - eligible.count()
         self.message_user(
             request,
             f"Published {eligible.count()} paper(s)."
-            + (f" Skipped {skipped} not in Guide submitted/Merged status." if skipped else ""),
+            + (
+                f" Skipped {skipped} — exam papers need Guide submitted/Merged status; reports just can't already be Published."
+                if skipped
+                else ""
+            ),
             level=messages.SUCCESS if eligible.count() else messages.WARNING,
         )
 

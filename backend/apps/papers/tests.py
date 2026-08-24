@@ -2,18 +2,34 @@ import io
 from pathlib import Path
 
 import pytest
+from django.contrib.admin.sites import AdminSite
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import RequestFactory
 from pypdf import PdfReader
 from reportlab.pdfgen import canvas
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
+from apps.credits.models import CreditLedgerEntry
 from apps.payments.factories import SubscriptionFactory
 from apps.payments.models import PaperUnlock
 
+from .admin import PaperSubmissionAdmin
 from .factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory, SubjectFactory
 from .models import AdWatchEvent, ExamCategory, ExamType, PaperStatus, PaperSubmission, PaperViewLog, Subject
 from .services import DAILY_FREE_VIEWS, PaywallError, record_ad_watch, record_paper_view, user_can_view_file
+
+
+def _admin_action_request():
+    """message_user() needs a real messages storage attached, or it raises —
+    RequestFactory doesn't wire that up on its own (no middleware runs).
+    FallbackStorage's session-backed layer just needs something dict-like
+    at request.session, not a real session middleware."""
+    request = RequestFactory().post("/admin/papers/papersubmission/")
+    request.session = {}
+    request._messages = FallbackStorage(request)
+    return request
 
 
 def _real_pdf_bytes(text: str = "Original report content") -> bytes:
@@ -756,3 +772,56 @@ def test_report_paper_by_different_users_both_succeed(authed_client, api_client)
     api_client.force_authenticate(user=other_user)
     second = api_client.post(f"/api/papers/submissions/{paper.id}/report/", {"reason": "COPYRIGHT"}, format="json")
     assert second.status_code == 201
+
+
+@pytest.mark.django_db
+def test_admin_publish_selected_publishes_reports_regardless_of_guide_status():
+    """Regression: reports have no marking-guide/instructor pipeline at all
+    (see the "no marking guide" copy on the Academic Reports category) —
+    they default to PENDING_REVIEW and can never reach GUIDE_SUBMITTED or
+    MERGED, so gating them on that status meant a report could never be
+    published through the admin at all ("Skipped 1 not in Guide submitted/
+    Merged status." on every single one, forever)."""
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    report = PaperSubmissionFactory(
+        category=reports_category, exam_type=report_type, subject=None, status=PaperStatus.PENDING_REVIEW
+    )
+
+    admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
+    admin_instance.publish_selected(_admin_action_request(), PaperSubmission.objects.filter(id=report.id))
+
+    report.refresh_from_db()
+    assert report.status == PaperStatus.PUBLISHED
+    assert CreditLedgerEntry.objects.filter(paper_submission=report).exists()
+
+
+@pytest.mark.django_db
+def test_admin_publish_selected_still_gates_exam_papers_on_guide_status():
+    """The real instructor/marking-guide pipeline gate stays intact for
+    exam papers — only reports get the relaxed rule above."""
+    paper = PaperSubmissionFactory(status=PaperStatus.PENDING_REVIEW)
+
+    admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
+    admin_instance.publish_selected(_admin_action_request(), PaperSubmission.objects.filter(id=paper.id))
+
+    paper.refresh_from_db()
+    assert paper.status == PaperStatus.PENDING_REVIEW
+    assert not CreditLedgerEntry.objects.filter(paper_submission=paper).exists()
+
+
+@pytest.mark.django_db
+def test_admin_publish_selected_does_not_republish_an_already_published_report():
+    """award_contributor_bonus isn't itself idempotent — re-selecting an
+    already-published report must stay excluded, or staff re-running the
+    action double-credits the contributor."""
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    report = PaperSubmissionFactory(
+        category=reports_category, exam_type=report_type, subject=None, status=PaperStatus.PUBLISHED
+    )
+
+    admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
+    admin_instance.publish_selected(_admin_action_request(), PaperSubmission.objects.filter(id=report.id))
+
+    assert CreditLedgerEntry.objects.filter(paper_submission=report).count() == 0
