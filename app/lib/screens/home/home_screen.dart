@@ -157,7 +157,16 @@ class HomeScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(l10n.homePaperLabelWithYear(label, paper.year), style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                Text(l10n.homeFreeToView, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                // Reports have no marking-guide/instructor
+                                // pipeline at all, unlike exam papers — the
+                                // "marking guide sold separately" line would
+                                // be a false claim for one.
+                                Text(
+                                  paper.isReport
+                                      ? (paper.requiresUnlock ? l10n.homeReportPaymentRequired : l10n.homeFreeToViewReport)
+                                      : l10n.homeFreeToView,
+                                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
+                                ),
                               ],
                             ),
                           ),

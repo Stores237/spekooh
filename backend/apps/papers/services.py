@@ -31,6 +31,20 @@ def user_can_view_file(user, paper_submission: PaperSubmission) -> bool:
     return PaperUnlock.objects.has_unlocked(user, paper_submission)
 
 
+def report_download_is_free(paper_submission: PaperSubmission) -> bool:
+    """
+    Owner decision: Internship/Bachelor's/HND-tier reports are free to
+    both view AND download — no PaperUnlock required. Master's/PhD-tier
+    reports (already paid to view) still require a real unlock to
+    download, and exam papers are untouched by this — their PaperUnlock
+    also gates the marking guide, so that stays a real purchase.
+    """
+    return (
+        paper_submission.category.key == "reports"
+        and not paper_submission.exam_type.requires_payment_to_view
+    )
+
+
 class PaywallError(Exception):
     pass
 

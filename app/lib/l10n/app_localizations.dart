@@ -404,6 +404,18 @@ abstract class AppLocalizations {
   /// **'Free to view — marking guide sold separately'**
   String get homeFreeToView;
 
+  /// No description provided for @homeFreeToViewReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Free to view and download'**
+  String get homeFreeToViewReport;
+
+  /// No description provided for @homeReportPaymentRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment required to view'**
+  String get homeReportPaymentRequired;
+
   /// No description provided for @homeContributionTitle.
   ///
   /// In en, this message translates to:

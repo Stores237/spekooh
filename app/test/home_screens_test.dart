@@ -62,6 +62,52 @@ void main() {
     await tester.tap(find.textContaining('Mathématiques · Baccalauréat 2025'));
     await tester.pump();
     expect(opened?.id, 7);
+    expect(find.text('Free to view — marking guide sold separately'), findsOneWidget);
+  });
+
+  testWidgets('HomeScreen (guest) does not claim a marking guide exists for a free-to-view report', (tester) async {
+    // Regression: this card used to show the exam-paper-flavored "marking
+    // guide sold separately" copy for reports too, which have no
+    // marking-guide/instructor pipeline at all.
+    final seeded = PaperEntry(
+      id: 9,
+      year: 2024,
+      system: null,
+      track: '',
+      status: 'PUBLISHED',
+      fileUrl: null,
+      createdAt: DateTime(2024, 1, 1),
+      examTypeName: 'Internship Report',
+      categoryKey: 'reports',
+    );
+    await tester.pumpWidget(l10nTestApp(
+      HomeScreen(papersRepository: MockPapersRepository(seedPublished: [seeded]), shopRepository: MockShopRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.textContaining('marking guide'), findsNothing);
+    expect(find.text('Free to view and download'), findsOneWidget);
+  });
+
+  testWidgets('HomeScreen (guest) shows a payment-required note for a gated report', (tester) async {
+    final seeded = PaperEntry(
+      id: 10,
+      year: 2024,
+      system: null,
+      track: '',
+      status: 'PUBLISHED',
+      fileUrl: null,
+      createdAt: DateTime(2024, 1, 1),
+      examTypeName: 'PhD Thesis (Thèse)',
+      categoryKey: 'reports',
+      requiresUnlock: true,
+    );
+    await tester.pumpWidget(l10nTestApp(
+      HomeScreen(papersRepository: MockPapersRepository(seedPublished: [seeded]), shopRepository: MockShopRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Payment required to view'), findsOneWidget);
   });
 
   testWidgets('LoggedInHomeScreen builds with real profile/streak/daily-challenge data', (tester) async {

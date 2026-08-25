@@ -255,6 +255,20 @@ I can write unilaterally. Grouped by what each one unblocks.
   tests (locked message for gated reports, free-tier View pushes the real viewer — checked via
   a `NavigatorObserver` rather than letting `pdfx`'s native plugin actually render in a widget
   test, which it can't without a real device/platform, Save-offline gated until a real unlock).
+- **Update, 2026-08-25 — owner correction:** "downloading *any* report always requires
+  payment" (above) was flagged as wrong by the owner — a user shouldn't be asked to pay to
+  download an Internship/Bachelor's/HND report that's already free to view. Policy is now:
+  **Internship/Bachelor's/HND reports are free to both view and download** (no `PaperUnlock`
+  needed at all); Master's/PhD-tier reports and every exam paper are unchanged — still require
+  a real unlock to download. New `apps.papers.services.report_download_is_free()` is the single
+  place this rule lives; `PaperAccessFieldsMixin.get_is_unlocked()` (drives the app's
+  Save-offline gate and the "Download access" card) short-circuits to `True` for free-tier
+  reports, and `apps.payments.services.unlock_paper()` now rejects a direct unlock attempt on
+  one of them (`PaperUnlockError`) so nobody can be charged for something already free. Verified
+  live: the Internship Report's "Unlock — 500 FCFA" button now correctly reads "Already
+  unlocked" and Save-offline works immediately, no payment. 5 new tests (2 backend serializer
+  tests — free tier needs no unlock, Master's/PhD tier still does; 2 `unlock_paper()` tests —
+  rejects a free-tier report, still charges full price for a thesis-tier one).
 
 ### 7. ~~Referral bonuses~~ — done
 - Spec only listed this as a one-liner with no mechanics, so the trigger and reward were
