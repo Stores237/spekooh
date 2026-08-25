@@ -18,4 +18,4 @@ class QuizAdmin(admin.ModelAdmin):
 @admin.register(QuizAttempt)
 class QuizAttemptAdmin(admin.ModelAdmin):
     list_display = ("user", "quiz", "score", "completed_at")
-    search_fields = ("user__email",)
+    search_fields = ("user__name",)

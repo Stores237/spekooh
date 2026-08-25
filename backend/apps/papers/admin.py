@@ -67,7 +67,7 @@ class SubjectAdmin(ModelAdmin):
 class PaperSubmissionAdmin(ModelAdmin):
     list_display = ("id", "exam_type", "subject", "year", "status_badge", "submitted_by", "created_at", "file_link")
     list_filter = ("status", "category", "exam_type")
-    search_fields = ("id", "submitted_by__email", "duplicate_hash")
+    search_fields = ("id", "submitted_by__name", "duplicate_hash")
     readonly_fields = ("created_at", "updated_at")
     actions = ["publish_selected"]
 
@@ -131,7 +131,7 @@ class AcademicReportSubmissionAdmin(PaperSubmissionAdmin):
         "file_link",
     )
     list_filter = ("status", "exam_type")
-    search_fields = ("id", "submitted_by__email", "institution", "discipline", "supervisor_name")
+    search_fields = ("id", "submitted_by__name", "institution", "discipline", "supervisor_name")
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(category__key="reports")
@@ -141,7 +141,7 @@ class AcademicReportSubmissionAdmin(PaperSubmissionAdmin):
 class PaperFlagAdmin(ModelAdmin):
     list_display = ("paper_submission", "reason", "flagged_by", "created_at")
     list_filter = ("reason",)
-    search_fields = ("paper_submission__id", "flagged_by__email")
+    search_fields = ("paper_submission__id", "flagged_by__name")
     readonly_fields = ("created_at", "updated_at")
 
 
@@ -154,7 +154,7 @@ class PaperViewLogAdmin(ModelAdmin):
     # file_link gets straight to the document without hunting for it.
     list_display = ("user", "paper_label", "created_at", "file_link")
     list_filter = ("paper_submission__category",)
-    search_fields = ("user__email", "paper_submission__institution", "paper_submission__discipline")
+    search_fields = ("user__name", "paper_submission__institution", "paper_submission__discipline")
 
     @display(description="Paper / report")
     def paper_label(self, obj):
@@ -171,7 +171,7 @@ class PaperViewLogAdmin(ModelAdmin):
 @admin.register(AdWatchEvent)
 class AdWatchEventAdmin(ModelAdmin):
     list_display = ("user", "consumed_by_view_log", "created_at")
-    search_fields = ("user__email",)
+    search_fields = ("user__name",)
 
 
 @admin.register(MCQAnswerKey)

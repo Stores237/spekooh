@@ -20,7 +20,7 @@ SUBSCRIPTION_STATUS_LABELS = {
 class PaymentTransactionAdmin(ModelAdmin):
     list_display = ("user", "purpose", "amount_fcfa", "status_badge", "failure_reason", "created_at")
     list_filter = ("purpose", "status")
-    search_fields = ("user__email", "provider_reference", "failure_reason")
+    search_fields = ("user__name", "provider_reference", "failure_reason")
     ordering = ("-created_at",)
 
     @display(description="Status", label=TRANSACTION_STATUS_LABELS, ordering="status")
@@ -51,4 +51,4 @@ class SubscriptionAdmin(ModelAdmin):
 @admin.register(PaperUnlock)
 class PaperUnlockAdmin(ModelAdmin):
     list_display = ("user", "paper_submission", "amount_paid", "created_at")
-    search_fields = ("user__email",)
+    search_fields = ("user__name",)

@@ -7,7 +7,7 @@ from .models import ForumPost, ForumReply, ForumUpvote
 class ForumPostAdmin(admin.ModelAdmin):
     list_display = ("title", "author", "tag", "created_at")
     list_filter = ("tag",)
-    search_fields = ("title", "body", "author__email")
+    search_fields = ("title", "body", "author__name")
 
 
 @admin.register(ForumReply)
