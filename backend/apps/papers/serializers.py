@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.payments.models import PaperUnlock
 
 from .models import AdWatchEvent, ExamCategory, ExamType, PaperFlag, PaperSubmission, PaperViewLog, Subject
-from .services import user_can_view_file
+from .services import report_download_is_free, user_can_view_file
 
 
 class ExamCategorySerializer(serializers.ModelSerializer):
@@ -51,11 +51,11 @@ class PaperAccessFieldsMixin:
     apps.papers.services.user_can_view_file).
 
     is_unlocked: has this user actually completed a real PaperUnlock for
-    this paper — independent of requires_unlock, since even a free-to-view
-    report still requires payment to *download* (owner decision). Exam
-    papers reuse the same PaperUnlock rows their marking-guide unlock
-    already creates, so this doubles as "has the marking guide been paid
-    for" there too.
+    this paper — independent of requires_unlock. Master's/PhD-tier reports
+    (already paid to view) and exam papers (whose PaperUnlock also gates
+    the marking guide) still require a real unlock to download. Lower-tier
+    reports (Internship/Bachelor's/HND) are free to both view and download
+    (owner decision) — see report_download_is_free.
     """
 
     def get_requires_unlock(self, obj) -> bool:
@@ -64,6 +64,8 @@ class PaperAccessFieldsMixin:
         return user is None or not user_can_view_file(user, obj)
 
     def get_is_unlocked(self, obj) -> bool:
+        if report_download_is_free(obj):
+            return True
         request = self.context.get("request")
         user = getattr(request, "user", None)
         if user is None or not user.is_authenticated:

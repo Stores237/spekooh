@@ -347,6 +347,38 @@ def test_free_tier_report_is_viewable_by_anyone_without_unlock():
 
 
 @pytest.mark.django_db
+def test_free_tier_report_is_free_to_download_without_any_unlock(api_client):
+    """Owner decision: Internship/Bachelor's/HND reports need no PaperUnlock
+    to download — unlike Master's/PhD-tier reports and exam papers, whose
+    PaperUnlock also gates the marking guide."""
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    internship = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    submission = PaperSubmissionFactory(
+        category=reports_category, exam_type=internship, subject=None, status=PaperStatus.PUBLISHED
+    )
+
+    response = api_client.get(f"/api/papers/submissions/{submission.id}/")
+
+    assert response.data["is_unlocked"] is True
+
+
+@pytest.mark.django_db
+def test_masters_and_phd_reports_still_require_a_real_unlock_to_download(authed_client):
+    client, user = authed_client
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    phd = ExamTypeFactory(category=reports_category, system=None, name="PhD Thesis (Thèse)", requires_payment_to_view=True)
+    submission = PaperSubmissionFactory(category=reports_category, exam_type=phd, subject=None, status=PaperStatus.PUBLISHED)
+
+    unpaid = UserFactory()
+    unpaid_client = APIClient()
+    unpaid_client.force_authenticate(user=unpaid)
+    assert unpaid_client.get(f"/api/papers/submissions/{submission.id}/").data["is_unlocked"] is False
+
+    PaperUnlock.objects.create(user=user, paper_submission=submission, amount_paid=500)
+    assert client.get(f"/api/papers/submissions/{submission.id}/").data["is_unlocked"] is True
+
+
+@pytest.mark.django_db
 def test_masters_and_phd_reports_are_hidden_until_unlocked(authed_client):
     client, user = authed_client
     reports_category = ExamCategoryFactory(key="reports", requires_system=False)

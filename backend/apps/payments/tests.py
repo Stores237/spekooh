@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 from apps.accounts.factories import UserFactory
 from apps.accounts.models import User
 from apps.credits.factories import RedeemCodeFactory
-from apps.papers.factories import PaperSubmissionFactory
+from apps.papers.factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory
 
 from .factories import SubscriptionFactory
 from .models import PaperUnlock, PaymentTransactionStatus, Subscription, SubscriptionStatus
@@ -83,6 +83,36 @@ def test_unlock_paper_rejects_double_unlock():
     unlock_paper(user=user, paper_submission=paper, phone_number="670000000")
     with pytest.raises(PaperUnlockError):
         unlock_paper(user=user, paper_submission=paper, phone_number="670000000")
+
+
+@pytest.mark.django_db
+def test_unlock_paper_rejects_a_free_tier_report():
+    """Internship/Bachelor's/HND reports are free to download outright —
+    calling unlock directly must not charge for something already free."""
+    user = UserFactory()
+    _expire_trial(user)
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    internship = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    paper = PaperSubmissionFactory(category=reports_category, exam_type=internship, subject=None)
+
+    with pytest.raises(PaperUnlockError):
+        unlock_paper(user=user, paper_submission=paper, phone_number="670000000")
+    assert PaperUnlock.objects.has_unlocked(user, paper) is False
+
+
+@pytest.mark.django_db
+def test_unlock_paper_still_charges_for_a_masters_tier_report():
+    user = UserFactory()
+    _expire_trial(user)
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    masters = ExamTypeFactory(
+        category=reports_category, system=None, name="Master’s Thesis (Mémoire)", requires_payment_to_view=True
+    )
+    paper = PaperSubmissionFactory(category=reports_category, exam_type=masters, subject=None)
+
+    unlock = unlock_paper(user=user, paper_submission=paper, phone_number="670000000")
+
+    assert unlock.amount_paid == PAPER_UNLOCK_PRICE_FCFA
 
 
 @pytest.mark.django_db

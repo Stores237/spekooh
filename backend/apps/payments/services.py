@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from apps.core.payment_provider import MockPaymentProvider, PaymentProvider
 from apps.credits.services import RedeemCodeError, award_referral_bonus, redeem_code
+from apps.papers.services import report_download_is_free
 
 from .models import (
     PaperUnlock,
@@ -81,6 +82,8 @@ def first_unlock_free_eligible(user) -> bool:
 
 
 def unlock_paper(*, user, paper_submission, phone_number: str, redeem_code_str: str | None = None) -> PaperUnlock:
+    if report_download_is_free(paper_submission):
+        raise PaperUnlockError("This report is already free to download.")
     if PaperUnlock.objects.has_unlocked(user, paper_submission):
         raise PaperUnlockError("Already unlocked.")
 
