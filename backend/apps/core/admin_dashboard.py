@@ -38,63 +38,96 @@ def dashboard_callback(request, context):
     )
 
     now = timezone.now()
+    user = request.user
 
-    papers_funnel = [
-        {
-            "label": label,
-            "count": PaperSubmission.objects.filter(status=value).count(),
-            "url": _changelist_url(PaperSubmission, status=value),
-        }
-        for value, label in PaperStatus.choices
-    ]
+    # Role-gated: each flag mirrors the real model permission a role needs
+    # to click through to the underlying records — a widget summarizing a
+    # model nobody in this role can open is itself a data leak (aggregate
+    # counts are still real information, e.g. "6 open flags" tells a
+    # Support agent something about Review Team's queue they have no
+    # access to). Query each section's data only when it'll actually be
+    # shown, not just gate it in the template.
+    can_view_papers = user.has_perm("papers.view_papersubmission")
+    can_view_admin_queue = user.has_perm("admin_queue.view_adminflagqueue")
+    can_view_instructor_requests = user.has_perm("instructors.view_instructorrequest")
+    can_view_withdrawals = user.has_perm("instructors.view_withdrawalrequest")
+    can_view_credits = user.has_perm("credits.view_redeemcode")
+    can_view_transactions = user.has_perm("payments.view_paymenttransaction")
+    can_view_subscriptions = user.has_perm("payments.view_subscription")
 
-    # "Open" here means not yet resolved (NEW or IN_PROGRESS) — the ticket
-    # queue (spec §2.1) has three states now, not just open/resolved.
-    open_flags = AdminFlagQueue.objects.exclude(status=FlagStatus.RESOLVED)
-    flags_by_category = list(
-        open_flags.values("category").annotate(count=Count("id")).order_by("-count")
-    )
-
-    revenue_by_purpose = list(
-        PaymentTransaction.objects.filter(status=PaymentTransactionStatus.SUCCESS)
-        .values("purpose")
-        .annotate(total=Sum("amount_fcfa"))
-        .order_by("-total")
-    )
-
-    context["spekooh_dashboard"] = {
-        "papers_funnel": papers_funnel,
-        "open_flags_count": open_flags.count(),
-        "flags_by_category": flags_by_category,
-        "flags_url": _changelist_url(AdminFlagQueue),
-        "pending_instructor_requests": InstructorRequest.objects.filter(
-            status=InstructorRequestStatus.PENDING
-        ).count(),
-        "overdue_instructor_requests": InstructorRequest.objects.filter(
-            status=InstructorRequestStatus.PENDING, responds_by__lt=now
-        ).count(),
-        "instructor_requests_url": _changelist_url(
-            InstructorRequest, status=InstructorRequestStatus.PENDING
-        ),
-        "pending_withdrawals": WithdrawalRequest.objects.filter(
-            status=WithdrawalStatus.PENDING
-        ).count(),
-        "withdrawals_url": _changelist_url(WithdrawalRequest, status=WithdrawalStatus.PENDING),
-        "active_redeem_codes": RedeemCode.objects.filter(status=RedeemCodeStatus.ACTIVE).count(),
-        "stale_redeem_codes": RedeemCode.objects.filter(
-            status=RedeemCodeStatus.ACTIVE, expires_at__lt=now
-        ).count(),
-        "redeem_codes_url": _changelist_url(RedeemCode, status=RedeemCodeStatus.ACTIVE),
-        "failed_transactions_7d": PaymentTransaction.objects.filter(
-            status=PaymentTransactionStatus.FAILED, created_at__gte=now - timedelta(days=7)
-        ).count(),
-        "failed_transactions_url": _changelist_url(
-            PaymentTransaction, status=PaymentTransactionStatus.FAILED
-        ),
-        "revenue_by_purpose": revenue_by_purpose,
-        "expiring_subscriptions_7d": Subscription.objects.filter(
-            status=SubscriptionStatus.ACTIVE, renews_at__lte=now + timedelta(days=7)
-        ).count(),
-        "subscriptions_url": _changelist_url(Subscription, status=SubscriptionStatus.ACTIVE),
+    dashboard = {
+        "can_view_papers": can_view_papers,
+        "can_view_admin_queue": can_view_admin_queue,
+        "can_view_instructor_requests": can_view_instructor_requests,
+        "can_view_withdrawals": can_view_withdrawals,
+        "can_view_credits": can_view_credits,
+        "can_view_transactions": can_view_transactions,
+        "can_view_subscriptions": can_view_subscriptions,
     }
+
+    if can_view_papers:
+        dashboard["papers_funnel"] = [
+            {
+                "label": label,
+                "count": PaperSubmission.objects.filter(status=value).count(),
+                "url": _changelist_url(PaperSubmission, status=value),
+            }
+            for value, label in PaperStatus.choices
+        ]
+
+    if can_view_admin_queue:
+        # "Open" here means not yet resolved (NEW or IN_PROGRESS) — the
+        # ticket queue (spec §2.1) has three states, not just open/resolved.
+        open_flags = AdminFlagQueue.objects.exclude(status=FlagStatus.RESOLVED)
+        dashboard["open_flags_count"] = open_flags.count()
+        dashboard["flags_by_category"] = list(
+            open_flags.values("category").annotate(count=Count("id")).order_by("-count")
+        )
+        dashboard["flags_url"] = _changelist_url(AdminFlagQueue)
+
+    if can_view_instructor_requests:
+        dashboard["pending_instructor_requests"] = InstructorRequest.objects.filter(
+            status=InstructorRequestStatus.PENDING
+        ).count()
+        dashboard["overdue_instructor_requests"] = InstructorRequest.objects.filter(
+            status=InstructorRequestStatus.PENDING, responds_by__lt=now
+        ).count()
+        dashboard["instructor_requests_url"] = _changelist_url(
+            InstructorRequest, status=InstructorRequestStatus.PENDING
+        )
+
+    if can_view_withdrawals:
+        dashboard["pending_withdrawals"] = WithdrawalRequest.objects.filter(
+            status=WithdrawalStatus.PENDING
+        ).count()
+        dashboard["withdrawals_url"] = _changelist_url(WithdrawalRequest, status=WithdrawalStatus.PENDING)
+
+    if can_view_credits:
+        dashboard["active_redeem_codes"] = RedeemCode.objects.filter(status=RedeemCodeStatus.ACTIVE).count()
+        dashboard["stale_redeem_codes"] = RedeemCode.objects.filter(
+            status=RedeemCodeStatus.ACTIVE, expires_at__lt=now
+        ).count()
+        dashboard["redeem_codes_url"] = _changelist_url(RedeemCode, status=RedeemCodeStatus.ACTIVE)
+
+    if can_view_transactions:
+        dashboard["failed_transactions_7d"] = PaymentTransaction.objects.filter(
+            status=PaymentTransactionStatus.FAILED, created_at__gte=now - timedelta(days=7)
+        ).count()
+        dashboard["failed_transactions_url"] = _changelist_url(
+            PaymentTransaction, status=PaymentTransactionStatus.FAILED
+        )
+        dashboard["revenue_by_purpose"] = list(
+            PaymentTransaction.objects.filter(status=PaymentTransactionStatus.SUCCESS)
+            .values("purpose")
+            .annotate(total=Sum("amount_fcfa"))
+            .order_by("-total")
+        )
+
+    if can_view_subscriptions:
+        dashboard["expiring_subscriptions_7d"] = Subscription.objects.filter(
+            status=SubscriptionStatus.ACTIVE, renews_at__lte=now + timedelta(days=7)
+        ).count()
+        dashboard["subscriptions_url"] = _changelist_url(Subscription, status=SubscriptionStatus.ACTIVE)
+
+    context["spekooh_dashboard"] = dashboard
     return context
