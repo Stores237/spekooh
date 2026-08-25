@@ -90,6 +90,12 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
+    # Regulatory: proof of Terms/Privacy consent at signup — required by
+    # RegisterSerializer (a registration without it is rejected outright,
+    # not just nudged client-side). Null for guests, who never go through
+    # RegisterSerializer at all.
+    terms_accepted_at = models.DateTimeField(null=True, blank=True)
+
     # Referral bonuses (spec: "referral bonuses", mechanics scoped by product
     # this session — fires on the referred user's first real action, not
     # bare signup, to resist fake-account abuse; see

@@ -1,4 +1,5 @@
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -47,6 +48,11 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     referral_code = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    # Regulatory: a registration without real, affirmative Terms/Privacy
+    # consent is rejected outright — this isn't just a client-side nudge,
+    # the server enforces it too. Recorded as `terms_accepted_at`, not
+    # just accepted-or-not, so there's a real audit trail of when.
+    terms_accepted = serializers.BooleanField(write_only=True)
 
     class Meta:
         model = User
@@ -59,6 +65,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             "region",
             "language_pref",
             "referral_code",
+            "terms_accepted",
         ]
 
     def validate_referral_code(self, value):
@@ -69,11 +76,22 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Referral code not found.")
         return code
 
+    def validate_terms_accepted(self, value):
+        if not value:
+            raise serializers.ValidationError("You must accept the Terms of Service and Privacy Policy to register.")
+        return value
+
     def create(self, validated_data):
         password = validated_data.pop("password")
         referral_code = validated_data.pop("referral_code", "")
+        validated_data.pop("terms_accepted")
         referred_by = User.objects.filter(referral_code=referral_code).first() if referral_code else None
-        user = User.objects.create_user(account_type=AccountType.REGISTERED, referred_by=referred_by, **validated_data)
+        user = User.objects.create_user(
+            account_type=AccountType.REGISTERED,
+            referred_by=referred_by,
+            terms_accepted_at=timezone.now(),
+            **validated_data,
+        )
         user.set_password(password)
         user.save(update_fields=["password"])
         return user

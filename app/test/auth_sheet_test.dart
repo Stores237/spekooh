@@ -37,11 +37,14 @@ void main() {
     await tester.enterText(fields.at(1), 'new@example.com'); // email
     await tester.enterText(fields.at(2), 'S0mePass!23'); // password
     await tester.enterText(fields.at(3), 'a1b2c3d4'); // referral code
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
 
     await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
 
     expect(sentBody?['referral_code'], 'a1b2c3d4');
+    expect(sentBody?['terms_accepted'], true);
   });
 
   testWidgets('registering with no referral code omits it entirely, not as an empty string', (tester) async {
@@ -68,10 +71,50 @@ void main() {
     await tester.enterText(fields.at(0), 'New User');
     await tester.enterText(fields.at(1), 'new2@example.com');
     await tester.enterText(fields.at(2), 'S0mePass!23');
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
 
     await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
 
     expect(sentBody?.containsKey('referral_code'), isFalse);
+  });
+
+  testWidgets('Create account is disabled until the terms checkbox is checked', (tester) async {
+    var requestCount = 0;
+    final mockClient = MockClient((request) async {
+      requestCount++;
+      return http.Response(
+        jsonEncode({
+          'access': 'fake-access',
+          'refresh': 'fake-refresh',
+          'user': {'id': 'fake-id', 'email': 'new3@example.com'},
+        }),
+        201,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient));
+
+    await tester.pumpWidget(l10nTestApp(const Scaffold(body: AuthSheet())));
+    await tester.tap(find.text('New here? Create an account'));
+    await tester.pumpAndSettle();
+
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'New User');
+    await tester.enterText(fields.at(1), 'new3@example.com');
+    await tester.enterText(fields.at(2), 'S0mePass!23');
+
+    // Unchecked: tapping "Create account" does nothing — no request fired.
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+    expect(requestCount, 0);
+
+    // Checked: the same tap now goes through for real.
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+    expect(requestCount, 1);
   });
 }

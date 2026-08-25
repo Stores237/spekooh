@@ -20,6 +20,7 @@ class AuthSheet extends StatefulWidget {
 class _AuthSheetState extends State<AuthSheet> {
   bool _isRegisterMode = false;
   bool _isSubmitting = false;
+  bool _termsAccepted = false;
   String? _error;
 
   final _emailController = TextEditingController();
@@ -47,6 +48,7 @@ class _AuthSheetState extends State<AuthSheet> {
           email: _emailController.text.trim(),
           name: _nameController.text.trim(),
           password: _passwordController.text,
+          termsAccepted: _termsAccepted,
           referralCode: _referralCodeController.text.trim(),
         );
       } else {
@@ -125,6 +127,29 @@ class _AuthSheetState extends State<AuthSheet> {
               _FieldLabel(l10n.authReferralLabel),
               const SizedBox(height: 6),
               _TextField(controller: _referralCodeController, hint: l10n.authReferralHint),
+              const SizedBox(height: AppSpacing.space3),
+              GestureDetector(
+                onTap: _isSubmitting ? null : () => setState(() => _termsAccepted = !_termsAccepted),
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: _termsAccepted,
+                      onChanged: _isSubmitting ? null : (value) => setState(() => _termsAccepted = value ?? false),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 14),
+                        child: Text(
+                          l10n.authTermsCheckboxLabel,
+                          style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
             if (_error != null) ...[
               const SizedBox(height: AppSpacing.space3),
@@ -132,7 +157,7 @@ class _AuthSheetState extends State<AuthSheet> {
             ],
             const SizedBox(height: AppSpacing.space4),
             SpekoohButton(
-              onPressed: _isSubmitting ? null : _submit,
+              onPressed: _isSubmitting || (_isRegisterMode && !_termsAccepted) ? null : _submit,
               child: Text(_isSubmitting ? l10n.authPleaseWait : (_isRegisterMode ? l10n.authCreateAccountButton : l10n.authLoginButton)),
             ),
             const SizedBox(height: AppSpacing.space3),
