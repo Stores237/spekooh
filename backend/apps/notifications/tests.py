@@ -25,7 +25,7 @@ def api_client():
 def test_register_endpoint_sends_onboarding_notification(api_client):
     response = api_client.post(
         "/api/auth/register/",
-        {"email": "new@example.com", "name": "New User", "password": "S0mePass!23"},
+        {"email": "new@example.com", "name": "New User", "password": "S0mePass!23", "terms_accepted": True},
         format="json",
     )
     assert response.status_code == 201

@@ -26,14 +26,14 @@ REDEEM_STATUS_LABELS = {
 @admin.register(CreditLedgerEntry)
 class CreditLedgerEntryAdmin(ModelAdmin):
     list_display = ("user", "amount", "reason", "created_at")
-    search_fields = ("user__email", "reason")
+    search_fields = ("user__name", "reason")
 
 
 @admin.register(RedeemCode)
 class RedeemCodeAdmin(ModelAdmin):
     list_display = ("code", "owner", "value_percent", "status_badge", "expiry_countdown", "redeemed_by")
     list_filter = ("status",)
-    search_fields = ("code", "owner__email")
+    search_fields = ("code", "owner__name")
     ordering = ("status", "expires_at")
     actions = ["expire_stale_selected"]
 

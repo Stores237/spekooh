@@ -1,10 +1,14 @@
 import datetime
 
 import pytest
+from django.contrib.admin.sites import AdminSite
+from django.contrib.auth.models import Group
 from django.core.management import call_command
+from django.test import Client
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from .admin import UserAdmin
 from .factories import UserFactory
 from .models import AccountType, User
 
@@ -238,3 +242,75 @@ def test_prune_stale_guest_accounts_never_touches_registered_users():
     call_command("prune_stale_guest_accounts")
 
     assert User.objects.filter(id=old_registered.id).exists()
+
+
+@pytest.mark.django_db
+def test_user_admin_never_exposes_email_or_phone_for_browsing():
+    """Owner decision (data minimization): nobody browsing this admin —
+    not even a superuser — sees a user's raw email or phone number. name
+    is the only identifying field. Email stays settable on account
+    *creation* only (add_fieldsets), since that's typing in credentials
+    you already know, not browsing an existing user's PII."""
+    admin_instance = UserAdmin(User, AdminSite())
+    assert "email" not in admin_instance.list_display
+    assert "email" not in admin_instance.search_fields
+    assert "phone_number" not in admin_instance.search_fields
+    editable_fields = [field for _, opts in admin_instance.fieldsets for field in opts["fields"]]
+    assert "email" not in editable_fields
+    assert "phone_number" not in editable_fields
+    assert "name" in admin_instance.list_display
+
+
+@pytest.mark.django_db
+def test_reviewer_group_has_expected_moderation_permissions():
+    reviewer = Group.objects.get(name="Reviewer")
+    codenames = set(reviewer.permissions.values_list("codename", flat=True))
+    assert {"view_papersubmission", "change_papersubmission"} <= codenames
+    assert {"view_mcqanswerkey", "add_mcqanswerkey", "change_mcqanswerkey"} <= codenames
+    assert "view_user" not in codenames  # no user-account access at all
+
+
+@pytest.mark.django_db
+def test_support_group_is_read_only_with_no_moderation_access():
+    support = Group.objects.get(name="Support")
+    codenames = set(support.permissions.values_list("codename", flat=True))
+    assert {"view_user", "view_papersubmission", "view_paymenttransaction"} <= codenames
+    assert not any(c.startswith(("change_", "add_", "delete_")) for c in codenames)
+
+
+@pytest.mark.django_db
+def test_support_staff_can_view_but_not_edit_a_paper_submission():
+    """Support has view_papersubmission but not change_papersubmission —
+    Django admin renders the change page read-only in that case (a real
+    200, not a 403), so the actual proof is that a POST can't mutate the
+    record, not the GET status code."""
+    from apps.papers.factories import PaperSubmissionFactory
+    from apps.papers.models import PaperStatus
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Support"))
+    paper = PaperSubmissionFactory(status=PaperStatus.PENDING_REVIEW)
+
+    client = Client()
+    client.force_login(staff)
+
+    assert client.get("/admin/papers/papersubmission/").status_code == 200
+    change_url = f"/admin/papers/papersubmission/{paper.id}/change/"
+    assert client.get(change_url).status_code == 200
+    client.post(change_url, {"status": PaperStatus.PUBLISHED, "year": paper.year})
+    paper.refresh_from_db()
+    assert paper.status == PaperStatus.PENDING_REVIEW
+
+
+@pytest.mark.django_db
+def test_reviewer_staff_can_edit_a_paper_submission():
+    from apps.papers.factories import PaperSubmissionFactory
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Reviewer"))
+    paper = PaperSubmissionFactory()
+
+    client = Client()
+    client.force_login(staff)
+
+    assert client.get(f"/admin/papers/papersubmission/{paper.id}/change/").status_code == 200

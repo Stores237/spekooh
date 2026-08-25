@@ -7,4 +7,4 @@ from .models import Notification
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ("user", "kind", "title", "is_read", "created_at")
     list_filter = ("kind", "is_read")
-    search_fields = ("user__email", "title")
+    search_fields = ("user__name", "title")
