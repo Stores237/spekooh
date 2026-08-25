@@ -99,6 +99,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get authReferralHint => 'ex. A1B2C3D4';
 
   @override
+  String get authTermsCheckboxLabel =>
+      'J\'accepte les Conditions d\'utilisation et la Politique de confidentialité';
+
+  @override
   String get authPleaseWait => 'Veuillez patienter…';
 
   @override

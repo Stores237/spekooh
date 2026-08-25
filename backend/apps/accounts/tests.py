@@ -18,24 +18,48 @@ def api_client():
 def test_register_creates_registered_user_and_returns_tokens(api_client):
     response = api_client.post(
         "/api/auth/register/",
-        {"email": "new@example.com", "name": "New User", "password": "S0mePass!23"},
+        {"email": "new@example.com", "name": "New User", "password": "S0mePass!23", "terms_accepted": True},
         format="json",
     )
     assert response.status_code == 201
     assert response.data["user"]["email"] == "new@example.com"
     assert response.data["user"]["account_type"] == AccountType.REGISTERED
     assert "access" in response.data and "refresh" in response.data
-    assert User.objects.get(email="new@example.com").check_password("S0mePass!23")
+    new_user = User.objects.get(email="new@example.com")
+    assert new_user.check_password("S0mePass!23")
+    assert new_user.terms_accepted_at is not None
 
 
 @pytest.mark.django_db
 def test_register_rejects_weak_password(api_client):
     response = api_client.post(
         "/api/auth/register/",
-        {"email": "weak@example.com", "name": "Weak", "password": "123"},
+        {"email": "weak@example.com", "name": "Weak", "password": "123", "terms_accepted": True},
         format="json",
     )
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_register_rejects_missing_terms_acceptance(api_client):
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "noconsent@example.com", "name": "No Consent", "password": "S0mePass!23"},
+        format="json",
+    )
+    assert response.status_code == 400
+    assert not User.objects.filter(email="noconsent@example.com").exists()
+
+
+@pytest.mark.django_db
+def test_register_rejects_explicit_terms_declined(api_client):
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "declined@example.com", "name": "Declined", "password": "S0mePass!23", "terms_accepted": False},
+        format="json",
+    )
+    assert response.status_code == 400
+    assert not User.objects.filter(email="declined@example.com").exists()
 
 
 @pytest.mark.django_db
@@ -128,7 +152,7 @@ def test_registered_user_requires_email_at_db_level():
 def test_register_returns_a_referral_code(api_client):
     response = api_client.post(
         "/api/auth/register/",
-        {"email": "coded@example.com", "name": "Coded User", "password": "S0mePass!23"},
+        {"email": "coded@example.com", "name": "Coded User", "password": "S0mePass!23", "terms_accepted": True},
         format="json",
     )
     assert response.status_code == 201
@@ -145,6 +169,7 @@ def test_register_with_valid_referral_code_sets_referred_by(api_client):
             "name": "Referred User",
             "password": "S0mePass!23",
             "referral_code": referrer.referral_code.lower(),  # case-insensitive
+            "terms_accepted": True,
         },
         format="json",
     )
@@ -162,6 +187,7 @@ def test_register_rejects_an_unknown_referral_code(api_client):
             "name": "Bad Code",
             "password": "S0mePass!23",
             "referral_code": "NOTREAL1",
+            "terms_accepted": True,
         },
         format="json",
     )

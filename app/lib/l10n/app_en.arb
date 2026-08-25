@@ -37,6 +37,7 @@
   "authPasswordLabel": "PASSWORD",
   "authReferralLabel": "REFERRAL CODE (OPTIONAL)",
   "authReferralHint": "e.g. A1B2C3D4",
+  "authTermsCheckboxLabel": "I agree to the Terms of Service and Privacy Policy",
   "authPleaseWait": "Please wait…",
   "authCreateAccountButton": "Create account",
   "authLoginButton": "Log in",

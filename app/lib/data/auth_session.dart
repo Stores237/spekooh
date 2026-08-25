@@ -79,6 +79,7 @@ class AuthSession extends ChangeNotifier {
     required String email,
     required String name,
     required String password,
+    required bool termsAccepted,
     String? referralCode,
   }) async {
     final response = await _client.post(
@@ -88,6 +89,7 @@ class AuthSession extends ChangeNotifier {
         'email': email,
         'name': name,
         'password': password,
+        'terms_accepted': termsAccepted,
         if (referralCode != null && referralCode.isNotEmpty) 'referral_code': referralCode,
       }),
     );

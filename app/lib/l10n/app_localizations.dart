@@ -278,6 +278,12 @@ abstract class AppLocalizations {
   /// **'e.g. A1B2C3D4'**
   String get authReferralHint;
 
+  /// No description provided for @authTermsCheckboxLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree to the Terms of Service and Privacy Policy'**
+  String get authTermsCheckboxLabel;
+
   /// No description provided for @authPleaseWait.
   ///
   /// In en, this message translates to:

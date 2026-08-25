@@ -33,6 +33,7 @@
   "authPasswordLabel": "MOT DE PASSE",
   "authReferralLabel": "CODE DE PARRAINAGE (FACULTATIF)",
   "authReferralHint": "ex. A1B2C3D4",
+  "authTermsCheckboxLabel": "J'accepte les Conditions d'utilisation et la Politique de confidentialité",
   "authPleaseWait": "Veuillez patienter…",
   "authCreateAccountButton": "Créer un compte",
   "authLoginButton": "Se connecter",
