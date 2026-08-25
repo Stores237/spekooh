@@ -55,9 +55,10 @@ class PaperEntry {
   /// submitter and staff are always exempt).
   final bool requiresUnlock;
 
-  /// Server-decided: has this user actually paid to unlock this paper —
-  /// independent of [requiresUnlock], since even a free-to-view report
-  /// still requires a real unlock to download (owner decision).
+  /// Server-decided: has this user actually paid to unlock this paper, or
+  /// is it a lower-tier report (Internship/Bachelor's/HND) that's free to
+  /// download outright — independent of [requiresUnlock] (owner decision;
+  /// see apps.papers.services.report_download_is_free on the backend).
   final bool isUnlocked;
 
   bool get isReport => categoryKey == 'reports';

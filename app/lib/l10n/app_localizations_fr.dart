@@ -172,6 +172,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Consultation gratuite — corrigé vendu séparément';
 
   @override
+  String get homeFreeToViewReport => 'Gratuit à consulter et télécharger';
+
+  @override
+  String get homeReportPaymentRequired => 'Paiement requis pour consulter';
+
+  @override
   String get homeContributionTitle => 'Contribution — gagnez des crédits';
 
   @override

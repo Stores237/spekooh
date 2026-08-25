@@ -55,6 +55,8 @@
   "homeNoPapersYet": "Aucune épreuve publiée pour l'instant — revenez bientôt.",
   "homePaperLabelWithYear": "{label} {year}",
   "homeFreeToView": "Consultation gratuite — corrigé vendu séparément",
+  "homeFreeToViewReport": "Gratuit à consulter et télécharger",
+  "homeReportPaymentRequired": "Paiement requis pour consulter",
   "homeContributionTitle": "Contribution — gagnez des crédits",
   "homeContributionPrompt": "Vous avez une ancienne épreuve ou un rapport que nous n'avons pas ?",
   "homeContributionSubtitle": "Prenez une photo, identifiez-la, gagnez un bonus une fois vérifiée — la première contribution compte.",

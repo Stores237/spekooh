@@ -62,6 +62,8 @@
     "placeholders": {"label": {"type": "String"}, "year": {"type": "int"}}
   },
   "homeFreeToView": "Free to view — marking guide sold separately",
+  "homeFreeToViewReport": "Free to view and download",
+  "homeReportPaymentRequired": "Payment required to view",
   "homeContributionTitle": "Contribution — earn credit",
   "homeContributionPrompt": "Got a past paper or report we don't have?",
   "homeContributionSubtitle": "Snap a photo, tag it, earn bonus credit once it's verified — first contribution counts.",

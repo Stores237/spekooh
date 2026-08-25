@@ -169,6 +169,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeFreeToView => 'Free to view — marking guide sold separately';
 
   @override
+  String get homeFreeToViewReport => 'Free to view and download';
+
+  @override
+  String get homeReportPaymentRequired => 'Payment required to view';
+
+  @override
   String get homeContributionTitle => 'Contribution — earn credit';
 
   @override
