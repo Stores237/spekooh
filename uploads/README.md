@@ -26,6 +26,8 @@ Spekooh crowdsources exam papers from students **and individuals more broadly** 
 | Pamphlet escrow ledger | Custom table on Supabase Postgres (not a third-party escrow product) |
 | QR generation/scanning | Standard server-side QR library; scanning = phone camera opening a web link, no native scanner app |
 | Admin dashboard | Django admin (free, comes with the backend choice) — doubles as the internal ticketing system (§4, `AdminFlagQueue`/`Ticket`) rather than integrating a separate Jira/Linear tool |
+| Cache / rate limiting | **Redis** (`django.core.cache.backends.redis.RedisCache`) — backs DRF's throttles, e.g. the guest-mint endpoint's 10/hour-per-IP limit. Local Redis by default; a managed instance (Upstash, Redis Cloud, etc.) for production is an owner action item, see `TODOS.md` |
+| Error tracking | **Sentry** (`sentry-sdk`, Django integration) — no-ops with no `SENTRY_DSN` set, so a fresh clone still works out of the box. A real Sentry project/DSN is an owner action item, see `TODOS.md` |
 | Target market (v1) | **Cameroon** — bilingual EN/FR UI is P0, currency is **XAF** |
 
 ---
