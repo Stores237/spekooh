@@ -884,6 +884,30 @@ abstract class AppLocalizations {
   /// **'Subject'**
   String get subjectLabel;
 
+  /// No description provided for @addCustomSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a subject'**
+  String get addCustomSubject;
+
+  /// No description provided for @customSubjectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Geology'**
+  String get customSubjectHint;
+
+  /// No description provided for @addCustomSubjectCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get addCustomSubjectCta;
+
+  /// No description provided for @addCustomSubjectError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add that subject. Try again.'**
+  String get addCustomSubjectError;
+
   /// No description provided for @yearLabel.
   ///
   /// In en, this message translates to:

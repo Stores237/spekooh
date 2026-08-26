@@ -451,6 +451,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get subjectLabel => 'Matière';
 
   @override
+  String get addCustomSubject => 'Ajouter une matière';
+
+  @override
+  String get customSubjectHint => 'ex. Géologie';
+
+  @override
+  String get addCustomSubjectCta => 'Ajouter';
+
+  @override
+  String get addCustomSubjectError =>
+      'Impossible d\'ajouter cette matière. Réessayez.';
+
+  @override
   String get yearLabel => 'Année';
 
   @override
