@@ -29,7 +29,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Notes'), findsOneWidget);
-    expect(find.text('Mechanics — Newton’s Laws'), findsOneWidget);
+    expect(find.text('Mechanics: Newton’s Laws'), findsOneWidget);
 
     await tester.tap(find.byIcon(LucideIcons.chevronLeft));
     await tester.pumpAndSettle();

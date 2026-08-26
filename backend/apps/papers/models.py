@@ -95,7 +95,7 @@ class PaperStatus(models.TextChoices):
     GUIDE_SUBMITTED = "GUIDE_SUBMITTED", "Guide submitted"
     MERGED = "MERGED", "Merged"
     PUBLISHED = "PUBLISHED", "Published"
-    UNASSIGNED_ADMIN_QUEUE = "UNASSIGNED_ADMIN_QUEUE", "Unassigned — admin queue"
+    UNASSIGNED_ADMIN_QUEUE = "UNASSIGNED_ADMIN_QUEUE", "Unassigned: admin queue"
 
 
 class PaperSubmission(TimeStampedModel):
@@ -148,7 +148,7 @@ class PaperSubmission(TimeStampedModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.exam_type} {self.year} — {self.subject or 'no subject'}"
+        return f"{self.exam_type} {self.year}, {self.subject or 'no subject'}"
 
     def save(self, *args, **kwargs):
         if self.uploaded_file and not self.file_ref:
@@ -207,7 +207,7 @@ class PaperFlag(TimeStampedModel):
         ]
 
     def __str__(self):
-        return f"{self.get_reason_display()} — paper {self.paper_submission_id} (by {self.flagged_by_id})"
+        return f"{self.get_reason_display()}, paper {self.paper_submission_id} (by {self.flagged_by_id})"
 
 
 class MCQAnswerKey(TimeStampedModel):

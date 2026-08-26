@@ -15,7 +15,7 @@ class PamphletFactory(factory.django.DjangoModelFactory):
         model = Pamphlet
 
     partner = factory.SubFactory(PartnerBookshopFactory)
-    title = "GCE A Level Physics — Full Course Pack"
+    title = "GCE A Level Physics: Full Course Pack"
     price_fcfa = 3000
     delivery_available = True
     delivery_fee_fcfa = 500

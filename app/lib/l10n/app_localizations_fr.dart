@@ -147,7 +147,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get joinFree => 'Inscription gratuite';
 
   @override
-  String get homeExploringBadge => 'Vous explorez — sans compte';
+  String get homeExploringBadge => 'Vous explorez : sans compte';
 
   @override
   String get homeFreeViewsLabel => 'ÉPREUVES GRATUITES';
@@ -164,7 +164,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get homeNoPapersYet =>
-      'Aucune épreuve publiée pour l\'instant — revenez bientôt.';
+      'Aucune épreuve publiée pour l\'instant. Revenez bientôt.';
 
   @override
   String homePaperLabelWithYear(String label, int year) {
@@ -173,7 +173,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get homeFreeToView =>
-      'Consultation gratuite — corrigé vendu séparément';
+      'Consultation gratuite (corrigé vendu séparément)';
 
   @override
   String get homeFreeToViewReport => 'Gratuit à consulter et télécharger';
@@ -182,7 +182,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get homeReportPaymentRequired => 'Paiement requis pour consulter';
 
   @override
-  String get homeContributionTitle => 'Contribution — gagnez des crédits';
+  String get homeContributionTitle => 'Contribution : gagnez des crédits';
 
   @override
   String get homeContributionPrompt =>
@@ -190,7 +190,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get homeContributionSubtitle =>
-      'Prenez une photo, identifiez-la, gagnez un bonus une fois vérifiée — la première contribution compte.';
+      'Prenez une photo, identifiez-la, et gagnez un bonus une fois vérifiée. La première contribution compte.';
 
   @override
   String get notesTitle => 'Notes';
@@ -233,7 +233,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get homeReadingOpenNote =>
-      'La lecture des épreuves reste ouverte à tous — 3 consultations gratuites par jour, sans compte.';
+      'La lecture des épreuves reste ouverte à tous : 3 consultations gratuites par jour, sans compte.';
 
   @override
   String get greetingMorning => 'Bonjour';
@@ -331,7 +331,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get papersSubtitle =>
-      'Tous les niveaux, tous les systèmes — du Primaire au Concours des Grandes Écoles.';
+      'Tous les niveaux, tous les systèmes, du Primaire au Concours des Grandes Écoles.';
 
   @override
   String get searchExamOrSubject =>
@@ -342,7 +342,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String chooseSystemHeader(String category) {
-    return '$category — choisir le système';
+    return '$category : choisir le système';
   }
 
   @override
@@ -363,7 +363,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String chooseTrackHeader(String examType) {
-    return '$examType — choisir la filière';
+    return '$examType : choisir la filière';
   }
 
   @override
@@ -383,12 +383,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String noPapersYetBody(String subject) {
-    return 'Personne n\'a encore soumis d\'épreuve de $subject pour ce type d\'examen. Soyez le premier — soumettez-en une depuis l\'onglet Contribuer.';
+    return 'Personne n\'a encore soumis d\'épreuve de $subject pour ce type d\'examen. Soyez le premier à en soumettre une depuis l\'onglet Contribuer.';
   }
 
   @override
   String noReportsYetBody(String examType) {
-    return 'Personne n\'a encore soumis de $examType. Soyez le premier — soumettez-en un depuis l\'onglet Contribuer.';
+    return 'Personne n\'a encore soumis de $examType. Soyez le premier à en soumettre un depuis l\'onglet Contribuer.';
   }
 
   @override
@@ -396,14 +396,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get contributionSubtitle =>
-      'Partagez une ancienne épreuve ou un rapport académique — chaque contribution aide un autre étudiant.';
+      'Partagez une ancienne épreuve ou un rapport académique. Chaque contribution aide un autre étudiant.';
 
   @override
   String get contributorNameTitle => 'Nom du contributeur';
 
   @override
   String get contributorNameSubtitle =>
-      'Aucun compte n\'est nécessaire pour contribuer — nous créditerons le nom que vous nous donnez.';
+      'Aucun compte n\'est nécessaire pour contribuer. Nous créditerons le nom que vous nous donnez.';
 
   @override
   String get contributorNameLabel => 'Votre nom';
@@ -419,7 +419,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get academicReportComingSoon =>
-      'Les soumissions de rapports académiques ne sont pas encore connectées au serveur — seules les épreuves d\'examen peuvent être soumises pour l\'instant. Revenez bientôt.';
+      'Les soumissions de rapports académiques ne sont pas encore connectées au serveur. Seules les épreuves d\'examen peuvent être soumises pour l\'instant. Revenez bientôt.';
 
   @override
   String get takePhotoOrUploadPdf => 'Prenez une photo ou téléversez un PDF';
@@ -458,7 +458,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get contributionBonusBanner =>
-      'Les nouvelles soumissions vérifiées rapportent un bonus de crédit — utilisable pour débloquer des corrigés.';
+      'Les nouvelles soumissions vérifiées rapportent un bonus de crédit, utilisable pour débloquer des corrigés.';
 
   @override
   String get submitPaperButton => 'Soumettre l\'épreuve';
@@ -492,7 +492,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get contributionReceivedBody =>
-      'Nous la vérifierons d\'abord par rapport aux épreuves existantes — si elle est nouvelle, elle passe en revue par l\'instructeur. Suivez-la depuis Profil.';
+      'Nous la vérifierons d\'abord par rapport aux épreuves existantes. Si elle est nouvelle, elle passe en revue par l\'instructeur. Suivez-la depuis Profil.';
 
   @override
   String submissionFailed(String error) {
@@ -501,7 +501,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String fileTooLargeError(int maxMb) {
-    return 'Le fichier est trop volumineux — ce type de rapport autorise jusqu\'à $maxMb Mo.';
+    return 'Le fichier est trop volumineux. Ce type de rapport autorise jusqu\'à $maxMb Mo.';
   }
 
   @override
@@ -536,7 +536,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get forumNoPosts =>
-      'Aucune question pour l\'instant — soyez le premier à en poser une.';
+      'Aucune question pour l\'instant. Soyez le premier à en poser une.';
 
   @override
   String get forumAskButton => '+ Question';
@@ -620,14 +620,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get pastPaperPracticeSubtitle =>
-      'Généré automatiquement à partir des épreuves soumises — bientôt disponible';
+      'Généré automatiquement à partir des épreuves soumises (bientôt disponible)';
 
   @override
   String get fridayArenaTitle => 'Arène du vendredi';
 
   @override
   String get fridayArenaSubtitle =>
-      'Quiz d\'élimination en direct — bientôt disponible';
+      'Quiz d\'élimination en direct (bientôt disponible)';
 
   @override
   String get topPlayers => 'Meilleurs joueurs';
@@ -706,7 +706,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String shareRedeemCodeMessage(String code, String subtitle) {
-    return 'Utilisez mon code de réduction Spekooh $code — $subtitle';
+    return 'Utilisez mon code de réduction Spekooh $code : $subtitle';
   }
 
   @override
@@ -721,7 +721,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String shareReferralMessage(String code) {
-    return 'Rejoignez-moi sur Spekooh — inscrivez-vous avec mon code de parrainage $code.';
+    return 'Rejoignez-moi sur Spekooh. Inscrivez-vous avec mon code de parrainage $code.';
   }
 
   @override
@@ -767,7 +767,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get adNotCompletedError =>
-      'Publicité non terminée — aucune consultation accordée.';
+      'Publicité non terminée. Aucune consultation accordée.';
 
   @override
   String adLoadError(String error) {
@@ -787,11 +787,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get viewOnlyNotice =>
-      'Consultation uniquement — débloquez pour télécharger une copie';
+      'Consultation uniquement. Débloquez pour télécharger une copie';
 
   @override
   String get reportThanksMessage =>
-      'Merci — l\'équipe de vérification a été notifiée.';
+      'Merci ! L\'équipe de vérification a été notifiée.';
 
   @override
   String reportSendError(String error) {
@@ -852,7 +852,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get reportDownloadSubtitle =>
-      'La consultation dans l\'application est gratuite — débloquez une fois pour enregistrer une copie hors ligne';
+      'La consultation dans l\'application est gratuite. Débloquez une fois pour enregistrer une copie hors ligne';
 
   @override
   String unlockedForAmount(int amount) {
@@ -860,7 +860,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get unlockButton => 'Débloquer — 500 FCFA';
+  String get unlockButton => 'Débloquer : 500 FCFA';
 
   @override
   String get alreadyUnlocked => 'Débloqué.';
@@ -873,7 +873,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get reportLockedMessage =>
-      'Les thèses de Master et de Doctorat nécessitent un paiement pour être consultées — débloquez ci-dessous pour la lire.';
+      'Les thèses de Master et de Doctorat nécessitent un paiement pour être consultées. Débloquez ci-dessous pour la lire.';
 
   @override
   String get unlockToDownloadHint =>
@@ -988,14 +988,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get escrowExplanation =>
-      'Spekooh conserve votre paiement en séquestre. Vous recevrez un ticket QR à usage unique pour le récupérer à la librairie — le paiement n\'est débloqué au partenaire qu\'une fois le ticket scanné.';
+      'Spekooh conserve votre paiement en séquestre. Vous recevrez un ticket QR à usage unique pour le récupérer à la librairie. Le paiement n\'est débloqué au partenaire qu\'une fois le ticket scanné.';
 
   @override
   String get pickupInStoreLabel => 'RETRAIT · EN BOUTIQUE';
 
   @override
   String payAndReserve(String amount) {
-    return 'Payer et réserver — $amount FCFA';
+    return 'Payer et réserver : $amount FCFA';
   }
 
   @override
@@ -1010,7 +1010,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String showQrAtPartner(String partner) {
-    return 'Montrez ce QR à $partner. Usage unique — expire dans 30 jours. Le paiement est débloqué au partenaire une fois scanné.';
+    return 'Montrez ce QR à $partner. Usage unique, expire dans 30 jours. Le paiement est débloqué au partenaire une fois scanné.';
   }
 
   @override

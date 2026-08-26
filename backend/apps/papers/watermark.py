@@ -18,7 +18,7 @@ from reportlab.pdfgen import canvas
 
 logger = logging.getLogger(__name__)
 
-WATERMARK_TEXT = "Spekooh — spekooh.com"
+WATERMARK_TEXT = "Spekooh · spekooh.com"
 
 
 def watermark_bytes(content: bytes, filename: str) -> bytes:

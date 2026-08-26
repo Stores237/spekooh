@@ -22,7 +22,7 @@ def place_order(*, user, pamphlet, is_delivery: bool, phone_number: str) -> Pamp
         purpose=PaymentPurpose.PAMPHLET_ORDER,
         amount_fcfa=amount,
         phone_number=phone_number,
-        description=f"Pamphlet order — {pamphlet.title}",
+        description=f"Pamphlet order: {pamphlet.title}",
     )
     if transaction.status != PaymentTransactionStatus.SUCCESS:
         raise PamphletOrderError(transaction.failure_reason or "Payment failed.")

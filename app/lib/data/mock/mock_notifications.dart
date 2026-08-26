@@ -16,7 +16,7 @@ const mockNotifications = [
     icon: LucideIcons.check,
     tint: IconChipTint.green,
     title: 'Physics paper published',
-    body: 'Your submission\'s marking guide is live — you earned 150 credits.',
+    body: 'Your submission\'s marking guide is live. You earned 150 credits.',
     time: '1 day ago',
   ),
 ];

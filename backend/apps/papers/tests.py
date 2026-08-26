@@ -933,7 +933,7 @@ def test_admin_file_link_renders_a_real_download_link_when_a_file_exists():
 def test_admin_file_link_shows_a_placeholder_when_there_is_no_file():
     paper = PaperSubmissionFactory(uploaded_file=None)
     admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
-    assert admin_instance.file_link(paper) == "—"
+    assert admin_instance.file_link(paper) == "-"
 
 
 @pytest.mark.django_db

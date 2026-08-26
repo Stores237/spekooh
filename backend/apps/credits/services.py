@@ -78,7 +78,7 @@ def award_referral_bonus(referred_user) -> CreditLedgerEntry | None:
     return CreditLedgerEntry.objects.create(
         user=referrer,
         amount=config.amount,
-        reason=f"Referral bonus — {referred_user.name or referred_user.email} unlocked their first paper",
+        reason=f"Referral bonus: {referred_user.name or referred_user.email} unlocked their first paper",
     )
 
 
