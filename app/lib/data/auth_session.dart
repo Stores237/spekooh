@@ -8,8 +8,10 @@ import 'token_storage.dart';
 
 /// Base URL for the auth endpoints specifically, since [AuthSession] can't
 /// depend on [ApiClient] (ApiClient depends on AuthSession for its bearer
-/// token) — kept in sync with api_client.dart's default/override.
-const String _authBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://10.0.2.2:8000/api');
+/// token) — kept in sync with api_client.dart's default/override, including
+/// the kIsWeb split (10.0.2.2 resolves to nothing on web).
+const String _authDefaultBaseUrl = kIsWeb ? 'http://localhost:8000/api' : 'http://10.0.2.2:8000/api';
+const String _authBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: _authDefaultBaseUrl);
 
 /// Which of AuthSession's fixed set of failures happened — the widget layer
 /// (which has a BuildContext, so can reach AppLocalizations) maps this to a
