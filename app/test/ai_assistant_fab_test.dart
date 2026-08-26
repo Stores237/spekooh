@@ -18,6 +18,7 @@ void main() {
   testWidgets('AI assistant FAB is hidden for guest, appears after login, and opens its sheet', (tester) async {
     RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
     await tester.pumpWidget(const SpekoohApp());
+    await tester.pump(const Duration(milliseconds: 1300)); // clears SplashScreen's timed handoff to RootShell
     expect(find.byIcon(LucideIcons.sparkles), findsNothing);
 
     // Log in via Settings.
