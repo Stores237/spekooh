@@ -29,6 +29,18 @@ I can write unilaterally. Grouped by what each one unblocks.
 - **Firebase project** — only if real push notifications are wanted (current notifications are
   in-app only, which may be enough for v1 per spec).
 - **App store accounts** — Apple Developer + Google Play Console, once a build is ready to ship.
+- **Sentry DSN** (2026-08-26): `sentry-sdk` is fully wired in `config/settings/base.py`
+  (Django integration, `send_default_pii=False` — consistent with the admin PII-redaction work),
+  but with no `SENTRY_DSN` set it has no transport and never makes a network call, so a fresh
+  clone still works out of the box. Create a Sentry project and set `SENTRY_DSN` to start
+  actually receiving error reports — right now a production exception's first sign of life is
+  someone reporting it.
+- **Managed Redis for production** (2026-08-26): `CACHES` now points at Redis (local
+  `rediscache://localhost:6379/0` by default, same fallback pattern as `DATABASE_URL`) — it
+  backs the new guest-mint rate limit (`apps.accounts.views.GuestView`, 10/hour per IP; see
+  `apps.accounts.tests.test_guest_endpoint_is_rate_limited_per_ip`). Dev/CI use a real local/
+  containerized Redis; production needs a real managed instance (Upstash, Redis Cloud, etc.) —
+  set `REDIS_URL` to switch, no code change either way.
 
 ### Content only the owner can provide
 - **Real papers to seed the app**: the papers database is genuinely empty right now

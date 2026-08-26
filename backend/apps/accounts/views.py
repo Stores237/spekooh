@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -41,7 +42,15 @@ class RefreshView(TokenRefreshView):
 
 
 class GuestView(APIView):
+    """AllowAny + unauthenticated means nothing else rate-limits this —
+    without a real throttle, scripting this endpoint mints unlimited real
+    User rows (each a permanent DB row until the 24h prune job reaps it —
+    see prune_stale_guest_accounts). Redis-backed so the counter survives
+    across worker processes, not just one."""
+
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "guest_mint"
 
     @extend_schema(request=None, responses=UserSerializer)
     def post(self, request):

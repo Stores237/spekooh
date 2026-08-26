@@ -129,6 +129,33 @@ def test_guest_endpoint_falls_back_to_generated_name_for_blank_input(api_client)
 
 
 @pytest.mark.django_db
+def test_guest_endpoint_is_rate_limited_per_ip(api_client, monkeypatch):
+    """Without a real throttle, scripting this endpoint mints unlimited
+    real User rows (see GuestView's own docstring). Redis-backed via
+    CACHES["default"] — this hits the real local Redis, not a mock, so a
+    genuine connection failure would fail this test too, not just a wrong
+    assertion.
+
+    Note: DRF bakes DEFAULT_THROTTLE_RATES into SimpleRateThrottle.THROTTLE_RATES
+    as a class attribute at import time — once any earlier test has imported
+    rest_framework.throttling, overriding settings.REST_FRAMEWORK no longer
+    reaches it. Monkeypatching the dict DRF actually reads from at request
+    time is the reliable way to test a specific rate.
+    """
+    from rest_framework.throttling import SimpleRateThrottle
+
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "guest_mint", "2/hour")
+
+    first = api_client.post("/api/auth/guest/", {}, format="json")
+    second = api_client.post("/api/auth/guest/", {}, format="json")
+    third = api_client.post("/api/auth/guest/", {}, format="json")
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+    assert third.status_code == 429
+
+
+@pytest.mark.django_db
 def test_me_requires_authentication(api_client):
     response = api_client.get("/api/auth/me/")
     assert response.status_code == 401

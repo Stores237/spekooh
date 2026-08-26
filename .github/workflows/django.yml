@@ -30,9 +30,23 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      # CACHES now points at Redis (see config/settings/base.py) and DRF's
+      # guest-mint throttle reads/writes it on every request to that
+      # endpoint — without this service those tests fail on connection
+      # refused, not a throttle assertion.
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/spekooh
+      REDIS_URL: rediscache://localhost:6379/0
 
     steps:
     - uses: actions/checkout@v7
