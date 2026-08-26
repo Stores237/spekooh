@@ -5,6 +5,8 @@ Shared settings for every environment. dev.py / prod.py layer on top.
 from pathlib import Path
 
 import environ
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -14,6 +16,21 @@ environ.Env.read_env(BASE_DIR / ".env")
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="dev-secret-key-change-me-please-at-least-32-bytes-long")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
+
+# No-ops when SENTRY_DSN is unset (sentry-sdk's own documented behavior),
+# so a fresh clone with no Sentry project still works out of the box —
+# same fallback pattern as DATABASE_URL/REDIS_URL/AWS_* above and below.
+sentry_sdk.init(
+    dsn=env("SENTRY_DSN", default=None),
+    integrations=[DjangoIntegration()],
+    environment="development" if DEBUG else "production",
+    # Errors are always captured regardless of this — this is the *trace*
+    # sample rate for performance monitoring, kept low since this isn't a
+    # latency-critical service and a low-traffic beta doesn't need every
+    # request traced to get useful signal.
+    traces_sample_rate=0.1,
+    send_default_pii=False,
+)
 
 INSTALLED_APPS = [
     "unfold",  # must precede django.contrib.admin to override its templates
@@ -77,6 +94,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {"default": env.db("DATABASE_URL", default="postgres://postgres@localhost:5432/spekooh")}
+
+# Local Redis by default so a fresh clone with no managed Redis still
+# works out of the box (mirrors DATABASE_URL's own fallback). Backs DRF's
+# throttle classes (see the guest-mint rate limit below) and is the
+# obvious place to move any future hot-path counter (e.g. the daily
+# free-view count) if that ever needs to stop being a live COUNT query.
+CACHES = {"default": env.cache("REDIS_URL", default="rediscache://localhost:6379/0")}
 
 AUTH_USER_MODEL = "accounts.User"
 
@@ -150,6 +174,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Backed by CACHES["default"] (Redis) above — DRF's throttles use
+    # whatever the default cache is automatically, no extra wiring.
+    "DEFAULT_THROTTLE_RATES": {
+        # Per-IP. A real contributor mints one guest per submission
+        # attempt; 10/hour is generous for retries but stops scripted
+        # spam from creating unlimited real accounts.
+        "guest_mint": "10/hour",
+    },
 }
 
 SPECTACULAR_SETTINGS = {
