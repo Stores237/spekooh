@@ -464,4 +464,40 @@ void main() {
       expect(find.text('View'), findsOneWidget);
     });
   });
+
+  testWidgets('a report with no subject shows its exam type once, not duplicated', (tester) async {
+    // Regression: reports have no Subject taxonomy, so subjectTitle is null
+    // — the title builder used to fall back to examTypeName for BOTH halves,
+    // rendering "Internship Report — Internship Report 2022".
+    final report = PaperEntry(
+      id: 7,
+      year: 2022,
+      system: null,
+      track: '',
+      status: 'PUBLISHED',
+      fileUrl: null,
+      createdAt: DateTime(2022, 1, 1),
+      examTypeName: 'Internship Report',
+      categoryKey: 'reports',
+    );
+    await tester.pumpWidget(l10nTestApp(
+      PaperDetailScreen(paperEntry: report, repository: _FileBackedPapersRepository(report), adController: _FakeRewardedAdController(grantsReward: false)),
+    ));
+    await tester.pump();
+
+    expect(find.text('Internship Report 2022'), findsOneWidget);
+    expect(find.textContaining('Internship Report —'), findsNothing);
+    // Regression: reports have no MCQ questions at all — the marking-guide
+    // disclaimer banner only makes sense for exam papers.
+    expect(find.textContaining('MCQ'), findsNothing);
+  });
+
+  testWidgets('an exam paper shows the MCQ marking disclaimer', (tester) async {
+    await tester.pumpWidget(l10nTestApp(
+      PaperDetailScreen(paperEntry: _entry, repository: _FileBackedPapersRepository(_entry), adController: _FakeRewardedAdController(grantsReward: false)),
+    ));
+    await tester.pump();
+
+    expect(find.textContaining('marked in-house'), findsOneWidget);
+  });
 }

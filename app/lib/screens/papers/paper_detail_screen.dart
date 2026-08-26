@@ -22,6 +22,14 @@ import '../../widgets/spekooh_banner.dart';
 import 'papers_screen.dart';
 import 'report_viewer_screen.dart';
 
+/// Reports have no Subject taxonomy (subjectTitle is null/absent), so
+/// without this guard the title duplicated the exam type: "Internship
+/// Report, Internship Report 2022".
+String _paperTitle({required String? subjectTitle, required String examTypeLabel, required int year}) {
+  if (subjectTitle == null || subjectTitle == examTypeLabel) return '$examTypeLabel $year';
+  return '$subjectTitle, $examTypeLabel $year';
+}
+
 /// Ported from ui_kits/spekooh-app/PaperDetailScreen.jsx. Pushed as a
 /// full-screen overlay when a paper is tapped in PapersScreen's paper list.
 class PaperDetailScreen extends StatefulWidget {
@@ -234,9 +242,17 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       );
     }
 
+    // Academic reports (theses, internship reports, mémoires) have no MCQ
+    // questions at all, unlike exam papers' marking guides — the MCQ
+    // disclaimer banner below only makes sense for the latter.
+    final isReport = entry.isReport || selection?.category.key == ExamCategoryKey.reports;
     final title = selection != null
-        ? '${selection.subject?.title ?? selection.examType.name} — ${selection.examType.name}${selection.track != null ? ' ${selection.track}' : ''} ${entry.year}'
-        : '${entry.subjectTitle ?? entry.examTypeName ?? 'Paper'} — ${entry.examTypeName ?? ''} ${entry.year}';
+        ? _paperTitle(
+            subjectTitle: selection.subject?.title,
+            examTypeLabel: '${selection.examType.name}${selection.track != null ? ' ${selection.track}' : ''}',
+            year: entry.year,
+          )
+        : _paperTitle(subjectTitle: entry.subjectTitle, examTypeLabel: entry.examTypeName ?? 'Paper', year: entry.year);
     final meta = selection != null
         ? [
             selection.category.title,
@@ -464,12 +480,14 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                   );
                 },
               ),
-              const SizedBox(height: AppSpacing.space4),
-              SpekoohBanner(
-                tone: SpekoohBannerTone.blue,
-                icon: const Icon(LucideIcons.info),
-                message: l10n.mcqDisclaimer,
-              ),
+              if (!isReport) ...[
+                const SizedBox(height: AppSpacing.space4),
+                SpekoohBanner(
+                  tone: SpekoohBannerTone.blue,
+                  icon: const Icon(LucideIcons.info),
+                  message: l10n.mcqDisclaimer,
+                ),
+              ],
               const SizedBox(height: AppSpacing.space6),
             ],
           ),
