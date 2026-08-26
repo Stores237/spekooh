@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
@@ -8,10 +9,12 @@ import 'auth_session.dart';
 /// Base URL for the Django backend. Override at build/run time with
 /// `--dart-define=API_BASE_URL=http://<host>:8000/api`.
 ///
-/// Defaults to the standard Android-emulator-to-host address. For an iOS
-/// simulator use `http://localhost:8000/api`; for a physical device use
-/// your machine's LAN IP.
-const String _defaultBaseUrl = 'http://10.0.2.2:8000/api';
+/// `10.0.2.2` is the Android emulator's alias for the host machine — it
+/// resolves to nothing on web, so requests there just hang until timeout
+/// instead of failing fast. Web needs the real host. For an iOS simulator
+/// this also correctly resolves via `localhost`; for a physical device use
+/// your machine's LAN IP via the dart-define above.
+const String _defaultBaseUrl = kIsWeb ? 'http://localhost:8000/api' : 'http://10.0.2.2:8000/api';
 
 class ApiException implements Exception {
   ApiException(this.statusCode, this.body);
