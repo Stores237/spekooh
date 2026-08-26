@@ -336,6 +336,22 @@ I can write unilaterally. Grouped by what each one unblocks.
   product idea (bundling marking-guide access into a subscription) — not started, and shouldn't
   be until product decides whether pay-per-unlock stays the only marking-guide monetization path.
 
+### 12. Auto-extract paper metadata and auto-file submissions (2026-08-26, owner idea)
+- **Idea:** when a contributor submits a scanned paper (`SubmitScreen` → `POST
+  /api/papers/submissions/`), run OCR/document-understanding on the upload to recognize the
+  essential fields — subject, exam board, year, level/grade, paper number — and auto-fill the
+  submission's category/tags instead of relying entirely on what the contributor typed in by hand.
+  Goal: less manual tagging work for contributors, more consistent categorization for review.
+- **Backend:** not built — `PaperSubmission` today is filed purely by the fields the contributor
+  submits (`apps/papers/models.py`); there is no OCR/extraction step anywhere in the upload
+  pipeline, and no third-party OCR provider is wired in (`uploads/README.md` §2 lists
+  "OCR/duplicate detection" as a confirmed but not-yet-implemented stack choice — this idea is the
+  concrete feature that would consume it).
+- **Scope note:** real OCR needs a provider decision (e.g. a hosted OCR/document-AI API vs.
+  self-hosted) plus a review step, since auto-filed fields should stay contributor/reviewer-
+  correctable rather than silently overriding what a human typed. Not started — needs its own
+  design pass before implementation, not a drop-in addition.
+
 ---
 
 ## Not in the spec at all, and correctly left alone

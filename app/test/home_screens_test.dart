@@ -13,6 +13,7 @@ import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/screens/home/home_screen.dart';
 import 'package:spekooh/screens/home/logged_in_home_screen.dart';
 import 'package:spekooh/main.dart';
+import 'package:spekooh/shell/root_shell.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'support/l10n_test_app.dart';
@@ -143,6 +144,8 @@ void main() {
 
   testWidgets('Full login flow: Settings -> Log in -> LoggedInHomeScreen on Home tab', (tester) async {
     RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
+    RootShellState.debugShowContributeNudge = false; // dialog would steal taps meant for nav/Settings
+    addTearDown(() => RootShellState.debugShowContributeNudge = true);
     await tester.pumpWidget(const SpekoohApp());
     await tester.pump(const Duration(milliseconds: 1300)); // clears SplashScreen's timed handoff to RootShell
 

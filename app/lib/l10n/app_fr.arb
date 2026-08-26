@@ -281,6 +281,11 @@
   "cancelButton": "Annuler",
   "submitButton": "Soumettre",
 
+  "contributeNudgeTitle": "Aidez d'autres étudiants",
+  "contributeNudgeBody": "Si vous avez une ancienne épreuve ou un rapport académique, le soumettre avec précision et dès que possible aide d'autres étudiants qui en ont besoin maintenant. Chaque contribution fait une vraie différence.",
+  "contributeNudgeCta": "Contribuer maintenant",
+  "contributeNudgeDismiss": "Plus tard",
+
   "reasonWrongAnswers": "Réponses incorrectes ou manquantes",
   "reasonPoorQuality": "Mauvaise qualité de scan / illisible",
   "reasonWrongSubject": "Mauvaise matière ou type d'examen",

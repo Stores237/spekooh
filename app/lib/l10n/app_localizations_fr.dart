@@ -905,6 +905,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get submitButton => 'Soumettre';
 
   @override
+  String get contributeNudgeTitle => 'Aidez d\'autres étudiants';
+
+  @override
+  String get contributeNudgeBody =>
+      'Si vous avez une ancienne épreuve ou un rapport académique, le soumettre avec précision et dès que possible aide d\'autres étudiants qui en ont besoin maintenant. Chaque contribution fait une vraie différence.';
+
+  @override
+  String get contributeNudgeCta => 'Contribuer maintenant';
+
+  @override
+  String get contributeNudgeDismiss => 'Plus tard';
+
+  @override
   String get reasonWrongAnswers => 'Réponses incorrectes ou manquantes';
 
   @override
