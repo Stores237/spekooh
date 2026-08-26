@@ -381,6 +381,11 @@
   "cancelButton": "Cancel",
   "submitButton": "Submit",
 
+  "contributeNudgeTitle": "Help other students",
+  "contributeNudgeBody": "If you have a past paper or academic report, submitting it accurately and as soon as you can helps other students who need it right now. Every contribution makes a real difference.",
+  "contributeNudgeCta": "Contribute now",
+  "contributeNudgeDismiss": "Maybe later",
+
   "reasonWrongAnswers": "Wrong or missing answers",
   "reasonPoorQuality": "Poor scan quality / unreadable",
   "reasonWrongSubject": "Wrong subject or exam type",

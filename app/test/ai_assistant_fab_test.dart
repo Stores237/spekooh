@@ -4,6 +4,7 @@ import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repository_locator.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/main.dart';
+import 'package:spekooh/shell/root_shell.dart';
 import 'package:spekooh/widgets/ai_assistant_fab.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -13,10 +14,12 @@ import 'support/mock_repository_locator.dart';
 void main() {
   tearDown(() {
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    RootShellState.debugShowContributeNudge = true;
   });
 
   testWidgets('AI assistant FAB is hidden for guest, appears after login, and opens its sheet', (tester) async {
     RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
+    RootShellState.debugShowContributeNudge = false; // dialog would steal taps meant for nav/Settings
     await tester.pumpWidget(const SpekoohApp());
     await tester.pump(const Duration(milliseconds: 1300)); // clears SplashScreen's timed handoff to RootShell
     expect(find.byIcon(LucideIcons.sparkles), findsNothing);

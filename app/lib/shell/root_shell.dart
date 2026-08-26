@@ -43,11 +43,50 @@ class RootShellState extends State<RootShell> {
 
   bool get isLoggedIn => _isLoggedIn;
 
+  /// Widget tests pump SpekoohApp/RootShell to assert on Home/nav content
+  /// immediately — the nudge dialog would steal their subsequent taps (e.g.
+  /// tapping the Settings icon). Same debug-seam pattern as
+  /// AuthSession/LocaleController's debugSetInstance.
+  @visibleForTesting
+  static bool debugShowContributeNudge = true;
+
   @override
   void initState() {
     super.initState();
     AuthSession.instance.addListener(_onAuthChanged);
     AuthSession.instance.bootstrap();
+    if (debugShowContributeNudge) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showContributeNudge());
+    }
+  }
+
+  /// Owner ask: nudge contributors to submit accurate papers as soon as they
+  /// can, since someone else may need exactly that paper right now. Shown
+  /// once per app session (not persisted) — a "don't show again" flag can
+  /// follow later if this turns out to feel naggy across repeat sessions.
+  void _showContributeNudge() {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.contributeNudgeTitle),
+        content: Text(l10n.contributeNudgeBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.contributeNudgeDismiss),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              goToTab(2);
+            },
+            child: Text(l10n.contributeNudgeCta),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

@@ -1664,6 +1664,30 @@ abstract class AppLocalizations {
   /// **'Submit'**
   String get submitButton;
 
+  /// No description provided for @contributeNudgeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help other students'**
+  String get contributeNudgeTitle;
+
+  /// No description provided for @contributeNudgeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'If you have a past paper or academic report, submitting it accurately and as soon as you can helps other students who need it right now. Every contribution makes a real difference.'**
+  String get contributeNudgeBody;
+
+  /// No description provided for @contributeNudgeCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribute now'**
+  String get contributeNudgeCta;
+
+  /// No description provided for @contributeNudgeDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe later'**
+  String get contributeNudgeDismiss;
+
   /// No description provided for @reasonWrongAnswers.
   ///
   /// In en, this message translates to:
