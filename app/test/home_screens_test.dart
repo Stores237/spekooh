@@ -144,6 +144,7 @@ void main() {
   testWidgets('Full login flow: Settings -> Log in -> LoggedInHomeScreen on Home tab', (tester) async {
     RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
     await tester.pumpWidget(const SpekoohApp());
+    await tester.pump(const Duration(milliseconds: 1300)); // clears SplashScreen's timed handoff to RootShell
 
     await tester.ensureVisible(find.byIcon(LucideIcons.settings));
     await tester.pumpAndSettle();

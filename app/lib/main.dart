@@ -7,6 +7,7 @@ import 'data/offline_papers_store.dart';
 import 'l10n/app_localizations.dart';
 import 'theme/app_theme.dart';
 import 'shell/root_shell.dart';
+import 'shell/splash_screen.dart';
 
 void main() async {
   // Needed before LocaleController.bootstrap() can read the platform's
@@ -44,7 +45,7 @@ class SpekoohApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const RootShell(),
+        home: const SplashScreen(child: RootShell()),
       ),
     );
   }

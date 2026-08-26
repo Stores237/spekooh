@@ -91,6 +91,7 @@ flutter:
   # PaperDetailScreen — owner-supplied, 2026-08-23.
   assets:
     - assets/report_covers/
+    - assets/branding/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
