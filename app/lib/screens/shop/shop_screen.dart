@@ -9,7 +9,9 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/filter_chip_row.dart';
+import '../../widgets/filter_trigger_button.dart';
 import '../../widgets/search_input.dart';
+import '../../widgets/spekooh_button.dart';
 import '../common/circular_back_button.dart';
 
 /// Ported from ui_kits/spekooh-app/ShopScreen.jsx. Pushed as a full-screen
@@ -36,6 +38,80 @@ class _ShopScreenState extends State<ShopScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openFilters(List<String> subjects, List<String> levels) {
+    final l10n = AppLocalizations.of(context)!;
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      l10n.filtersTitle,
+                      style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _subjectFilter = null;
+                          _levelFilter = null;
+                        });
+                        setSheetState(() {});
+                      },
+                      child: Text(
+                        l10n.filterClearAll,
+                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (subjects.isNotEmpty) ...[
+                  FilterChipRow(
+                    label: l10n.subjectLabel,
+                    options: subjects,
+                    selected: _subjectFilter,
+                    onSelected: (v) {
+                      setState(() => _subjectFilter = v);
+                      setSheetState(() {});
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+                ],
+                if (levels.isNotEmpty)
+                  FilterChipRow(
+                    label: l10n.academicLevelFilterLabel,
+                    options: levels,
+                    selected: _levelFilter,
+                    onSelected: (v) {
+                      setState(() => _levelFilter = v);
+                      setSheetState(() {});
+                    },
+                  ),
+                const SizedBox(height: AppSpacing.space5),
+                SizedBox(
+                  width: double.infinity,
+                  child: SpekoohButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    child: Text(l10n.filterDone),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -66,8 +142,6 @@ class _ShopScreenState extends State<ShopScreen> {
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
-              SearchInput(placeholder: l10n.searchPamphlets, controller: _searchController, onChanged: (v) => setState(() => _query = v)),
-              const SizedBox(height: AppSpacing.space4),
               Expanded(
                 child: FutureBuilder<List<Pamphlet>>(
                   future: _pamphletsFuture,
@@ -85,24 +159,25 @@ class _ShopScreenState extends State<ShopScreen> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (subjects.isNotEmpty) ...[
-                          FilterChipRow(
-                            label: l10n.subjectLabel,
-                            options: subjects,
-                            selected: _subjectFilter,
-                            onSelected: (v) => setState(() => _subjectFilter = v),
-                          ),
-                          const SizedBox(height: AppSpacing.space3),
-                        ],
-                        if (levels.isNotEmpty) ...[
-                          FilterChipRow(
-                            label: l10n.academicLevelFilterLabel,
-                            options: levels,
-                            selected: _levelFilter,
-                            onSelected: (v) => setState(() => _levelFilter = v),
-                          ),
-                          const SizedBox(height: AppSpacing.space4),
-                        ],
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SearchInput(
+                                placeholder: l10n.searchPamphlets,
+                                controller: _searchController,
+                                onChanged: (v) => setState(() => _query = v),
+                              ),
+                            ),
+                            if (subjects.isNotEmpty || levels.isNotEmpty) ...[
+                              const SizedBox(width: AppSpacing.space3),
+                              FilterTriggerButton(
+                                active: _subjectFilter != null || _levelFilter != null,
+                                onTap: () => _openFilters(subjects, levels),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.space4),
                         Expanded(
                           child: ListView.separated(
                             itemCount: items.length,

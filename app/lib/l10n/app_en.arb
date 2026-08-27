@@ -215,6 +215,9 @@
   "takePhoto": "Take a photo",
 
   "filterAll": "All",
+  "filtersTitle": "Filters",
+  "filterClearAll": "Clear all",
+  "filterDone": "Done",
   "forumFilterMySubjects": "My subjects",
   "forumFilterUnanswered": "Unanswered",
   "forumFilterSolved": "Solved",

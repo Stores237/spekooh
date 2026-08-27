@@ -57,18 +57,27 @@ void main() {
     expect(find.text('Cell Structure & Function'), findsOneWidget);
     expect(find.text('Acids, Bases & Salts'), findsOneWidget);
 
-    // Filter by subject: Chemistry.
+    // Filters live in an on-demand sheet behind a trigger button, not two
+    // permanent chip rows — open it, pick a subject, apply.
+    await tester.tap(find.text('Filters'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Chemistry'));
     await tester.pump();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
 
     expect(find.text('Acids, Bases & Salts'), findsOneWidget);
     expect(find.text('Cell Structure & Function'), findsNothing);
 
     // Back to All on subject, then filter by level: O Level (Biology + Chemistry).
+    await tester.tap(find.text('Filters'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('All').first);
     await tester.pump();
     await tester.tap(find.text('O Level'));
     await tester.pump();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
 
     expect(find.text('Acids, Bases & Salts'), findsOneWidget);
     expect(find.text('Cell Structure & Function'), findsOneWidget);
