@@ -47,4 +47,31 @@ void main() {
     expect(find.text('Notes'), findsOneWidget); // same word in both languages
     expect(find.text('Rechercher des sujets...'), findsOneWidget);
   });
+
+  testWidgets('Subject and Academic level filters narrow the list independently', (tester) async {
+    await tester.pumpWidget(l10nTestApp(NotesScreen(repository: MockNotesRepository())));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // All 5 seeded notes show with no filter applied.
+    expect(find.text('Cell Structure & Function'), findsOneWidget);
+    expect(find.text('Acids, Bases & Salts'), findsOneWidget);
+
+    // Filter by subject: Chemistry.
+    await tester.tap(find.text('Chemistry'));
+    await tester.pump();
+
+    expect(find.text('Acids, Bases & Salts'), findsOneWidget);
+    expect(find.text('Cell Structure & Function'), findsNothing);
+
+    // Back to All on subject, then filter by level: O Level (Biology + Chemistry).
+    await tester.tap(find.text('All').first);
+    await tester.pump();
+    await tester.tap(find.text('O Level'));
+    await tester.pump();
+
+    expect(find.text('Acids, Bases & Salts'), findsOneWidget);
+    expect(find.text('Cell Structure & Function'), findsOneWidget);
+    expect(find.text('Les Nombres Complexes'), findsNothing); // Terminale, not O Level
+  });
 }

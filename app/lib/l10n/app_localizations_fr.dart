@@ -760,6 +760,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get searchTopics => 'Rechercher des sujets...';
 
   @override
+  String get academicLevelFilterLabel => 'Niveau';
+
+  @override
   String get notificationsTitle => 'Notifications';
 
   @override

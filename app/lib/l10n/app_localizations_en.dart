@@ -749,6 +749,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchTopics => 'Search topics...';
 
   @override
+  String get academicLevelFilterLabel => 'Level';
+
+  @override
   String get notificationsTitle => 'Notifications';
 
   @override

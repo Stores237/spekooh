@@ -1418,6 +1418,12 @@ abstract class AppLocalizations {
   /// **'Search topics...'**
   String get searchTopics;
 
+  /// No description provided for @academicLevelFilterLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get academicLevelFilterLabel;
+
   /// No description provided for @notificationsTitle.
   ///
   /// In en, this message translates to:

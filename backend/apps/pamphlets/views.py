@@ -1,6 +1,7 @@
 from django.core import signing
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_protect
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -23,6 +24,8 @@ class PamphletViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
     permission_classes = [permissions.AllowAny]
     queryset = Pamphlet.objects.filter(is_active=True).select_related("partner")
     serializer_class = PamphletSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["subject_title", "academic_level"]
 
     @action(detail=False, methods=["get"])
     def featured(self, request):

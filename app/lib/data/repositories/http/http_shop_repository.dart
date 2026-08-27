@@ -17,6 +17,8 @@ class HttpShopRepository implements ShopRepository {
       description: row['description'] as String? ?? '',
       deliveryAvailable: row['delivery_available'] as bool? ?? false,
       deliveryFeeFcfa: row['delivery_fee_fcfa'] as int? ?? 0,
+      subjectTitle: row['subject_title'] as String? ?? '',
+      academicLevel: row['academic_level'] as String? ?? '',
     );
   }
 

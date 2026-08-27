@@ -63,6 +63,28 @@ void main() {
     expect(find.text('GCE A Level Further Maths Pack'), findsNothing);
   });
 
+  testWidgets('ShopScreen Subject and Academic level filters narrow the list independently', (tester) async {
+    await _pumpAndCheck(tester, ShopScreen(repository: MockShopRepository()));
+
+    // All 3 seeded pamphlets show with no filter applied.
+    expect(find.text('GCE A Level Further Maths Pack'), findsOneWidget);
+    expect(find.text('Baccalauréat SVT Revision Guide'), findsOneWidget);
+
+    await tester.tap(find.text('Further Maths'));
+    await tester.pump();
+
+    expect(find.text('GCE A Level Further Maths Pack'), findsOneWidget);
+    expect(find.text('Baccalauréat SVT Revision Guide'), findsNothing);
+
+    await tester.tap(find.text('All').first);
+    await tester.pump();
+    await tester.tap(find.text('Baccalauréat'));
+    await tester.pump();
+
+    expect(find.text('Baccalauréat SVT Revision Guide'), findsOneWidget);
+    expect(find.text('GCE A Level Further Maths Pack'), findsNothing);
+  });
+
   testWidgets('ShopScreen tapping a specific pamphlet passes that exact pamphlet, not always the featured one', (tester) async {
     Pamphlet? opened;
     await _pumpAndCheck(tester, ShopScreen(repository: MockShopRepository(), onOpenPamphlet: (p) => opened = p));

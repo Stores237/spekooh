@@ -6,6 +6,7 @@ import '../../models/note.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/filter_chip_row.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/list_item_row.dart';
 import '../../widgets/search_input.dart';
@@ -28,6 +29,8 @@ class _NotesScreenState extends State<NotesScreen> {
   late final Future<List<Note>> _notesFuture = widget.repository.getNotes();
   final _searchController = TextEditingController();
   String _query = '';
+  String? _subjectFilter;
+  String? _levelFilter;
 
   @override
   void dispose() {
@@ -89,27 +92,60 @@ class _NotesScreenState extends State<NotesScreen> {
                   future: _notesFuture,
                   builder: (context, snapshot) {
                     final notes = snapshot.data ?? const [];
+                    // Distinct, real values only — no fabricated "all possible
+                    // subjects/levels" list, matching what's actually here.
+                    final subjects = notes.map((n) => n.subjectTitle).where((s) => s.isNotEmpty).toSet().toList()
+                      ..sort();
+                    final levels = notes.map((n) => n.academicLevel).where((s) => s.isNotEmpty).toSet().toList()
+                      ..sort();
                     final filtered = notes
                         .where((n) => n.title.toLowerCase().contains(_query.toLowerCase()))
+                        .where((n) => _subjectFilter == null || n.subjectTitle == _subjectFilter)
+                        .where((n) => _levelFilter == null || n.academicLevel == _levelFilter)
                         .toList();
-                    return ListView.separated(
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.space3),
-                      itemBuilder: (context, i) {
-                        final note = filtered[i];
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceCard,
-                            borderRadius: BorderRadius.circular(18),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (subjects.isNotEmpty) ...[
+                          FilterChipRow(
+                            label: l10n.subjectLabel,
+                            options: subjects,
+                            selected: _subjectFilter,
+                            onSelected: (v) => setState(() => _subjectFilter = v),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: ListItemRow(
-                            icon: IconChip(icon: note.icon, tint: note.tint),
-                            title: note.title,
-                            subtitle: note.subtitle,
+                          const SizedBox(height: AppSpacing.space3),
+                        ],
+                        if (levels.isNotEmpty) ...[
+                          FilterChipRow(
+                            label: l10n.academicLevelFilterLabel,
+                            options: levels,
+                            selected: _levelFilter,
+                            onSelected: (v) => setState(() => _levelFilter = v),
                           ),
-                        );
-                      },
+                          const SizedBox(height: AppSpacing.space4),
+                        ],
+                        Expanded(
+                          child: ListView.separated(
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.space3),
+                            itemBuilder: (context, i) {
+                              final note = filtered[i];
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceCard,
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                child: ListItemRow(
+                                  icon: IconChip(icon: note.icon, tint: note.tint),
+                                  title: note.title,
+                                  subtitle: note.subtitle,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
