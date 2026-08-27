@@ -914,6 +914,12 @@ abstract class AppLocalizations {
   /// **'Could not add that subject. Try again.'**
   String get addCustomSubjectError;
 
+  /// No description provided for @contributorNameRequiredForSubjectError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your name above first, so we know who to credit.'**
+  String get contributorNameRequiredForSubjectError;
+
   /// No description provided for @yearLabel.
   ///
   /// In en, this message translates to:

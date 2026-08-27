@@ -100,14 +100,18 @@ class HttpPapersRepository implements PapersRepository {
   }
 
   @override
-  Future<Subject> createSubject({required String title, required String examTypeName}) async {
+  Future<Subject> createSubject({required String title, required String examTypeName, String? guestAccessToken}) async {
     final language = _francophoneExamNames.contains(examTypeName) ? 'fr' : 'en';
-    final row = await _client.post('/papers/subjects/', body: {'title': title, 'language': language}) as Map<String, dynamic>;
+    final row = await _client.post(
+      '/papers/subjects/',
+      body: {'title': title, 'language': language},
+      bearerTokenOverride: guestAccessToken,
+    ) as Map<String, dynamic>;
     return Subject(
       id: row['id'] as int,
       key: row['key'] as String,
       title: row['title'] as String,
-      tint: IconChipTint.values.byName(row['tint'] as String? ?? 'blue'),
+      tint: IconChipTint.values.asNameMap()[row['tint']] ?? IconChipTint.blue,
       icon: iconForName(row['icon_name'] as String?),
       code: row['code'] as String? ?? '',
     );
