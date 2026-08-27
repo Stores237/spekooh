@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
@@ -80,6 +81,65 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('A Level'), findsOneWidget); // subject-step header shows examType name
     expect(find.text('Science'), findsOneWidget); // ...and the track as subtitle
+  });
+
+  testWidgets('the paper list search filters by year, scoped to papers already resolved for this subject', (tester) async {
+    final paper2025 = PaperEntry(
+      id: 42,
+      year: 2025,
+      system: 'anglophone',
+      track: 'Science',
+      status: 'PUBLISHED',
+      fileUrl: 'http://testserver/media/paper_submissions/2025/physics.pdf',
+      createdAt: DateTime(2025, 1, 1),
+    );
+    final paper2026 = PaperEntry(
+      id: 43,
+      year: 2026,
+      system: 'anglophone',
+      track: 'Science',
+      status: 'PUBLISHED',
+      fileUrl: 'http://testserver/media/paper_submissions/2026/physics.pdf',
+      createdAt: DateTime(2026, 1, 1),
+    );
+    await tester.pumpWidget(l10nTestApp(
+      PapersScreen(repository: MockPapersRepository(seedPublished: [paper2025, paper2026])),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.tap(find.text('Secondary'));
+    await tester.pump();
+    await tester.tap(find.text('Anglophone'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.text('A Level'));
+    await tester.pump();
+    await tester.tap(find.text('Science'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.ensureVisible(find.text('Physics'));
+    await tester.pump();
+    await tester.tap(find.text('Physics'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Both seeded papers show before searching.
+    expect(find.textContaining('A Level 2025'), findsWidgets);
+    expect(find.textContaining('A Level 2026'), findsWidgets);
+
+    await tester.enterText(find.byType(TextField), '2025');
+    await tester.pump();
+
+    expect(find.textContaining('A Level 2025'), findsWidgets);
+    expect(find.textContaining('A Level 2026'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), '1999');
+    await tester.pump();
+
+    expect(find.text('No matches'), findsOneWidget);
+    expect(find.text('No papers here match your search.'), findsOneWidget);
   });
 
   testWidgets('Academic Reports skips the subject step entirely — reports have no Subject taxonomy', (tester) async {

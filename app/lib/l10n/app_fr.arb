@@ -107,11 +107,9 @@
 
   "papersTitle": "Anciennes épreuves",
   "papersSubtitle": "Tous les niveaux, tous les systèmes, du Primaire au Concours des Grandes Écoles.",
-  "searchExamOrSubject": "Rechercher un type d'examen ou une matière...",
   "categoryLabel": "CATÉGORIE",
   "chooseSystemHeader": "{category} : choisir le système",
   "examTypeStepHeaderWithSystem": "{category} · {system}",
-  "searchExamType": "Rechercher un type d'examen...",
   "examTypeOfficialPlus": "Officiel + {variant}",
   "examTypeOfficialOnly": "Officiel uniquement",
   "chooseTrackHeader": "{examType} : choisir la filière",
@@ -122,6 +120,9 @@
   "noPapersYetTitle": "Aucune épreuve pour l'instant",
   "noPapersYetBody": "Personne n'a encore soumis d'épreuve de {subject} pour ce type d'examen. Soyez le premier à en soumettre une depuis l'onglet Contribuer.",
   "noReportsYetBody": "Personne n'a encore soumis de {examType}. Soyez le premier à en soumettre un depuis l'onglet Contribuer.",
+  "searchPapersInCategory": "Rechercher par année...",
+  "paperSearchNoResultsTitle": "Aucun résultat",
+  "paperSearchNoResultsBody": "Aucune épreuve ici ne correspond à votre recherche.",
 
   "contributionTitle": "Contribution",
   "contributionSubtitle": "Partagez une ancienne épreuve ou un rapport académique. Chaque contribution aide un autre étudiant.",

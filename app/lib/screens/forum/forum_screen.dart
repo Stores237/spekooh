@@ -99,13 +99,7 @@ class _ForumScreenState extends State<ForumScreen> {
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      const Row(
-                        children: [
-                          Icon(LucideIcons.search),
-                          SizedBox(width: 10),
-                          Icon(LucideIcons.bell),
-                        ],
-                      ),
+                      const Icon(LucideIcons.bell),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.space3),

@@ -686,12 +686,6 @@ abstract class AppLocalizations {
   /// **'Every level, every system, from Primary to Concours des Grandes Écoles.'**
   String get papersSubtitle;
 
-  /// No description provided for @searchExamOrSubject.
-  ///
-  /// In en, this message translates to:
-  /// **'Search exam type or subject...'**
-  String get searchExamOrSubject;
-
   /// No description provided for @categoryLabel.
   ///
   /// In en, this message translates to:
@@ -709,12 +703,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{category} · {system}'**
   String examTypeStepHeaderWithSystem(String category, String system);
-
-  /// No description provided for @searchExamType.
-  ///
-  /// In en, this message translates to:
-  /// **'Search exam type...'**
-  String get searchExamType;
 
   /// No description provided for @examTypeOfficialPlus.
   ///
@@ -775,6 +763,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nobody has submitted a {examType} yet. Be the first to submit one from the Submit tab.'**
   String noReportsYetBody(String examType);
+
+  /// No description provided for @searchPapersInCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by year...'**
+  String get searchPapersInCategory;
+
+  /// No description provided for @paperSearchNoResultsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get paperSearchNoResultsTitle;
+
+  /// No description provided for @paperSearchNoResultsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No papers here match your search.'**
+  String get paperSearchNoResultsBody;
 
   /// No description provided for @contributionTitle.
   ///

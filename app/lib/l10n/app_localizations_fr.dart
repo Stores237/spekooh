@@ -334,10 +334,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Tous les niveaux, tous les systèmes, du Primaire au Concours des Grandes Écoles.';
 
   @override
-  String get searchExamOrSubject =>
-      'Rechercher un type d\'examen ou une matière...';
-
-  @override
   String get categoryLabel => 'CATÉGORIE';
 
   @override
@@ -349,9 +345,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String examTypeStepHeaderWithSystem(String category, String system) {
     return '$category · $system';
   }
-
-  @override
-  String get searchExamType => 'Rechercher un type d\'examen...';
 
   @override
   String examTypeOfficialPlus(String variant) {
@@ -390,6 +383,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String noReportsYetBody(String examType) {
     return 'Personne n\'a encore soumis de $examType. Soyez le premier à en soumettre un depuis l\'onglet Contribuer.';
   }
+
+  @override
+  String get searchPapersInCategory => 'Rechercher par année...';
+
+  @override
+  String get paperSearchNoResultsTitle => 'Aucun résultat';
+
+  @override
+  String get paperSearchNoResultsBody =>
+      'Aucune épreuve ici ne correspond à votre recherche.';
 
   @override
   String get contributionTitle => 'Contribution';
