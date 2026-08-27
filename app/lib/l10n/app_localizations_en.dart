@@ -790,6 +790,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String couldNotLoadOptionsError(String error) {
+    return 'Could not load options: $error';
+  }
+
+  @override
   String unlockFailedError(String error) {
     return 'Unlock failed: $error';
   }

@@ -249,6 +249,7 @@
 
   "adNotCompletedError": "Publicité non terminée. Aucune consultation accordée.",
   "adLoadError": "Impossible de charger la publicité : {error}",
+  "couldNotLoadOptionsError": "Impossible de charger les options : {error}",
   "unlockFailedError": "Échec du déblocage : {error}",
   "couldNotOpenFile": "Impossible d'ouvrir le fichier.",
   "couldNotOpenLink": "Impossible d'ouvrir le lien.",

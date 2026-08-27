@@ -803,6 +803,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String couldNotLoadOptionsError(String error) {
+    return 'Impossible de charger les options : $error';
+  }
+
+  @override
   String unlockFailedError(String error) {
     return 'Échec du déblocage : $error';
   }
