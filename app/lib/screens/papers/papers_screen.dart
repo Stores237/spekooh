@@ -59,6 +59,13 @@ class PapersScreen extends StatefulWidget {
 class _PapersScreenState extends State<PapersScreen> {
   PaperBrowseSelection _selection = const PaperBrowseSelection();
   final _searchController = TextEditingController();
+  String _paperQuery = '';
+
+  /// Cached so typing in the search box (a setState on this same screen)
+  /// doesn't recreate the request and flash the whole list back to a
+  /// loading spinner — only cleared when [_select] actually moves to a new
+  /// step, not on every rebuild.
+  Future<List<PaperEntry>>? _papersFuture;
 
   @override
   void dispose() {
@@ -68,6 +75,11 @@ class _PapersScreenState extends State<PapersScreen> {
 
   void _select(PaperBrowseSelection Function() next) => setState(() {
         _selection = next();
+        // A search left over from a previous subject/category shouldn't
+        // silently filter out everything in the next one.
+        _paperQuery = '';
+        _searchController.clear();
+        _papersFuture = null;
       });
 
   @override
@@ -123,8 +135,6 @@ class _PapersScreenState extends State<PapersScreen> {
           Text(l10n.papersTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary)),
           const SizedBox(height: 4),
           Text(l10n.papersSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-          const SizedBox(height: AppSpacing.space4),
-          SearchInput(placeholder: l10n.searchExamOrSubject, controller: _searchController),
           const SizedBox(height: AppSpacing.space5),
           Text(l10n.categoryLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.6)),
           const SizedBox(height: AppSpacing.space3),
@@ -194,8 +204,6 @@ class _PapersScreenState extends State<PapersScreen> {
         children: [
           const SizedBox(height: AppSpacing.space2),
           _backHeader(header),
-          const SizedBox(height: AppSpacing.space3),
-          SearchInput(placeholder: l10n.searchExamType),
           const SizedBox(height: AppSpacing.space4),
           FutureBuilder<List<ExamType>>(
             future: widget.repository.getExamTypes(category.key, _selection.system),
@@ -264,8 +272,6 @@ class _PapersScreenState extends State<PapersScreen> {
         children: [
           const SizedBox(height: AppSpacing.space2),
           _backHeader(examType.name, subtitle: _selection.track),
-          const SizedBox(height: AppSpacing.space3),
-          SearchInput(placeholder: l10n.searchSubjects),
           const SizedBox(height: AppSpacing.space4),
           FutureBuilder<List<Subject>>(
             future: widget.repository.getSubjects(examType.name),
@@ -317,18 +323,26 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   Widget _paperListBody(AppLocalizations l10n, {required ExamType examType, required Subject? subject}) {
+    _papersFuture ??= widget.repository.getPapers(
+      categoryId: _selection.category!.id,
+      examTypeId: examType.id,
+      subjectId: subject?.id,
+      system: _selection.system,
+      track: _selection.track,
+    );
     return FutureBuilder<List<PaperEntry>>(
-      future: widget.repository.getPapers(
-        categoryId: _selection.category!.id,
-        examTypeId: examType.id,
-        subjectId: subject?.id,
-        system: _selection.system,
-        track: _selection.track,
-      ),
+      future: _papersFuture,
       builder: (context, papersSnapshot) {
         final loading = papersSnapshot.connectionState == ConnectionState.waiting;
-        final papers = papersSnapshot.data ?? const <PaperEntry>[];
+        final allPapers = papersSnapshot.data ?? const <PaperEntry>[];
         final isReports = subject == null;
+        // Word-matching against exactly what's shown per row (exam type,
+        // subject, year) — scoped to papers already resolved for this one
+        // category/exam-type/subject/track, not a global search.
+        final query = _paperQuery.trim().toLowerCase();
+        final papers = query.isEmpty
+            ? allPapers
+            : allPapers.where((p) => '${examType.name} ${subject?.title ?? ''} ${p.year}'.toLowerCase().contains(query)).toList();
 
         return SingleChildScrollView(
           child: Column(
@@ -341,14 +355,20 @@ class _PapersScreenState extends State<PapersScreen> {
                     ? '${examType.name}${_selection.track != null ? ' · ${_selection.track}' : ''} · ${subject.code}'
                     : null,
               ),
+              if (!loading && allPapers.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.space3),
+                SearchInput(placeholder: l10n.searchPapersInCategory, controller: _searchController, onChanged: (v) => setState(() => _paperQuery = v)),
+              ],
               const SizedBox(height: AppSpacing.space4),
               if (loading)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 48),
                   child: Center(child: CircularProgressIndicator()),
                 )
-              else if (papers.isEmpty)
+              else if (allPapers.isEmpty)
                 _noPapersYet(l10n, subject != null ? l10n.noPapersYetBody(subject.title) : l10n.noReportsYetBody(examType.name))
+              else if (papers.isEmpty)
+                _noPapersYet(l10n, l10n.paperSearchNoResultsBody, title: l10n.paperSearchNoResultsTitle)
               else
                 for (final paper in papers) ...[
                   InkWell(
@@ -399,14 +419,14 @@ class _PapersScreenState extends State<PapersScreen> {
     );
   }
 
-  Widget _noPapersYet(AppLocalizations l10n, String bodyText) {
+  Widget _noPapersYet(AppLocalizations l10n, String bodyText, {String? title}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         children: [
           Icon(LucideIcons.inbox, size: 40, color: AppColors.textTertiary),
           const SizedBox(height: AppSpacing.space3),
-          Text(l10n.noPapersYetTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
+          Text(title ?? l10n.noPapersYetTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
           const SizedBox(height: 4),
           Text(bodyText, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
         ],

@@ -328,9 +328,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Every level, every system — Primary to Concours des Grandes Écoles.';
 
   @override
-  String get searchExamOrSubject => 'Search exam type or subject...';
-
-  @override
   String get categoryLabel => 'CATEGORY';
 
   @override
@@ -342,9 +339,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String examTypeStepHeaderWithSystem(String category, String system) {
     return '$category · $system';
   }
-
-  @override
-  String get searchExamType => 'Search exam type...';
 
   @override
   String examTypeOfficialPlus(String variant) {
@@ -383,6 +377,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String noReportsYetBody(String examType) {
     return 'Nobody has submitted a $examType yet. Be the first — submit one from the Submit tab.';
   }
+
+  @override
+  String get searchPapersInCategory => 'Search by year...';
+
+  @override
+  String get paperSearchNoResultsTitle => 'No matches';
+
+  @override
+  String get paperSearchNoResultsBody => 'No papers here match your search.';
 
   @override
   String get contributionTitle => 'Contribution';

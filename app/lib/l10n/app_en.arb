@@ -129,7 +129,6 @@
 
   "papersTitle": "Past papers",
   "papersSubtitle": "Every level, every system — Primary to Concours des Grandes Écoles.",
-  "searchExamOrSubject": "Search exam type or subject...",
   "categoryLabel": "CATEGORY",
   "chooseSystemHeader": "{category} — choose system",
   "@chooseSystemHeader": {
@@ -139,7 +138,6 @@
   "@examTypeStepHeaderWithSystem": {
     "placeholders": {"category": {"type": "String"}, "system": {"type": "String"}}
   },
-  "searchExamType": "Search exam type...",
   "examTypeOfficialPlus": "Official + {variant}",
   "@examTypeOfficialPlus": {
     "placeholders": {"variant": {"type": "String"}}
@@ -162,6 +160,9 @@
   "@noReportsYetBody": {
     "placeholders": {"examType": {"type": "String"}}
   },
+  "searchPapersInCategory": "Search by year...",
+  "paperSearchNoResultsTitle": "No matches",
+  "paperSearchNoResultsBody": "No papers here match your search.",
 
   "contributionTitle": "Contribution",
   "contributionSubtitle": "Share a past paper or an academic report — every contribution helps another student.",
