@@ -22,6 +22,7 @@ import 'support/mock_repository_locator.dart';
 void main() {
   tearDown(() {
     OfflinePapersStore.debugSetInstance(OfflinePapersStore());
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
   });
 
   testWidgets('HomeScreen (guest) shows an honest empty state when nothing is published yet', (tester) async {
@@ -134,6 +135,24 @@ void main() {
     expect(find.text('Daily challenge'), findsOneWidget);
     expect(find.text('START A STREAK'), findsOneWidget); // MockQuizzesRepository starts at zero — honest, not fabricated
     expect(find.text('Ready offline'), findsNothing); // nothing saved yet — section shouldn't fabricate itself
+  });
+
+  testWidgets('LoggedInHomeScreen EN/FR pill actually switches the locale, not just decorative', (tester) async {
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(LocaleController.instance.locale.languageCode, 'en');
+    expect(find.text('Daily challenge'), findsOneWidget); // English string, confirms starting locale
+
+    await tester.tap(find.text('FR'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(LocaleController.instance.locale.languageCode, 'fr');
+    expect(find.text('Défi du jour'), findsOneWidget); // same section, now in French
   });
 
   testWidgets('LoggedInHomeScreen shows a real "Ready offline" section once a paper is actually saved', (tester) async {
