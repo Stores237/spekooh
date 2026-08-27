@@ -45,7 +45,7 @@ class HttpPapersRepository implements PapersRepository {
         key: key,
         title: row['title'] as String,
         icon: iconForName(row['icon_name'] as String?),
-        tint: IconChipTint.values.byName(row['tint'] as String? ?? 'blue'),
+        tint: IconChipTint.values.asNameMap()[row['tint']] ?? IconChipTint.blue,
         subtitle: row['subtitle'] as String? ?? '',
         requiresSystem: row['requires_system'] as bool? ?? false,
       );
@@ -70,12 +70,19 @@ class HttpPapersRepository implements PapersRepository {
         subtitle: row['subtitle'] as String? ?? '',
         mockVariantLabel: (row['mock_variant_label'] as String?)?.isEmpty ?? true ? null : row['mock_variant_label'] as String,
         tracks: tracks.isEmpty ? null : tracks,
-        badgeTone: SpekoohBadgeTone.values.byName(row['badge_tone'] as String? ?? 'neutral'),
+        badgeTone: SpekoohBadgeTone.values.asNameMap()[row['badge_tone']] ?? SpekoohBadgeTone.neutral,
         maxUploadMb: row['max_upload_mb'] as int? ?? 20,
       );
     }).toList();
   }
 
+  // tint/badgeTone below read via asNameMap()[...] rather than .byName(...):
+  // a contributor-added subject (SubjectSerializer.create) deliberately
+  // leaves tint/icon_name/code blank for the owner to curate later, and
+  // .byName('') throws — which silently broke the *entire* subject list
+  // (not just that one row) the moment any custom subject existed, making
+  // the "Matière"/Subject field look permanently unresponsive. asNameMap()
+  // just falls back to a default on a blank/unrecognized value instead.
   @override
   Future<List<Subject>> getSubjects(String examTypeName) async {
     final language = _francophoneExamNames.contains(examTypeName) ? 'fr' : 'en';
@@ -85,7 +92,7 @@ class HttpPapersRepository implements PapersRepository {
         id: row['id'] as int,
         key: row['key'] as String,
         title: row['title'] as String,
-        tint: IconChipTint.values.byName(row['tint'] as String? ?? 'blue'),
+        tint: IconChipTint.values.asNameMap()[row['tint']] ?? IconChipTint.blue,
         icon: iconForName(row['icon_name'] as String?),
         code: row['code'] as String? ?? '',
       );

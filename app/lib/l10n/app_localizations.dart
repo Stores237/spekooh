@@ -1496,6 +1496,12 @@ abstract class AppLocalizations {
   /// **'Could not load an ad: {error}'**
   String adLoadError(String error);
 
+  /// No description provided for @couldNotLoadOptionsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load options: {error}'**
+  String couldNotLoadOptionsError(String error);
+
   /// No description provided for @unlockFailedError.
   ///
   /// In en, this message translates to:

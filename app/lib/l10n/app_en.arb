@@ -337,6 +337,10 @@
   "@adLoadError": {
     "placeholders": {"error": {"type": "String"}}
   },
+  "couldNotLoadOptionsError": "Could not load options: {error}",
+  "@couldNotLoadOptionsError": {
+    "placeholders": {"error": {"type": "String"}}
+  },
   "unlockFailedError": "Unlock failed: {error}",
   "@unlockFailedError": {
     "placeholders": {"error": {"type": "String"}}

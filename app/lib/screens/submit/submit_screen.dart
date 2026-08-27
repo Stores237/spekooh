@@ -148,10 +148,25 @@ class _SubmitScreenState extends State<SubmitScreen> {
     );
   }
 
+  /// Runs a taxonomy fetch that backs a field-picker tap (getCategories/
+  /// getExamTypes/getSubjects) and turns a network failure into a visible
+  /// SnackBar instead of the tap silently doing nothing — previously any of
+  /// these throwing left the field looking unresponsive with zero feedback.
+  Future<T?> _guardedFetch<T>(Future<T> Function() fetch) async {
+    try {
+      return await fetch();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.couldNotLoadOptionsError('$e'))));
+      }
+      return null;
+    }
+  }
+
   Future<void> _pickCategory() async {
     final title = AppLocalizations.of(context)!.educationLevelLabel;
-    final categories = (await widget.repository.getCategories()).where((c) => c.key != ExamCategoryKey.reports).toList();
-    if (!mounted) return;
+    final categories = await _guardedFetch(() async => (await widget.repository.getCategories()).where((c) => c.key != ExamCategoryKey.reports).toList());
+    if (categories == null || !mounted) return;
     final picked = await _pickFromList<ExamCategory>(title: title, items: categories, label: (c) => c.title);
     if (picked == null) return;
     setState(() {
@@ -180,8 +195,8 @@ class _SubmitScreenState extends State<SubmitScreen> {
 
   Future<void> _pickExamType() async {
     final title = AppLocalizations.of(context)!.examTypeLabel;
-    final types = await widget.repository.getExamTypes(_category!.key, _system);
-    if (!mounted) return;
+    final types = await _guardedFetch(() => widget.repository.getExamTypes(_category!.key, _system));
+    if (types == null || !mounted) return;
     final picked = await _pickFromList<ExamType>(title: title, items: types, label: (t) => t.name);
     if (picked == null) return;
     setState(() {
@@ -199,8 +214,8 @@ class _SubmitScreenState extends State<SubmitScreen> {
 
   Future<void> _pickSubject() async {
     final examTypeName = _examType!.name;
-    final subjects = await widget.repository.getSubjects(examTypeName);
-    if (!mounted) return;
+    final subjects = await _guardedFetch(() => widget.repository.getSubjects(examTypeName));
+    if (subjects == null || !mounted) return;
     final picked = await showModalBottomSheet<Subject>(
       context: context,
       isScrollControlled: true,
@@ -279,8 +294,8 @@ class _SubmitScreenState extends State<SubmitScreen> {
 
   Future<void> _pickReportType() async {
     final title = AppLocalizations.of(context)!.reportTypeLabel;
-    final types = await widget.repository.getExamTypes(ExamCategoryKey.reports, null);
-    if (!mounted) return;
+    final types = await _guardedFetch(() => widget.repository.getExamTypes(ExamCategoryKey.reports, null));
+    if (types == null || !mounted) return;
     final picked = await _pickFromList<ExamType>(title: title, items: types, label: (t) => t.name);
     if (picked == null) return;
     setState(() => _reportType = picked);
