@@ -189,6 +189,7 @@
   "customSubjectHint": "e.g. Geology",
   "addCustomSubjectCta": "Add",
   "addCustomSubjectError": "Could not add that subject. Try again.",
+  "contributorNameRequiredForSubjectError": "Enter your name above first, so we know who to credit.",
   "yearLabel": "Year",
   "examBoardHint": "Exam board / school (optional)",
   "contributionBonusBanner": "New, verified submissions earn bonus credit, redeemable toward marking-guide unlocks.",

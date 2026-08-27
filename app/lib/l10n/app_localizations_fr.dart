@@ -467,6 +467,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible d\'ajouter cette matière. Réessayez.';
 
   @override
+  String get contributorNameRequiredForSubjectError =>
+      'Entrez d\'abord votre nom ci-dessus, pour que l\'on sache qui créditer.';
+
+  @override
   String get yearLabel => 'Année';
 
   @override

@@ -38,4 +38,38 @@ void main() {
     expect(subjects[1].title, 'Geology');
     expect(subjects[1].tint, IconChipTint.blue);
   });
+
+  test('createSubject tolerates the blank tint the backend always returns for a new subject', () async {
+    final mockClient = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'id': 9, 'key': 'geology', 'title': 'Geology', 'code': '', 'icon_name': '', 'tint': '', 'language': 'en'}),
+        201,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+    final subject = await repo.createSubject(title: 'Geology', examTypeName: 'O Level');
+
+    expect(subject.title, 'Geology');
+    expect(subject.tint, IconChipTint.blue);
+  });
+
+  test('createSubject sends a guest bearer override instead of the (absent) session token', () async {
+    String? authHeader;
+    final mockClient = MockClient((request) async {
+      authHeader = request.headers['Authorization'];
+      return http.Response(
+        jsonEncode({'id': 9, 'key': 'geology', 'title': 'Geology', 'code': '', 'icon_name': '', 'tint': '', 'language': 'en'}),
+        201,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    // No accessToken set — a real guest (never logged in) has none.
+    final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+    await repo.createSubject(title: 'Geology', examTypeName: 'O Level', guestAccessToken: 'guest-token-123');
+
+    expect(authHeader, 'Bearer guest-token-123');
+  });
 }

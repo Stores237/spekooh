@@ -43,7 +43,12 @@ class ApiClient {
   Future<dynamic> get(String path, {Map<String, String>? query}) =>
       _send('GET', _uri(path, query));
 
-  Future<dynamic> post(String path, {Object? body}) => _send('POST', _uri(path), body: body);
+  /// [bearerTokenOverride]: same idea as [postMultipart]'s param of the same
+  /// name — authorizes just this call with a token that isn't this
+  /// session's own (e.g. a guest contributor's, for creating a subject
+  /// before/without ever submitting a paper).
+  Future<dynamic> post(String path, {Object? body, String? bearerTokenOverride}) =>
+      _send('POST', _uri(path), body: body, bearerTokenOverride: bearerTokenOverride);
 
   Future<dynamic> patch(String path, {Object? body}) => _send('PATCH', _uri(path), body: body);
 
@@ -103,14 +108,14 @@ class ApiClient {
     throw ApiException(response.statusCode, response.body);
   }
 
-  Future<dynamic> _send(String method, Uri uri, {Object? body, bool isRetry = false}) async {
+  Future<dynamic> _send(String method, Uri uri, {Object? body, String? bearerTokenOverride, bool isRetry = false}) async {
     final headers = <String, String>{'Content-Type': 'application/json'};
-    final access = authSession.accessToken;
+    final access = bearerTokenOverride ?? authSession.accessToken;
     if (access != null) headers['Authorization'] = 'Bearer $access';
 
     final response = await _request(method, uri, headers, body);
 
-    if (response.statusCode == 401 && !isRetry && authSession.refreshToken != null) {
+    if (response.statusCode == 401 && !isRetry && bearerTokenOverride == null && authSession.refreshToken != null) {
       final refreshed = await authSession.refreshAccessToken();
       if (refreshed) return _send(method, uri, body: body, isRetry: true);
     }
