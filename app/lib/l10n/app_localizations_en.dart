@@ -33,6 +33,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get spekoohProSubtitle => 'Unlimited paper views · no ads';
 
   @override
+  String get accountSection => 'Account';
+
+  @override
+  String get changePasswordTitle => 'Change password';
+
+  @override
+  String get changePasswordSubtitle =>
+      'We\'ll email you a code to confirm it\'s you';
+
+  @override
   String get languageSection => 'Language';
 
   @override
@@ -121,6 +131,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authErrorLogin => 'Login failed. Check your email and password.';
 
   @override
+  String get authErrorLoginEmailNotVerified =>
+      'Please verify your email before logging in.';
+
+  @override
+  String get verifyEmailLoginRecoveryDoneMessage =>
+      'Email verified — log in again to continue.';
+
+  @override
   String get authErrorRegisterReferral =>
       'Registration failed. Check your details, and that the referral code is correct.';
 
@@ -179,6 +197,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetPasswordBackToLogin => 'Back to log in';
+
+  @override
+  String get verifyEmailTitle => 'Verify your email';
+
+  @override
+  String get verifyEmailPrompt =>
+      'We sent a code to your email. Enter it below to verify your account.';
+
+  @override
+  String get verifyEmailCodeLabel => 'CODE';
+
+  @override
+  String get verifyEmailCodeHint => '6-digit code';
+
+  @override
+  String get verifyEmailConfirmButton => 'Verify';
+
+  @override
+  String get verifyEmailResendLink => 'Resend code';
+
+  @override
+  String get verifyEmailResendSentMessage => 'A new code is on its way.';
+
+  @override
+  String get verifyEmailSkipLink => 'Skip for now';
+
+  @override
+  String get authErrorEmailVerificationConfirm =>
+      'That code is invalid or has expired.';
+
+  @override
+  String get authErrorEmailVerificationResend =>
+      'Could not resend a verification code. Check your connection and try again.';
 
   @override
   String get homeWelcomeGreeting => 'Welcome';
@@ -565,6 +616,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get takePhoto => 'Take a photo';
+
+  @override
+  String get chooseFromGallery => 'Choose from gallery';
+
+  @override
+  String get avatarUploadError =>
+      'Could not update your photo. Check your connection and try again.';
 
   @override
   String get filterAll => 'All';

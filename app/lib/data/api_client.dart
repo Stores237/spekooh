@@ -56,6 +56,9 @@ class ApiClient {
 
   /// Multipart POST for real file uploads (e.g. paper submission scans).
   /// [fields] are form fields sent alongside the file as plain strings.
+  /// [method] is POST by default; pass 'PATCH' for an update-in-place
+  /// upload (e.g. ProfileRepository.updateAvatar against /auth/me/, which
+  /// DRF's RetrieveUpdateAPIView only accepts PATCH/PUT for).
   /// [bearerTokenOverride] authorizes just this call with a token that
   /// isn't this session's own (e.g. a guest contributor's — see
   /// AuthSession.mintGuestAccessToken) instead of [authSession]'s; a guest
@@ -69,10 +72,11 @@ class ApiClient {
     String? mimeType,
     Map<String, String> fields = const {},
     String? bearerTokenOverride,
+    String method = 'POST',
     bool isRetry = false,
   }) async {
     final uri = _uri(path);
-    final request = http.MultipartRequest('POST', uri)
+    final request = http.MultipartRequest(method, uri)
       ..fields.addAll(fields)
       ..files.add(http.MultipartFile.fromBytes(
         fileFieldName,
@@ -96,6 +100,7 @@ class ApiClient {
           fileName: fileName,
           mimeType: mimeType,
           fields: fields,
+          method: method,
           isRetry: true,
         );
       }

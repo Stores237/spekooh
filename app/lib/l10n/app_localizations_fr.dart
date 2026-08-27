@@ -33,6 +33,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get spekoohProSubtitle => 'Épreuves illimitées · sans publicité';
 
   @override
+  String get accountSection => 'Compte';
+
+  @override
+  String get changePasswordTitle => 'Changer le mot de passe';
+
+  @override
+  String get changePasswordSubtitle =>
+      'Nous vous enverrons un code par email pour confirmer que c\'est bien vous';
+
+  @override
   String get languageSection => 'Langue';
 
   @override
@@ -122,6 +132,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Échec de la connexion. Vérifiez votre email et votre mot de passe.';
 
   @override
+  String get authErrorLoginEmailNotVerified =>
+      'Veuillez vérifier votre email avant de vous connecter.';
+
+  @override
+  String get verifyEmailLoginRecoveryDoneMessage =>
+      'Email vérifié — connectez-vous à nouveau pour continuer.';
+
+  @override
   String get authErrorRegisterReferral =>
       'Échec de l\'inscription. Vérifiez vos informations et que le code de parrainage est correct.';
 
@@ -180,6 +198,39 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get resetPasswordBackToLogin => 'Retour à la connexion';
+
+  @override
+  String get verifyEmailTitle => 'Vérifiez votre email';
+
+  @override
+  String get verifyEmailPrompt =>
+      'Nous avons envoyé un code à votre email. Entrez-le ci-dessous pour vérifier votre compte.';
+
+  @override
+  String get verifyEmailCodeLabel => 'CODE';
+
+  @override
+  String get verifyEmailCodeHint => 'Code à 6 chiffres';
+
+  @override
+  String get verifyEmailConfirmButton => 'Vérifier';
+
+  @override
+  String get verifyEmailResendLink => 'Renvoyer le code';
+
+  @override
+  String get verifyEmailResendSentMessage => 'Un nouveau code est en route.';
+
+  @override
+  String get verifyEmailSkipLink => 'Passer pour l\'instant';
+
+  @override
+  String get authErrorEmailVerificationConfirm =>
+      'Ce code est invalide ou a expiré.';
+
+  @override
+  String get authErrorEmailVerificationResend =>
+      'Impossible de renvoyer un code de vérification. Vérifiez votre connexion et réessayez.';
 
   @override
   String get homeWelcomeGreeting => 'Bienvenue';
@@ -573,6 +624,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get takePhoto => 'Prendre une photo';
+
+  @override
+  String get chooseFromGallery => 'Choisir dans la galerie';
+
+  @override
+  String get avatarUploadError =>
+      'Impossible de mettre à jour votre photo. Vérifiez votre connexion et réessayez.';
 
   @override
   String get filterAll => 'Toutes';

@@ -3,6 +3,7 @@ import '../../../models/spekooh_user.dart';
 import '../../../models/submission.dart';
 import '../../../widgets/spekooh_badge.dart';
 import '../../api_client.dart';
+import '../papers_repository.dart' show SubmissionFile;
 import '../profile_repository.dart';
 
 const _statusDisplay = {
@@ -66,12 +67,26 @@ class HttpProfileRepository implements ProfileRepository {
       trialDaysRemaining: me['trial_days_remaining'] as int? ?? 0,
       firstUnlockFreeEligible: me['first_unlock_free_eligible'] as bool? ?? false,
       referralCode: me['referral_code'] as String? ?? '',
+      avatarUrl: me['avatar_url'] as String?,
     );
   }
 
   @override
   Future<void> setLanguagePreference(String code) async {
     await _client.patch('/auth/me/', body: {'language_pref': code});
+  }
+
+  @override
+  Future<String?> updateAvatar(SubmissionFile file) async {
+    final response = await _client.postMultipart(
+      '/auth/me/',
+      method: 'PATCH',
+      fileFieldName: 'avatar',
+      fileBytes: file.bytes,
+      fileName: file.fileName,
+      mimeType: file.mimeType,
+    ) as Map<String, dynamic>;
+    return response['avatar_url'] as String?;
   }
 
   @override

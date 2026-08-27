@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../data/auth_session.dart';
+import '../../data/repositories/papers_repository.dart' show SubmissionFile;
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
@@ -39,7 +41,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late final Future<List<Achievement>> _achievementsFuture = widget.repository.getAchievements();
   late final Future<List<Submission>> _submissionsFuture = widget.repository.getSubmissions();
 
+  // The avatar Container used to be a plain, non-interactive initial-letter
+  // circle — tapping it did nothing. Overlays the freshly-uploaded URL on
+  // top of whatever _userFuture resolved to, rather than refetching the
+  // whole profile just to pick up one changed field.
+  String? _avatarUrlOverride;
+  bool _isUploadingAvatar = false;
+
   bool get _isLoggedIn => AuthSession.instance.isLoggedIn;
+
+  Future<void> _pickAvatar() async {
+    final l10n = AppLocalizations.of(context)!;
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LucideIcons.camera),
+              title: Text(l10n.takePhoto),
+              onTap: () => Navigator.of(context).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.image),
+              title: Text(l10n.chooseFromGallery),
+              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    final xfile = await ImagePicker().pickImage(source: source, imageQuality: 90);
+    if (xfile == null || !mounted) return;
+
+    final bytes = await xfile.readAsBytes();
+    setState(() => _isUploadingAvatar = true);
+    try {
+      final avatarUrl = await widget.repository.updateAvatar(
+        SubmissionFile(bytes: bytes, fileName: xfile.name, mimeType: xfile.mimeType ?? 'image/jpeg'),
+      );
+      if (mounted) setState(() => _avatarUrlOverride = avatarUrl);
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.avatarUploadError)));
+    } finally {
+      if (mounted) setState(() => _isUploadingAvatar = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,12 +131,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
                         child: Row(
                           children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold200),
-                              alignment: Alignment.center,
-                              child: Text(user.name[0], style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700)),
+                            GestureDetector(
+                              onTap: _isUploadingAvatar ? null : _pickAvatar,
+                              child: Container(
+                                width: 52,
+                                height: 52,
+                                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold200),
+                                alignment: Alignment.center,
+                                clipBehavior: Clip.antiAlias,
+                                child: _isUploadingAvatar
+                                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                    : (_avatarUrlOverride ?? user.avatarUrl) != null
+                                        ? ClipOval(
+                                            child: Image.network(
+                                              (_avatarUrlOverride ?? user.avatarUrl)!,
+                                              width: 52,
+                                              height: 52,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) => Text(
+                                                user.name[0],
+                                                style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700),
+                                              ),
+                                            ),
+                                          )
+                                        : Text(user.name[0], style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700)),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(

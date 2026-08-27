@@ -86,6 +86,13 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     email = models.EmailField(unique=True, null=True, blank=True)
     phone_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
     name = models.CharField(max_length=150, blank=True)
+    # Same storage backend as paper scans (django-storages -> real Supabase
+    # Storage when AWS_* env vars are set, local disk otherwise — see
+    # STORAGES in config/settings/base.py). Unlike paper files this isn't
+    # access-gated: any authenticated caller who can see this profile at
+    # all can see its avatar, so UserSerializer.get_avatar_url just returns
+    # the URL directly, no user_can_view_file-style check needed.
+    avatar = models.ImageField(upload_to="avatars/%Y/%m/", null=True, blank=True)
 
     account_type = models.CharField(max_length=12, choices=AccountType.choices, default=AccountType.REGISTERED)
     # Opaque local identifier for guest accounts, stable across the guest's session lifetime.
@@ -97,6 +104,13 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+
+    # Set once EmailVerificationCode confirms the address is real (see
+    # RegisterView, which issues+sends the first code right at signup).
+    # Deliberately does NOT gate login/access — unverified accounts work
+    # normally; this is a signal surfaced in the app (a nag to verify), not
+    # an access-control mechanism. Null for guests, who have no email.
+    email_verified_at = models.DateTimeField(null=True, blank=True)
 
     # Regulatory: proof of Terms/Privacy consent at signup — required by
     # RegisterSerializer (a registration without it is rejected outright,
@@ -171,3 +185,41 @@ class PasswordResetCode(TimeStampedModel):
     @property
     def is_usable(self) -> bool:
         return self.used_at is None and not self.is_expired and self.attempts < PASSWORD_RESET_MAX_ATTEMPTS
+
+
+class EmailVerificationCode(TimeStampedModel):
+    """Same OTP shape as PasswordResetCode (deliberately a separate model,
+    not a shared one — the two are logically unrelated and mixing them up
+    would be a real security bug, not just a style choice).
+
+    RegisterView issues+emails the first one automatically right at signup
+    — this is what actually answers "no verification was required": there
+    now is a real code, sent for real (console backend today, see
+    TODOS.md), that the app asks the new user to confirm. See User.
+    email_verified_at's docstring for why confirming it doesn't gate access.
+    """
+
+    EMAIL_VERIFICATION_CODE_TTL_MINUTES = 30
+    EMAIL_VERIFICATION_MAX_ATTEMPTS = 5
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_verification_codes")
+    code = models.CharField(max_length=6)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "used_at"])]
+
+    @classmethod
+    def issue(cls, user: "User") -> "EmailVerificationCode":
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        return cls.objects.create(user=user, code=code)
+
+    @property
+    def is_expired(self) -> bool:
+        age = timezone.now() - self.created_at
+        return age.total_seconds() > self.EMAIL_VERIFICATION_CODE_TTL_MINUTES * 60
+
+    @property
+    def is_usable(self) -> bool:
+        return self.used_at is None and not self.is_expired and self.attempts < self.EMAIL_VERIFICATION_MAX_ATTEMPTS

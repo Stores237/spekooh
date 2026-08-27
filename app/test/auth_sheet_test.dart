@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/sheets/auth_sheet.dart';
+import 'package:spekooh/sheets/email_verification_sheet.dart';
 import 'package:spekooh/widgets/spekooh_button.dart';
 
 import 'support/l10n_test_app.dart';
@@ -20,7 +21,7 @@ void main() {
         jsonEncode({
           'access': 'fake-access',
           'refresh': 'fake-refresh',
-          'user': {'id': 'fake-id', 'email': 'new@example.com'},
+          'user': {'id': 'fake-id', 'email': 'new@example.com', 'email_verified': true},
         }),
         201,
         headers: {'content-type': 'application/json'},
@@ -56,7 +57,7 @@ void main() {
         jsonEncode({
           'access': 'fake-access',
           'refresh': 'fake-refresh',
-          'user': {'id': 'fake-id', 'email': 'new2@example.com'},
+          'user': {'id': 'fake-id', 'email': 'new2@example.com', 'email_verified': true},
         }),
         201,
         headers: {'content-type': 'application/json'},
@@ -117,7 +118,7 @@ void main() {
         jsonEncode({
           'access': 'fake-access',
           'refresh': 'fake-refresh',
-          'user': {'id': 'fake-id', 'email': 'new3@example.com'},
+          'user': {'id': 'fake-id', 'email': 'new3@example.com', 'email_verified': true},
         }),
         201,
         headers: {'content-type': 'application/json'},
@@ -224,5 +225,246 @@ void main() {
 
     expect(find.text('That code is invalid or has expired.'), findsOneWidget);
     expect(find.widgetWithText(SpekoohButton, 'Reset password'), findsOneWidget); // sheet stayed open
+  });
+
+  testWidgets('registering an unverified account opens the verification sheet automatically', (tester) async {
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/register/')) {
+        return http.Response(
+          jsonEncode({
+            'access': 'fake-access',
+            'refresh': 'fake-refresh',
+            'user': {'id': 'fake-id', 'email': 'unverified@example.com', 'email_verified': false},
+          }),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient));
+
+    await tester.pumpWidget(l10nTestApp(const Scaffold(body: AuthSheet())));
+    await tester.tap(find.text('New here? Create an account'));
+    await tester.pumpAndSettle();
+
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'Unverified');
+    await tester.enterText(fields.at(1), 'unverified@example.com');
+    await tester.enterText(fields.at(2), 'S0mePass!23');
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Verify your email'), findsOneWidget);
+  });
+
+  testWidgets('registering an already-verified account skips the verification sheet', (tester) async {
+    final mockClient = MockClient((request) async {
+      return http.Response(
+        jsonEncode({
+          'access': 'fake-access',
+          'refresh': 'fake-refresh',
+          'user': {'id': 'fake-id', 'email': 'preverified@example.com', 'email_verified': true},
+        }),
+        201,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient));
+
+    await tester.pumpWidget(l10nTestApp(const Scaffold(body: AuthSheet())));
+    await tester.tap(find.text('New here? Create an account'));
+    await tester.pumpAndSettle();
+
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'Preverified');
+    await tester.enterText(fields.at(1), 'preverified@example.com');
+    await tester.enterText(fields.at(2), 'S0mePass!23');
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Verify your email'), findsNothing);
+  });
+
+  testWidgets('confirming the emailed code closes the verification sheet and the auth sheet is done', (tester) async {
+    String? confirmedCode;
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/register/')) {
+        return http.Response(
+          jsonEncode({
+            'access': 'fake-access',
+            'refresh': 'fake-refresh',
+            'user': {'id': 'fake-id', 'email': 'confirmnow@example.com', 'email_verified': false},
+          }),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.endsWith('/verify-email/')) {
+        confirmedCode = (jsonDecode(request.body) as Map<String, dynamic>)['code'] as String;
+        return http.Response(jsonEncode({'email_verified': true}), 200, headers: {'content-type': 'application/json'});
+      }
+      return http.Response('not found', 404);
+    });
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient));
+
+    var poppedTrue = false;
+    await tester.pumpWidget(l10nTestApp(
+      Scaffold(
+        body: Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              final result = await showModalBottomSheet<bool>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => const AuthSheet(),
+              );
+              poppedTrue = result == true;
+            },
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('New here? Create an account'));
+    await tester.pumpAndSettle();
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'Confirm Now');
+    await tester.enterText(fields.at(1), 'confirmnow@example.com');
+    await tester.enterText(fields.at(2), 'S0mePass!23');
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Verify your email'), findsOneWidget);
+    await tester.enterText(
+      find.descendant(of: find.byType(EmailVerificationSheet), matching: find.byType(TextField)),
+      '654321',
+    );
+    await tester.tap(find.widgetWithText(SpekoohButton, 'Verify'));
+    await tester.pumpAndSettle();
+
+    expect(confirmedCode, '654321');
+    expect(poppedTrue, isTrue); // AuthSheet itself finished successfully afterward
+  });
+
+  testWidgets('skipping verification still leaves the account logged in', (tester) async {
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/register/')) {
+        return http.Response(
+          jsonEncode({
+            'access': 'fake-access',
+            'refresh': 'fake-refresh',
+            'user': {'id': 'fake-id', 'email': 'skipverify@example.com', 'email_verified': false},
+          }),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient));
+
+    var poppedTrue = false;
+    await tester.pumpWidget(l10nTestApp(
+      Scaffold(
+        body: Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              final result = await showModalBottomSheet<bool>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => const AuthSheet(),
+              );
+              poppedTrue = result == true;
+            },
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('New here? Create an account'));
+    await tester.pumpAndSettle();
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'Skip Verify');
+    await tester.enterText(fields.at(1), 'skipverify@example.com');
+    await tester.enterText(fields.at(2), 'S0mePass!23');
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Verify your email'), findsOneWidget);
+    await tester.tap(find.text('Skip for now'));
+    await tester.pumpAndSettle();
+
+    expect(AuthSession.instance.isLoggedIn, isTrue); // register() already granted tokens
+    expect(poppedTrue, isTrue);
+  });
+
+  testWidgets('a login blocked as unverified offers real recovery, not a dead end', (tester) async {
+    var loginAttempts = 0;
+    String? confirmedCode;
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/login/')) {
+        loginAttempts++;
+        if (loginAttempts == 1) {
+          return http.Response(jsonEncode({'code': ['email_not_verified']}), 400, headers: {'content-type': 'application/json'});
+        }
+        return http.Response(
+          jsonEncode({
+            'access': 'fake-access',
+            'refresh': 'fake-refresh',
+            'user': {'id': 'fake-id', 'email': 'blocked@example.com', 'email_verified': true},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.endsWith('/verify-email/request-by-email/')) {
+        return http.Response(jsonEncode({'detail': 'ok'}), 200, headers: {'content-type': 'application/json'});
+      }
+      if (request.url.path.endsWith('/verify-email/confirm-by-email/')) {
+        confirmedCode = (jsonDecode(request.body) as Map<String, dynamic>)['code'] as String;
+        return http.Response(jsonEncode({'detail': 'ok'}), 200, headers: {'content-type': 'application/json'});
+      }
+      return http.Response('not found', 404);
+    });
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient));
+
+    await tester.pumpWidget(l10nTestApp(const Scaffold(body: AuthSheet())));
+    await tester.enterText(find.byType(TextField).first, 'blocked@example.com');
+    await tester.enterText(find.byType(TextField).at(1), 'S0mePass!23');
+    await tester.tap(find.text('Log in'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Please verify your email before logging in.'), findsOneWidget);
+    // The recovery code field appeared automatically — no extra tap needed.
+    expect(find.text('A new code is on its way.'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).at(2), '111222');
+    await tester.tap(find.widgetWithText(SpekoohButton, 'Verify'));
+    await tester.pumpAndSettle();
+
+    expect(confirmedCode, '111222');
+    expect(find.text('Email verified — log in again to continue.'), findsOneWidget);
+
+    // The password field is still filled in from before — log in again for real.
+    await tester.tap(find.widgetWithText(SpekoohButton, 'Log in'));
+    await tester.pumpAndSettle();
+
+    expect(loginAttempts, 2);
+    expect(AuthSession.instance.isLoggedIn, isTrue);
   });
 }

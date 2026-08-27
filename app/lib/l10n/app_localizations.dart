@@ -146,6 +146,24 @@ abstract class AppLocalizations {
   /// **'Unlimited paper views · no ads'**
   String get spekoohProSubtitle;
 
+  /// No description provided for @accountSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get accountSection;
+
+  /// No description provided for @changePasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get changePasswordTitle;
+
+  /// No description provided for @changePasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll email you a code to confirm it\'s you'**
+  String get changePasswordSubtitle;
+
   /// No description provided for @languageSection.
   ///
   /// In en, this message translates to:
@@ -320,6 +338,18 @@ abstract class AppLocalizations {
   /// **'Login failed. Check your email and password.'**
   String get authErrorLogin;
 
+  /// No description provided for @authErrorLoginEmailNotVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Please verify your email before logging in.'**
+  String get authErrorLoginEmailNotVerified;
+
+  /// No description provided for @verifyEmailLoginRecoveryDoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verified — log in again to continue.'**
+  String get verifyEmailLoginRecoveryDoneMessage;
+
   /// No description provided for @authErrorRegisterReferral.
   ///
   /// In en, this message translates to:
@@ -421,6 +451,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to log in'**
   String get resetPasswordBackToLogin;
+
+  /// No description provided for @verifyEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email'**
+  String get verifyEmailTitle;
+
+  /// No description provided for @verifyEmailPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a code to your email. Enter it below to verify your account.'**
+  String get verifyEmailPrompt;
+
+  /// No description provided for @verifyEmailCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'CODE'**
+  String get verifyEmailCodeLabel;
+
+  /// No description provided for @verifyEmailCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit code'**
+  String get verifyEmailCodeHint;
+
+  /// No description provided for @verifyEmailConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verifyEmailConfirmButton;
+
+  /// No description provided for @verifyEmailResendLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get verifyEmailResendLink;
+
+  /// No description provided for @verifyEmailResendSentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A new code is on its way.'**
+  String get verifyEmailResendSentMessage;
+
+  /// No description provided for @verifyEmailSkipLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get verifyEmailSkipLink;
+
+  /// No description provided for @authErrorEmailVerificationConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'That code is invalid or has expired.'**
+  String get authErrorEmailVerificationConfirm;
+
+  /// No description provided for @authErrorEmailVerificationResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not resend a verification code. Check your connection and try again.'**
+  String get authErrorEmailVerificationResend;
 
   /// No description provided for @homeWelcomeGreeting.
   ///
@@ -1105,6 +1195,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Take a photo'**
   String get takePhoto;
+
+  /// No description provided for @chooseFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get chooseFromGallery;
+
+  /// No description provided for @avatarUploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update your photo. Check your connection and try again.'**
+  String get avatarUploadError;
 
   /// No description provided for @filterAll.
   ///

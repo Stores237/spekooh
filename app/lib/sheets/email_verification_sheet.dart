@@ -8,63 +8,43 @@ import '../theme/app_theme.dart';
 import '../widgets/auth_form_field.dart';
 import '../widgets/spekooh_button.dart';
 
-/// Two-step "forgot password" flow: request a code by email, then confirm
-/// it alongside a new password. Reached from AuthSheet's login mode.
-/// Pops `true` once the password is actually reset — the caller (AuthSheet)
-/// reacts by dropping back to its own login form so the user can log in
-/// with the new password; this sheet never logs anyone in itself.
-class PasswordResetSheet extends StatefulWidget {
-  const PasswordResetSheet({super.key});
+/// Shown right after a successful registration (see AuthSheet._submit) —
+/// RegisterView already issued+sent a real code as part of signup itself,
+/// this is where the new user actually confirms it. Deliberately skippable
+/// (see the "Skip for now" link): registration already granted tokens, and
+/// User.email_verified_at doesn't gate access (see that field's docstring
+/// on the backend) — this is a nag to verify, not a lockout, since forcing
+/// it would strand real users given no real email provider is wired up yet
+/// (see TODOS.md).
+class EmailVerificationSheet extends StatefulWidget {
+  const EmailVerificationSheet({super.key});
 
   @override
-  State<PasswordResetSheet> createState() => _PasswordResetSheetState();
+  State<EmailVerificationSheet> createState() => _EmailVerificationSheetState();
 }
 
-class _PasswordResetSheetState extends State<PasswordResetSheet> {
-  bool _codeSent = false;
+class _EmailVerificationSheetState extends State<EmailVerificationSheet> {
   bool _isSubmitting = false;
+  bool _isResending = false;
   String? _error;
+  String? _info;
 
-  final _emailController = TextEditingController();
   final _codeController = TextEditingController();
-  final _newPasswordController = TextEditingController();
 
   @override
   void dispose() {
-    _emailController.dispose();
     _codeController.dispose();
-    _newPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _sendCode() async {
+  Future<void> _confirm() async {
     setState(() {
       _isSubmitting = true;
       _error = null;
+      _info = null;
     });
     try {
-      await AuthSession.instance.requestPasswordReset(email: _emailController.text.trim());
-      if (mounted) setState(() => _codeSent = true);
-    } on AuthException catch (e) {
-      if (mounted) setState(() => _error = _localizedError(e.code));
-    } catch (_) {
-      if (mounted) setState(() => _error = AppLocalizations.of(context)!.authErrorUnknown);
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
-  }
-
-  Future<void> _confirmReset() async {
-    setState(() {
-      _isSubmitting = true;
-      _error = null;
-    });
-    try {
-      await AuthSession.instance.confirmPasswordReset(
-        email: _emailController.text.trim(),
-        code: _codeController.text.trim(),
-        newPassword: _newPasswordController.text,
-      );
+      await AuthSession.instance.confirmEmailVerification(code: _codeController.text.trim());
       if (mounted) Navigator.of(context).pop(true);
     } on AuthException catch (e) {
       if (mounted) setState(() => _error = _localizedError(e.code));
@@ -75,21 +55,39 @@ class _PasswordResetSheetState extends State<PasswordResetSheet> {
     }
   }
 
+  Future<void> _resend() async {
+    setState(() {
+      _isResending = true;
+      _error = null;
+      _info = null;
+    });
+    try {
+      await AuthSession.instance.resendEmailVerification();
+      if (mounted) setState(() => _info = AppLocalizations.of(context)!.verifyEmailResendSentMessage);
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = _localizedError(e.code));
+    } catch (_) {
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.authErrorUnknown);
+    } finally {
+      if (mounted) setState(() => _isResending = false);
+    }
+  }
+
   String _localizedError(AuthErrorCode code) {
     final l10n = AppLocalizations.of(context)!;
     switch (code) {
-      case AuthErrorCode.passwordResetRequestFailed:
-        return l10n.authErrorPasswordResetRequest;
-      case AuthErrorCode.passwordResetConfirmFailed:
-        return l10n.authErrorPasswordResetConfirm;
+      case AuthErrorCode.emailVerificationConfirmFailed:
+        return l10n.authErrorEmailVerificationConfirm;
+      case AuthErrorCode.emailVerificationResendFailed:
+        return l10n.authErrorEmailVerificationResend;
       case AuthErrorCode.loginFailed:
       case AuthErrorCode.loginFailedEmailNotVerified:
       case AuthErrorCode.registerFailedReferral:
       case AuthErrorCode.registerFailedGeneric:
       case AuthErrorCode.registerFailedInvalidEmailDomain:
       case AuthErrorCode.guestFailed:
-      case AuthErrorCode.emailVerificationConfirmFailed:
-      case AuthErrorCode.emailVerificationResendFailed:
+      case AuthErrorCode.passwordResetRequestFailed:
+      case AuthErrorCode.passwordResetConfirmFailed:
         return l10n.authErrorUnknown; // not reachable from this sheet
     }
   }
@@ -118,32 +116,21 @@ class _PasswordResetSheetState extends State<PasswordResetSheet> {
             ),
             const SizedBox(height: AppSpacing.space4),
             Text(
-              l10n.resetPasswordTitle,
+              l10n.verifyEmailTitle,
               style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 6),
             Text(
-              _codeSent ? l10n.resetPasswordCodeSentMessage : l10n.resetPasswordEmailPrompt,
+              l10n.verifyEmailPrompt,
               style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.space4),
-            AuthFieldLabel(l10n.authEmailLabel),
+            AuthFieldLabel(l10n.verifyEmailCodeLabel),
             const SizedBox(height: 6),
-            AuthTextField(
-              controller: _emailController,
-              hint: l10n.authEmailHint,
-              keyboardType: TextInputType.emailAddress,
-              enabled: !_codeSent,
-            ),
-            if (_codeSent) ...[
+            AuthTextField(controller: _codeController, hint: l10n.verifyEmailCodeHint, keyboardType: TextInputType.number),
+            if (_info != null) ...[
               const SizedBox(height: AppSpacing.space3),
-              AuthFieldLabel(l10n.resetPasswordCodeLabel),
-              const SizedBox(height: 6),
-              AuthTextField(controller: _codeController, hint: l10n.resetPasswordCodeHint, keyboardType: TextInputType.number),
-              const SizedBox(height: AppSpacing.space3),
-              AuthFieldLabel(l10n.resetPasswordNewPasswordLabel),
-              const SizedBox(height: 6),
-              AuthTextField(controller: _newPasswordController, hint: '••••••••', obscureText: true),
+              Text(_info!, style: const TextStyle(color: AppColors.green600, fontSize: 12)),
             ],
             if (_error != null) ...[
               const SizedBox(height: AppSpacing.space3),
@@ -151,19 +138,25 @@ class _PasswordResetSheetState extends State<PasswordResetSheet> {
             ],
             const SizedBox(height: AppSpacing.space4),
             SpekoohButton(
-              onPressed: _isSubmitting ? null : (_codeSent ? _confirmReset : _sendCode),
-              child: Text(
-                _isSubmitting
-                    ? l10n.authPleaseWait
-                    : (_codeSent ? l10n.resetPasswordConfirmButton : l10n.resetPasswordSendCodeButton),
-              ),
+              onPressed: _isSubmitting ? null : _confirm,
+              child: Text(_isSubmitting ? l10n.authPleaseWait : l10n.verifyEmailConfirmButton),
             ),
             const SizedBox(height: AppSpacing.space3),
             Center(
               child: GestureDetector(
-                onTap: _isSubmitting ? null : () => Navigator.of(context).pop(false),
+                onTap: _isResending ? null : _resend,
                 child: Text(
-                  l10n.resetPasswordBackToLogin,
+                  l10n.verifyEmailResendLink,
+                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.link),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.space2),
+            Center(
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(false),
+                child: Text(
+                  l10n.verifyEmailSkipLink,
                   style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
                 ),
               ),
