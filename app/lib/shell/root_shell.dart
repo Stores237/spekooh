@@ -238,6 +238,7 @@ class RootShellState extends State<RootShell> {
       onOpenProfile: () => _openProfile(context),
       onOpenNotes: () => _openNotes(context),
       onOpenShop: () => _openShop(context),
+      onOpenSubmit: () => goToTab(2),
       onOpenPaper: (entry) => _openPaperEntryDetail(context, entry),
       onOpenPamphlet: () => _openPamphlet(context),
       onOpenPaywall: () => _openPaywall(context),

@@ -28,6 +28,7 @@ class HomeScreen extends StatelessWidget {
     this.onOpenProfile,
     this.onOpenNotes,
     this.onOpenShop,
+    this.onOpenSubmit,
     PapersRepository? papersRepository,
     ShopRepository? shopRepository,
   })  : papersRepository = papersRepository ?? RepositoryLocator.instance.papers,
@@ -40,6 +41,7 @@ class HomeScreen extends StatelessWidget {
   final VoidCallback? onOpenProfile;
   final VoidCallback? onOpenNotes;
   final VoidCallback? onOpenShop;
+  final VoidCallback? onOpenSubmit;
   final PapersRepository papersRepository;
   final ShopRepository shopRepository;
 
@@ -180,24 +182,28 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.space6),
               Text(l10n.homeContributionTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
               const SizedBox(height: AppSpacing.space3),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const IconChip(icon: LucideIcons.upload, tint: IconChipTint.amber, size: 48),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(l10n.homeContributionPrompt, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                          Text(l10n.homeContributionSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                        ],
+              GestureDetector(
+                onTap: onOpenSubmit,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const IconChip(icon: LucideIcons.upload, tint: IconChipTint.amber, size: 48),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(l10n.homeContributionPrompt, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                            Text(l10n.homeContributionSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      if (onOpenSubmit != null) const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.space5),
