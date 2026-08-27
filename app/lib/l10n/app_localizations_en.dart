@@ -522,6 +522,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterAll => 'All';
 
   @override
+  String get filtersTitle => 'Filters';
+
+  @override
+  String get filterClearAll => 'Clear all';
+
+  @override
+  String get filterDone => 'Done';
+
+  @override
   String get forumFilterMySubjects => 'My subjects';
 
   @override

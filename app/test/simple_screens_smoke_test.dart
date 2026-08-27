@@ -70,16 +70,26 @@ void main() {
     expect(find.text('GCE A Level Further Maths Pack'), findsOneWidget);
     expect(find.text('Baccalauréat SVT Revision Guide'), findsOneWidget);
 
+    // Filters live in an on-demand sheet behind a trigger button, not two
+    // permanent chip rows — open it, pick a subject, apply.
+    await tester.tap(find.text('Filters'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Further Maths'));
     await tester.pump();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
 
     expect(find.text('GCE A Level Further Maths Pack'), findsOneWidget);
     expect(find.text('Baccalauréat SVT Revision Guide'), findsNothing);
 
+    await tester.tap(find.text('Filters'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('All').first);
     await tester.pump();
     await tester.tap(find.text('Baccalauréat'));
     await tester.pump();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
 
     expect(find.text('Baccalauréat SVT Revision Guide'), findsOneWidget);
     expect(find.text('GCE A Level Further Maths Pack'), findsNothing);

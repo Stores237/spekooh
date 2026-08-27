@@ -166,6 +166,9 @@
   "takePhoto": "Prendre une photo",
 
   "filterAll": "Toutes",
+  "filtersTitle": "Filtres",
+  "filterClearAll": "Tout effacer",
+  "filterDone": "Terminé",
   "forumFilterMySubjects": "Mes matières",
   "forumFilterUnanswered": "Sans réponse",
   "forumFilterSolved": "Résolu",

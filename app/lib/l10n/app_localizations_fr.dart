@@ -530,6 +530,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get filterAll => 'Toutes';
 
   @override
+  String get filtersTitle => 'Filtres';
+
+  @override
+  String get filterClearAll => 'Tout effacer';
+
+  @override
+  String get filterDone => 'Terminé';
+
+  @override
   String get forumFilterMySubjects => 'Mes matières';
 
   @override
