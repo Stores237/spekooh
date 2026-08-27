@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../../data/auth_session.dart';
+import '../../data/locale_controller.dart';
 import '../../data/offline_papers_store.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repositories/quizzes_repository.dart';
@@ -119,15 +123,8 @@ class LoggedInHomeScreen extends StatelessWidget {
                                       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
                                       child: Row(
                                         children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                            decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(999)),
-                                            child: Text('EN', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.ink900)),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                            child: Text('FR', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.white)),
-                                          ),
+                                          _langPill('EN', 'en'),
+                                          _langPill('FR', 'fr'),
                                         ],
                                       ),
                                     ),
@@ -415,6 +412,34 @@ class LoggedInHomeScreen extends StatelessWidget {
     if (result.type != ResultType.done && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotOpenFile)));
     }
+  }
+
+  /// Same switch as Settings' language row (SettingsScreen._changeLanguage)
+  /// — this header pill used to be purely decorative (no onTap at all), so
+  /// tapping it did nothing. LocaleController.instance is a ChangeNotifier
+  /// that SpekoohApp's root listens to, so calling setLocale here rebuilds
+  /// the whole app (including this pill's own highlight) with no local
+  /// state needed, despite this being a StatelessWidget.
+  Future<void> _changeLanguage(String code) async {
+    await LocaleController.instance.setLocale(code);
+    if (AuthSession.instance.isLoggedIn) {
+      unawaited(profileRepository.setLanguagePreference(code).catchError((_) {}));
+    }
+  }
+
+  Widget _langPill(String label, String code) {
+    final active = LocaleController.instance.locale.languageCode == code;
+    return GestureDetector(
+      onTap: active ? null : () => _changeLanguage(code),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(color: active ? AppColors.white : null, borderRadius: BorderRadius.circular(999)),
+        child: Text(
+          label,
+          style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w800, color: active ? AppColors.ink900 : AppColors.white),
+        ),
+      ),
+    );
   }
 
   Widget _darkIconButton(IconData icon, VoidCallback? onTap) {
