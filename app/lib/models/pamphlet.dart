@@ -8,6 +8,8 @@ class Pamphlet {
     this.description = '',
     this.deliveryAvailable = false,
     this.deliveryFeeFcfa = 0,
+    this.subjectTitle = '',
+    this.academicLevel = '',
   });
 
   final int id;
@@ -18,4 +20,8 @@ class Pamphlet {
   final String description;
   final bool deliveryAvailable;
   final int deliveryFeeFcfa;
+
+  /// Backs the Subject/Academic level filter chips on ShopScreen.
+  final String subjectTitle;
+  final String academicLevel;
 }

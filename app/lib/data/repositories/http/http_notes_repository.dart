@@ -20,6 +20,8 @@ class HttpNotesRepository implements NotesRepository {
         // The backend note model carries no icon/tint (cosmetic-only, spec §-unconfirmed feature) — fixed placeholder.
         tint: IconChipTint.blue,
         icon: LucideIcons.fileText,
+        subjectTitle: row['subject_title'] as String? ?? '',
+        academicLevel: row['academic_level'] as String? ?? '',
       );
     }).toList();
   }

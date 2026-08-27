@@ -20,6 +20,8 @@ class PamphletSerializer(serializers.ModelSerializer):
             "partner_name",
             "title",
             "description",
+            "subject_title",
+            "academic_level",
             "price_fcfa",
             "delivery_available",
             "delivery_fee_fcfa",

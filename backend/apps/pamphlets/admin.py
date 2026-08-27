@@ -10,8 +10,8 @@ class PartnerBookshopAdmin(admin.ModelAdmin):
 
 @admin.register(Pamphlet)
 class PamphletAdmin(admin.ModelAdmin):
-    list_display = ("title", "partner", "price_fcfa", "is_active", "is_featured")
-    list_filter = ("partner", "is_active", "is_featured")
+    list_display = ("title", "partner", "subject_title", "academic_level", "price_fcfa", "is_active", "is_featured")
+    list_filter = ("partner", "is_active", "is_featured", "subject_title", "academic_level")
 
 
 @admin.register(PamphletOrder)

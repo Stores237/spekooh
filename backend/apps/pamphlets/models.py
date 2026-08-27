@@ -19,9 +19,17 @@ class PartnerBookshop(TimeStampedModel):
 
 
 class Pamphlet(TimeStampedModel):
+    """subject_title/academic_level are free text, same rationale as
+    apps.notes.Note: partners list one pamphlet at a time via admin, not
+    picked from the contributor-facing papers taxonomy — a lighter,
+    independent field fits better than an FK dependency. They back the
+    app's Subject/Academic level filter chips on the Shop screen."""
+
     partner = models.ForeignKey(PartnerBookshop, on_delete=models.CASCADE, related_name="pamphlets")
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    subject_title = models.CharField(max_length=100, blank=True)
+    academic_level = models.CharField(max_length=100, blank=True)
     price_fcfa = models.PositiveIntegerField()
     delivery_available = models.BooleanField(default=False)
     delivery_fee_fcfa = models.PositiveIntegerField(default=0)

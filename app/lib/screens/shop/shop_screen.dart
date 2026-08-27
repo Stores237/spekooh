@@ -8,6 +8,7 @@ import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/filter_chip_row.dart';
 import '../../widgets/search_input.dart';
 import '../common/circular_back_button.dart';
 
@@ -28,6 +29,8 @@ class _ShopScreenState extends State<ShopScreen> {
   late final Future<List<Pamphlet>> _pamphletsFuture = widget.repository.getPamphlets();
   final _searchController = TextEditingController();
   String _query = '';
+  String? _subjectFilter;
+  String? _levelFilter;
 
   @override
   void dispose() {
@@ -69,13 +72,45 @@ class _ShopScreenState extends State<ShopScreen> {
                 child: FutureBuilder<List<Pamphlet>>(
                   future: _pamphletsFuture,
                   builder: (context, snapshot) {
-                    final items = (snapshot.data ?? const [])
+                    final pamphlets = snapshot.data ?? const <Pamphlet>[];
+                    final subjects = pamphlets.map((p) => p.subjectTitle).where((s) => s.isNotEmpty).toSet().toList()
+                      ..sort();
+                    final levels = pamphlets.map((p) => p.academicLevel).where((s) => s.isNotEmpty).toSet().toList()
+                      ..sort();
+                    final items = pamphlets
                         .where((p) => p.title.toLowerCase().contains(_query.toLowerCase()))
+                        .where((p) => _subjectFilter == null || p.subjectTitle == _subjectFilter)
+                        .where((p) => _levelFilter == null || p.academicLevel == _levelFilter)
                         .toList();
-                    return ListView.separated(
-                      itemCount: items.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.space3),
-                      itemBuilder: (context, i) => _PamphletCard(pamphlet: items[i], onTap: () => widget.onOpenPamphlet?.call(items[i])),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (subjects.isNotEmpty) ...[
+                          FilterChipRow(
+                            label: l10n.subjectLabel,
+                            options: subjects,
+                            selected: _subjectFilter,
+                            onSelected: (v) => setState(() => _subjectFilter = v),
+                          ),
+                          const SizedBox(height: AppSpacing.space3),
+                        ],
+                        if (levels.isNotEmpty) ...[
+                          FilterChipRow(
+                            label: l10n.academicLevelFilterLabel,
+                            options: levels,
+                            selected: _levelFilter,
+                            onSelected: (v) => setState(() => _levelFilter = v),
+                          ),
+                          const SizedBox(height: AppSpacing.space4),
+                        ],
+                        Expanded(
+                          child: ListView.separated(
+                            itemCount: items.length,
+                            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.space3),
+                            itemBuilder: (context, i) => _PamphletCard(pamphlet: items[i], onTap: () => widget.onOpenPamphlet?.call(items[i])),
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),

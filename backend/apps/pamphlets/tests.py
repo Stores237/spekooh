@@ -97,6 +97,24 @@ def test_featured_endpoint_404s_when_none_configured(api_client):
     assert response.status_code == 404
 
 
+@pytest.mark.django_db
+def test_catalog_filters_by_subject_and_level(api_client):
+    PamphletFactory(title="Physics pack", subject_title="Physics", academic_level="A Level")
+    PamphletFactory(title="Biology pack", subject_title="Biology", academic_level="O Level")
+
+    response = api_client.get("/api/pamphlets/catalog/?subject_title=Physics")
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    titles = [r["title"] for r in rows]
+    assert "Physics pack" in titles
+    assert "Biology pack" not in titles
+
+    response = api_client.get("/api/pamphlets/catalog/?academic_level=O Level")
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    titles = [r["title"] for r in rows]
+    assert "Biology pack" in titles
+    assert "Physics pack" not in titles
+
+
 # --- Escrow + QR state machine (Stage 6) ---
 
 
