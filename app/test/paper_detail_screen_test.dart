@@ -176,7 +176,7 @@ void main() {
     expect(adController.showAdCalls, 1);
     expect(repository.adWatchCalls, 0);
     expect(find.textContaining('Daily free view limit reached'), findsOneWidget);
-    expect(find.text('Ad not completed — no view granted.'), findsOneWidget);
+    expect(find.text('Ad not completed. No view granted.'), findsOneWidget);
   });
 
   testWidgets('reporting a paper picks a reason and submits it for real', (tester) async {
@@ -193,7 +193,7 @@ void main() {
     expect(repository.reportCalls, hasLength(1));
     expect(repository.reportCalls.single.paperId, 1);
     expect(repository.reportCalls.single.reason, 'WRONG_ANSWERS');
-    expect(find.text('Thanks — the Review Team has been notified.'), findsOneWidget);
+    expect(find.text('Thanks! The Review Team has been notified.'), findsOneWidget);
   });
 
   testWidgets('cancelling the report dialog sends nothing', (tester) async {
@@ -455,7 +455,7 @@ void main() {
       expect(find.text('This report requires unlocking'), findsOneWidget);
       expect(find.text('View'), findsNothing);
 
-      await tester.tap(find.text('Unlock — 500 FCFA'));
+      await tester.tap(find.text('Unlock: 500 FCFA'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 

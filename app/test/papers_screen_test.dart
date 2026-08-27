@@ -34,7 +34,7 @@ void main() {
     await tester.pump();
 
     // Step 2: system (synchronous, no FutureBuilder).
-    expect(find.text('Secondary — choose system'), findsOneWidget);
+    expect(find.text('Secondary: choose system'), findsOneWidget);
     await tester.tap(find.text('Anglophone'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50)); // exam-type FutureBuilder
@@ -46,7 +46,7 @@ void main() {
     await tester.pump();
 
     // Step 4: track (synchronous).
-    expect(find.text('A Level — choose track'), findsOneWidget);
+    expect(find.text('A Level: choose track'), findsOneWidget);
     await tester.tap(find.text('Science'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50)); // subject FutureBuilder

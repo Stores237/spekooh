@@ -29,4 +29,4 @@ class Notification(TimeStampedModel):
         ordering = ["is_read", "-created_at"]
 
     def __str__(self):
-        return f"{self.user} — {self.title}"
+        return f"{self.user}: {self.title}"

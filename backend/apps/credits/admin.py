@@ -44,7 +44,7 @@ class RedeemCodeAdmin(ModelAdmin):
     @display(description="Expires")
     def expiry_countdown(self, obj):
         if obj.status != RedeemCodeStatus.ACTIVE:
-            return "—"
+            return "-"
         remaining = obj.expires_at - timezone.now()
         if remaining.total_seconds() < 0:
             return "Expired (not yet marked)"

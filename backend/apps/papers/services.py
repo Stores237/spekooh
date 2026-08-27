@@ -64,7 +64,7 @@ def report_paper(*, user, paper_submission, reason, details="") -> PaperFlag:
     flag(
         subject=paper_submission,
         category=FlagCategory.PAPER_REPORTED,
-        reason=f"Reported by user #{user.id} — {paper_flag.get_reason_display()}"
+        reason=f"Reported by user #{user.id}: {paper_flag.get_reason_display()}"
         + (f": {details}" if details else ""),
     )
     return paper_flag

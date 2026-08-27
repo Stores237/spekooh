@@ -198,10 +198,17 @@ class _SubmitScreenState extends State<SubmitScreen> {
   }
 
   Future<void> _pickSubject() async {
-    final title = AppLocalizations.of(context)!.subjectLabel;
-    final subjects = await widget.repository.getSubjects(_examType!.name);
+    final examTypeName = _examType!.name;
+    final subjects = await widget.repository.getSubjects(examTypeName);
     if (!mounted) return;
-    final picked = await _pickFromList<Subject>(title: title, items: subjects, label: (s) => s.title);
+    final picked = await showModalBottomSheet<Subject>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _SubjectPickerSheet(
+        subjects: subjects,
+        onCreate: (title) => widget.repository.createSubject(title: title, examTypeName: examTypeName),
+      ),
+    );
     if (picked == null) return;
     setState(() => _subject = picked);
   }
@@ -634,7 +641,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
             Text(label, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
             Row(
               children: [
-                Text(value ?? (enabled ? l10n.selectPlaceholder : '—'),
+                Text(value ?? (enabled ? l10n.selectPlaceholder : '-'),
                     style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: value == null ? AppColors.textTertiary : AppColors.textPrimary)),
                 const SizedBox(width: 6),
                 Icon(LucideIcons.chevronRight, size: 14, color: enabled ? AppColors.textTertiary : AppColors.textTertiary.withValues(alpha: 0.4)),
@@ -665,6 +672,130 @@ class _SubmitScreenState extends State<SubmitScreen> {
             fontWeight: FontWeight.w700,
             fontSize: 13,
             color: active ? AppColors.textPrimary : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Subject picker for [_SubmitScreenState._pickSubject] — a normal list plus
+/// an "Add a subject" row for when the curated list is missing what the
+/// contributor needs. Its own StatefulWidget (not the shared _pickFromList
+/// helper) since it needs local state for the inline add-subject field.
+class _SubjectPickerSheet extends StatefulWidget {
+  const _SubjectPickerSheet({required this.subjects, required this.onCreate});
+
+  final List<Subject> subjects;
+  final Future<Subject> Function(String title) onCreate;
+
+  @override
+  State<_SubjectPickerSheet> createState() => _SubjectPickerSheetState();
+}
+
+class _SubjectPickerSheetState extends State<_SubjectPickerSheet> {
+  bool _addingCustom = false;
+  bool _creating = false;
+  String? _error;
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitCustom() async {
+    final title = _controller.text.trim();
+    if (title.isEmpty) return;
+    setState(() {
+      _creating = true;
+      _error = null;
+    });
+    try {
+      final subject = await widget.onCreate(title);
+      if (mounted) Navigator.of(context).pop(subject);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _creating = false;
+          _error = AppLocalizations.of(context)!.addCustomSubjectError;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(l10n.subjectLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
+                ),
+              ),
+              Flexible(
+                child: widget.subjects.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(l10n.nothingAvailable, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: widget.subjects.length,
+                        itemBuilder: (context, i) => ListTile(
+                          title: Text(widget.subjects[i].title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 14, color: AppColors.textPrimary)),
+                          onTap: () => Navigator.of(context).pop(widget.subjects[i]),
+                        ),
+                      ),
+              ),
+              const Divider(height: 1),
+              if (!_addingCustom)
+                ListTile(
+                  leading: const Icon(LucideIcons.plus, size: 18, color: AppColors.gold700),
+                  title: Text(l10n.addCustomSubject, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.gold700)),
+                  onTap: () => setState(() => _addingCustom = true),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _controller,
+                        autofocus: true,
+                        enabled: !_creating,
+                        decoration: InputDecoration(hintText: l10n.customSubjectHint, isDense: true, border: const OutlineInputBorder()),
+                        onSubmitted: (_) => _submitCustom(),
+                      ),
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(_error!, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.red500)),
+                        ),
+                      const SizedBox(height: 10),
+                      SpekoohButton(
+                        size: SpekoohButtonSize.sm,
+                        onPressed: _creating ? null : _submitCustom,
+                        child: _creating
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white))
+                            : Text(l10n.addCustomSubjectCta),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.space2),
+            ],
           ),
         ),
       ),

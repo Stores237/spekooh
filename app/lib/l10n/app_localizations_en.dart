@@ -146,7 +146,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get joinFree => 'Join free';
 
   @override
-  String get homeExploringBadge => 'Exploring — no account';
+  String get homeExploringBadge => 'Exploring: no account';
 
   @override
   String get homeFreeViewsLabel => 'FREE PAPER VIEWS';
@@ -162,7 +162,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goPro => 'Go Pro';
 
   @override
-  String get homeNoPapersYet => 'No papers published yet — check back soon.';
+  String get homeNoPapersYet => 'No papers published yet. Check back soon.';
 
   @override
   String homePaperLabelWithYear(String label, int year) {
@@ -170,7 +170,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get homeFreeToView => 'Free to view — marking guide sold separately';
+  String get homeFreeToView => 'Free to view (marking guide sold separately)';
 
   @override
   String get homeFreeToViewReport => 'Free to view and download';
@@ -179,7 +179,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeReportPaymentRequired => 'Payment required to view';
 
   @override
-  String get homeContributionTitle => 'Contribution — earn credit';
+  String get homeContributionTitle => 'Contribution: earn credit';
 
   @override
   String get homeContributionPrompt =>
@@ -187,7 +187,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeContributionSubtitle =>
-      'Snap a photo, tag it, earn bonus credit once it\'s verified — first contribution counts.';
+      'Snap a photo, tag it, and earn bonus credit once it\'s verified. First contribution counts.';
 
   @override
   String get notesTitle => 'Notes';
@@ -229,7 +229,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeReadingOpenNote =>
-      'Reading papers stays open to everyone — 3 free views a day, no account needed.';
+      'Reading papers stays open to everyone: 3 free views a day, no account needed.';
 
   @override
   String get greetingMorning => 'Good morning';
@@ -325,7 +325,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get papersSubtitle =>
-      'Every level, every system — Primary to Concours des Grandes Écoles.';
+      'Every level, every system, from Primary to Concours des Grandes Écoles.';
 
   @override
   String get searchExamOrSubject => 'Search exam type or subject...';
@@ -335,7 +335,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chooseSystemHeader(String category) {
-    return '$category — choose system';
+    return '$category: choose system';
   }
 
   @override
@@ -356,7 +356,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chooseTrackHeader(String examType) {
-    return '$examType — choose track';
+    return '$examType: choose track';
   }
 
   @override
@@ -376,12 +376,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String noPapersYetBody(String subject) {
-    return 'Nobody has submitted a $subject paper for this exam type yet. Be the first — submit one from the Submit tab.';
+    return 'Nobody has submitted a $subject paper for this exam type yet. Be the first to submit one from the Submit tab.';
   }
 
   @override
   String noReportsYetBody(String examType) {
-    return 'Nobody has submitted a $examType yet. Be the first — submit one from the Submit tab.';
+    return 'Nobody has submitted a $examType yet. Be the first to submit one from the Submit tab.';
   }
 
   @override
@@ -389,14 +389,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contributionSubtitle =>
-      'Share a past paper or an academic report — every contribution helps another student.';
+      'Share a past paper or an academic report. Every contribution helps another student.';
 
   @override
   String get contributorNameTitle => 'Contributor name';
 
   @override
   String get contributorNameSubtitle =>
-      'No account needed to contribute — we\'ll credit this to the name you give us.';
+      'No account needed to contribute. We\'ll credit this to the name you give us.';
 
   @override
   String get contributorNameLabel => 'Your name';
@@ -412,7 +412,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get academicReportComingSoon =>
-      'Academic report submissions aren\'t wired to the backend yet — only exam papers can be submitted right now. Check back soon.';
+      'Academic report submissions aren\'t wired to the backend yet. Only exam papers can be submitted right now. Check back soon.';
 
   @override
   String get takePhotoOrUploadPdf => 'Take a photo or upload a PDF';
@@ -444,6 +444,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subjectLabel => 'Subject';
 
   @override
+  String get addCustomSubject => 'Add a subject';
+
+  @override
+  String get customSubjectHint => 'e.g. Geology';
+
+  @override
+  String get addCustomSubjectCta => 'Add';
+
+  @override
+  String get addCustomSubjectError => 'Could not add that subject. Try again.';
+
+  @override
   String get yearLabel => 'Year';
 
   @override
@@ -451,7 +463,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contributionBonusBanner =>
-      'New, verified submissions earn bonus credit — redeemable toward marking-guide unlocks.';
+      'New, verified submissions earn bonus credit, redeemable toward marking-guide unlocks.';
 
   @override
   String get submitPaperButton => 'Submit paper';
@@ -485,7 +497,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contributionReceivedBody =>
-      'We\'ll check it against existing papers first — if it\'s new, it moves to instructor review. Track it under Profile.';
+      'We\'ll check it against existing papers first. If it\'s new, it moves to instructor review. Track it under Profile.';
 
   @override
   String submissionFailed(String error) {
@@ -494,7 +506,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fileTooLargeError(int maxMb) {
-    return 'File is too large — this report type allows up to ${maxMb}MB.';
+    return 'File is too large. This report type allows up to ${maxMb}MB.';
   }
 
   @override
@@ -527,7 +539,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forumNoUnanswered => 'No unanswered questions right now.';
 
   @override
-  String get forumNoPosts => 'No posts yet — be the first to ask.';
+  String get forumNoPosts => 'No posts yet. Be the first to ask.';
 
   @override
   String get forumAskButton => '+ Question';
@@ -610,13 +622,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pastPaperPracticeSubtitle =>
-      'Auto-generated from submitted papers — coming soon';
+      'Auto-generated from submitted papers (coming soon)';
 
   @override
   String get fridayArenaTitle => 'Friday Arena';
 
   @override
-  String get fridayArenaSubtitle => 'Live elimination quiz — coming soon';
+  String get fridayArenaSubtitle => 'Live elimination quiz (coming soon)';
 
   @override
   String get topPlayers => 'Top players';
@@ -695,7 +707,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String shareRedeemCodeMessage(String code, String subtitle) {
-    return 'Use my Spekooh redeem code $code — $subtitle';
+    return 'Use my Spekooh redeem code $code: $subtitle';
   }
 
   @override
@@ -710,7 +722,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String shareReferralMessage(String code) {
-    return 'Join me on Spekooh — sign up with my referral code $code.';
+    return 'Join me on Spekooh. Sign up with my referral code $code.';
   }
 
   @override
@@ -755,7 +767,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allCaughtUp => 'All caught up';
 
   @override
-  String get adNotCompletedError => 'Ad not completed — no view granted.';
+  String get adNotCompletedError => 'Ad not completed. No view granted.';
 
   @override
   String adLoadError(String error) {
@@ -774,11 +786,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotOpenLink => 'Could not open the link.';
 
   @override
-  String get viewOnlyNotice => 'View only — unlock to download a copy';
+  String get viewOnlyNotice => 'View only. Unlock to download a copy';
 
   @override
   String get reportThanksMessage =>
-      'Thanks — the Review Team has been notified.';
+      'Thanks! The Review Team has been notified.';
 
   @override
   String reportSendError(String error) {
@@ -837,7 +849,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportDownloadSubtitle =>
-      'Viewing in the app is free — unlock once to save a copy for offline reading';
+      'Viewing in the app is free. Unlock once to save a copy for offline reading';
 
   @override
   String unlockedForAmount(int amount) {
@@ -845,7 +857,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get unlockButton => 'Unlock — 500 FCFA';
+  String get unlockButton => 'Unlock: 500 FCFA';
 
   @override
   String get alreadyUnlocked => 'Unlocked.';
@@ -858,7 +870,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportLockedMessage =>
-      'PhD and Master\'s theses require payment to view — unlock below to read it.';
+      'PhD and Master\'s theses require payment to view. Unlock below to read it.';
 
   @override
   String get unlockToDownloadHint =>
@@ -973,14 +985,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get escrowExplanation =>
-      'Spekooh holds your payment in escrow. You\'ll get a one-time QR ticket to collect it at the bookshop — payment only releases to the partner once they scan it.';
+      'Spekooh holds your payment in escrow. You\'ll get a one-time QR ticket to collect it at the bookshop. Payment only releases to the partner once they scan it.';
 
   @override
   String get pickupInStoreLabel => 'PICKUP · IN-STORE';
 
   @override
   String payAndReserve(String amount) {
-    return 'Pay & reserve — $amount FCFA';
+    return 'Pay & reserve: $amount FCFA';
   }
 
   @override
@@ -995,7 +1007,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String showQrAtPartner(String partner) {
-    return 'Show this QR at $partner. Single-use — expires in 30 days. Payment releases to the partner once they scan it.';
+    return 'Show this QR at $partner. Single-use, expires in 30 days. Payment releases to the partner once they scan it.';
   }
 
   @override
