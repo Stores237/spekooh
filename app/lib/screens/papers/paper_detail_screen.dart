@@ -253,8 +253,6 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
             year: entry.year,
           )
         : _paperTitle(subjectTitle: entry.subjectTitle, examTypeLabel: entry.examTypeName ?? 'Paper', year: entry.year);
-        ? '${selection.subject?.title ?? selection.examType.name}, ${selection.examType.name}${selection.track != null ? ' ${selection.track}' : ''} ${entry.year}'
-        : '${entry.subjectTitle ?? entry.examTypeName ?? 'Paper'}, ${entry.examTypeName ?? ''} ${entry.year}';
     final meta = selection != null
         ? [
             selection.category.title,
