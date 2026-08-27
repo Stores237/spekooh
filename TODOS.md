@@ -354,6 +354,47 @@ I can write unilaterally. Grouped by what each one unblocks.
 
 ---
 
+## Recently shipped (2026-08-26 – 2026-08-27)
+
+Owner-requested features and bugs found from live screenshots, in one batch. Each is a real,
+tested, merged change (not a mock) — PR numbers are on `main`'s history for exact diffs.
+
+- **Launch splash screen** (#27): shows the Spekooh logo briefly on app start before handing off
+  to the real Home screen.
+- **Contribute-now nudge** (#28): a one-time-per-session dialog on launch encouraging accurate,
+  timely paper submissions, with a direct "Contribute now" CTA into the Submit tab.
+- **Redis + Sentry** (#24 — see "Owner action items" above for the still-needed managed
+  credentials): `guest_mint` rate limiting and error tracking, both real, both no-op safely with
+  no config.
+- **Em dash removed from user-facing text** (#29): the "—" used as a sentence-connector
+  ("Contribution — earn credit") read as unpolished per owner feedback. Replaced across every
+  `.arb` string, hardcoded UI string, and backend notification/error message that reaches the app
+  or the Django admin. Genuine "no value" placeholders (a disabled field, an empty admin column)
+  were left as a plain hyphen instead — a different, legitimate convention, not what was flagged.
+- **Duplicated report titles fixed** (#30): reports (no Subject taxonomy) rendered
+  "Internship Report, Internship Report 2022" — the title builder fell back to the exam type for
+  both halves instead of only showing it once. Found from a live screenshot.
+- **MCQ disclaimer hidden on reports** (#30): the "Objective/MCQ answers are marked in-house..."
+  banner showed unconditionally, including on academic reports, which have no MCQ questions at
+  all. Now gated the same way the rest of `PaperDetailScreen` already gates report-only behavior.
+- **Add a custom subject when submitting a paper** (#31): the subject picker in `SubmitScreen` had
+  no way to add a subject missing from the curated list. Backend get-or-creates a `Subject` by a
+  slugified key (so retyping an existing one, any casing, reuses it instead of duplicating);
+  gated to `IsAuthenticated` — guest accounts included, same bar as submitting a paper itself.
+- **Non-functional search bars removed, one real one added** (#32): Papers had 3 `SearchInput`
+  fields (category/exam-type/subject grids) with no `onChanged` at all — typing did nothing. All
+  3 removed; one real, word-matching search added on the final paper-list step instead, scoped to
+  papers already resolved for that category/exam-type/subject/track (not a global search). Notes/
+  Quizzes/Shop already had real, working search and were left alone. Forum's decorative search
+  icon (no `onTap`) was also removed — see "Not in the spec at all" below for the bell it left
+  behind.
+- **Subject/Academic level filters on Notes and Shop** (#33): both `Note` and `Pamphlet` gained
+  `subject_title`/`academic_level` fields (free text — admin/partner-authored one row at a time,
+  not picked from the contributor-facing taxonomy). Filter chip options are built from whatever
+  distinct values actually exist, not a fabricated fixed list.
+
+---
+
 ## Not in the spec at all, and correctly left alone
 
 These are decorative gaps found during this session's audit. Each was deliberately left
@@ -364,9 +405,10 @@ whole pass was hunting:
 - **Settings → Visit our website / Privacy policy**: two still-dead links (down from five —
   Help & support/WhatsApp/Contact us are wired to real destinations, see above). Needs a live
   site and real legal text before these can point anywhere real.
-- **Forum header search icon and notification bell**: purely decorative, no `onTap`. Forum
-  already has a working list; wiring real search would need a `?search=` query param the backend
-  doesn't currently expose on `/forum/posts/`.
+- **Forum notification bell**: purely decorative, no `onTap` (2026-08-27: the search icon next to
+  it has been removed — see "Recently shipped" below — the bell is what's left). Forum already has
+  a working list; wiring real search would need a `?search=` query param the backend doesn't
+  currently expose on `/forum/posts/`.
 - **Forum's "My subjects" and "Solved" filter chips**: found this pass — all four filter chips
   visually highlighted on tap but never filtered anything; fixed "All" and "Unanswered" for real
   (client-side, no backend change needed), but "My subjects" (no per-user subject-preference
