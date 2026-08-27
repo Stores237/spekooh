@@ -341,3 +341,151 @@ def test_reviewer_staff_can_edit_a_paper_submission():
     client.force_login(staff)
 
     assert client.get(f"/admin/papers/papersubmission/{paper.id}/change/").status_code == 200
+
+
+@pytest.mark.django_db
+def test_password_reset_full_round_trip(api_client, mailoutbox):
+    user = UserFactory(email="reset-me@example.com")
+    user.set_password("OldPass!23")
+    user.save()
+
+    request_response = api_client.post("/api/auth/password-reset/", {"email": "reset-me@example.com"}, format="json")
+    assert request_response.status_code == 200
+    assert len(mailoutbox) == 1
+    assert "reset-me@example.com" in mailoutbox[0].to
+    code = mailoutbox[0].body.split()[6]  # "...reset code is 123456. It expires..."
+    assert len(code.rstrip(".")) == 6
+
+    confirm_response = api_client.post(
+        "/api/auth/password-reset/confirm/",
+        {"email": "reset-me@example.com", "code": code.rstrip("."), "new_password": "NewPass!456"},
+        format="json",
+    )
+    assert confirm_response.status_code == 200
+
+    user.refresh_from_db()
+    assert user.check_password("NewPass!456")
+    assert not user.check_password("OldPass!23")
+
+    # The code is single-use — a second confirm with the same code fails.
+    replay_response = api_client.post(
+        "/api/auth/password-reset/confirm/",
+        {"email": "reset-me@example.com", "code": code.rstrip("."), "new_password": "AnotherPass!789"},
+        format="json",
+    )
+    assert replay_response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_password_reset_request_does_not_reveal_whether_email_exists(api_client, mailoutbox):
+    response = api_client.post("/api/auth/password-reset/", {"email": "nobody-here@example.com"}, format="json")
+
+    assert response.status_code == 200
+    assert response.data == {"detail": "If that email is registered, a reset code has been sent."}
+    assert len(mailoutbox) == 0  # no account, so no email — but the caller can't tell
+
+
+@pytest.mark.django_db
+def test_password_reset_confirm_rejects_wrong_code(api_client):
+    from .models import PasswordResetCode
+
+    user = UserFactory(email="wrong-code@example.com")
+    PasswordResetCode.issue(user)
+
+    response = api_client.post(
+        "/api/auth/password-reset/confirm/",
+        {"email": "wrong-code@example.com", "code": "000000", "new_password": "NewPass!456"},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    user.refresh_from_db()
+    assert user.check_password("testpass123")  # UserFactory's default — unchanged
+
+
+@pytest.mark.django_db
+def test_password_reset_confirm_locks_out_after_too_many_wrong_attempts(api_client):
+    from .models import PASSWORD_RESET_MAX_ATTEMPTS, PasswordResetCode
+
+    user = UserFactory(email="lockout@example.com")
+    reset = PasswordResetCode.issue(user)
+
+    for _ in range(PASSWORD_RESET_MAX_ATTEMPTS):
+        api_client.post(
+            "/api/auth/password-reset/confirm/",
+            {"email": "lockout@example.com", "code": "000000", "new_password": "NewPass!456"},
+            format="json",
+        )
+
+    # Even the *correct* code is now refused — the code's attempts budget is spent.
+    response = api_client.post(
+        "/api/auth/password-reset/confirm/",
+        {"email": "lockout@example.com", "code": reset.code, "new_password": "NewPass!456"},
+        format="json",
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_password_reset_confirm_rejects_expired_code(api_client):
+    from .models import PasswordResetCode
+
+    user = UserFactory(email="expired@example.com")
+    reset = PasswordResetCode.issue(user)
+    reset.created_at = timezone.now() - datetime.timedelta(minutes=16)
+    reset.save(update_fields=["created_at"])
+
+    response = api_client.post(
+        "/api/auth/password-reset/confirm/",
+        {"email": "expired@example.com", "code": reset.code, "new_password": "NewPass!456"},
+        format="json",
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_password_reset_request_is_rate_limited_per_ip(api_client, monkeypatch):
+    from rest_framework.throttling import SimpleRateThrottle
+
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "password_reset_request", "2/hour")
+    UserFactory(email="ratelimited@example.com")
+
+    first = api_client.post("/api/auth/password-reset/", {"email": "ratelimited@example.com"}, format="json")
+    second = api_client.post("/api/auth/password-reset/", {"email": "ratelimited@example.com"}, format="json")
+    third = api_client.post("/api/auth/password-reset/", {"email": "ratelimited@example.com"}, format="json")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert third.status_code == 429
+
+
+@pytest.mark.django_db
+def test_register_rejects_an_unverifiable_email_domain(api_client, settings, monkeypatch):
+    from . import services
+
+    settings.SUPABASE_EDGE_FUNCTION_BASE_URL = "https://example.supabase.co/functions/v1"
+    monkeypatch.setattr(services, "email_domain_is_verifiable", lambda email: False)
+
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "typo@gmial.com", "name": "Typo", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert not User.objects.filter(email="typo@gmial.com").exists()
+
+
+@pytest.mark.django_db
+def test_register_succeeds_when_edge_function_is_not_configured(api_client, settings):
+    # Default posture (no SUPABASE_EDGE_FUNCTION_BASE_URL set): the check is
+    # skipped entirely rather than blocking registration.
+    settings.SUPABASE_EDGE_FUNCTION_BASE_URL = None
+
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "noedgefn@example.com", "name": "No Edge Fn", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+
+    assert response.status_code == 201

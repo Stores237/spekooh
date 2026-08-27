@@ -17,7 +17,15 @@ const String _authBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue:
 /// (which has a BuildContext, so can reach AppLocalizations) maps this to a
 /// real localized message rather than AuthSession carrying pre-built,
 /// English-only text.
-enum AuthErrorCode { loginFailed, registerFailedReferral, registerFailedGeneric, guestFailed }
+enum AuthErrorCode {
+  loginFailed,
+  registerFailedReferral,
+  registerFailedGeneric,
+  registerFailedInvalidEmailDomain,
+  guestFailed,
+  passwordResetRequestFailed,
+  passwordResetConfirmFailed,
+}
 
 class AuthException implements Exception {
   AuthException(this.code, this.debugMessage);
@@ -96,6 +104,22 @@ class AuthSession extends ChangeNotifier {
       }),
     );
     if (response.statusCode != 201) {
+      // RegisterSerializer.validate_email (the verify-email-domain edge
+      // function check) reports its rejection as a field error on "email"
+      // — surface that specifically, since "that email may already be in
+      // use" would be actively wrong advice for a typo'd domain.
+      Map<String, dynamic>? body;
+      try {
+        body = jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        // Non-JSON error body — fall through to the generic message below.
+      }
+      if (body?['email'] != null) {
+        throw AuthException(
+          AuthErrorCode.registerFailedInvalidEmailDomain,
+          "Registration failed. That email domain doesn't appear to accept mail.",
+        );
+      }
       if (referralCode != null && referralCode.isNotEmpty) {
         throw AuthException(
           AuthErrorCode.registerFailedReferral,
@@ -130,6 +154,34 @@ class AuthSession extends ChangeNotifier {
       throw AuthException(AuthErrorCode.guestFailed, 'Could not continue as guest.');
     }
     return (jsonDecode(response.body) as Map<String, dynamic>)['access'] as String;
+  }
+
+  /// Always a 200 from the backend regardless of whether [email] matches a
+  /// real account (see PasswordResetRequestSerializer) — this only throws
+  /// on a genuine network/server failure (or the rate limit), never on "no
+  /// such account", so the UI can't be used to probe which emails exist.
+  Future<void> requestPasswordReset({required String email}) async {
+    final response = await _client.post(
+      Uri.parse('$_authBaseUrl/auth/password-reset/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+    if (response.statusCode != 200) {
+      throw AuthException(AuthErrorCode.passwordResetRequestFailed, 'Could not request a password reset code.');
+    }
+  }
+
+  /// Not a login — doesn't touch [accessToken]/[isLoggedIn]. The caller
+  /// (PasswordResetSheet) sends the user to the login form afterward.
+  Future<void> confirmPasswordReset({required String email, required String code, required String newPassword}) async {
+    final response = await _client.post(
+      Uri.parse('$_authBaseUrl/auth/password-reset/confirm/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'code': code, 'new_password': newPassword}),
+    );
+    if (response.statusCode != 200) {
+      throw AuthException(AuthErrorCode.passwordResetConfirmFailed, 'That code is invalid or has expired.');
+    }
   }
 
   Future<void> _storeTokens(Map<String, dynamic> data) async {

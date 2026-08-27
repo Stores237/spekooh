@@ -1,0 +1,11 @@
+# Supabase project config — only what's needed to deploy/run the edge
+# functions under functions/. Not a full `supabase init` (no local Postgres/
+# Studio/etc. stack here — Django owns the app-level database directly).
+
+project_id = "gojwhocnznwxfdrszxfq"
+
+[functions.verify-email-domain]
+# Called server-to-server by Django, not on behalf of a logged-in Supabase
+# user — there's no Supabase session JWT to verify. Gated instead by the
+# EMAIL_VERIFY_SHARED_SECRET header check inside the function itself.
+verify_jwt = false

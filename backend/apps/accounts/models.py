@@ -1,10 +1,18 @@
+import secrets
 import uuid
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
+from django.utils import timezone
 
 from apps.core.models import TimeStampedModel
+
+# Owner-tunable: how long a reset code stays valid, and how many wrong
+# guesses before it's dead regardless of time left (a 6-digit code has only
+# 1e6 possibilities — capping attempts matters more than the format looks).
+PASSWORD_RESET_CODE_TTL_MINUTES = 15
+PASSWORD_RESET_MAX_ATTEMPTS = 5
 
 
 class AccountType(models.TextChoices):
@@ -127,3 +135,39 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     @property
     def is_guest(self):
         return self.account_type == AccountType.GUEST
+
+
+class PasswordResetCode(TimeStampedModel):
+    """A short-lived, single-use OTP for the app-native reset flow (no
+    website to click an emailed link on, so a code the user retypes into
+    the app fits the actual product better than Django's default
+    token+uidb64 web flow).
+
+    Request-side deliberately never reveals whether the email matched a
+    real account (see PasswordResetRequestSerializer) — this table is the
+    only place that distinction lives.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="password_reset_codes")
+    code = models.CharField(max_length=6)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "used_at"])]
+
+    @classmethod
+    def issue(cls, user: "User") -> "PasswordResetCode":
+        # secrets.randbelow (not `random`) — this gates a real password
+        # change, so it needs to be cryptographically unguessable.
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        return cls.objects.create(user=user, code=code)
+
+    @property
+    def is_expired(self) -> bool:
+        age = timezone.now() - self.created_at
+        return age.total_seconds() > PASSWORD_RESET_CODE_TTL_MINUTES * 60
+
+    @property
+    def is_usable(self) -> bool:
+        return self.used_at is None and not self.is_expired and self.attempts < PASSWORD_RESET_MAX_ATTEMPTS

@@ -130,12 +130,56 @@ class AppLocalizationsFr extends AppLocalizations {
       'Échec de l\'inscription. Cet email est peut-être déjà utilisé.';
 
   @override
+  String get authErrorRegisterInvalidEmailDomain =>
+      'Ce domaine d\'email ne semble pas accepter de courrier. Vérifiez qu\'il n\'y a pas de faute de frappe.';
+
+  @override
   String get authErrorGuest =>
       'Impossible de continuer en tant qu\'invité. Vérifiez votre connexion et réessayez.';
 
   @override
   String get authErrorUnknown =>
       'Une erreur s\'est produite. Vérifiez votre connexion et réessayez.';
+
+  @override
+  String get authErrorPasswordResetRequest =>
+      'Impossible d\'envoyer un code de réinitialisation. Vérifiez votre connexion et réessayez.';
+
+  @override
+  String get authErrorPasswordResetConfirm =>
+      'Ce code est invalide ou a expiré.';
+
+  @override
+  String get forgotPasswordLink => 'Mot de passe oublié ?';
+
+  @override
+  String get resetPasswordTitle => 'Réinitialiser le mot de passe';
+
+  @override
+  String get resetPasswordEmailPrompt =>
+      'Entrez votre email et nous vous enverrons un code de réinitialisation.';
+
+  @override
+  String get resetPasswordCodeSentMessage =>
+      'Si cet email est enregistré, un code est en route. Entrez-le ci-dessous avec un nouveau mot de passe.';
+
+  @override
+  String get resetPasswordCodeLabel => 'CODE';
+
+  @override
+  String get resetPasswordCodeHint => 'Code à 6 chiffres';
+
+  @override
+  String get resetPasswordNewPasswordLabel => 'NOUVEAU MOT DE PASSE';
+
+  @override
+  String get resetPasswordSendCodeButton => 'Envoyer le code';
+
+  @override
+  String get resetPasswordConfirmButton => 'Réinitialiser le mot de passe';
+
+  @override
+  String get resetPasswordBackToLogin => 'Retour à la connexion';
 
   @override
   String get homeWelcomeGreeting => 'Bienvenue';
