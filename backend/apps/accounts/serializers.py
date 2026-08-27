@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.payments.services import first_unlock_free_eligible, trial_days_remaining
 
+from . import services
 from .models import AccountType, PasswordResetCode, User
 
 
@@ -70,6 +71,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             "referral_code",
             "terms_accepted",
         ]
+
+    def validate_email(self, value):
+        if not services.email_domain_is_verifiable(value):
+            raise serializers.ValidationError("That email domain doesn't appear to accept mail. Check for a typo.")
+        return value
 
     def validate_referral_code(self, value):
         if not value:

@@ -208,6 +208,15 @@ QR_SIGNING_SALT = env("QR_SIGNING_SALT", default="spekooh-pamphlet-qr")
 # (an EMAIL_HOST/API-key-based backend, e.g. SendGrid/SES/Postmark).
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@spekooh.app")
 
+# Supabase Edge Function that verifies a registration email's domain has
+# real MX records (see supabase/functions/verify-email-domain) — both unset
+# by default, same no-op-safely pattern as SENTRY_DSN/REDIS_URL above: a
+# fresh clone with no Supabase edge function deployed just skips the check
+# (see apps.accounts.services.email_domain_is_verifiable) rather than
+# failing to start or blocking every registration.
+SUPABASE_EDGE_FUNCTION_BASE_URL = env("SUPABASE_EDGE_FUNCTION_BASE_URL", default=None)
+EMAIL_VERIFY_SHARED_SECRET = env("EMAIL_VERIFY_SHARED_SECRET", default=None)
+
 # Instructor webhook HMAC replay-protection window.
 INSTRUCTOR_WEBHOOK_MAX_SKEW_SECONDS = env.int("INSTRUCTOR_WEBHOOK_MAX_SKEW_SECONDS", default=300)
 

@@ -85,6 +85,7 @@ class _PasswordResetSheetState extends State<PasswordResetSheet> {
       case AuthErrorCode.loginFailed:
       case AuthErrorCode.registerFailedReferral:
       case AuthErrorCode.registerFailedGeneric:
+      case AuthErrorCode.registerFailedInvalidEmailDomain:
       case AuthErrorCode.guestFailed:
         return l10n.authErrorUnknown; // not reachable from this sheet
     }

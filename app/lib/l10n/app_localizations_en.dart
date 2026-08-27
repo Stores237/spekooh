@@ -129,6 +129,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Registration failed. That email may already be in use.';
 
   @override
+  String get authErrorRegisterInvalidEmailDomain =>
+      'That email domain doesn\'t appear to accept mail. Check for a typo.';
+
+  @override
   String get authErrorGuest =>
       'Could not continue as guest. Check your connection and try again.';
 

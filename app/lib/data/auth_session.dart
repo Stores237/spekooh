@@ -21,6 +21,7 @@ enum AuthErrorCode {
   loginFailed,
   registerFailedReferral,
   registerFailedGeneric,
+  registerFailedInvalidEmailDomain,
   guestFailed,
   passwordResetRequestFailed,
   passwordResetConfirmFailed,
@@ -103,6 +104,22 @@ class AuthSession extends ChangeNotifier {
       }),
     );
     if (response.statusCode != 201) {
+      // RegisterSerializer.validate_email (the verify-email-domain edge
+      // function check) reports its rejection as a field error on "email"
+      // — surface that specifically, since "that email may already be in
+      // use" would be actively wrong advice for a typo'd domain.
+      Map<String, dynamic>? body;
+      try {
+        body = jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        // Non-JSON error body — fall through to the generic message below.
+      }
+      if (body?['email'] != null) {
+        throw AuthException(
+          AuthErrorCode.registerFailedInvalidEmailDomain,
+          "Registration failed. That email domain doesn't appear to accept mail.",
+        );
+      }
       if (referralCode != null && referralCode.isNotEmpty) {
         throw AuthException(
           AuthErrorCode.registerFailedReferral,

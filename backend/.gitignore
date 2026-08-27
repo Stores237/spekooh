@@ -7,3 +7,8 @@ staticfiles/
 media/
 .pytest_cache/
 .gstack/
+
+# Supabase CLI local link/project cache — not secret, but machine-local
+# state (`supabase link` regenerates it), not something to commit.
+supabase/.temp/
+supabase/.branches/

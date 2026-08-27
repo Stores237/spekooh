@@ -78,6 +78,8 @@ class _AuthSheetState extends State<AuthSheet> {
         return l10n.authErrorRegisterReferral;
       case AuthErrorCode.registerFailedGeneric:
         return l10n.authErrorRegisterGeneric;
+      case AuthErrorCode.registerFailedInvalidEmailDomain:
+        return l10n.authErrorRegisterInvalidEmailDomain;
       case AuthErrorCode.guestFailed:
         return l10n.authErrorGuest;
       case AuthErrorCode.passwordResetRequestFailed:

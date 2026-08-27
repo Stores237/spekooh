@@ -51,6 +51,20 @@ I can write unilaterally. Grouped by what each one unblocks.
   outright without real settings. Needs a real provider (SendGrid, Postmark, SES, or plain SMTP)
   and its credentials — then set `EMAIL_BACKEND`/`EMAIL_HOST`/etc. (or `DEFAULT_FROM_EMAIL` if
   just the sender address changes) via env vars, no code change.
+- ~~**Supabase Edge Function for registration email verification**~~ — done (2026-08-27). A real
+  Deno edge function (`backend/supabase/functions/verify-email-domain`) is deployed to the
+  project's actual Supabase instance and checks a registration email's domain has real MX
+  records (catches typo'd domains like `gmial.com`), gated by a shared-secret header
+  (`EMAIL_VERIFY_SHARED_SECRET`, set both as a Supabase secret and in `backend/.env`). Wired into
+  `RegisterSerializer.validate_email` via `apps.accounts.services.email_domain_is_verifiable`,
+  which fails *open* (lets registration through) if the function isn't configured or is
+  unreachable — a third-party outage shouldn't block every signup. Verified live end-to-end: a
+  real `curl` to the deployed function URL, then a real registration attempt against the local
+  backend with a typo'd domain (rejected) and a real one (accepted). This checks domain
+  deliverability only, not that a specific mailbox exists — an actual "confirm your email" code
+  flow (same OTP pattern as password reset) is the natural next step once a real email-sending
+  provider is wired up (see the item above — that's the actual blocker for delivering the code,
+  not the edge function itself).
 
 ### Content only the owner can provide
 - **Real papers to seed the app**: the papers database is genuinely empty right now

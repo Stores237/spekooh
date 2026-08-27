@@ -130,6 +130,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Échec de l\'inscription. Cet email est peut-être déjà utilisé.';
 
   @override
+  String get authErrorRegisterInvalidEmailDomain =>
+      'Ce domaine d\'email ne semble pas accepter de courrier. Vérifiez qu\'il n\'y a pas de faute de frappe.';
+
+  @override
   String get authErrorGuest =>
       'Impossible de continuer en tant qu\'invité. Vérifiez votre connexion et réessayez.';
 

@@ -457,3 +457,35 @@ def test_password_reset_request_is_rate_limited_per_ip(api_client, monkeypatch):
     assert first.status_code == 200
     assert second.status_code == 200
     assert third.status_code == 429
+
+
+@pytest.mark.django_db
+def test_register_rejects_an_unverifiable_email_domain(api_client, settings, monkeypatch):
+    from . import services
+
+    settings.SUPABASE_EDGE_FUNCTION_BASE_URL = "https://example.supabase.co/functions/v1"
+    monkeypatch.setattr(services, "email_domain_is_verifiable", lambda email: False)
+
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "typo@gmial.com", "name": "Typo", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert not User.objects.filter(email="typo@gmial.com").exists()
+
+
+@pytest.mark.django_db
+def test_register_succeeds_when_edge_function_is_not_configured(api_client, settings):
+    # Default posture (no SUPABASE_EDGE_FUNCTION_BASE_URL set): the check is
+    # skipped entirely rather than blocking registration.
+    settings.SUPABASE_EDGE_FUNCTION_BASE_URL = None
+
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "noedgefn@example.com", "name": "No Edge Fn", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+
+    assert response.status_code == 201

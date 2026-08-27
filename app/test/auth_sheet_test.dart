@@ -81,6 +81,34 @@ void main() {
     expect(sentBody?.containsKey('referral_code'), isFalse);
   });
 
+  testWidgets('registering with an unverifiable email domain shows a specific error, not the generic one', (tester) async {
+    final mockClient = MockClient((request) async {
+      return http.Response(
+        jsonEncode({"email": ["That email domain doesn't appear to accept mail. Check for a typo."]}),
+        400,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient));
+
+    await tester.pumpWidget(l10nTestApp(const Scaffold(body: AuthSheet())));
+    await tester.tap(find.text('New here? Create an account'));
+    await tester.pumpAndSettle();
+
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'Typo');
+    await tester.enterText(fields.at(1), 'typo@gmial.com');
+    await tester.enterText(fields.at(2), 'S0mePass!23');
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+
+    expect(find.text("That email domain doesn't appear to accept mail. Check for a typo."), findsOneWidget);
+    expect(find.text('Registration failed. That email may already be in use.'), findsNothing);
+  });
+
   testWidgets('Create account is disabled until the terms checkbox is checked', (tester) async {
     var requestCount = 0;
     final mockClient = MockClient((request) async {

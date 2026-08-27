@@ -332,6 +332,12 @@ abstract class AppLocalizations {
   /// **'Registration failed. That email may already be in use.'**
   String get authErrorRegisterGeneric;
 
+  /// No description provided for @authErrorRegisterInvalidEmailDomain.
+  ///
+  /// In en, this message translates to:
+  /// **'That email domain doesn\'t appear to accept mail. Check for a typo.'**
+  String get authErrorRegisterInvalidEmailDomain;
+
   /// No description provided for @authErrorGuest.
   ///
   /// In en, this message translates to:
