@@ -45,7 +45,7 @@ def route_next_instructor(paper: PaperSubmission) -> InstructorRequest | None:
     the paper for admin review rather than leaving it unassigned forever.
     """
     if paper.subject_id is None:
-        raise RoutingError("Paper has no subject — cannot route to an instructor.")
+        raise RoutingError("Paper has no subject, cannot route to an instructor.")
 
     already_tried = _tried_instructor_ids(paper)
     next_entry = (
@@ -169,11 +169,11 @@ def handle_marking_guide_submission(*, instructor_request_id: int, content: list
                 instructor_id=request.instructor_id, paper=paper, amount=credit_result.amount
             )
 
-            review_reason = "Instructor marking guide returned — needs review team merge with in-house MCQ key."
+            review_reason = "Instructor marking guide returned, needs review team merge with in-house MCQ key."
             if credit_result.capped:
                 review_reason += (
                     f" Credit ceiling applied: formula produced {credit_result.raw_amount} XAF, "
-                    f"capped to {credit_result.amount} XAF (see CreditCeilingConfig) — worth checking "
+                    f"capped to {credit_result.amount} XAF (see CreditCeilingConfig), worth checking "
                     f"whether this paper/subject's rate config needs tuning."
                 )
             flag(subject=guide, category=FlagCategory.GUIDE_REVIEW, reason=review_reason)
@@ -222,7 +222,7 @@ def merge_and_publish(paper: PaperSubmission) -> PublishedGuide:
         title="Your paper is published!",
         body=(
             "Your submission's marking guide is live"
-            + (f" — you earned {bonus_entry.amount} credits" if bonus_entry else "")
+            + (f", and you earned {bonus_entry.amount} credits" if bonus_entry else "")
             + "."
         ),
     )
@@ -244,6 +244,6 @@ def request_withdrawal(*, instructor_id: str, amount: int, payout_method: str) -
     flag(
         subject=withdrawal,
         category=FlagCategory.WITHDRAWAL_APPROVAL,
-        reason=f"Instructor {instructor_id} requested a {amount} XAF withdrawal — needs KYC/payout approval.",
+        reason=f"Instructor {instructor_id} requested a {amount} XAF withdrawal, needs KYC/payout approval.",
     )
     return withdrawal

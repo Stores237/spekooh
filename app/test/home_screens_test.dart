@@ -32,7 +32,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     expect(tester.takeException(), isNull);
     expect(find.text('Guest'), findsOneWidget);
-    expect(find.text('No papers published yet — check back soon.'), findsOneWidget);
+    expect(find.text('No papers published yet. Check back soon.'), findsOneWidget);
     expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget); // real featured pamphlet from the mock
   });
 
@@ -63,7 +63,7 @@ void main() {
     await tester.tap(find.textContaining('Mathématiques · Baccalauréat 2025'));
     await tester.pump();
     expect(opened?.id, 7);
-    expect(find.text('Free to view — marking guide sold separately'), findsOneWidget);
+    expect(find.text('Free to view (marking guide sold separately)'), findsOneWidget);
   });
 
   testWidgets('HomeScreen (guest) does not claim a marking guide exists for a free-to-view report', (tester) async {
@@ -183,7 +183,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Invité'), findsOneWidget);
-    expect(find.text("Aucune épreuve publiée pour l'instant — revenez bientôt."), findsOneWidget);
+    expect(find.text("Aucune épreuve publiée pour l'instant. Revenez bientôt."), findsOneWidget);
     expect(find.text('Guest'), findsNothing);
   });
 

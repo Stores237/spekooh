@@ -185,7 +185,7 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
                 children: [
                   SpekoohBanner(
                     icon: const Icon(LucideIcons.download),
-                    message: 'Saved papers open without internet — even in the village.',
+                    message: 'Saved papers open without internet, even in the village.',
                   ),
                   const SizedBox(height: AppSpacing.space2),
                   SpekoohBanner(

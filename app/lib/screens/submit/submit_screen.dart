@@ -634,7 +634,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
             Text(label, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
             Row(
               children: [
-                Text(value ?? (enabled ? l10n.selectPlaceholder : '—'),
+                Text(value ?? (enabled ? l10n.selectPlaceholder : '-'),
                     style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: value == null ? AppColors.textTertiary : AppColors.textPrimary)),
                 const SizedBox(width: 6),
                 Icon(LucideIcons.chevronRight, size: 14, color: enabled ? AppColors.textTertiary : AppColors.textTertiary.withValues(alpha: 0.4)),

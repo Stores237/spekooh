@@ -210,7 +210,7 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
             max_bytes = exam_type.max_upload_mb * 1024 * 1024
             if uploaded_file.size > max_bytes:
                 raise serializers.ValidationError(
-                    {"uploaded_file": f"File is too large — {exam_type.name} allows up to {exam_type.max_upload_mb}MB."}
+                    {"uploaded_file": f"File is too large. {exam_type.name} allows up to {exam_type.max_upload_mb}MB."}
                 )
         return attrs
 

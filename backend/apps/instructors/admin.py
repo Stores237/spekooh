@@ -58,7 +58,7 @@ class InstructorRequestAdmin(ModelAdmin):
     def sla_countdown(self, obj):
         deadline = obj.guide_deadline if obj.status == InstructorRequestStatus.ACCEPTED else obj.responds_by
         if deadline is None or obj.status in (InstructorRequestStatus.REJECTED, InstructorRequestStatus.TIMED_OUT):
-            return "—"
+            return "-"
         remaining = deadline - timezone.now()
         if remaining.total_seconds() < 0:
             return f"Overdue by {abs(remaining.days)}d {abs(remaining.seconds) // 3600}h"
