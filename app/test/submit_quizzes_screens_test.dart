@@ -56,8 +56,13 @@ void main() {
   });
 
   testWidgets('SubmitScreen lets a contributor add a subject missing from the list', (tester) async {
+    // Creating a subject hits the same auth bar as submitting a paper, so a
+    // guest needs a minted guest token — buildFakeAuthSession() fakes that
+    // endpoint instead of hitting the real network.
+    AuthSession.debugSetInstance(buildFakeAuthSession());
     await tester.pumpWidget(l10nTestApp(SubmitScreen(repository: MockPapersRepository())));
     await tester.pump();
+    await tester.enterText(find.widgetWithText(TextField, 'Your name'), 'A Contributor');
 
     await tester.tap(find.text('Education level'));
     await tester.pumpAndSettle();
@@ -81,6 +86,36 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Geology'), findsOneWidget);
+  });
+
+  testWidgets('SubmitScreen tells a guest to enter their name before adding a subject', (tester) async {
+    AuthSession.debugSetInstance(buildFakeAuthSession());
+    await tester.pumpWidget(l10nTestApp(SubmitScreen(repository: MockPapersRepository())));
+    await tester.pump();
+    // Deliberately not filling in the contributor name field.
+
+    await tester.tap(find.text('Education level'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Primary').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Exam type'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('FSLC').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Subject'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add a subject'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).last, 'Geology');
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter your name above first, so we know who to credit.'), findsOneWidget);
+    // Sheet stays open on this error rather than popping a picked subject.
+    expect(find.text('Add'), findsOneWidget);
   });
 
   testWidgets('SubmitScreen "Academic report" tab walks the real reports taxonomy', (tester) async {

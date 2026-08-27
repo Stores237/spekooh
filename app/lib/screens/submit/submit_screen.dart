@@ -20,6 +20,12 @@ import '../../widgets/spekooh_button.dart';
 
 enum _SubmitType { paper, report }
 
+/// Thrown by [_SubmitScreenState._createCustomSubject] when a guest tries
+/// to add a subject before typing their name above — distinct from a real
+/// create failure so [_SubjectPickerSheetState._submitCustom] can show a
+/// specific "enter your name first" message instead of the generic one.
+class _GuestNameRequiredException implements Exception {}
+
 /// Ported from ui_kits/spekooh-app/SubmitScreen.jsx. One of the 5 bottom
 /// tabs (the elevated center nav item). Both tabs are real: "Exam paper"
 /// walks the real taxonomy, real-picks a file, and POSTs a real multipart
@@ -221,11 +227,30 @@ class _SubmitScreenState extends State<SubmitScreen> {
       isScrollControlled: true,
       builder: (context) => _SubjectPickerSheet(
         subjects: subjects,
-        onCreate: (title) => widget.repository.createSubject(title: title, examTypeName: examTypeName),
+        onCreate: (title) => _createCustomSubject(title: title, examTypeName: examTypeName),
       ),
     );
     if (picked == null) return;
     setState(() => _subject = picked);
+  }
+
+  /// Backend requires the same auth bar as submitting a paper itself (see
+  /// SubjectViewSet.get_permissions on the backend) — a guest has to be
+  /// minted a token first, same as [_submit]/[_submitReport] do right
+  /// before the real upload. Unlike those, this can happen well before the
+  /// guest has necessarily typed their name (the name field sits above the
+  /// paper/report form, but nothing forces filling it in before scrolling
+  /// down to Subject) — [_GuestNameRequiredException] lets the picker sheet
+  /// show a specific "enter your name first" message instead of the
+  /// generic create-failed one for that case.
+  Future<Subject> _createCustomSubject({required String title, required String examTypeName}) async {
+    String? guestToken;
+    if (_isGuest) {
+      final name = _contributorNameController.text.trim();
+      if (name.isEmpty) throw _GuestNameRequiredException();
+      guestToken = await AuthSession.instance.mintGuestAccessToken(name: name);
+    }
+    return widget.repository.createSubject(title: title, examTypeName: examTypeName, guestAccessToken: guestToken);
   }
 
   Future<void> _pickYear() async {
@@ -730,6 +755,13 @@ class _SubjectPickerSheetState extends State<_SubjectPickerSheet> {
     try {
       final subject = await widget.onCreate(title);
       if (mounted) Navigator.of(context).pop(subject);
+    } on _GuestNameRequiredException {
+      if (mounted) {
+        setState(() {
+          _creating = false;
+          _error = AppLocalizations.of(context)!.contributorNameRequiredForSubjectError;
+        });
+      }
     } catch (_) {
       if (mounted) {
         setState(() {

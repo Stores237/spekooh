@@ -459,6 +459,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addCustomSubjectError => 'Could not add that subject. Try again.';
 
   @override
+  String get contributorNameRequiredForSubjectError =>
+      'Enter your name above first, so we know who to credit.';
+
+  @override
   String get yearLabel => 'Year';
 
   @override

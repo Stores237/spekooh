@@ -30,7 +30,12 @@ abstract class PapersRepository {
   /// centralized in one place, same as [getSubjects]. The backend
   /// get-or-creates by a slugified key, so retyping an existing subject
   /// (any casing) just returns that one instead of duplicating it.
-  Future<Subject> createSubject({required String title, required String examTypeName});
+  ///
+  /// The backend requires the same auth bar as submitting a paper itself
+  /// (a real account or a minted guest one) — [guestAccessToken] is that
+  /// guest token for a caller who isn't logged in, same idea as
+  /// [submitPaper]'s param of the same name. Null for a logged-in caller.
+  Future<Subject> createSubject({required String title, required String examTypeName, String? guestAccessToken});
 
   /// Real submitted papers for a resolved subject — not the taxonomy, the
   /// actual [PaperEntry] rows. Empty means genuinely no papers yet.
@@ -140,7 +145,7 @@ class MockPapersRepository implements PapersRepository {
       Future.value(MockTaxonomy.subjectsForExamType(examTypeName));
 
   @override
-  Future<Subject> createSubject({required String title, required String examTypeName}) =>
+  Future<Subject> createSubject({required String title, required String examTypeName, String? guestAccessToken}) =>
       Future.value(Subject(key: title.trim().toLowerCase(), title: title.trim(), tint: IconChipTint.blue, icon: LucideIcons.circle, code: ''));
 
   @override
