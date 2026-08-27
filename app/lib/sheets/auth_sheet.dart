@@ -7,6 +7,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_form_field.dart';
 import '../widgets/spekooh_button.dart';
+import 'email_verification_sheet.dart';
 import 'password_reset_sheet.dart';
 
 /// Minimal login/register bottom sheet. Wired to Settings' "Log in" button
@@ -46,13 +47,24 @@ class _AuthSheetState extends State<AuthSheet> {
     });
     try {
       if (_isRegisterMode) {
-        await AuthSession.instance.register(
+        final needsVerification = await AuthSession.instance.register(
           email: _emailController.text.trim(),
           name: _nameController.text.trim(),
           password: _passwordController.text,
           termsAccepted: _termsAccepted,
           referralCode: _referralCodeController.text.trim(),
         );
+        // Already logged in at this point (register() granted tokens) —
+        // the verification sheet is a nag, not a gate, so its outcome
+        // (confirmed or skipped) doesn't change what happens next here.
+        if (needsVerification && mounted) {
+          await showModalBottomSheet<bool>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => const EmailVerificationSheet(),
+          );
+        }
       } else {
         await AuthSession.instance.login(
           email: _emailController.text.trim(),
@@ -84,7 +96,9 @@ class _AuthSheetState extends State<AuthSheet> {
         return l10n.authErrorGuest;
       case AuthErrorCode.passwordResetRequestFailed:
       case AuthErrorCode.passwordResetConfirmFailed:
-        return l10n.authErrorUnknown; // not reachable from this sheet — see PasswordResetSheet
+      case AuthErrorCode.emailVerificationConfirmFailed:
+      case AuthErrorCode.emailVerificationResendFailed:
+        return l10n.authErrorUnknown; // not reachable from this sheet — see PasswordResetSheet/EmailVerificationSheet
     }
   }
 

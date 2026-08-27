@@ -25,6 +25,8 @@ enum AuthErrorCode {
   guestFailed,
   passwordResetRequestFailed,
   passwordResetConfirmFailed,
+  emailVerificationConfirmFailed,
+  emailVerificationResendFailed,
 }
 
 class AuthException implements Exception {
@@ -85,7 +87,11 @@ class AuthSession extends ChangeNotifier {
     await _storeTokens(jsonDecode(response.body));
   }
 
-  Future<void> register({
+  /// Returns whether the new account still needs email verification (i.e.
+  /// the caller should follow up with [confirmEmailVerification]) — the
+  /// backend already issued+sent a real code as part of this same request
+  /// (RegisterView), so this is never a separate round trip.
+  Future<bool> register({
     required String email,
     required String name,
     required String password,
@@ -128,7 +134,10 @@ class AuthSession extends ChangeNotifier {
       }
       throw AuthException(AuthErrorCode.registerFailedGeneric, 'Registration failed. That email may already be in use.');
     }
-    await _storeTokens(jsonDecode(response.body));
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    await _storeTokens(data);
+    final user = data['user'] as Map<String, dynamic>;
+    return user['email_verified'] != true;
   }
 
   /// Owner decision: contributing (Submit) shouldn't require a real
@@ -181,6 +190,30 @@ class AuthSession extends ChangeNotifier {
     );
     if (response.statusCode != 200) {
       throw AuthException(AuthErrorCode.passwordResetConfirmFailed, 'That code is invalid or has expired.');
+    }
+  }
+
+  /// Confirms the code RegisterView already sent at signup. Authenticated
+  /// (unlike password reset, this always runs from an already-logged-in
+  /// session — registration itself grants tokens).
+  Future<void> confirmEmailVerification({required String code}) async {
+    final response = await _client.post(
+      Uri.parse('$_authBaseUrl/auth/verify-email/'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $accessToken'},
+      body: jsonEncode({'code': code}),
+    );
+    if (response.statusCode != 200) {
+      throw AuthException(AuthErrorCode.emailVerificationConfirmFailed, 'That code is invalid or has expired.');
+    }
+  }
+
+  Future<void> resendEmailVerification() async {
+    final response = await _client.post(
+      Uri.parse('$_authBaseUrl/auth/verify-email/resend/'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $accessToken'},
+    );
+    if (response.statusCode != 200) {
+      throw AuthException(AuthErrorCode.emailVerificationResendFailed, 'Could not resend a verification code.');
     }
   }
 

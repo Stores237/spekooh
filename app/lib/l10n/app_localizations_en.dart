@@ -181,6 +181,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetPasswordBackToLogin => 'Back to log in';
 
   @override
+  String get verifyEmailTitle => 'Verify your email';
+
+  @override
+  String get verifyEmailPrompt =>
+      'We sent a code to your email. Enter it below to verify your account.';
+
+  @override
+  String get verifyEmailCodeLabel => 'CODE';
+
+  @override
+  String get verifyEmailCodeHint => '6-digit code';
+
+  @override
+  String get verifyEmailConfirmButton => 'Verify';
+
+  @override
+  String get verifyEmailResendLink => 'Resend code';
+
+  @override
+  String get verifyEmailResendSentMessage => 'A new code is on its way.';
+
+  @override
+  String get verifyEmailSkipLink => 'Skip for now';
+
+  @override
+  String get authErrorEmailVerificationConfirm =>
+      'That code is invalid or has expired.';
+
+  @override
+  String get authErrorEmailVerificationResend =>
+      'Could not resend a verification code. Check your connection and try again.';
+
+  @override
   String get homeWelcomeGreeting => 'Welcome';
 
   @override

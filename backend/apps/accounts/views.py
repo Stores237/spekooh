@@ -8,9 +8,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from apps.notifications.models import NotificationKind
 from apps.notifications.services import notify
 
+from . import services
 from .models import User
 from .serializers import (
     EmailTokenObtainPairSerializer,
+    EmailVerificationConfirmSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     RegisterSerializer,
@@ -33,6 +35,11 @@ class RegisterView(generics.CreateAPIView):
             title="Welcome to Spekooh 🎉",
             body="Browse past papers, join the forum, and start earning credits for what you contribute.",
         )
+        # Real verification code, sent for real (console backend today —
+        # see TODOS.md) — this is what makes "verify your email" an actual
+        # step in signup rather than nothing happening. Doesn't gate the
+        # tokens below: see User.email_verified_at's docstring for why.
+        services.send_verification_email(user)
         return Response(
             {"user": UserSerializer(user).data, **tokens_for_user(user)},
             status=status.HTTP_201_CREATED,
@@ -99,6 +106,33 @@ class PasswordResetConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "Password reset. Log in with your new password."})
+
+
+class EmailVerificationConfirmView(APIView):
+    """Authenticated (RegisterView already grants tokens at signup, so
+    there's always a session to confirm from) — no email/enumeration
+    concern to design around, unlike password reset."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "email_verification_confirm"
+
+    @extend_schema(request=EmailVerificationConfirmSerializer, responses=UserSerializer)
+    def post(self, request):
+        serializer = EmailVerificationConfirmSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(UserSerializer(user).data)
+
+
+class EmailVerificationResendView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "email_verification_resend"
+
+    @extend_schema(request=None, responses=None)
+    def post(self, request):
+        if request.user.email:
+            services.send_verification_email(request.user)
+        return Response({"detail": "A new code has been sent."})
 
 
 class MeView(generics.RetrieveUpdateAPIView):

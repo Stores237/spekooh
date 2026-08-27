@@ -188,6 +188,11 @@ REST_FRAMEWORK = {
         # a 6-digit code has several legitimate retries; PasswordResetCode's
         # own attempts-cap (5) is what actually stops brute-forcing one code.
         "password_reset_confirm": "20/hour",
+        "email_verification_confirm": "20/hour",
+        # Per-user (authenticated), not per-IP — a real user asking for a
+        # fresh code a couple times while typing is normal; unlimited resends
+        # would just be a way to spam their own inbox.
+        "email_verification_resend": "5/hour",
     },
 }
 

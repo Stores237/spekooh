@@ -489,3 +489,95 @@ def test_register_succeeds_when_edge_function_is_not_configured(api_client, sett
     )
 
     assert response.status_code == 201
+
+
+@pytest.mark.django_db
+def test_register_issues_and_sends_a_real_verification_code(api_client, mailoutbox):
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "verifyme@example.com", "name": "Verify Me", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["user"]["email_verified"] is False
+    assert len(mailoutbox) == 1
+    assert "verifyme@example.com" in mailoutbox[0].to
+
+    user = User.objects.get(email="verifyme@example.com")
+    from .models import EmailVerificationCode
+
+    assert EmailVerificationCode.objects.filter(user=user).exists()
+
+
+@pytest.mark.django_db
+def test_email_verification_full_round_trip(api_client, mailoutbox):
+    from .models import EmailVerificationCode
+
+    register_response = api_client.post(
+        "/api/auth/register/",
+        {"email": "confirmflow@example.com", "name": "Confirm Flow", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+    access_token = register_response.data["access"]
+    code = EmailVerificationCode.objects.get(user__email="confirmflow@example.com").code
+
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+    confirm_response = api_client.post("/api/auth/verify-email/", {"code": code}, format="json")
+
+    assert confirm_response.status_code == 200
+    assert confirm_response.data["email_verified"] is True
+    user = User.objects.get(email="confirmflow@example.com")
+    assert user.email_verified_at is not None
+
+
+@pytest.mark.django_db
+def test_email_verification_requires_authentication(api_client):
+    response = api_client.post("/api/auth/verify-email/", {"code": "123456"}, format="json")
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_email_verification_rejects_wrong_code(api_client):
+    from .models import EmailVerificationCode
+
+    user = UserFactory(email="wrongcode@example.com")
+    EmailVerificationCode.issue(user)
+    api_client.force_authenticate(user)
+
+    response = api_client.post("/api/auth/verify-email/", {"code": "000000"}, format="json")
+
+    assert response.status_code == 400
+    user.refresh_from_db()
+    assert user.email_verified_at is None
+
+
+@pytest.mark.django_db
+def test_email_verification_resend_issues_a_fresh_code(api_client, mailoutbox):
+    from .models import EmailVerificationCode
+
+    user = UserFactory(email="resend@example.com")
+    api_client.force_authenticate(user)
+
+    response = api_client.post("/api/auth/verify-email/resend/", {}, format="json")
+
+    assert response.status_code == 200
+    assert len(mailoutbox) == 1
+    assert EmailVerificationCode.objects.filter(user=user).count() == 1
+
+
+@pytest.mark.django_db
+def test_email_verification_resend_is_rate_limited(api_client, monkeypatch):
+    from rest_framework.throttling import SimpleRateThrottle
+
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "email_verification_resend", "2/hour")
+    user = UserFactory(email="ratelimitresend@example.com")
+    api_client.force_authenticate(user)
+
+    first = api_client.post("/api/auth/verify-email/resend/", {}, format="json")
+    second = api_client.post("/api/auth/verify-email/resend/", {}, format="json")
+    third = api_client.post("/api/auth/verify-email/resend/", {}, format="json")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert third.status_code == 429

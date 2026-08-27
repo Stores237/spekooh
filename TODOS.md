@@ -61,10 +61,23 @@ I can write unilaterally. Grouped by what each one unblocks.
   unreachable — a third-party outage shouldn't block every signup. Verified live end-to-end: a
   real `curl` to the deployed function URL, then a real registration attempt against the local
   backend with a typo'd domain (rejected) and a real one (accepted). This checks domain
-  deliverability only, not that a specific mailbox exists — an actual "confirm your email" code
-  flow (same OTP pattern as password reset) is the natural next step once a real email-sending
-  provider is wired up (see the item above — that's the actual blocker for delivering the code,
-  not the edge function itself).
+  deliverability only, not that a specific mailbox exists.
+- ~~**Actual "confirm your email" verification code**~~ — done (2026-08-27). The domain check
+  above answered "is this email real," but nothing asked the new user to actually confirm it —
+  registering just worked instantly with no visible verification step at all. `RegisterView` now
+  issues a real `EmailVerificationCode` (same OTP shape as password reset — 6-digit,
+  `secrets.randbelow`, 30-min expiry, 5-attempt cap) and emails it as part of the same request;
+  the app opens `EmailVerificationSheet` right after a successful registration if the account
+  isn't verified yet. `POST /api/auth/verify-email/` (confirm) and `.../resend/` are both
+  authenticated (registration already grants tokens, so there's no account-enumeration surface
+  to design around here, unlike password reset). Confirming does **not** gate login/access —
+  `User.email_verified_at` is a signal surfaced in the app, not an access-control mechanism —
+  deliberately, since forcing it would strand every real signup until a real email provider is
+  wired up (see the item above; still console-only). "Skip for now" in the sheet reflects that:
+  either outcome leaves the user logged in exactly the same. Verified end-to-end against the
+  real local backend: registered, pulled the real code from the `EmailVerificationCode` row,
+  confirmed a wrong code (rejected) then the real one (accepted, `email_verified` flips true),
+  confirmed the console-logged email is real and well-formed, cleaned up the test user.
 
 ### Content only the owner can provide
 - **Real papers to seed the app**: the papers database is genuinely empty right now

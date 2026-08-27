@@ -2,8 +2,28 @@ import logging
 
 import requests
 from django.conf import settings
+from django.core.mail import send_mail
+
+from .models import EmailVerificationCode, User
 
 logger = logging.getLogger(__name__)
+
+
+def send_verification_email(user: "User") -> EmailVerificationCode:
+    """Issues a fresh EmailVerificationCode and emails it. Called both right
+    at registration (RegisterView) and from the resend endpoint — kept here
+    rather than inlined in either, since both need the exact same code."""
+    verification = EmailVerificationCode.issue(user)
+    send_mail(
+        subject="Verify your Spekooh email",
+        message=(
+            f"Your Spekooh email verification code is {verification.code}. "
+            "It expires in 30 minutes."
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+    )
+    return verification
 
 
 def email_domain_is_verifiable(email: str) -> bool:

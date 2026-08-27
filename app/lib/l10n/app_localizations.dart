@@ -422,6 +422,66 @@ abstract class AppLocalizations {
   /// **'Back to log in'**
   String get resetPasswordBackToLogin;
 
+  /// No description provided for @verifyEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email'**
+  String get verifyEmailTitle;
+
+  /// No description provided for @verifyEmailPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a code to your email. Enter it below to verify your account.'**
+  String get verifyEmailPrompt;
+
+  /// No description provided for @verifyEmailCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'CODE'**
+  String get verifyEmailCodeLabel;
+
+  /// No description provided for @verifyEmailCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit code'**
+  String get verifyEmailCodeHint;
+
+  /// No description provided for @verifyEmailConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verifyEmailConfirmButton;
+
+  /// No description provided for @verifyEmailResendLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get verifyEmailResendLink;
+
+  /// No description provided for @verifyEmailResendSentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A new code is on its way.'**
+  String get verifyEmailResendSentMessage;
+
+  /// No description provided for @verifyEmailSkipLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get verifyEmailSkipLink;
+
+  /// No description provided for @authErrorEmailVerificationConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'That code is invalid or has expired.'**
+  String get authErrorEmailVerificationConfirm;
+
+  /// No description provided for @authErrorEmailVerificationResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not resend a verification code. Check your connection and try again.'**
+  String get authErrorEmailVerificationResend;
+
   /// No description provided for @homeWelcomeGreeting.
   ///
   /// In en, this message translates to:

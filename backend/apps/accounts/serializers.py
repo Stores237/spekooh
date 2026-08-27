@@ -10,12 +10,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.payments.services import first_unlock_free_eligible, trial_days_remaining
 
 from . import services
-from .models import AccountType, PasswordResetCode, User
+from .models import AccountType, EmailVerificationCode, PasswordResetCode, User
 
 
 class UserSerializer(serializers.ModelSerializer):
     trial_days_remaining = serializers.SerializerMethodField()
     first_unlock_free_eligible = serializers.SerializerMethodField()
+    email_verified = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -32,6 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
             "trial_days_remaining",
             "first_unlock_free_eligible",
             "referral_code",
+            "email_verified",
         ]
         read_only_fields = [
             "id",
@@ -40,6 +42,7 @@ class UserSerializer(serializers.ModelSerializer):
             "trial_days_remaining",
             "first_unlock_free_eligible",
             "referral_code",
+            "email_verified",
         ]
 
     def get_trial_days_remaining(self, obj) -> int:
@@ -47,6 +50,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_first_unlock_free_eligible(self, obj) -> bool:
         return first_unlock_free_eligible(obj)
+
+    def get_email_verified(self, obj) -> bool:
+        return obj.email_verified_at is not None
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -179,4 +185,37 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         user.save(update_fields=["password"])
         reset.used_at = timezone.now()
         reset.save(update_fields=["used_at"])
+        return user
+
+
+class EmailVerificationConfirmSerializer(serializers.Serializer):
+    """Operates on request.user (passed in via context), not an email —
+    unlike password reset, this always runs from an authenticated session
+    (RegisterView already grants tokens at signup), so there's no
+    account-enumeration concern to design around here."""
+
+    code = serializers.CharField(max_length=6, min_length=6)
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        generic_error = "That code is invalid or has expired."
+        verification = (
+            EmailVerificationCode.objects.filter(user=user, used_at__isnull=True).order_by("-created_at").first()
+        )
+        if verification is None or not verification.is_usable:
+            raise serializers.ValidationError(generic_error)
+        if verification.code != attrs["code"]:
+            EmailVerificationCode.objects.filter(pk=verification.pk).update(attempts=F("attempts") + 1)
+            raise serializers.ValidationError(generic_error)
+        attrs["_user"] = user
+        attrs["_verification"] = verification
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.validated_data["_user"]
+        verification = self.validated_data["_verification"]
+        user.email_verified_at = timezone.now()
+        user.save(update_fields=["email_verified_at"])
+        verification.used_at = timezone.now()
+        verification.save(update_fields=["used_at"])
         return user
