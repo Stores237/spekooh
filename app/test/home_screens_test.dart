@@ -36,6 +36,18 @@ void main() {
     expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget); // real featured pamphlet from the mock
   });
 
+  testWidgets('HomeScreen (guest) contribution card opens Submit', (tester) async {
+    var opened = false;
+    await tester.pumpWidget(l10nTestApp(
+      HomeScreen(papersRepository: MockPapersRepository(), shopRepository: MockShopRepository(), onOpenSubmit: () => opened = true),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.tap(find.text("Got a past paper or report we don't have?"));
+    expect(opened, isTrue);
+  });
+
   testWidgets('HomeScreen (guest) shows the real latest published paper when one exists', (tester) async {
     final seeded = PaperEntry(
       id: 7,
