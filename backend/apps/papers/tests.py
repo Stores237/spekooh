@@ -903,17 +903,46 @@ def test_admin_publish_selected_publishes_reports_regardless_of_guide_status():
 
 
 @pytest.mark.django_db
-def test_admin_publish_selected_still_gates_exam_papers_on_guide_status():
-    """The real instructor/marking-guide pipeline gate stays intact for
-    exam papers — only reports get the relaxed rule above."""
+def test_admin_publish_selected_no_longer_requires_a_marking_guide_for_exam_papers():
+    """Owner decision (2026-08-28): an exam paper's scan is useful to other
+    students before a marking guide exists — publishing no longer waits on
+    the instructor pipeline. It also never fabricates a guide: the paper
+    publishes, but has_marking_guide stays False until a real
+    PublishedGuide exists (see PaperAccessFieldsMixin.get_has_marking_guide)."""
     paper = PaperSubmissionFactory(status=PaperStatus.PENDING_REVIEW)
 
     admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
     admin_instance.publish_selected(_admin_action_request(), PaperSubmission.objects.filter(id=paper.id))
 
     paper.refresh_from_db()
-    assert paper.status == PaperStatus.PENDING_REVIEW
-    assert not CreditLedgerEntry.objects.filter(paper_submission=paper).exists()
+    assert paper.status == PaperStatus.PUBLISHED
+    assert CreditLedgerEntry.objects.filter(paper_submission=paper).exists()
+
+    from .serializers import PaperSubmissionDetailSerializer
+
+    serializer = PaperSubmissionDetailSerializer(paper, context={"request": None})
+    assert serializer.data["has_marking_guide"] is False
+
+
+@pytest.mark.django_db
+def test_has_marking_guide_is_true_once_a_real_guide_is_published():
+    from django.utils import timezone
+
+    from apps.instructors.models import InstructorMarkingGuide
+    from apps.instructors.services import merge_and_publish
+
+    from .serializers import PaperSubmissionDetailSerializer
+
+    paper = PaperSubmissionFactory(status=PaperStatus.GUIDE_SUBMITTED)
+    InstructorMarkingGuide.objects.create(
+        paper=paper, instructor_id="test-instructor", content=[{"q": 1, "a": "answer"}], submitted_at=timezone.now()
+    )
+
+    merge_and_publish(paper)
+    paper.refresh_from_db()
+
+    serializer = PaperSubmissionDetailSerializer(paper, context={"request": None})
+    assert serializer.data["has_marking_guide"] is True
 
 
 @pytest.mark.django_db

@@ -229,6 +229,49 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('a published exam paper with no real guide yet says so honestly, not "available"', (tester) async {
+    final withGuide = PaperEntry(
+      id: 1,
+      year: 2025,
+      system: null,
+      track: '',
+      status: 'PUBLISHED',
+      fileUrl: null,
+      createdAt: DateTime(2025, 1, 1),
+      hasMarkingGuide: true,
+    );
+    final withoutGuide = PaperEntry(
+      id: 2,
+      year: 2026,
+      system: null,
+      track: '',
+      status: 'PUBLISHED',
+      fileUrl: null,
+      createdAt: DateTime(2026, 1, 1),
+      hasMarkingGuide: false,
+    );
+    await tester.pumpWidget(l10nTestApp(
+      PapersScreen(repository: MockPapersRepository(seedPublished: [withGuide, withoutGuide])),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.tap(find.text('Primary'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.text('FSLC'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.ensureVisible(find.text('Accounting'));
+    await tester.tap(find.text('Accounting'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Marking guide available'), findsOneWidget);
+    expect(find.text('Marking guide not yet available'), findsOneWidget);
+  });
+
   testWidgets('renders the category step in French once that locale is active', (tester) async {
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
     await LocaleController.instance.setLocale('fr');

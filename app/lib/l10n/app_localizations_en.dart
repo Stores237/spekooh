@@ -458,6 +458,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paperMarkingGuideAvailable => 'Marking guide available';
 
   @override
+  String get paperMarkingGuideNotYetAvailable =>
+      'Marking guide not yet available';
+
+  @override
   String get paperUnderReview => 'Under review';
 
   @override
@@ -969,6 +973,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get markingGuideSubtitle => 'Instructor-authored + in-house MCQ key';
+
+  @override
+  String get markingGuideNotYetAvailable =>
+      'The paper is here, but its marking guide isn\'t ready yet. Check back soon.';
 
   @override
   String get reportDownloadTitle => 'Download access';

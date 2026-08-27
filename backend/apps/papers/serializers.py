@@ -95,6 +95,14 @@ class PaperAccessFieldsMixin:
     def get_category_key(self, obj) -> str:
         return obj.category.key
 
+    def get_has_marking_guide(self, obj) -> bool:
+        # Real state, not "is this published" — a paper can be published
+        # (see PaperSubmissionAdmin.publish_selected, which no longer
+        # requires a guide to exist first) before its marking guide is
+        # ready. Reports have no marking-guide concept at all, so this is
+        # always False for them (PublishedGuide is never created for one).
+        return getattr(obj, "published_guide", None) is not None
+
     def get_file_url(self, obj) -> str | None:
         if not obj.uploaded_file:
             return None
@@ -112,6 +120,7 @@ class PaperSubmissionListSerializer(PaperAccessFieldsMixin, serializers.ModelSer
     category_key = serializers.SerializerMethodField()
     requires_unlock = serializers.SerializerMethodField()
     is_unlocked = serializers.SerializerMethodField()
+    has_marking_guide = serializers.SerializerMethodField()
 
     class Meta:
         model = PaperSubmission
@@ -131,6 +140,7 @@ class PaperSubmissionListSerializer(PaperAccessFieldsMixin, serializers.ModelSer
             "supervisor_name",
             "requires_unlock",
             "is_unlocked",
+            "has_marking_guide",
             "status",
             "created_at",
         ]
@@ -141,6 +151,7 @@ class PaperSubmissionDetailSerializer(PaperAccessFieldsMixin, serializers.ModelS
     category_key = serializers.SerializerMethodField()
     requires_unlock = serializers.SerializerMethodField()
     is_unlocked = serializers.SerializerMethodField()
+    has_marking_guide = serializers.SerializerMethodField()
 
     class Meta:
         model = PaperSubmission
@@ -161,6 +172,7 @@ class PaperSubmissionDetailSerializer(PaperAccessFieldsMixin, serializers.ModelS
             "file_url",
             "requires_unlock",
             "is_unlocked",
+            "has_marking_guide",
             "ocr_text",
             "duplicate_hash",
             "is_duplicate",

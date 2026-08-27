@@ -424,58 +424,85 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                           ),
                         const SizedBox(height: AppSpacing.space3),
                       ],
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(isReport ? l10n.reportDownloadTitle : l10n.markingGuideTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                      Text(isReport ? l10n.reportDownloadSubtitle : l10n.markingGuideSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                                    ],
-                                  ),
+                      // A published exam paper can genuinely have no guide
+                      // yet (publishing no longer waits on the instructor
+                      // pipeline — see PaperEntry.hasMarkingGuide). Never
+                      // offer to sell one that doesn't exist: no lock icon,
+                      // no unlock button, no redeem code field, just an
+                      // honest "not available yet" state.
+                      if (!isReport && !(detail?.hasMarkingGuide ?? false))
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                          child: Row(
+                            children: [
+                              const Icon(LucideIcons.clock, size: 18, color: AppColors.textSecondary),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(l10n.markingGuideTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                    Text(l10n.markingGuideNotYetAvailable, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                  ],
                                 ),
-                                Icon(_unlockedAmount != null || downloadUnlocked ? LucideIcons.unlock : LucideIcons.lock, size: 18),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            if (_unlockedAmount != null)
-                              Text(l10n.unlockedForAmount(_unlockedAmount!), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600))
-                            else if (downloadUnlocked)
-                              Text(l10n.alreadyUnlocked, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600))
-                            else ...[
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  SpekoohButton(
-                                    size: SpekoohButtonSize.sm,
-                                    onPressed: _unlocking ? null : () => _unlock(entry.id),
-                                    child: _unlocking ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)) : Text(l10n.unlockButton),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(isReport ? l10n.reportDownloadTitle : l10n.markingGuideTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                        Text(isReport ? l10n.reportDownloadSubtitle : l10n.markingGuideSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                      ],
+                                    ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  GestureDetector(
-                                    onTap: () => setState(() => _showRedeemField = !_showRedeemField),
-                                    child: Text(l10n.haveRedeemCode, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700, fontWeight: FontWeight.w700, fontSize: 12)),
-                                  ),
+                                  Icon(_unlockedAmount != null || downloadUnlocked ? LucideIcons.unlock : LucideIcons.lock, size: 18),
                                 ],
                               ),
-                              if (_showRedeemField) ...[
-                                const SizedBox(height: 10),
-                                TextField(
-                                  controller: _redeemController,
-                                  decoration: InputDecoration(hintText: l10n.redeemCodeHint, isDense: true, border: const OutlineInputBorder()),
+                              const SizedBox(height: 12),
+                              if (_unlockedAmount != null)
+                                Text(l10n.unlockedForAmount(_unlockedAmount!), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600))
+                              else if (downloadUnlocked)
+                                Text(l10n.alreadyUnlocked, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600))
+                              else ...[
+                                Row(
+                                  children: [
+                                    SpekoohButton(
+                                      size: SpekoohButtonSize.sm,
+                                      onPressed: _unlocking ? null : () => _unlock(entry.id),
+                                      child: _unlocking ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)) : Text(l10n.unlockButton),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    GestureDetector(
+                                      onTap: () => setState(() => _showRedeemField = !_showRedeemField),
+                                      child: Text(l10n.haveRedeemCode, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700, fontWeight: FontWeight.w700, fontSize: 12)),
+                                    ),
+                                  ],
                                 ),
+                                if (_showRedeemField) ...[
+                                  const SizedBox(height: 10),
+                                  TextField(
+                                    controller: _redeemController,
+                                    decoration: InputDecoration(hintText: l10n.redeemCodeHint, isDense: true, border: const OutlineInputBorder()),
+                                  ),
+                                ],
                               ],
                             ],
-                          ],
+                          ),
                         ),
-                      ),
                     ],
                   );
                 },

@@ -19,6 +19,7 @@ class PaperEntry {
     this.categoryKey,
     this.requiresUnlock = false,
     this.isUnlocked = false,
+    this.hasMarkingGuide = false,
   });
 
   final int id;
@@ -60,6 +61,13 @@ class PaperEntry {
   /// download outright — independent of [requiresUnlock] (owner decision;
   /// see apps.papers.services.report_download_is_free on the backend).
   final bool isUnlocked;
+
+  /// Whether a real PublishedGuide exists for this paper — independent of
+  /// [isPublished] (an exam paper can be published for students to read
+  /// well before its marking guide is ready; see
+  /// PaperAccessFieldsMixin.get_has_marking_guide on the backend). Never
+  /// true for a report — reports have no marking-guide concept at all.
+  final bool hasMarkingGuide;
 
   bool get isReport => categoryKey == 'reports';
 
