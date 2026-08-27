@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_gradients.dart';
 
 /// Shown briefly on app launch, then hands off to [child]. Owner-supplied
 /// logo (assets/branding/spekooh_logo.png) — placement/timing here is a
@@ -29,11 +29,15 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     if (!_showSplash) return widget.child;
     return Scaffold(
-      backgroundColor: AppColors.ink900,
-      body: Center(
-        child: Image.asset(
-          'assets/branding/spekooh_logo.png',
-          width: 240,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(gradient: AppGradients.goldSoft),
+        child: Center(
+          child: Image.asset(
+            'assets/branding/spekooh_logo.png',
+            width: 240,
+          ),
         ),
       ),
     );
