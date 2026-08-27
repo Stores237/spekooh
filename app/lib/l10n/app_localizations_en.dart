@@ -444,6 +444,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subjectLabel => 'Subject';
 
   @override
+  String get addCustomSubject => 'Add a subject';
+
+  @override
+  String get customSubjectHint => 'e.g. Geology';
+
+  @override
+  String get addCustomSubjectCta => 'Add';
+
+  @override
+  String get addCustomSubjectError => 'Could not add that subject. Try again.';
+
+  @override
   String get yearLabel => 'Year';
 
   @override
