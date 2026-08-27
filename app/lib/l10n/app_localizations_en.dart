@@ -137,6 +137,46 @@ class AppLocalizationsEn extends AppLocalizations {
       'Something went wrong. Check your connection and try again.';
 
   @override
+  String get authErrorPasswordResetRequest =>
+      'Could not send a reset code. Check your connection and try again.';
+
+  @override
+  String get authErrorPasswordResetConfirm =>
+      'That code is invalid or has expired.';
+
+  @override
+  String get forgotPasswordLink => 'Forgot password?';
+
+  @override
+  String get resetPasswordTitle => 'Reset password';
+
+  @override
+  String get resetPasswordEmailPrompt =>
+      'Enter your email and we\'ll send you a reset code.';
+
+  @override
+  String get resetPasswordCodeSentMessage =>
+      'If that email is registered, a code is on its way. Enter it below along with a new password.';
+
+  @override
+  String get resetPasswordCodeLabel => 'CODE';
+
+  @override
+  String get resetPasswordCodeHint => '6-digit code';
+
+  @override
+  String get resetPasswordNewPasswordLabel => 'NEW PASSWORD';
+
+  @override
+  String get resetPasswordSendCodeButton => 'Send code';
+
+  @override
+  String get resetPasswordConfirmButton => 'Reset password';
+
+  @override
+  String get resetPasswordBackToLogin => 'Back to log in';
+
+  @override
   String get homeWelcomeGreeting => 'Welcome';
 
   @override

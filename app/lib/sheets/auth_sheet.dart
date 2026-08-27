@@ -5,7 +5,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
+import '../widgets/auth_form_field.dart';
 import '../widgets/spekooh_button.dart';
+import 'password_reset_sheet.dart';
 
 /// Minimal login/register bottom sheet. Wired to Settings' "Log in" button
 /// in place of the previous bare local-boolean flip — on success it pops
@@ -78,6 +80,25 @@ class _AuthSheetState extends State<AuthSheet> {
         return l10n.authErrorRegisterGeneric;
       case AuthErrorCode.guestFailed:
         return l10n.authErrorGuest;
+      case AuthErrorCode.passwordResetRequestFailed:
+      case AuthErrorCode.passwordResetConfirmFailed:
+        return l10n.authErrorUnknown; // not reachable from this sheet — see PasswordResetSheet
+    }
+  }
+
+  Future<void> _openPasswordReset() async {
+    final reset = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const PasswordResetSheet(),
+    );
+    if (reset == true && mounted) {
+      setState(() {
+        _isRegisterMode = false;
+        _passwordController.clear();
+        _error = null;
+      });
     }
   }
 
@@ -110,23 +131,36 @@ class _AuthSheetState extends State<AuthSheet> {
             ),
             const SizedBox(height: AppSpacing.space4),
             if (_isRegisterMode) ...[
-              _FieldLabel(l10n.authNameLabel),
+              AuthFieldLabel(l10n.authNameLabel),
               const SizedBox(height: 6),
-              _TextField(controller: _nameController, hint: l10n.authNameHint),
+              AuthTextField(controller: _nameController, hint: l10n.authNameHint),
               const SizedBox(height: AppSpacing.space3),
             ],
-            _FieldLabel(l10n.authEmailLabel),
+            AuthFieldLabel(l10n.authEmailLabel),
             const SizedBox(height: 6),
-            _TextField(controller: _emailController, hint: l10n.authEmailHint, keyboardType: TextInputType.emailAddress),
+            AuthTextField(controller: _emailController, hint: l10n.authEmailHint, keyboardType: TextInputType.emailAddress),
             const SizedBox(height: AppSpacing.space3),
-            _FieldLabel(l10n.authPasswordLabel),
+            AuthFieldLabel(l10n.authPasswordLabel),
             const SizedBox(height: 6),
-            _TextField(controller: _passwordController, hint: '••••••••', obscureText: true),
+            AuthTextField(controller: _passwordController, hint: '••••••••', obscureText: true),
+            if (!_isRegisterMode) ...[
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: _isSubmitting ? null : _openPasswordReset,
+                  child: Text(
+                    l10n.forgotPasswordLink,
+                    style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.link),
+                  ),
+                ),
+              ),
+            ],
             if (_isRegisterMode) ...[
               const SizedBox(height: AppSpacing.space3),
-              _FieldLabel(l10n.authReferralLabel),
+              AuthFieldLabel(l10n.authReferralLabel),
               const SizedBox(height: 6),
-              _TextField(controller: _referralCodeController, hint: l10n.authReferralHint),
+              AuthTextField(controller: _referralCodeController, hint: l10n.authReferralHint),
               const SizedBox(height: AppSpacing.space3),
               GestureDetector(
                 onTap: _isSubmitting ? null : () => setState(() => _termsAccepted = !_termsAccepted),
@@ -172,46 +206,6 @@ class _AuthSheetState extends State<AuthSheet> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        text,
-        style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.4),
-      ),
-    );
-  }
-}
-
-class _TextField extends StatelessWidget {
-  const _TextField({required this.controller, required this.hint, this.obscureText = false, this.keyboardType});
-
-  final TextEditingController controller;
-  final String hint;
-  final bool obscureText;
-  final TextInputType? keyboardType;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(color: AppColors.white, border: Border.all(color: AppColors.borderSubtle), borderRadius: BorderRadius.circular(12)),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(hintText: hint, border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
-        style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 14),
       ),
     );
   }

@@ -1,4 +1,7 @@
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
+from django.core.mail import send_mail
+from django.db.models import F
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -6,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.payments.services import first_unlock_free_eligible, trial_days_remaining
 
-from .models import AccountType, User
+from .models import AccountType, PasswordResetCode, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -109,3 +112,65 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 def tokens_for_user(user: User) -> dict:
     refresh = RefreshToken.for_user(user)
     return {"refresh": str(refresh), "access": str(refresh.access_token)}
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Always succeeds from the caller's point of view regardless of
+    whether the email matches a real, registered account — the view (not
+    this serializer) is what decides whether to actually issue+email a
+    code, so a script probing emails can't tell which ones exist."""
+
+    email = serializers.EmailField()
+
+    def issue_code_if_real_account(self):
+        email = self.validated_data["email"].strip().lower()
+        user = User.objects.filter(email__iexact=email, account_type=AccountType.REGISTERED).first()
+        if user is None:
+            return
+        reset = PasswordResetCode.issue(user)
+        send_mail(
+            subject="Your Spekooh password reset code",
+            message=(
+                f"Your Spekooh password reset code is {reset.code}. "
+                "It expires in 15 minutes. If you didn't request this, ignore this email."
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+        )
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6, min_length=6)
+    new_password = serializers.CharField(write_only=True, validators=[validate_password])
+
+    def validate(self, attrs):
+        email = attrs["email"].strip().lower()
+        user = User.objects.filter(email__iexact=email, account_type=AccountType.REGISTERED).first()
+        # Deliberately the same error for "no such account" and "wrong
+        # code" — distinguishing them would leak which emails are registered.
+        generic_error = "That code is invalid or has expired."
+        if user is None:
+            raise serializers.ValidationError(generic_error)
+        reset = (
+            PasswordResetCode.objects.filter(user=user, used_at__isnull=True)
+            .order_by("-created_at")
+            .first()
+        )
+        if reset is None or not reset.is_usable:
+            raise serializers.ValidationError(generic_error)
+        if reset.code != attrs["code"]:
+            PasswordResetCode.objects.filter(pk=reset.pk).update(attempts=F("attempts") + 1)
+            raise serializers.ValidationError(generic_error)
+        attrs["_user"] = user
+        attrs["_reset"] = reset
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.validated_data["_user"]
+        reset = self.validated_data["_reset"]
+        user.set_password(self.validated_data["new_password"])
+        user.save(update_fields=["password"])
+        reset.used_at = timezone.now()
+        reset.save(update_fields=["used_at"])
+        return user

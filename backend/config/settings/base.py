@@ -181,6 +181,13 @@ REST_FRAMEWORK = {
         # attempt; 10/hour is generous for retries but stops scripted
         # spam from creating unlimited real accounts.
         "guest_mint": "10/hour",
+        # Per-IP. A real user retrying a typo'd email is rare; a script
+        # probing which emails are registered is the thing this stops.
+        "password_reset_request": "5/hour",
+        # Deliberately looser than the request scope — a real user re-typing
+        # a 6-digit code has several legitimate retries; PasswordResetCode's
+        # own attempts-cap (5) is what actually stops brute-forcing one code.
+        "password_reset_confirm": "20/hour",
     },
 }
 
@@ -194,6 +201,12 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # QR pamphlet-pickup token signing (django.core.signing).
 QR_SIGNING_SALT = env("QR_SIGNING_SALT", default="spekooh-pamphlet-qr")
+
+# Password-reset codes (and anything else transactional) send from this
+# address. dev.py points EMAIL_BACKEND at the console — no real provider is
+# wired up yet, see TODOS.md's "Owner action items" for what prod needs
+# (an EMAIL_HOST/API-key-based backend, e.g. SendGrid/SES/Postmark).
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@spekooh.app")
 
 # Instructor webhook HMAC replay-protection window.
 INSTRUCTOR_WEBHOOK_MAX_SKEW_SECONDS = env.int("INSTRUCTOR_WEBHOOK_MAX_SKEW_SECONDS", default=300)

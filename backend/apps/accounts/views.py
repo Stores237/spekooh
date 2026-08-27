@@ -9,7 +9,14 @@ from apps.notifications.models import NotificationKind
 from apps.notifications.services import notify
 
 from .models import User
-from .serializers import EmailTokenObtainPairSerializer, RegisterSerializer, UserSerializer, tokens_for_user
+from .serializers import (
+    EmailTokenObtainPairSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    RegisterSerializer,
+    UserSerializer,
+    tokens_for_user,
+)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -62,6 +69,36 @@ class GuestView(APIView):
             {"user": UserSerializer(user).data, **tokens_for_user(user)},
             status=status.HTTP_201_CREATED,
         )
+
+
+class PasswordResetRequestView(APIView):
+    """Rate-limited per IP (same idea as guest_mint) — otherwise this is a
+    free email-bombing/enumeration oracle. Always returns 200 with the same
+    generic body, real account or not (see PasswordResetRequestSerializer)."""
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_reset_request"
+
+    @extend_schema(request=PasswordResetRequestSerializer, responses=None)
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.issue_code_if_real_account()
+        return Response({"detail": "If that email is registered, a reset code has been sent."})
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_reset_confirm"
+
+    @extend_schema(request=PasswordResetConfirmSerializer, responses=None)
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Password reset. Log in with your new password."})
 
 
 class MeView(generics.RetrieveUpdateAPIView):

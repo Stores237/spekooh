@@ -41,6 +41,16 @@ I can write unilaterally. Grouped by what each one unblocks.
   `apps.accounts.tests.test_guest_endpoint_is_rate_limited_per_ip`). Dev/CI use a real local/
   containerized Redis; production needs a real managed instance (Upstash, Redis Cloud, etc.) —
   set `REDIS_URL` to switch, no code change either way.
+- **Real email provider for password-reset codes** (2026-08-27): the "forgot password" flow
+  (backend `apps.accounts.views.PasswordResetRequestView`/`PasswordResetConfirmView`, app
+  `PasswordResetSheet`) is fully real end-to-end — verified against the live local backend,
+  including logging in with the actually-changed password afterward — but `EMAIL_BACKEND` is
+  Django's console backend (`config/settings/dev.py`), so a reset code currently prints to the
+  server's own console/log instead of reaching the user's inbox. `base.py` has no `EMAIL_BACKEND`
+  override, so as-is `prod.py` would fall through to Django's default SMTP backend and fail
+  outright without real settings. Needs a real provider (SendGrid, Postmark, SES, or plain SMTP)
+  and its credentials — then set `EMAIL_BACKEND`/`EMAIL_HOST`/etc. (or `DEFAULT_FROM_EMAIL` if
+  just the sender address changes) via env vars, no code change.
 
 ### Content only the owner can provide
 - **Real papers to seed the app**: the papers database is genuinely empty right now

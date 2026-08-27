@@ -344,6 +344,78 @@ abstract class AppLocalizations {
   /// **'Something went wrong. Check your connection and try again.'**
   String get authErrorUnknown;
 
+  /// No description provided for @authErrorPasswordResetRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send a reset code. Check your connection and try again.'**
+  String get authErrorPasswordResetRequest;
+
+  /// No description provided for @authErrorPasswordResetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'That code is invalid or has expired.'**
+  String get authErrorPasswordResetConfirm;
+
+  /// No description provided for @forgotPasswordLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPasswordLink;
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordEmailPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email and we\'ll send you a reset code.'**
+  String get resetPasswordEmailPrompt;
+
+  /// No description provided for @resetPasswordCodeSentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'If that email is registered, a code is on its way. Enter it below along with a new password.'**
+  String get resetPasswordCodeSentMessage;
+
+  /// No description provided for @resetPasswordCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'CODE'**
+  String get resetPasswordCodeLabel;
+
+  /// No description provided for @resetPasswordCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit code'**
+  String get resetPasswordCodeHint;
+
+  /// No description provided for @resetPasswordNewPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW PASSWORD'**
+  String get resetPasswordNewPasswordLabel;
+
+  /// No description provided for @resetPasswordSendCodeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get resetPasswordSendCodeButton;
+
+  /// No description provided for @resetPasswordConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get resetPasswordConfirmButton;
+
+  /// No description provided for @resetPasswordBackToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to log in'**
+  String get resetPasswordBackToLogin;
+
   /// No description provided for @homeWelcomeGreeting.
   ///
   /// In en, this message translates to:
