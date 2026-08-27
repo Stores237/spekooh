@@ -35,7 +35,7 @@ class PaymentTransaction(TimeStampedModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.purpose} {self.amount_fcfa}FCFA — {self.status}"
+        return f"{self.purpose} {self.amount_fcfa}FCFA, {self.status}"
 
 
 class SubscriptionStatus(models.TextChoices):
@@ -66,7 +66,7 @@ class Subscription(TimeStampedModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.user} — {self.status} (renews {self.renews_at:%Y-%m-%d})"
+        return f"{self.user}, {self.status} (renews {self.renews_at:%Y-%m-%d})"
 
 
 class PaperUnlockManager(models.Manager):

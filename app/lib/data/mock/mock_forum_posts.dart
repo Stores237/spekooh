@@ -26,7 +26,7 @@ const mockForumPosts = [
     name: 'Aïcha N.',
     time: '3h ago',
     tag: 'Philosophie',
-    title: 'Dissertation — la liberté',
+    title: 'Dissertation : la liberté',
     body: 'Quelqu’un a-t-il un plan pour ce sujet de dissertation du Probatoire 2024 ?',
     upvotes: 2,
     answers: 21,

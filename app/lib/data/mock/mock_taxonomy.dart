@@ -32,7 +32,7 @@ class MockTaxonomy {
       title: 'University',
       icon: LucideIcons.landmark,
       tint: IconChipTint.blue,
-      subtitle: 'Semester exams · Resits — State & Private',
+      subtitle: 'Semester exams · Resits (State & Private)',
       requiresSystem: true,
     ),
     ExamCategory(
@@ -54,7 +54,7 @@ class MockTaxonomy {
       title: 'Academic Reports',
       icon: LucideIcons.bookOpen,
       tint: IconChipTint.red,
-      subtitle: 'Internship · Mémoire · Thèse — no marking guide',
+      subtitle: 'Internship · Mémoire · Thèse (no marking guide)',
     ),
   ];
 

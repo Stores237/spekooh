@@ -41,7 +41,7 @@ class SubscriptionAdmin(ModelAdmin):
     @display(description="Renews")
     def renewal_countdown(self, obj):
         if obj.status != SubscriptionStatus.ACTIVE:
-            return "—"
+            return "-"
         remaining = obj.renews_at - timezone.now()
         if remaining.total_seconds() < 0:
             return "Past due (not yet marked expired)"

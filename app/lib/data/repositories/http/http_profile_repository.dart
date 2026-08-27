@@ -94,7 +94,7 @@ class HttpProfileRepository implements ProfileRepository {
       final year = row['year'] as int;
       final date = DateTime.tryParse(row['created_at'] as String? ?? '');
       return Submission(
-        title: subjectTitle != null ? '$subjectTitle — $examTypeName $year' : '$examTypeName $year',
+        title: subjectTitle != null ? '$subjectTitle, $examTypeName $year' : '$examTypeName $year',
         status: _statusDisplay[status] ?? status,
         tone: _statusTone[status] ?? SpekoohBadgeTone.neutral,
         date: date == null ? '' : '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',

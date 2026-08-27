@@ -56,4 +56,4 @@ class QuizAttempt(TimeStampedModel):
         ordering = ["-completed_at"]
 
     def __str__(self):
-        return f"{self.user} — {self.quiz} — {self.score}"
+        return f"{self.user}, {self.quiz}, {self.score}"

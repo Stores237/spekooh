@@ -235,8 +235,8 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     }
 
     final title = selection != null
-        ? '${selection.subject?.title ?? selection.examType.name} — ${selection.examType.name}${selection.track != null ? ' ${selection.track}' : ''} ${entry.year}'
-        : '${entry.subjectTitle ?? entry.examTypeName ?? 'Paper'} — ${entry.examTypeName ?? ''} ${entry.year}';
+        ? '${selection.subject?.title ?? selection.examType.name}, ${selection.examType.name}${selection.track != null ? ' ${selection.track}' : ''} ${entry.year}'
+        : '${entry.subjectTitle ?? entry.examTypeName ?? 'Paper'}, ${entry.examTypeName ?? ''} ${entry.year}';
     final meta = selection != null
         ? [
             selection.category.title,

@@ -365,7 +365,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeExploringBadge.
   ///
   /// In en, this message translates to:
-  /// **'Exploring — no account'**
+  /// **'Exploring: no account'**
   String get homeExploringBadge;
 
   /// No description provided for @homeFreeViewsLabel.
@@ -395,7 +395,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeNoPapersYet.
   ///
   /// In en, this message translates to:
-  /// **'No papers published yet — check back soon.'**
+  /// **'No papers published yet. Check back soon.'**
   String get homeNoPapersYet;
 
   /// No description provided for @homePaperLabelWithYear.
@@ -407,7 +407,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeFreeToView.
   ///
   /// In en, this message translates to:
-  /// **'Free to view — marking guide sold separately'**
+  /// **'Free to view (marking guide sold separately)'**
   String get homeFreeToView;
 
   /// No description provided for @homeFreeToViewReport.
@@ -425,7 +425,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeContributionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Contribution — earn credit'**
+  /// **'Contribution: earn credit'**
   String get homeContributionTitle;
 
   /// No description provided for @homeContributionPrompt.
@@ -437,7 +437,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeContributionSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Snap a photo, tag it, earn bonus credit once it\'s verified — first contribution counts.'**
+  /// **'Snap a photo, tag it, and earn bonus credit once it\'s verified. First contribution counts.'**
   String get homeContributionSubtitle;
 
   /// No description provided for @notesTitle.
@@ -515,7 +515,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeReadingOpenNote.
   ///
   /// In en, this message translates to:
-  /// **'Reading papers stays open to everyone — 3 free views a day, no account needed.'**
+  /// **'Reading papers stays open to everyone: 3 free views a day, no account needed.'**
   String get homeReadingOpenNote;
 
   /// No description provided for @greetingMorning.
@@ -683,7 +683,7 @@ abstract class AppLocalizations {
   /// No description provided for @papersSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Every level, every system — Primary to Concours des Grandes Écoles.'**
+  /// **'Every level, every system, from Primary to Concours des Grandes Écoles.'**
   String get papersSubtitle;
 
   /// No description provided for @categoryLabel.
@@ -695,7 +695,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseSystemHeader.
   ///
   /// In en, this message translates to:
-  /// **'{category} — choose system'**
+  /// **'{category}: choose system'**
   String chooseSystemHeader(String category);
 
   /// No description provided for @examTypeStepHeaderWithSystem.
@@ -719,7 +719,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseTrackHeader.
   ///
   /// In en, this message translates to:
-  /// **'{examType} — choose track'**
+  /// **'{examType}: choose track'**
   String chooseTrackHeader(String examType);
 
   /// No description provided for @searchSubjects.
@@ -755,13 +755,13 @@ abstract class AppLocalizations {
   /// No description provided for @noPapersYetBody.
   ///
   /// In en, this message translates to:
-  /// **'Nobody has submitted a {subject} paper for this exam type yet. Be the first — submit one from the Submit tab.'**
+  /// **'Nobody has submitted a {subject} paper for this exam type yet. Be the first to submit one from the Submit tab.'**
   String noPapersYetBody(String subject);
 
   /// No description provided for @noReportsYetBody.
   ///
   /// In en, this message translates to:
-  /// **'Nobody has submitted a {examType} yet. Be the first — submit one from the Submit tab.'**
+  /// **'Nobody has submitted a {examType} yet. Be the first to submit one from the Submit tab.'**
   String noReportsYetBody(String examType);
 
   /// No description provided for @searchPapersInCategory.
@@ -791,7 +791,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributionSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Share a past paper or an academic report — every contribution helps another student.'**
+  /// **'Share a past paper or an academic report. Every contribution helps another student.'**
   String get contributionSubtitle;
 
   /// No description provided for @contributorNameTitle.
@@ -803,7 +803,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributorNameSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'No account needed to contribute — we\'ll credit this to the name you give us.'**
+  /// **'No account needed to contribute. We\'ll credit this to the name you give us.'**
   String get contributorNameSubtitle;
 
   /// No description provided for @contributorNameLabel.
@@ -833,7 +833,7 @@ abstract class AppLocalizations {
   /// No description provided for @academicReportComingSoon.
   ///
   /// In en, this message translates to:
-  /// **'Academic report submissions aren\'t wired to the backend yet — only exam papers can be submitted right now. Check back soon.'**
+  /// **'Academic report submissions aren\'t wired to the backend yet. Only exam papers can be submitted right now. Check back soon.'**
   String get academicReportComingSoon;
 
   /// No description provided for @takePhotoOrUploadPdf.
@@ -890,6 +890,30 @@ abstract class AppLocalizations {
   /// **'Subject'**
   String get subjectLabel;
 
+  /// No description provided for @addCustomSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a subject'**
+  String get addCustomSubject;
+
+  /// No description provided for @customSubjectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Geology'**
+  String get customSubjectHint;
+
+  /// No description provided for @addCustomSubjectCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get addCustomSubjectCta;
+
+  /// No description provided for @addCustomSubjectError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add that subject. Try again.'**
+  String get addCustomSubjectError;
+
   /// No description provided for @yearLabel.
   ///
   /// In en, this message translates to:
@@ -905,7 +929,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributionBonusBanner.
   ///
   /// In en, this message translates to:
-  /// **'New, verified submissions earn bonus credit — redeemable toward marking-guide unlocks.'**
+  /// **'New, verified submissions earn bonus credit, redeemable toward marking-guide unlocks.'**
   String get contributionBonusBanner;
 
   /// No description provided for @submitPaperButton.
@@ -971,7 +995,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributionReceivedBody.
   ///
   /// In en, this message translates to:
-  /// **'We\'ll check it against existing papers first — if it\'s new, it moves to instructor review. Track it under Profile.'**
+  /// **'We\'ll check it against existing papers first. If it\'s new, it moves to instructor review. Track it under Profile.'**
   String get contributionReceivedBody;
 
   /// No description provided for @submissionFailed.
@@ -983,7 +1007,7 @@ abstract class AppLocalizations {
   /// No description provided for @fileTooLargeError.
   ///
   /// In en, this message translates to:
-  /// **'File is too large — this report type allows up to {maxMb}MB.'**
+  /// **'File is too large. This report type allows up to {maxMb}MB.'**
   String fileTooLargeError(int maxMb);
 
   /// No description provided for @choosePdfOrImage.
@@ -1043,7 +1067,7 @@ abstract class AppLocalizations {
   /// No description provided for @forumNoPosts.
   ///
   /// In en, this message translates to:
-  /// **'No posts yet — be the first to ask.'**
+  /// **'No posts yet. Be the first to ask.'**
   String get forumNoPosts;
 
   /// No description provided for @forumAskButton.
@@ -1187,7 +1211,7 @@ abstract class AppLocalizations {
   /// No description provided for @pastPaperPracticeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Auto-generated from submitted papers — coming soon'**
+  /// **'Auto-generated from submitted papers (coming soon)'**
   String get pastPaperPracticeSubtitle;
 
   /// No description provided for @fridayArenaTitle.
@@ -1199,7 +1223,7 @@ abstract class AppLocalizations {
   /// No description provided for @fridayArenaSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Live elimination quiz — coming soon'**
+  /// **'Live elimination quiz (coming soon)'**
   String get fridayArenaSubtitle;
 
   /// No description provided for @topPlayers.
@@ -1337,7 +1361,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareRedeemCodeMessage.
   ///
   /// In en, this message translates to:
-  /// **'Use my Spekooh redeem code {code} — {subtitle}'**
+  /// **'Use my Spekooh redeem code {code}: {subtitle}'**
   String shareRedeemCodeMessage(String code, String subtitle);
 
   /// No description provided for @shareRedeemCodeSubject.
@@ -1361,7 +1385,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareReferralMessage.
   ///
   /// In en, this message translates to:
-  /// **'Join me on Spekooh — sign up with my referral code {code}.'**
+  /// **'Join me on Spekooh. Sign up with my referral code {code}.'**
   String shareReferralMessage(String code);
 
   /// No description provided for @shareReferralSubject.
@@ -1439,7 +1463,7 @@ abstract class AppLocalizations {
   /// No description provided for @adNotCompletedError.
   ///
   /// In en, this message translates to:
-  /// **'Ad not completed — no view granted.'**
+  /// **'Ad not completed. No view granted.'**
   String get adNotCompletedError;
 
   /// No description provided for @adLoadError.
@@ -1469,13 +1493,13 @@ abstract class AppLocalizations {
   /// No description provided for @viewOnlyNotice.
   ///
   /// In en, this message translates to:
-  /// **'View only — unlock to download a copy'**
+  /// **'View only. Unlock to download a copy'**
   String get viewOnlyNotice;
 
   /// No description provided for @reportThanksMessage.
   ///
   /// In en, this message translates to:
-  /// **'Thanks — the Review Team has been notified.'**
+  /// **'Thanks! The Review Team has been notified.'**
   String get reportThanksMessage;
 
   /// No description provided for @reportSendError.
@@ -1577,7 +1601,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportDownloadSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Viewing in the app is free — unlock once to save a copy for offline reading'**
+  /// **'Viewing in the app is free. Unlock once to save a copy for offline reading'**
   String get reportDownloadSubtitle;
 
   /// No description provided for @unlockedForAmount.
@@ -1589,7 +1613,7 @@ abstract class AppLocalizations {
   /// No description provided for @unlockButton.
   ///
   /// In en, this message translates to:
-  /// **'Unlock — 500 FCFA'**
+  /// **'Unlock: 500 FCFA'**
   String get unlockButton;
 
   /// No description provided for @alreadyUnlocked.
@@ -1613,7 +1637,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportLockedMessage.
   ///
   /// In en, this message translates to:
-  /// **'PhD and Master\'s theses require payment to view — unlock below to read it.'**
+  /// **'PhD and Master\'s theses require payment to view. Unlock below to read it.'**
   String get reportLockedMessage;
 
   /// No description provided for @unlockToDownloadHint.
@@ -1817,7 +1841,7 @@ abstract class AppLocalizations {
   /// No description provided for @escrowExplanation.
   ///
   /// In en, this message translates to:
-  /// **'Spekooh holds your payment in escrow. You\'ll get a one-time QR ticket to collect it at the bookshop — payment only releases to the partner once they scan it.'**
+  /// **'Spekooh holds your payment in escrow. You\'ll get a one-time QR ticket to collect it at the bookshop. Payment only releases to the partner once they scan it.'**
   String get escrowExplanation;
 
   /// No description provided for @pickupInStoreLabel.
@@ -1829,7 +1853,7 @@ abstract class AppLocalizations {
   /// No description provided for @payAndReserve.
   ///
   /// In en, this message translates to:
-  /// **'Pay & reserve — {amount} FCFA'**
+  /// **'Pay & reserve: {amount} FCFA'**
   String payAndReserve(String amount);
 
   /// No description provided for @processingLabel.
@@ -1853,7 +1877,7 @@ abstract class AppLocalizations {
   /// No description provided for @showQrAtPartner.
   ///
   /// In en, this message translates to:
-  /// **'Show this QR at {partner}. Single-use — expires in 30 days. Payment releases to the partner once they scan it.'**
+  /// **'Show this QR at {partner}. Single-use, expires in 30 days. Payment releases to the partner once they scan it.'**
   String showQrAtPartner(String partner);
 
   /// No description provided for @ticketRefLabel.

@@ -25,11 +25,11 @@ def _uploaded_file_link(uploaded_file):
     both local disk and remote (Supabase S3) storage, unlike .path() which
     only local disk supports (see PaperSubmission.save)."""
     if not uploaded_file:
-        return "—"
+        return "-"
     try:
         url = uploaded_file.url
     except ValueError:
-        return "—"
+        return "-"
     return format_html('<a href="{}" target="_blank" rel="noopener noreferrer">View / download</a>', url)
 
 STATUS_LABELS = {
@@ -79,7 +79,7 @@ class PaperSubmissionAdmin(ModelAdmin):
     def file_link(self, obj):
         return _uploaded_file_link(obj.uploaded_file)
 
-    @admin.action(description="Publish selected (exam papers: guide submitted/merged; reports: any reviewed status — awards contributor bonus)")
+    @admin.action(description="Publish selected (exam papers: guide submitted/merged; reports: any reviewed status; awards contributor bonus)")
     def publish_selected(self, request, queryset):
         # Reports have no marking-guide/instructor pipeline at all (see the
         # "no marking guide" copy on the Academic Reports category) — they
@@ -102,7 +102,7 @@ class PaperSubmissionAdmin(ModelAdmin):
             request,
             f"Published {eligible.count()} paper(s)."
             + (
-                f" Skipped {skipped} — exam papers need Guide submitted/Merged status; reports just can't already be Published."
+                f" Skipped {skipped}: exam papers need Guide submitted/Merged status; reports just can't already be Published."
                 if skipped
                 else ""
             ),
@@ -160,7 +160,7 @@ class PaperViewLogAdmin(ModelAdmin):
     def paper_label(self, obj):
         paper = obj.paper_submission
         if paper.category.key == "reports":
-            return f"{paper.exam_type} — {paper.institution or paper.discipline or 'report'} ({paper.year})"
+            return f"{paper.exam_type}, {paper.institution or paper.discipline or 'report'} ({paper.year})"
         return str(paper)
 
     @display(description="File")

@@ -1,6 +1,9 @@
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../../models/exam_taxonomy.dart';
 import '../../models/paper_entry.dart';
 import '../../models/subject.dart';
+import '../../widgets/icon_chip.dart';
 import '../mock/mock_taxonomy.dart';
 
 /// A file picked on-device, ready to upload — kept decoupled from any
@@ -21,6 +24,13 @@ abstract class PapersRepository {
   /// Thèse/etc.), not a separate concept.
   Future<List<ExamType>> getExamTypes(ExamCategoryKey category, ExamSystem? system);
   Future<List<Subject>> getSubjects(String examTypeName);
+
+  /// Lets a contributor add a subject the curated list is missing.
+  /// [examTypeName] (not a raw language code) so the EN/FR heuristic stays
+  /// centralized in one place, same as [getSubjects]. The backend
+  /// get-or-creates by a slugified key, so retyping an existing subject
+  /// (any casing) just returns that one instead of duplicating it.
+  Future<Subject> createSubject({required String title, required String examTypeName});
 
   /// Real submitted papers for a resolved subject — not the taxonomy, the
   /// actual [PaperEntry] rows. Empty means genuinely no papers yet.
@@ -128,6 +138,10 @@ class MockPapersRepository implements PapersRepository {
   @override
   Future<List<Subject>> getSubjects(String examTypeName) =>
       Future.value(MockTaxonomy.subjectsForExamType(examTypeName));
+
+  @override
+  Future<Subject> createSubject({required String title, required String examTypeName}) =>
+      Future.value(Subject(key: title.trim().toLowerCase(), title: title.trim(), tint: IconChipTint.blue, icon: LucideIcons.circle, code: ''));
 
   @override
   Future<List<PaperEntry>> getPapers({
