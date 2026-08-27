@@ -412,4 +412,59 @@ void main() {
     expect(AuthSession.instance.isLoggedIn, isTrue); // register() already granted tokens
     expect(poppedTrue, isTrue);
   });
+
+  testWidgets('a login blocked as unverified offers real recovery, not a dead end', (tester) async {
+    var loginAttempts = 0;
+    String? confirmedCode;
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/login/')) {
+        loginAttempts++;
+        if (loginAttempts == 1) {
+          return http.Response(jsonEncode({'code': ['email_not_verified']}), 400, headers: {'content-type': 'application/json'});
+        }
+        return http.Response(
+          jsonEncode({
+            'access': 'fake-access',
+            'refresh': 'fake-refresh',
+            'user': {'id': 'fake-id', 'email': 'blocked@example.com', 'email_verified': true},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.endsWith('/verify-email/request-by-email/')) {
+        return http.Response(jsonEncode({'detail': 'ok'}), 200, headers: {'content-type': 'application/json'});
+      }
+      if (request.url.path.endsWith('/verify-email/confirm-by-email/')) {
+        confirmedCode = (jsonDecode(request.body) as Map<String, dynamic>)['code'] as String;
+        return http.Response(jsonEncode({'detail': 'ok'}), 200, headers: {'content-type': 'application/json'});
+      }
+      return http.Response('not found', 404);
+    });
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient));
+
+    await tester.pumpWidget(l10nTestApp(const Scaffold(body: AuthSheet())));
+    await tester.enterText(find.byType(TextField).first, 'blocked@example.com');
+    await tester.enterText(find.byType(TextField).at(1), 'S0mePass!23');
+    await tester.tap(find.text('Log in'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Please verify your email before logging in.'), findsOneWidget);
+    // The recovery code field appeared automatically — no extra tap needed.
+    expect(find.text('A new code is on its way.'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).at(2), '111222');
+    await tester.tap(find.widgetWithText(SpekoohButton, 'Verify'));
+    await tester.pumpAndSettle();
+
+    expect(confirmedCode, '111222');
+    expect(find.text('Email verified — log in again to continue.'), findsOneWidget);
+
+    // The password field is still filled in from before — log in again for real.
+    await tester.tap(find.widgetWithText(SpekoohButton, 'Log in'));
+    await tester.pumpAndSettle();
+
+    expect(loginAttempts, 2);
+    expect(AuthSession.instance.isLoggedIn, isTrue);
+  });
 }

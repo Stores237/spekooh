@@ -19,6 +19,7 @@ const String _authBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue:
 /// English-only text.
 enum AuthErrorCode {
   loginFailed,
+  loginFailedEmailNotVerified,
   registerFailedReferral,
   registerFailedGeneric,
   registerFailedInvalidEmailDomain,
@@ -82,6 +83,20 @@ class AuthSession extends ChangeNotifier {
       body: jsonEncode({'email': email, 'password': password}),
     );
     if (response.statusCode != 200) {
+      // EmailTokenObtainPairSerializer reports the REQUIRE_EMAIL_VERIFICATION
+      // gate as {"code": ["email_not_verified"]} — a stable machine-readable
+      // signal, distinct from a plain wrong-password rejection, so the UI
+      // can offer a real recovery path instead of a dead-end generic error.
+      Map<String, dynamic>? body;
+      try {
+        body = jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        // Non-JSON error body — fall through to the generic message below.
+      }
+      final code = body?['code'];
+      if (code is List && code.contains('email_not_verified')) {
+        throw AuthException(AuthErrorCode.loginFailedEmailNotVerified, 'Please verify your email before logging in.');
+      }
       throw AuthException(AuthErrorCode.loginFailed, 'Login failed. Check your email and password.');
     }
     await _storeTokens(jsonDecode(response.body));
@@ -214,6 +229,38 @@ class AuthSession extends ChangeNotifier {
     );
     if (response.statusCode != 200) {
       throw AuthException(AuthErrorCode.emailVerificationResendFailed, 'Could not resend a verification code.');
+    }
+  }
+
+  /// Recovery path for a registered account stranded by
+  /// REQUIRE_EMAIL_VERIFICATION: no session to call [resendEmailVerification]
+  /// with (the original in-session code from signup is long gone), so this
+  /// requests a fresh one by email instead — same non-revealing shape as
+  /// [requestPasswordReset] (always succeeds from the caller's point of
+  /// view). Used from AuthSheet's login-failure recovery, not registration.
+  Future<void> requestEmailVerificationByEmail({required String email}) async {
+    final response = await _client.post(
+      Uri.parse('$_authBaseUrl/auth/verify-email/request-by-email/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+    if (response.statusCode != 200) {
+      throw AuthException(AuthErrorCode.emailVerificationResendFailed, 'Could not resend a verification code.');
+    }
+  }
+
+  /// Confirms the code from [requestEmailVerificationByEmail] — does NOT
+  /// log the caller in (unlike registration's flow, there's no session
+  /// here to grant tokens into). The caller logs in for real afterward
+  /// with their password.
+  Future<void> confirmEmailVerificationByEmail({required String email, required String code}) async {
+    final response = await _client.post(
+      Uri.parse('$_authBaseUrl/auth/verify-email/confirm-by-email/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'code': code}),
+    );
+    if (response.statusCode != 200) {
+      throw AuthException(AuthErrorCode.emailVerificationConfirmFailed, 'That code is invalid or has expired.');
     }
   }
 

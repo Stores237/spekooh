@@ -78,6 +78,42 @@ I can write unilaterally. Grouped by what each one unblocks.
   real local backend: registered, pulled the real code from the `EmailVerificationCode` row,
   confirmed a wrong code (rejected) then the real one (accepted, `email_verified` flips true),
   confirmed the console-logged email is real and well-formed, cleaned up the test user.
+- ~~**Gate account access behind email verification**~~ — done (2026-08-27), conditionally. Owner
+  ask: "only after the verification is done that the user can access the account." New
+  `REQUIRE_EMAIL_VERIFICATION` setting (env var, **default False**) — when flipped on,
+  `EmailTokenObtainPairSerializer` refuses login for a registered account with no
+  `email_verified_at` (`{"code": ["email_not_verified"]}`, a stable key the app matches on).
+  Deliberately never gates the *initial* tokens registration itself grants (needed so
+  `EmailVerificationSheet` can confirm in that same session) — only a *later* login. Default
+  stays False because there's still no real email provider wired up (see the two items above) —
+  flipping it on today would strand every real signup with no way to ever receive a code. Also
+  added the recovery path a hard gate needs to not be a dead end: a user who skipped verifying,
+  lost that session, and comes back to a blocked login has no authenticated session left to call
+  the resend endpoint with — `POST /api/auth/verify-email/request-by-email/` and
+  `.../confirm-by-email/` (both unauthenticated, both non-revealing about account state, same
+  posture as password reset) close that loop. The app's login form shows the specific
+  "verify your email" error and an inline code-entry recovery block automatically (no dead-end
+  generic error). Verified end-to-end against the real local backend with the flag flipped on:
+  registered, confirmed login is genuinely blocked, requested a fresh code by email, confirmed
+  it, confirmed login then succeeds — cleaned up the test user.
+- ~~**"Change password" reachable while logged in**~~ — done (2026-08-27). The only path to
+  `PasswordResetSheet` was `AuthSheet`'s "Forgot password?" link, which only shows while logged
+  *out* — a logged-in user had no way to change their password at all. Settings now has an
+  "Account" section with a "Change password" row (shown only when logged in) that opens the same
+  sheet — it re-verifies via an emailed code either way, so "forgot" and "want to change" are the
+  same flow.
+- ~~**Profile picture upload**~~ — done (2026-08-27). The avatar circle on Profile was a plain
+  initial-letter placeholder with no `onTap` at all. `User.avatar` (ImageField, same Supabase
+  Storage backend as paper scans) + `avatar_url` on `UserSerializer`; `PATCH /api/auth/me/` now
+  accepts multipart to set/replace it (`ApiClient.postMultipart` gained a `method` param so PATCH
+  multipart is possible, not just POST). Tapping the avatar offers "Take a photo"/"Choose from
+  gallery" (same `image_picker` already used in Submit), uploads, and swaps in the real photo
+  immediately. Verified end-to-end against the real local backend: registered, uploaded a real
+  PNG via multipart PATCH, got back a real signed Supabase Storage URL, fetched that URL directly
+  and confirmed it serves the actual image (`content-type: image/png`) — cleaned up the test user
+  and the orphaned test files the earlier pytest run had left in the real bucket (transaction
+  rollback undoes the DB row but not an S3 write — a pre-existing trait of this test suite's
+  file-upload tests generally, not something new here).
 
 ### Content only the owner can provide
 - **Real papers to seed the app**: the papers database is genuinely empty right now

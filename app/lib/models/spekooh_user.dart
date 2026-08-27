@@ -10,6 +10,7 @@ class SpekoohUser {
     this.trialDaysRemaining = 0,
     this.firstUnlockFreeEligible = false,
     this.referralCode = '',
+    this.avatarUrl,
   });
 
   final String name;
@@ -21,6 +22,10 @@ class SpekoohUser {
   final String redeemCodeSubtitle;
   final int trialDaysRemaining;
   final bool firstUnlockFreeEligible;
+
+  /// Null means genuinely no photo set — the profile screen falls back to
+  /// an initial-letter avatar, never a fabricated placeholder image.
+  final String? avatarUrl;
 
   /// Shareable code a new signup can enter at registration — the referrer
   /// earns a real credit bonus once the referred user completes their first

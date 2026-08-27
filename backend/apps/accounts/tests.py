@@ -179,6 +179,70 @@ def test_registered_user_requires_email_at_db_level():
         User.objects.create(account_type=AccountType.REGISTERED, email=None)
 
 
+def _tiny_png():
+    # A real, minimal (1x1 transparent pixel) PNG — not a fake/empty file,
+    # since ImageField validates actual image content, not just an extension.
+    import base64
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    png_bytes = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    )
+    return SimpleUploadedFile("avatar.png", png_bytes, content_type="image/png")
+
+
+@pytest.mark.django_db
+def test_me_patch_uploads_a_real_avatar(api_client):
+    user = UserFactory(email="avatarme@example.com", password="correcthorse123")
+    login = api_client.post(
+        "/api/auth/login/", {"email": "avatarme@example.com", "password": "correcthorse123"}, format="json"
+    )
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+    response = api_client.patch("/api/auth/me/", {"avatar": _tiny_png()}, format="multipart")
+
+    assert response.status_code == 200
+    assert response.data["avatar_url"] is not None
+    user.refresh_from_db()
+    assert user.avatar.name  # a real file was actually stored
+
+
+@pytest.mark.django_db
+def test_me_returns_null_avatar_url_when_none_set(api_client):
+    UserFactory(email="noavatar@example.com", password="correcthorse123")
+    login = api_client.post(
+        "/api/auth/login/", {"email": "noavatar@example.com", "password": "correcthorse123"}, format="json"
+    )
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+    response = api_client.get("/api/auth/me/")
+
+    assert response.status_code == 200
+    assert response.data["avatar_url"] is None
+
+
+@pytest.mark.django_db
+def test_me_patch_replaces_an_existing_avatar(api_client):
+    user = UserFactory(email="replaceavatar@example.com", password="correcthorse123")
+    login = api_client.post(
+        "/api/auth/login/", {"email": "replaceavatar@example.com", "password": "correcthorse123"}, format="json"
+    )
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+    first = api_client.patch("/api/auth/me/", {"avatar": _tiny_png()}, format="multipart")
+    assert first.status_code == 200
+    user.refresh_from_db()
+    assert user.avatar.name  # first upload actually landed
+
+    # A second real upload succeeds the same way — this isn't a one-shot
+    # "set once" field.
+    second = api_client.patch("/api/auth/me/", {"avatar": _tiny_png()}, format="multipart")
+
+    assert second.status_code == 200
+    user.refresh_from_db()
+    assert user.avatar.name
+
+
 @pytest.mark.django_db
 def test_register_returns_a_referral_code(api_client):
     response = api_client.post(
@@ -581,3 +645,135 @@ def test_email_verification_resend_is_rate_limited(api_client, monkeypatch):
     assert first.status_code == 200
     assert second.status_code == 200
     assert third.status_code == 429
+
+
+@pytest.mark.django_db
+def test_login_allows_unverified_account_when_flag_is_off(api_client, settings):
+    # Default posture — no real email provider is wired up yet, so this
+    # must stay off by default (see REQUIRE_EMAIL_VERIFICATION's docstring).
+    settings.REQUIRE_EMAIL_VERIFICATION = False
+    UserFactory(email="unverified-flagoff@example.com")
+
+    response = api_client.post(
+        "/api/auth/login/", {"email": "unverified-flagoff@example.com", "password": "testpass123"}, format="json"
+    )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_login_refuses_unverified_account_when_flag_is_on(api_client, settings):
+    settings.REQUIRE_EMAIL_VERIFICATION = True
+    UserFactory(email="unverified-flagon@example.com")
+
+    response = api_client.post(
+        "/api/auth/login/", {"email": "unverified-flagon@example.com", "password": "testpass123"}, format="json"
+    )
+
+    assert response.status_code == 400
+    assert "email_not_verified" in response.data.get("code", [])
+
+
+@pytest.mark.django_db
+def test_login_allows_verified_account_when_flag_is_on(api_client, settings):
+    settings.REQUIRE_EMAIL_VERIFICATION = True
+    user = UserFactory(email="verified-flagon@example.com")
+    user.email_verified_at = timezone.now()
+    user.save(update_fields=["email_verified_at"])
+
+    response = api_client.post(
+        "/api/auth/login/", {"email": "verified-flagon@example.com", "password": "testpass123"}, format="json"
+    )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_login_never_gates_guest_accounts(api_client, settings):
+    # Guests have no email at all — email_verified_at is always null for
+    # them, but they never log in via this endpoint (no password), so
+    # there's nothing to actually assert beyond "the flag only ever
+    # touches REGISTERED accounts" (see the serializer's account_type check).
+    settings.REQUIRE_EMAIL_VERIFICATION = True
+    guest = User.objects.create_guest(name="A Guest")
+    assert guest.email_verified_at is None
+    assert guest.account_type == AccountType.GUEST
+
+
+@pytest.mark.django_db
+def test_email_verification_request_by_email_issues_a_code_for_a_real_unverified_account(api_client, mailoutbox):
+    from .models import EmailVerificationCode
+
+    user = UserFactory(email="recoverme@example.com")
+
+    response = api_client.post("/api/auth/verify-email/request-by-email/", {"email": "recoverme@example.com"}, format="json")
+
+    assert response.status_code == 200
+    assert len(mailoutbox) == 1
+    assert EmailVerificationCode.objects.filter(user=user).exists()
+
+
+@pytest.mark.django_db
+def test_email_verification_request_by_email_does_not_reveal_account_state(api_client, mailoutbox):
+    # Neither a nonexistent email nor an already-verified one gets a code —
+    # but the caller sees the exact same response either way.
+    verified_user = UserFactory(email="alreadyverified@example.com")
+    verified_user.email_verified_at = timezone.now()
+    verified_user.save(update_fields=["email_verified_at"])
+
+    nonexistent_response = api_client.post(
+        "/api/auth/verify-email/request-by-email/", {"email": "nobody@example.com"}, format="json"
+    )
+    verified_response = api_client.post(
+        "/api/auth/verify-email/request-by-email/", {"email": "alreadyverified@example.com"}, format="json"
+    )
+
+    assert nonexistent_response.status_code == 200
+    assert verified_response.status_code == 200
+    assert nonexistent_response.data == verified_response.data
+    assert len(mailoutbox) == 0
+
+
+@pytest.mark.django_db
+def test_email_verification_confirm_by_email_unlocks_a_stranded_login(api_client, settings):
+    from .models import EmailVerificationCode
+
+    settings.REQUIRE_EMAIL_VERIFICATION = True
+    user = UserFactory(email="stranded@example.com")
+    # Simulate the original signup code having long expired.
+    verification = EmailVerificationCode.issue(user)
+
+    blocked = api_client.post(
+        "/api/auth/login/", {"email": "stranded@example.com", "password": "testpass123"}, format="json"
+    )
+    assert blocked.status_code == 400
+
+    confirm = api_client.post(
+        "/api/auth/verify-email/confirm-by-email/",
+        {"email": "stranded@example.com", "code": verification.code},
+        format="json",
+    )
+    assert confirm.status_code == 200
+
+    unblocked = api_client.post(
+        "/api/auth/login/", {"email": "stranded@example.com", "password": "testpass123"}, format="json"
+    )
+    assert unblocked.status_code == 200
+
+
+@pytest.mark.django_db
+def test_email_verification_confirm_by_email_rejects_wrong_code(api_client):
+    from .models import EmailVerificationCode
+
+    user = UserFactory(email="wrongcodebyemail@example.com")
+    EmailVerificationCode.issue(user)
+
+    response = api_client.post(
+        "/api/auth/verify-email/confirm-by-email/",
+        {"email": "wrongcodebyemail@example.com", "code": "000000"},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    user.refresh_from_db()
+    assert user.email_verified_at is None

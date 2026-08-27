@@ -33,6 +33,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get spekoohProSubtitle => 'Épreuves illimitées · sans publicité';
 
   @override
+  String get accountSection => 'Compte';
+
+  @override
+  String get changePasswordTitle => 'Changer le mot de passe';
+
+  @override
+  String get changePasswordSubtitle =>
+      'Nous vous enverrons un code par email pour confirmer que c\'est bien vous';
+
+  @override
   String get languageSection => 'Langue';
 
   @override
@@ -120,6 +130,14 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get authErrorLogin =>
       'Échec de la connexion. Vérifiez votre email et votre mot de passe.';
+
+  @override
+  String get authErrorLoginEmailNotVerified =>
+      'Veuillez vérifier votre email avant de vous connecter.';
+
+  @override
+  String get verifyEmailLoginRecoveryDoneMessage =>
+      'Email vérifié — connectez-vous à nouveau pour continuer.';
 
   @override
   String get authErrorRegisterReferral =>
@@ -606,6 +624,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get takePhoto => 'Prendre une photo';
+
+  @override
+  String get chooseFromGallery => 'Choisir dans la galerie';
+
+  @override
+  String get avatarUploadError =>
+      'Impossible de mettre à jour votre photo. Vérifiez votre connexion et réessayez.';
 
   @override
   String get filterAll => 'Toutes';

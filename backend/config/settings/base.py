@@ -193,6 +193,11 @@ REST_FRAMEWORK = {
         # fresh code a couple times while typing is normal; unlimited resends
         # would just be a way to spam their own inbox.
         "email_verification_resend": "5/hour",
+        # Per-IP, same reasoning as password_reset_request/confirm — the
+        # unauthenticated recovery path, so the same enumeration concern
+        # applies here that doesn't apply to the authenticated pair above.
+        "email_verification_request_by_email": "5/hour",
+        "email_verification_confirm_by_email": "20/hour",
     },
 }
 
@@ -221,6 +226,16 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@spekooh.app")
 # failing to start or blocking every registration.
 SUPABASE_EDGE_FUNCTION_BASE_URL = env("SUPABASE_EDGE_FUNCTION_BASE_URL", default=None)
 EMAIL_VERIFY_SHARED_SECRET = env("EMAIL_VERIFY_SHARED_SECRET", default=None)
+
+# Owner switch: once flipped True, a registered (non-guest) account with an
+# unconfirmed email is refused at login (EmailTokenObtainPairSerializer).
+# Defaults False — WITH NO REAL EMAIL PROVIDER WIRED UP YET (see
+# DEFAULT_FROM_EMAIL's comment above), flipping this on would strand every
+# real signup with no way to ever receive their code. Flip it once that's
+# actually fixed. Registration itself is never gated by this — a brand
+# new account still gets tokens immediately so EmailVerificationSheet can
+# confirm it in the same session; this only affects *later* logins.
+REQUIRE_EMAIL_VERIFICATION = env.bool("REQUIRE_EMAIL_VERIFICATION", default=False)
 
 # Instructor webhook HMAC replay-protection window.
 INSTRUCTOR_WEBHOOK_MAX_SKEW_SECONDS = env.int("INSTRUCTOR_WEBHOOK_MAX_SKEW_SECONDS", default=300)

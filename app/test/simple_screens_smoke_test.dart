@@ -129,6 +129,19 @@ void main() {
     expect(loggedOut, isTrue);
   });
 
+  testWidgets('SettingsScreen "Change password" only shows when logged in, and opens the real reset sheet', (tester) async {
+    await _pumpAndCheck(tester, SettingsScreen(profileRepository: MockProfileRepository()));
+    expect(find.text('Change password'), findsNothing); // guest — nothing to change
+
+    _fakeLoggedIn();
+    await _pumpAndCheck(tester, SettingsScreen(profileRepository: MockProfileRepository()));
+    expect(find.text('Change password'), findsOneWidget);
+
+    await tester.tap(find.text('Change password'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reset password'), findsWidgets); // PasswordResetSheet's own title
+  });
+
   testWidgets('SettingsScreen Log in button calls onLogin', (tester) async {
     var called = false;
     await _pumpAndCheck(tester, SettingsScreen(onLogin: () => called = true));
@@ -153,6 +166,17 @@ void main() {
     expect(find.text('Invite a friend'), findsOneWidget);
     // Two real, independently-tappable share actions (redeem code + referral code), not dead text.
     expect(find.text('Share'), findsNWidgets(2));
+  });
+
+  testWidgets('ProfileScreen avatar is tappable and offers real photo options, not decorative', (tester) async {
+    _fakeLoggedIn();
+    await _pumpAndCheck(tester, ProfileScreen(repository: MockProfileRepository()));
+
+    await tester.tap(find.text('G')); // the initial-letter placeholder itself ("Guest")
+    await tester.pumpAndSettle();
+
+    expect(find.text('Take a photo'), findsOneWidget);
+    expect(find.text('Choose from gallery'), findsOneWidget);
   });
 
   testWidgets('ProfileScreen shows an honest state when there is no active redeem code', (tester) async {

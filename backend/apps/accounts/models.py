@@ -86,6 +86,13 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     email = models.EmailField(unique=True, null=True, blank=True)
     phone_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
     name = models.CharField(max_length=150, blank=True)
+    # Same storage backend as paper scans (django-storages -> real Supabase
+    # Storage when AWS_* env vars are set, local disk otherwise — see
+    # STORAGES in config/settings/base.py). Unlike paper files this isn't
+    # access-gated: any authenticated caller who can see this profile at
+    # all can see its avatar, so UserSerializer.get_avatar_url just returns
+    # the URL directly, no user_can_view_file-style check needed.
+    avatar = models.ImageField(upload_to="avatars/%Y/%m/", null=True, blank=True)
 
     account_type = models.CharField(max_length=12, choices=AccountType.choices, default=AccountType.REGISTERED)
     # Opaque local identifier for guest accounts, stable across the guest's session lifetime.

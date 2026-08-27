@@ -17,6 +17,12 @@ class UserSerializer(serializers.ModelSerializer):
     trial_days_remaining = serializers.SerializerMethodField()
     first_unlock_free_eligible = serializers.SerializerMethodField()
     email_verified = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
+    # Write-only upload target — PATCH /me/ with multipart form data,
+    # field name "avatar", to set/replace it. Not access-gated like paper
+    # files (see the model field's own comment): avatar_url just returns
+    # the URL directly.
+    avatar = serializers.ImageField(write_only=True, required=False)
 
     class Meta:
         model = User
@@ -34,6 +40,8 @@ class UserSerializer(serializers.ModelSerializer):
             "first_unlock_free_eligible",
             "referral_code",
             "email_verified",
+            "avatar",
+            "avatar_url",
         ]
         read_only_fields = [
             "id",
@@ -43,6 +51,7 @@ class UserSerializer(serializers.ModelSerializer):
             "first_unlock_free_eligible",
             "referral_code",
             "email_verified",
+            "avatar_url",
         ]
 
     def get_trial_days_remaining(self, obj) -> int:
@@ -53,6 +62,13 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_email_verified(self, obj) -> bool:
         return obj.email_verified_at is not None
+
+    def get_avatar_url(self, obj) -> str | None:
+        if not obj.avatar:
+            return None
+        request = self.context.get("request")
+        url = obj.avatar.url
+        return request.build_absolute_uri(url) if request else url
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -117,6 +133,21 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
+        # settings.REQUIRE_EMAIL_VERIFICATION's own docstring covers why
+        # this is a login-time gate, not a registration-time one: a brand
+        # new account already got tokens at signup (so it can confirm in
+        # that same session) — this only blocks a *later* login once that
+        # session is gone and the code has expired.
+        if (
+            settings.REQUIRE_EMAIL_VERIFICATION
+            and self.user.account_type == AccountType.REGISTERED
+            and self.user.email_verified_at is None
+        ):
+            # A stable machine-readable key (not just a human sentence) so
+            # the app can distinguish this from a plain wrong-password
+            # rejection and offer a real "resend code" recovery instead of
+            # a dead-end generic error.
+            raise serializers.ValidationError({"code": ["email_not_verified"]})
         data["user"] = UserSerializer(self.user).data
         return data
 
@@ -199,6 +230,65 @@ class EmailVerificationConfirmSerializer(serializers.Serializer):
     def validate(self, attrs):
         user = self.context["request"].user
         generic_error = "That code is invalid or has expired."
+        verification = (
+            EmailVerificationCode.objects.filter(user=user, used_at__isnull=True).order_by("-created_at").first()
+        )
+        if verification is None or not verification.is_usable:
+            raise serializers.ValidationError(generic_error)
+        if verification.code != attrs["code"]:
+            EmailVerificationCode.objects.filter(pk=verification.pk).update(attempts=F("attempts") + 1)
+            raise serializers.ValidationError(generic_error)
+        attrs["_user"] = user
+        attrs["_verification"] = verification
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.validated_data["_user"]
+        verification = self.validated_data["_verification"]
+        user.email_verified_at = timezone.now()
+        user.save(update_fields=["email_verified_at"])
+        verification.used_at = timezone.now()
+        verification.save(update_fields=["used_at"])
+        return user
+
+
+class EmailVerificationRequestByEmailSerializer(serializers.Serializer):
+    """The recovery path for REQUIRE_EMAIL_VERIFICATION: a registered user
+    who never verified, then lost the session that let them use the
+    authenticated confirm/resend above (closed the app, came back a day
+    later, code long expired) is now refused at login with nothing else to
+    do — this is how they get a fresh code without being logged in.
+    Same non-revealing shape as PasswordResetRequestSerializer, and for the
+    same reason: a script probing emails shouldn't learn which are real."""
+
+    email = serializers.EmailField()
+
+    def issue_code_if_unverified_real_account(self):
+        email = self.validated_data["email"].strip().lower()
+        user = User.objects.filter(
+            email__iexact=email, account_type=AccountType.REGISTERED, email_verified_at__isnull=True
+        ).first()
+        if user is None:
+            return
+        services.send_verification_email(user)
+
+
+class EmailVerificationConfirmByEmailSerializer(serializers.Serializer):
+    """Same idea as EmailVerificationConfirmSerializer but keyed by email
+    instead of request.user, for the same not-logged-in recovery case as
+    EmailVerificationRequestByEmailSerializer above. Confirming here does
+    NOT log the caller in — it only flips email_verified_at so their next
+    real login (with their password) succeeds."""
+
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6, min_length=6)
+
+    def validate(self, attrs):
+        email = attrs["email"].strip().lower()
+        generic_error = "That code is invalid or has expired."
+        user = User.objects.filter(email__iexact=email, account_type=AccountType.REGISTERED).first()
+        if user is None:
+            raise serializers.ValidationError(generic_error)
         verification = (
             EmailVerificationCode.objects.filter(user=user, used_at__isnull=True).order_by("-created_at").first()
         )

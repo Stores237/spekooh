@@ -12,7 +12,9 @@ from . import services
 from .models import User
 from .serializers import (
     EmailTokenObtainPairSerializer,
+    EmailVerificationConfirmByEmailSerializer,
     EmailVerificationConfirmSerializer,
+    EmailVerificationRequestByEmailSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     RegisterSerializer,
@@ -133,6 +135,37 @@ class EmailVerificationResendView(APIView):
         if request.user.email:
             services.send_verification_email(request.user)
         return Response({"detail": "A new code has been sent."})
+
+
+class EmailVerificationRequestByEmailView(APIView):
+    """Unauthenticated recovery path — see
+    EmailVerificationRequestByEmailSerializer's docstring for why this
+    exists alongside the authenticated resend above. Always 200 with the
+    same generic body, real/unverified account or not."""
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "email_verification_request_by_email"
+
+    @extend_schema(request=EmailVerificationRequestByEmailSerializer, responses=None)
+    def post(self, request):
+        serializer = EmailVerificationRequestByEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.issue_code_if_unverified_real_account()
+        return Response({"detail": "If that email needs verifying, a code has been sent."})
+
+
+class EmailVerificationConfirmByEmailView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "email_verification_confirm_by_email"
+
+    @extend_schema(request=EmailVerificationConfirmByEmailSerializer, responses=None)
+    def post(self, request):
+        serializer = EmailVerificationConfirmByEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Email verified. Log in with your password."})
 
 
 class MeView(generics.RetrieveUpdateAPIView):

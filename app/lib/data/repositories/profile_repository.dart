@@ -4,6 +4,7 @@ import '../../models/submission.dart';
 import '../mock/mock_achievements.dart';
 import '../mock/mock_submissions.dart';
 import '../mock/mock_user.dart';
+import 'papers_repository.dart' show SubmissionFile;
 
 abstract class ProfileRepository {
   Future<SpekoohUser> getUser();
@@ -13,6 +14,11 @@ abstract class ProfileRepository {
   /// Persists the user's language choice on their account (User.language_pref)
   /// so it follows them to other devices — see LocaleController.syncFromAccount.
   Future<void> setLanguagePreference(String code);
+
+  /// Uploads a real photo as the account's avatar, replacing any existing
+  /// one. Returns the new avatar_url so the caller can update its display
+  /// immediately without a second round trip.
+  Future<String?> updateAvatar(SubmissionFile file);
 }
 
 class MockProfileRepository implements ProfileRepository {
@@ -31,4 +37,7 @@ class MockProfileRepository implements ProfileRepository {
 
   @override
   Future<void> setLanguagePreference(String code) async {}
+
+  @override
+  Future<String?> updateAvatar(SubmissionFile file) => Future.value(null);
 }

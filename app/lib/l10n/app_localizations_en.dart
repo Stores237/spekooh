@@ -33,6 +33,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get spekoohProSubtitle => 'Unlimited paper views · no ads';
 
   @override
+  String get accountSection => 'Account';
+
+  @override
+  String get changePasswordTitle => 'Change password';
+
+  @override
+  String get changePasswordSubtitle =>
+      'We\'ll email you a code to confirm it\'s you';
+
+  @override
   String get languageSection => 'Language';
 
   @override
@@ -119,6 +129,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authErrorLogin => 'Login failed. Check your email and password.';
+
+  @override
+  String get authErrorLoginEmailNotVerified =>
+      'Please verify your email before logging in.';
+
+  @override
+  String get verifyEmailLoginRecoveryDoneMessage =>
+      'Email verified — log in again to continue.';
 
   @override
   String get authErrorRegisterReferral =>
@@ -598,6 +616,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get takePhoto => 'Take a photo';
+
+  @override
+  String get chooseFromGallery => 'Choose from gallery';
+
+  @override
+  String get avatarUploadError =>
+      'Could not update your photo. Check your connection and try again.';
 
   @override
   String get filterAll => 'All';

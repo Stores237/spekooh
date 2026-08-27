@@ -146,6 +146,24 @@ abstract class AppLocalizations {
   /// **'Unlimited paper views · no ads'**
   String get spekoohProSubtitle;
 
+  /// No description provided for @accountSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get accountSection;
+
+  /// No description provided for @changePasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get changePasswordTitle;
+
+  /// No description provided for @changePasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll email you a code to confirm it\'s you'**
+  String get changePasswordSubtitle;
+
   /// No description provided for @languageSection.
   ///
   /// In en, this message translates to:
@@ -319,6 +337,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Login failed. Check your email and password.'**
   String get authErrorLogin;
+
+  /// No description provided for @authErrorLoginEmailNotVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Please verify your email before logging in.'**
+  String get authErrorLoginEmailNotVerified;
+
+  /// No description provided for @verifyEmailLoginRecoveryDoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verified — log in again to continue.'**
+  String get verifyEmailLoginRecoveryDoneMessage;
 
   /// No description provided for @authErrorRegisterReferral.
   ///
@@ -1165,6 +1195,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Take a photo'**
   String get takePhoto;
+
+  /// No description provided for @chooseFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get chooseFromGallery;
+
+  /// No description provided for @avatarUploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update your photo. Check your connection and try again.'**
+  String get avatarUploadError;
 
   /// No description provided for @filterAll.
   ///

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../data/auth_session.dart';
 import '../l10n/app_localizations.dart';
@@ -26,6 +28,17 @@ class _AuthSheetState extends State<AuthSheet> {
   bool _termsAccepted = false;
   String? _error;
 
+  // Login-time recovery for REQUIRE_EMAIL_VERIFICATION-blocked accounts —
+  // see AuthSession.requestEmailVerificationByEmail's docstring for why
+  // this needs its own by-email flow instead of reusing EmailVerificationSheet
+  // (that one only works from an authenticated session; this one doesn't
+  // have one, by definition, since login is exactly what just got refused).
+  bool _showLoginRecovery = false;
+  bool _isRecoverySubmitting = false;
+  String? _recoveryInfo;
+  String? _recoveryError;
+  final _recoveryCodeController = TextEditingController();
+
   final _emailController = TextEditingController();
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -37,6 +50,7 @@ class _AuthSheetState extends State<AuthSheet> {
     _nameController.dispose();
     _passwordController.dispose();
     _referralCodeController.dispose();
+    _recoveryCodeController.dispose();
     super.dispose();
   }
 
@@ -44,6 +58,9 @@ class _AuthSheetState extends State<AuthSheet> {
     setState(() {
       _isSubmitting = true;
       _error = null;
+      _showLoginRecovery = false;
+      _recoveryInfo = null;
+      _recoveryError = null;
     });
     try {
       if (_isRegisterMode) {
@@ -74,10 +91,55 @@ class _AuthSheetState extends State<AuthSheet> {
       if (mounted) Navigator.of(context).pop(true);
     } on AuthException catch (e) {
       if (mounted) setState(() => _error = _localizedAuthError(context, e.code));
+      if (e.code == AuthErrorCode.loginFailedEmailNotVerified) {
+        // Fire the recovery code immediately — we already know this exact
+        // email needs one, no reason to make the user ask for it first.
+        unawaited(_startLoginRecovery());
+      }
     } catch (_) {
       if (mounted) setState(() => _error = AppLocalizations.of(context)!.authErrorUnknown);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _startLoginRecovery() async {
+    if (mounted) setState(() => _showLoginRecovery = true);
+    try {
+      await AuthSession.instance.requestEmailVerificationByEmail(email: _emailController.text.trim());
+      if (mounted) setState(() => _recoveryInfo = AppLocalizations.of(context)!.verifyEmailResendSentMessage);
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _recoveryError = _localizedAuthError(context, e.code));
+    } catch (_) {
+      if (mounted) setState(() => _recoveryError = AppLocalizations.of(context)!.authErrorUnknown);
+    }
+  }
+
+  Future<void> _confirmLoginRecovery() async {
+    setState(() {
+      _isRecoverySubmitting = true;
+      _recoveryError = null;
+    });
+    try {
+      await AuthSession.instance.confirmEmailVerificationByEmail(
+        email: _emailController.text.trim(),
+        code: _recoveryCodeController.text.trim(),
+      );
+      if (mounted) {
+        setState(() {
+          _showLoginRecovery = false;
+          _recoveryInfo = null;
+          // The password field is already filled in — tapping "Log in"
+          // again now succeeds, since email_verified_at just flipped.
+          _error = AppLocalizations.of(context)!.verifyEmailLoginRecoveryDoneMessage;
+        });
+      }
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _recoveryError = _localizedAuthError(context, e.code));
+    } catch (_) {
+      if (mounted) setState(() => _recoveryError = AppLocalizations.of(context)!.authErrorUnknown);
+    } finally {
+      if (mounted) setState(() => _isRecoverySubmitting = false);
     }
   }
 
@@ -86,6 +148,8 @@ class _AuthSheetState extends State<AuthSheet> {
     switch (code) {
       case AuthErrorCode.loginFailed:
         return l10n.authErrorLogin;
+      case AuthErrorCode.loginFailedEmailNotVerified:
+        return l10n.authErrorLoginEmailNotVerified;
       case AuthErrorCode.registerFailedReferral:
         return l10n.authErrorRegisterReferral;
       case AuthErrorCode.registerFailedGeneric:
@@ -94,11 +158,15 @@ class _AuthSheetState extends State<AuthSheet> {
         return l10n.authErrorRegisterInvalidEmailDomain;
       case AuthErrorCode.guestFailed:
         return l10n.authErrorGuest;
+      // Reachable here too: _startLoginRecovery/_confirmLoginRecovery call
+      // the by-email verification methods when login is blocked.
+      case AuthErrorCode.emailVerificationConfirmFailed:
+        return l10n.authErrorEmailVerificationConfirm;
+      case AuthErrorCode.emailVerificationResendFailed:
+        return l10n.authErrorEmailVerificationResend;
       case AuthErrorCode.passwordResetRequestFailed:
       case AuthErrorCode.passwordResetConfirmFailed:
-      case AuthErrorCode.emailVerificationConfirmFailed:
-      case AuthErrorCode.emailVerificationResendFailed:
-        return l10n.authErrorUnknown; // not reachable from this sheet — see PasswordResetSheet/EmailVerificationSheet
+        return l10n.authErrorUnknown; // not reachable from this sheet — see PasswordResetSheet
     }
   }
 
@@ -204,6 +272,36 @@ class _AuthSheetState extends State<AuthSheet> {
             if (_error != null) ...[
               const SizedBox(height: AppSpacing.space3),
               Text(_error!, style: const TextStyle(color: AppColors.red500, fontSize: 12)),
+            ],
+            if (_showLoginRecovery) ...[
+              const SizedBox(height: AppSpacing.space3),
+              AuthFieldLabel(l10n.verifyEmailCodeLabel),
+              const SizedBox(height: 6),
+              AuthTextField(controller: _recoveryCodeController, hint: l10n.verifyEmailCodeHint, keyboardType: TextInputType.number),
+              if (_recoveryInfo != null) ...[
+                const SizedBox(height: AppSpacing.space2),
+                Text(_recoveryInfo!, style: const TextStyle(color: AppColors.green600, fontSize: 12)),
+              ],
+              if (_recoveryError != null) ...[
+                const SizedBox(height: AppSpacing.space2),
+                Text(_recoveryError!, style: const TextStyle(color: AppColors.red500, fontSize: 12)),
+              ],
+              const SizedBox(height: AppSpacing.space2),
+              SpekoohButton(
+                size: SpekoohButtonSize.sm,
+                onPressed: _isRecoverySubmitting ? null : _confirmLoginRecovery,
+                child: Text(_isRecoverySubmitting ? l10n.authPleaseWait : l10n.verifyEmailConfirmButton),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: GestureDetector(
+                  onTap: _isRecoverySubmitting ? null : _startLoginRecovery,
+                  child: Text(
+                    l10n.verifyEmailResendLink,
+                    style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.link),
+                  ),
+                ),
+              ),
             ],
             const SizedBox(height: AppSpacing.space4),
             SpekoohButton(

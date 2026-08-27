@@ -15,6 +15,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/list_item_row.dart';
+import '../../sheets/password_reset_sheet.dart';
 import '../common/circular_back_button.dart';
 
 /// Ported from ui_kits/spekooh-app/SettingsScreen.jsx. `onLogin` is called
@@ -113,6 +114,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+              // Previously the only way to reach PasswordResetSheet at all
+              // was AuthSheet's "Forgot password?" link — which only shows
+              // while logged OUT. A logged-in user had no way to change
+              // their password. Reuses the same OTP sheet: it re-verifies
+              // via an emailed code, not the current password, so it works
+              // identically whether "forgotten" or just "want to change it".
+              if (AuthSession.instance.isLoggedIn) ...[
+                _sectionLabel(l10n.accountSection),
+                _card([
+                  ListItemRow(
+                    icon: const IconChip(icon: LucideIcons.lock, tint: IconChipTint.blue, size: 38),
+                    title: l10n.changePasswordTitle,
+                    subtitle: l10n.changePasswordSubtitle,
+                    onTap: () => showModalBottomSheet<bool>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const PasswordResetSheet(),
+                    ),
+                  ),
+                ]),
+              ],
               _sectionLabel(l10n.languageSection),
               _card([
                 _langRow('English', 'en'),

@@ -81,6 +81,7 @@ class _EmailVerificationSheetState extends State<EmailVerificationSheet> {
       case AuthErrorCode.emailVerificationResendFailed:
         return l10n.authErrorEmailVerificationResend;
       case AuthErrorCode.loginFailed:
+      case AuthErrorCode.loginFailedEmailNotVerified:
       case AuthErrorCode.registerFailedReferral:
       case AuthErrorCode.registerFailedGeneric:
       case AuthErrorCode.registerFailedInvalidEmailDomain:
