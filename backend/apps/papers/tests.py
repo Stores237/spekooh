@@ -96,6 +96,35 @@ def test_exam_types_endpoint_filters_by_category_and_system(api_client):
 
 
 @pytest.mark.django_db
+def test_create_subject_requires_authentication(api_client):
+    response = api_client.post("/api/papers/subjects/", {"title": "Geology"}, format="json")
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_create_subject_lets_a_contributor_add_one_missing_from_the_list(authed_client):
+    client, _ = authed_client
+    response = client.post("/api/papers/subjects/", {"title": "Geology", "language": "en"}, format="json")
+    assert response.status_code == 201
+    assert response.data["title"] == "Geology"
+    assert response.data["key"] == "geology"
+    assert Subject.objects.filter(key="geology", title="Geology").count() == 1
+
+
+@pytest.mark.django_db
+def test_create_subject_is_idempotent_by_key_not_title_casing(authed_client):
+    client, _ = authed_client
+    existing = SubjectFactory(key="geology", title="Geology")
+    response = client.post("/api/papers/subjects/", {"title": "geology"}, format="json")
+    assert response.status_code == 201
+    # Same underlying row reused (matched by slugified key), not a duplicate
+    # — and the already-curated title/casing isn't silently overwritten.
+    assert response.data["id"] == existing.id
+    assert response.data["title"] == "Geology"
+    assert Subject.objects.filter(key="geology").count() == 1
+
+
+@pytest.mark.django_db
 def test_submit_requires_authentication(api_client):
     response = api_client.post("/api/papers/submissions/", {}, format="json")
     assert response.status_code == 401
@@ -933,7 +962,7 @@ def test_admin_file_link_renders_a_real_download_link_when_a_file_exists():
 def test_admin_file_link_shows_a_placeholder_when_there_is_no_file():
     paper = PaperSubmissionFactory(uploaded_file=None)
     admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
-    assert admin_instance.file_link(paper) == "—"
+    assert admin_instance.file_link(paper) == "-"
 
 
 @pytest.mark.django_db

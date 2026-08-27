@@ -12,7 +12,7 @@ class FlagCategory(models.TextChoices):
     PAPER_VERIFICATION = "PAPER_VERIFICATION", "New submission needs verification"
     PAPER_REPORTED = "PAPER_REPORTED", "Paper reported by a user"
     UNASSIGNED_PAPER = "UNASSIGNED_PAPER", "No instructor accepted"
-    GUIDE_REVIEW = "GUIDE_REVIEW", "Marking guide returned — needs review/merge"
+    GUIDE_REVIEW = "GUIDE_REVIEW", "Marking guide returned, needs review/merge"
     PAMPHLET_DISPUTE = "PAMPHLET_DISPUTE", "Pamphlet handover dispute"
     PAMPHLET_EXPIRED = "PAMPHLET_EXPIRED", "Pamphlet ticket expired unredeemed"
     WITHDRAWAL_APPROVAL = "WITHDRAWAL_APPROVAL", "Instructor withdrawal needs KYC/payout approval"
@@ -60,7 +60,7 @@ class AdminFlagQueue(TimeStampedModel):
         indexes = [models.Index(fields=["content_type", "object_id"])]
 
     def __str__(self):
-        return f"[{self.category}] {self.subject!r} — {self.status}"
+        return f"[{self.category}] {self.subject!r}, {self.status}"
 
     @property
     def age_days(self) -> int:

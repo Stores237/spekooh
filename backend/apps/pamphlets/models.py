@@ -44,10 +44,10 @@ class Pamphlet(TimeStampedModel):
 
 
 class PamphletOrderStatus(models.TextChoices):
-    PAID_HELD = "PAID_HELD", "Paid — held in escrow"
+    PAID_HELD = "PAID_HELD", "Paid, held in escrow"
     QR_ISSUED = "QR_ISSUED", "QR issued"
     RELEASED = "RELEASED", "Released to partner"
-    EXPIRED = "EXPIRED", "Expired — flagged for admin review"
+    EXPIRED = "EXPIRED", "Expired, flagged for admin review"
     DISPUTED = "DISPUTED", "Disputed"
 
 
@@ -76,4 +76,4 @@ class PamphletOrder(TimeStampedModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.pamphlet} — {self.user} ({self.status})"
+        return f"{self.pamphlet}, {self.user} ({self.status})"

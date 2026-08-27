@@ -52,22 +52,22 @@
   "homeWelcomeGreeting": "Welcome",
   "guestLabel": "Guest",
   "joinFree": "Join free",
-  "homeExploringBadge": "Exploring — no account",
+  "homeExploringBadge": "Exploring: no account",
   "homeFreeViewsLabel": "FREE PAPER VIEWS",
   "homeFreeViewsCount": "3 a day",
   "homeFreeViewsHint": "No account needed. Sign up to track usage and unlock more.",
   "goPro": "Go Pro",
-  "homeNoPapersYet": "No papers published yet — check back soon.",
+  "homeNoPapersYet": "No papers published yet. Check back soon.",
   "homePaperLabelWithYear": "{label} {year}",
   "@homePaperLabelWithYear": {
     "placeholders": {"label": {"type": "String"}, "year": {"type": "int"}}
   },
-  "homeFreeToView": "Free to view — marking guide sold separately",
+  "homeFreeToView": "Free to view (marking guide sold separately)",
   "homeFreeToViewReport": "Free to view and download",
   "homeReportPaymentRequired": "Payment required to view",
-  "homeContributionTitle": "Contribution — earn credit",
+  "homeContributionTitle": "Contribution: earn credit",
   "homeContributionPrompt": "Got a past paper or report we don't have?",
-  "homeContributionSubtitle": "Snap a photo, tag it, earn bonus credit once it's verified — first contribution counts.",
+  "homeContributionSubtitle": "Snap a photo, tag it, and earn bonus credit once it's verified. First contribution counts.",
   "notesTitle": "Notes",
   "notesSubtitle": "Topic study notes by subject",
   "shopTitle": "Shop",
@@ -83,7 +83,7 @@
   "homeLockedCredits": "Earn & redeem contributor credits",
   "homeLockedTrackContributions": "Track your contributions",
   "homeLockedInstructorAlerts": "Get instructor status alerts",
-  "homeReadingOpenNote": "Reading papers stays open to everyone — 3 free views a day, no account needed.",
+  "homeReadingOpenNote": "Reading papers stays open to everyone: 3 free views a day, no account needed.",
 
   "greetingMorning": "Good morning",
   "greetingAfternoon": "Good afternoon",
@@ -128,10 +128,10 @@
   "streakPlayToBegin": "Play a quiz to begin",
 
   "papersTitle": "Past papers",
-  "papersSubtitle": "Every level, every system — Primary to Concours des Grandes Écoles.",
+  "papersSubtitle": "Every level, every system, from Primary to Concours des Grandes Écoles.",
   "searchExamOrSubject": "Search exam type or subject...",
   "categoryLabel": "CATEGORY",
-  "chooseSystemHeader": "{category} — choose system",
+  "chooseSystemHeader": "{category}: choose system",
   "@chooseSystemHeader": {
     "placeholders": {"category": {"type": "String"}}
   },
@@ -145,7 +145,7 @@
     "placeholders": {"variant": {"type": "String"}}
   },
   "examTypeOfficialOnly": "Official only",
-  "chooseTrackHeader": "{examType} — choose track",
+  "chooseTrackHeader": "{examType}: choose track",
   "@chooseTrackHeader": {
     "placeholders": {"examType": {"type": "String"}}
   },
@@ -154,24 +154,24 @@
   "paperMarkingGuideAvailable": "Marking guide available",
   "paperUnderReview": "Under review",
   "noPapersYetTitle": "No papers yet",
-  "noPapersYetBody": "Nobody has submitted a {subject} paper for this exam type yet. Be the first — submit one from the Submit tab.",
+  "noPapersYetBody": "Nobody has submitted a {subject} paper for this exam type yet. Be the first to submit one from the Submit tab.",
   "@noPapersYetBody": {
     "placeholders": {"subject": {"type": "String"}}
   },
-  "noReportsYetBody": "Nobody has submitted a {examType} yet. Be the first — submit one from the Submit tab.",
+  "noReportsYetBody": "Nobody has submitted a {examType} yet. Be the first to submit one from the Submit tab.",
   "@noReportsYetBody": {
     "placeholders": {"examType": {"type": "String"}}
   },
 
   "contributionTitle": "Contribution",
-  "contributionSubtitle": "Share a past paper or an academic report — every contribution helps another student.",
+  "contributionSubtitle": "Share a past paper or an academic report. Every contribution helps another student.",
   "contributorNameTitle": "Contributor name",
-  "contributorNameSubtitle": "No account needed to contribute — we'll credit this to the name you give us.",
+  "contributorNameSubtitle": "No account needed to contribute. We'll credit this to the name you give us.",
   "contributorNameLabel": "Your name",
   "examPaperTab": "Exam paper",
   "academicReportTab": "Academic report",
   "notAvailableYet": "Not available yet",
-  "academicReportComingSoon": "Academic report submissions aren't wired to the backend yet — only exam papers can be submitted right now. Check back soon.",
+  "academicReportComingSoon": "Academic report submissions aren't wired to the backend yet. Only exam papers can be submitted right now. Check back soon.",
   "takePhotoOrUploadPdf": "Take a photo or upload a PDF",
   "fileFormatsHint": "JPG, PNG or PDF · up to 20MB",
   "fileFormatsHintWithSize": "JPG, PNG or PDF · up to {maxMb}MB",
@@ -184,9 +184,13 @@
   "examTypeLabel": "Exam type",
   "trackLabel": "Track",
   "subjectLabel": "Subject",
+  "addCustomSubject": "Add a subject",
+  "customSubjectHint": "e.g. Geology",
+  "addCustomSubjectCta": "Add",
+  "addCustomSubjectError": "Could not add that subject. Try again.",
   "yearLabel": "Year",
   "examBoardHint": "Exam board / school (optional)",
-  "contributionBonusBanner": "New, verified submissions earn bonus credit — redeemable toward marking-guide unlocks.",
+  "contributionBonusBanner": "New, verified submissions earn bonus credit, redeemable toward marking-guide unlocks.",
   "submitPaperButton": "Submit paper",
   "reportTypeLabel": "Report type",
   "institutionLabel": "Institution / University",
@@ -197,12 +201,12 @@
   "nothingAvailable": "Nothing available.",
   "submitAnother": "Submit another",
   "contributionReceivedTitle": "Contribution received",
-  "contributionReceivedBody": "We'll check it against existing papers first — if it's new, it moves to instructor review. Track it under Profile.",
+  "contributionReceivedBody": "We'll check it against existing papers first. If it's new, it moves to instructor review. Track it under Profile.",
   "submissionFailed": "Submission failed: {error}",
   "@submissionFailed": {
     "placeholders": {"error": {"type": "String"}}
   },
-  "fileTooLargeError": "File is too large — this report type allows up to {maxMb}MB.",
+  "fileTooLargeError": "File is too large. This report type allows up to {maxMb}MB.",
   "@fileTooLargeError": {
     "placeholders": {"maxMb": {"type": "int"}}
   },
@@ -216,7 +220,7 @@
   "forumMySubjectsUnavailable": "Personalizing by subject isn't available yet.",
   "forumSolvedUnavailable": "Marking questions as solved isn't available yet.",
   "forumNoUnanswered": "No unanswered questions right now.",
-  "forumNoPosts": "No posts yet — be the first to ask.",
+  "forumNoPosts": "No posts yet. Be the first to ask.",
   "forumAskButton": "+ Question",
   "forumAnswersCount": "{count} answers",
   "@forumAnswersCount": {
@@ -256,9 +260,9 @@
   "revisionModeTitle": "Revision mode",
   "revisionModeSubtitle": "No timer, hints on",
   "pastPaperPracticeTitle": "Past-paper practice",
-  "pastPaperPracticeSubtitle": "Auto-generated from submitted papers — coming soon",
+  "pastPaperPracticeSubtitle": "Auto-generated from submitted papers (coming soon)",
   "fridayArenaTitle": "Friday Arena",
-  "fridayArenaSubtitle": "Live elimination quiz — coming soon",
+  "fridayArenaSubtitle": "Live elimination quiz (coming soon)",
   "topPlayers": "Top players",
   "bySubjectTitle": "By subject",
   "statQuestionsLabel": "questions",
@@ -294,14 +298,14 @@
   "redeemCodeReady": "Redeem code ready",
   "redeemCodeEarnHint": "You'll get one once a verified submission earns a bonus tier.",
   "shareLabel": "Share",
-  "shareRedeemCodeMessage": "Use my Spekooh redeem code {code} — {subtitle}",
+  "shareRedeemCodeMessage": "Use my Spekooh redeem code {code}: {subtitle}",
   "@shareRedeemCodeMessage": {
     "placeholders": {"code": {"type": "String"}, "subtitle": {"type": "String"}}
   },
   "shareRedeemCodeSubject": "Spekooh redeem code",
   "inviteAFriendTitle": "Invite a friend",
   "inviteAFriendSubtitle": "You earn bonus credit once they unlock their first paper.",
-  "shareReferralMessage": "Join me on Spekooh — sign up with my referral code {code}.",
+  "shareReferralMessage": "Join me on Spekooh. Sign up with my referral code {code}.",
   "@shareReferralMessage": {
     "placeholders": {"code": {"type": "String"}}
   },
@@ -324,7 +328,7 @@
   "notificationsTitle": "Notifications",
   "allCaughtUp": "All caught up",
 
-  "adNotCompletedError": "Ad not completed — no view granted.",
+  "adNotCompletedError": "Ad not completed. No view granted.",
   "adLoadError": "Could not load an ad: {error}",
   "@adLoadError": {
     "placeholders": {"error": {"type": "String"}}
@@ -335,8 +339,8 @@
   },
   "couldNotOpenFile": "Could not open the file.",
   "couldNotOpenLink": "Could not open the link.",
-  "viewOnlyNotice": "View only — unlock to download a copy",
-  "reportThanksMessage": "Thanks — the Review Team has been notified.",
+  "viewOnlyNotice": "View only. Unlock to download a copy",
+  "reportThanksMessage": "Thanks! The Review Team has been notified.",
   "reportSendError": "Could not send report: {error}",
   "@reportSendError": {
     "placeholders": {"error": {"type": "String"}}
@@ -362,16 +366,16 @@
   "markingGuideTitle": "Marking guide",
   "markingGuideSubtitle": "Instructor-authored + in-house MCQ key",
   "reportDownloadTitle": "Download access",
-  "reportDownloadSubtitle": "Viewing in the app is free — unlock once to save a copy for offline reading",
+  "reportDownloadSubtitle": "Viewing in the app is free. Unlock once to save a copy for offline reading",
   "unlockedForAmount": "Unlocked for {amount} FCFA.",
   "@unlockedForAmount": {
     "placeholders": {"amount": {"type": "int"}}
   },
-  "unlockButton": "Unlock — 500 FCFA",
+  "unlockButton": "Unlock: 500 FCFA",
   "alreadyUnlocked": "Unlocked.",
   "viewButton": "View",
   "reportLockedTitle": "This report requires unlocking",
-  "reportLockedMessage": "PhD and Master's theses require payment to view — unlock below to read it.",
+  "reportLockedMessage": "PhD and Master's theses require payment to view. Unlock below to read it.",
   "unlockToDownloadHint": "Unlock below to save a copy for offline reading.",
   "haveRedeemCode": "Have a redeem code?",
   "redeemCodeHint": "Redeem code",
@@ -418,16 +422,16 @@
   "@pamphletSoldBy": {
     "placeholders": {"partner": {"type": "String"}}
   },
-  "escrowExplanation": "Spekooh holds your payment in escrow. You'll get a one-time QR ticket to collect it at the bookshop — payment only releases to the partner once they scan it.",
+  "escrowExplanation": "Spekooh holds your payment in escrow. You'll get a one-time QR ticket to collect it at the bookshop. Payment only releases to the partner once they scan it.",
   "pickupInStoreLabel": "PICKUP · IN-STORE",
-  "payAndReserve": "Pay & reserve — {amount} FCFA",
+  "payAndReserve": "Pay & reserve: {amount} FCFA",
   "@payAndReserve": {
     "placeholders": {"amount": {"type": "String"}}
   },
   "processingLabel": "Processing…",
   "escrowFooterNote": "Held in escrow · released to partner only after pickup is confirmed · 5% platform commission",
   "pickupTicketReady": "Pickup ticket ready",
-  "showQrAtPartner": "Show this QR at {partner}. Single-use — expires in 30 days. Payment releases to the partner once they scan it.",
+  "showQrAtPartner": "Show this QR at {partner}. Single-use, expires in 30 days. Payment releases to the partner once they scan it.",
   "@showQrAtPartner": {
     "placeholders": {"partner": {"type": "String"}}
   },

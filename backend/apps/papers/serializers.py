@@ -1,8 +1,9 @@
+from django.utils.text import slugify
 from rest_framework import serializers
 
 from apps.payments.models import PaperUnlock
 
-from .models import AdWatchEvent, ExamCategory, ExamType, PaperFlag, PaperSubmission, PaperViewLog, Subject
+from .models import AdWatchEvent, ExamCategory, ExamType, PaperFlag, PaperSubmission, PaperViewLog, Subject, SubjectLanguage
 from .services import report_download_is_free, user_can_view_file
 
 
@@ -35,9 +36,28 @@ class ExamTypeSerializer(serializers.ModelSerializer):
 
 
 class SubjectSerializer(serializers.ModelSerializer):
+    """key/code/icon_name/tint stay read-only even on create: a
+    contributor-typed subject only supplies a title, everything else is
+    either derived (key, via slugify) or cosmetic curation the owner adds
+    later (code/icon_name/tint default blank, same as any seeded row)."""
+
     class Meta:
         model = Subject
         fields = ["id", "key", "title", "code", "icon_name", "tint", "language"]
+        read_only_fields = ["key", "code", "icon_name", "tint"]
+
+    def create(self, validated_data):
+        # get_or_create by key (not title) so "physics" and "Physics" don't
+        # create two rows, and a contributor's typed subject that matches an
+        # existing curated one (icon/tint already set) reuses it instead of
+        # shadowing it with a bare duplicate.
+        title = validated_data["title"].strip()
+        key = slugify(title)[:60]
+        subject, _ = Subject.objects.get_or_create(
+            key=key,
+            defaults={"title": title, "language": validated_data.get("language", SubjectLanguage.EN)},
+        )
+        return subject
 
 
 class PaperAccessFieldsMixin:
@@ -210,7 +230,7 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
             max_bytes = exam_type.max_upload_mb * 1024 * 1024
             if uploaded_file.size > max_bytes:
                 raise serializers.ValidationError(
-                    {"uploaded_file": f"File is too large — {exam_type.name} allows up to {exam_type.max_upload_mb}MB."}
+                    {"uploaded_file": f"File is too large. {exam_type.name} allows up to {exam_type.max_upload_mb}MB."}
                 )
         return attrs
 

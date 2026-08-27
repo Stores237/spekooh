@@ -55,6 +55,34 @@ void main() {
     expect(submitButton.disabled, isTrue);
   });
 
+  testWidgets('SubmitScreen lets a contributor add a subject missing from the list', (tester) async {
+    await tester.pumpWidget(l10nTestApp(SubmitScreen(repository: MockPapersRepository())));
+    await tester.pump();
+
+    await tester.tap(find.text('Education level'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Primary').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Exam type'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('FSLC').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Subject'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add a subject'), findsOneWidget);
+    await tester.tap(find.text('Add a subject'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).last, 'Geology');
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Geology'), findsOneWidget);
+  });
+
   testWidgets('SubmitScreen "Academic report" tab walks the real reports taxonomy', (tester) async {
     await tester.pumpWidget(l10nTestApp(SubmitScreen(repository: MockPapersRepository())));
     await tester.pump();

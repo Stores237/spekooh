@@ -49,12 +49,19 @@ class ExamTypeViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
     filterset_fields = ["category", "system"]
 
 
-class SubjectViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    permission_classes = [permissions.AllowAny]
+class SubjectViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["language"]
+
+    def get_permissions(self):
+        if self.action == "create":
+            # Same bar as submitting a paper itself (see PaperSubmissionViewSet
+            # .get_permissions) — a guest account can propose a subject the
+            # curated list is missing, real accounts aren't required.
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
 
 class PaperSubmissionViewSet(

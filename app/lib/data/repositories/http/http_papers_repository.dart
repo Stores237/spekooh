@@ -92,6 +92,20 @@ class HttpPapersRepository implements PapersRepository {
     }).toList();
   }
 
+  @override
+  Future<Subject> createSubject({required String title, required String examTypeName}) async {
+    final language = _francophoneExamNames.contains(examTypeName) ? 'fr' : 'en';
+    final row = await _client.post('/papers/subjects/', body: {'title': title, 'language': language}) as Map<String, dynamic>;
+    return Subject(
+      id: row['id'] as int,
+      key: row['key'] as String,
+      title: row['title'] as String,
+      tint: IconChipTint.values.byName(row['tint'] as String? ?? 'blue'),
+      icon: iconForName(row['icon_name'] as String?),
+      code: row['code'] as String? ?? '',
+    );
+  }
+
   PaperEntry _paperFromJson(Map<String, dynamic> row) => PaperEntry(
         id: row['id'] as int,
         year: row['year'] as int,

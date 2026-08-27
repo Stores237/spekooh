@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("pamphlets", "0003_alter_pamphlet_options_pamphlet_is_featured"),
+        ("pamphlets", "0004_alter_pamphletorder_status"),
     ]
 
     operations = [

@@ -4,7 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 const mockNotes = [
   Note(
-    title: 'Mechanics — Newton’s Laws',
+    title: 'Mechanics: Newton’s Laws',
     subtitle: 'Physics · A Level',
     tint: IconChipTint.blue,
     icon: LucideIcons.zap,
