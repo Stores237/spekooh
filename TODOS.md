@@ -569,6 +569,22 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   new real field to the display: `quiz.suggestedTime` (already tracked, backed by
   `suggested_time_seconds` on the backend, previously shown only on the Quizzes tab) now shows as
   a small time pill next to the "DAILY CHALLENGE" label — not a fabricated duration.
+- **`RUNNING_LOCALLY.md` + a real Android app on a real phone, for the first time this project**
+  (2026-08-28): every previous run of this app was web or `flutter test` — this session did the
+  first-ever real native install on a real device, which immediately surfaced two real gaps
+  neither web nor mocked tests could ever catch: (1) `android/app/src/main/AndroidManifest.xml`
+  had no `<uses-permission android:name="android.permission.INTERNET" />` at all — Flutter's
+  debug/profile manifests carry it automatically (for hot-reload), the release one doesn't unless
+  added explicitly, so a real installed release APK opened past its splash screen and then acted
+  like the backend didn't exist (honest empty states everywhere, login/register silently doing
+  nothing) — fixed; (2) `config.settings.dev`'s `ALLOWED_HOSTS` only allowed `localhost`/
+  `127.0.0.1`, rejecting a real phone's request to the backend by LAN IP or tunnel hostname with
+  `DisallowedHost` — widened to `["*"]` (dev-only settings module, `DEBUG` already `True`).
+  Documented the full real path end-to-end in `RUNNING_LOCALLY.md`: backend setup, the web dev
+  loop, and building+installing a real APK against a `cloudflared` quick tunnel (works from any
+  network, no router config) including the exact troubleshooting for both bugs above. Also added
+  `backend/requirements.txt` (previously untracked entirely — a fresh clone had no way to know
+  what to `pip install`), generated from the real working environment via `pip freeze`.
 
 ---
 

@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for every real HTTP call the app makes (auth, papers, payments, ...).
+         Missing entirely before 2026-08-28 — never caught because every test this app
+         had run through was web (no Android permission model) or a mocked HTTP client;
+         a real device install just silently blocked all network access, which is why
+         splash worked but nothing past it ever loaded real data. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="spekooh"
         android:name="${applicationName}"

@@ -6,4 +6,9 @@
 # OS cruft
 .DS_Store
 
+# Local dev-session scratch — downloaded tools (e.g. cloudflared, see
+# RUNNING_LOCALLY.md §3.1) and server logs. Never something to commit.
+/tools/
+*.log
+
 # app/ and backend/ have their own .gitignore for their toolchains.
