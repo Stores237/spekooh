@@ -12,6 +12,7 @@ import '../../models/spekooh_user.dart';
 import '../../models/submission.dart';
 import '../../sheets/achievements_sheet.dart';
 import '../../sheets/edit_profile_sheet.dart';
+import '../../shell/route_observers.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
@@ -42,16 +43,17 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
   // `late` defers evaluation to first access — guarded by _isLoggedIn in
   // build() below, so a guest never actually fires these (all three need
   // auth: /auth/me/, /credits/..., /papers/submissions/?submitted_by=me).
-  // Not `final`: _openEditProfile below re-assigns it after a real save so
-  // the card reflects the new name/email/phone immediately, without a full
-  // screen reopen.
+  // Not `final`: _refresh below re-assigns all three so the card reflects
+  // real, current counts — after a real profile edit, and after returning
+  // to an already-open Profile from a screen pushed on top of it (see
+  // didPopNext) — without a full screen reopen.
   late Future<SpekoohUser> _userFuture = widget.repository.getUser();
   late Future<List<Achievement>> _achievementsFuture = _userFuture.then(widget.repository.getAchievements);
-  late final Future<List<Submission>> _submissionsFuture = widget.repository.getSubmissions();
+  late Future<List<Submission>> _submissionsFuture = widget.repository.getSubmissions();
 
   // The avatar Container used to be a plain, non-interactive initial-letter
   // circle — tapping it did nothing. Overlays the freshly-uploaded URL on
@@ -62,6 +64,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool get _isLoggedIn => AuthSession.instance.isLoggedIn;
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<void>) profileRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void dispose() {
+    profileRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  // A real, published contribution's count previously stayed 0 on an
+  // already-open Profile screen popped back into from a screen pushed on
+  // top of it (e.g. Settings) — Profile itself always refetches fine on a
+  // fresh push, but returning to this same still-alive instance via pop
+  // never did (found from a live report, 2026-08-28). RouteAware fixes
+  // that: refetch whenever this becomes the visible route again.
+  @override
+  void didPopNext() => _refresh();
+
+  void _refresh() {
+    if (!_isLoggedIn) return;
+    setState(() {
+      _userFuture = widget.repository.getUser();
+      _achievementsFuture = _userFuture.then(widget.repository.getAchievements);
+      _submissionsFuture = widget.repository.getSubmissions();
+    });
+  }
+
   Future<void> _openEditProfile(SpekoohUser user) async {
     final l10n = AppLocalizations.of(context)!;
     final emailChanged = await showModalBottomSheet<bool>(
@@ -71,10 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (_) => EditProfileSheet(user: user, repository: widget.repository),
     );
     if (emailChanged == null || !mounted) return;
-    setState(() {
-      _userFuture = widget.repository.getUser();
-      _achievementsFuture = _userFuture.then(widget.repository.getAchievements);
-    });
+    _refresh();
     if (emailChanged) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.editProfileEmailChangedNotice)));
     }
@@ -143,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Text(l10n.profileTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
                     ],
                   ),
-                  CircularBackButton(onTap: () => widget.onOpenSettings?.call()),
+                  CircularBackButton(icon: LucideIcons.settings, onTap: () => widget.onOpenSettings?.call()),
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),

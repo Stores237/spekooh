@@ -538,6 +538,23 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   "Spekooh" throughout (owner-confirmed) with the real support email/phone already used elsewhere
   in Settings. Wired into both the Settings row and a new "View Privacy Policy" link next to the
   signup terms checkbox.
+- **Profile: settings button no longer shows a back-arrow** (2026-08-28, found from a live
+  screenshot): the "open Settings" button on Profile's header reused `CircularBackButton` — the
+  same small circular chevron-left widget as the real back button right next to it — so the
+  header showed two identical back-arrows, one of which actually opened Settings. Added an
+  `icon` param to `CircularBackButton` (defaults to chevron-left, every other call site
+  unaffected) and passed a real settings-gear icon at this one call site.
+- **Profile: real counts no longer stuck at 0 after returning from Settings** (2026-08-28, owner
+  report: a real user's exam papers were submitted and published by admin, but Profile kept
+  showing 0 submissions). The backend and API were verified correct live (the real user's 3
+  published papers and 150 contributor-bonus credits both came back correctly from
+  `/papers/submissions/?submitted_by=<id>` and `/credits/ledger/`) — a fresh Profile screen open
+  already refetches fine. The real gap: popping back onto an *already-open* Profile screen from a
+  screen pushed on top of it (e.g. Settings) never refetched at all, since `late final` futures
+  were only ever computed once per screen instance. Added a `RouteObserver` (registered on the
+  app's `MaterialApp`, `lib/shell/route_observers.dart`) and made `ProfileScreen` a `RouteAware` —
+  `didPopNext()` now refetches the user/achievements/submissions futures for real whenever Profile
+  becomes visible again, not just on first open.
 
 ---
 
