@@ -1,6 +1,10 @@
 from .base import *  # noqa: F401,F403
 
 DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+# "*" so a real phone on the same Wi-Fi/LAN as this dev machine can reach the
+# API by its LAN IP (Django checks the incoming Host header against this
+# list) — safe here since DEBUG is already True and this settings module is
+# never used outside local dev.
+ALLOWED_HOSTS = ["*"]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
