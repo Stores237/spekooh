@@ -465,6 +465,21 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   `subject_title`/`academic_level` fields (free text — admin/partner-authored one row at a time,
   not picked from the contributor-facing taxonomy). Filter chip options are built from whatever
   distinct values actually exist, not a fabricated fixed list.
+- **Exam papers publishable without waiting on the instructor pipeline** (2026-08-28, owner
+  decision): a real marking guide can take an instructor a long time to produce, and a
+  contributor's scan is useful to other students well before one exists — the admin's
+  "Publish selected" action (`PaperSubmissionAdmin`) no longer requires
+  `GUIDE_SUBMITTED`/`MERGED` status for exam papers, just "not already Published" (same rule
+  reports already used). This never fabricates a guide: `has_marking_guide` (new field on both
+  paper serializers, backed by whether a real `PublishedGuide` row exists — independent of
+  publish status) tells the app the truth. The app now shows an honest "marking guide not yet
+  available" message — no lock icon, no "Unlock: 500 FCFA" button, no redeem-code field — instead
+  of ever offering to sell a guide that doesn't exist. The real instructor pipeline
+  (`merge_and_publish`) is unaffected and still creates a real `PublishedGuide` exactly as before
+  when it does complete; this is an additional path in, not a replacement. Verified end-to-end
+  against the real local backend: published one real paper via `mark_published` (no guide) and a
+  second via the full `merge_and_publish` pipeline (real instructor guide), confirmed
+  `has_marking_guide` correctly reads `false`/`true` for each via the live API, cleaned up both.
 
 ---
 

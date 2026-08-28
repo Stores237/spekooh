@@ -396,10 +396,15 @@ class _PapersScreenState extends State<PapersScreen> {
                                 // Reports never have a marking guide (see the
                                 // Academic Reports subtitle) — that copy would
                                 // be actively wrong here, not just generic.
+                                // A published exam paper can genuinely have
+                                // no guide yet (see PaperEntry.hasMarkingGuide)
+                                // — publishing no longer waits on one.
                                 Text(
                                   !paper.isPublished
                                       ? l10n.paperUnderReview
-                                      : (isReports ? l10n.publishedStatus : l10n.paperMarkingGuideAvailable),
+                                      : (isReports
+                                          ? l10n.publishedStatus
+                                          : (paper.hasMarkingGuide ? l10n.paperMarkingGuideAvailable : l10n.paperMarkingGuideNotYetAvailable)),
                                   style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary),
                                 ),
                               ],

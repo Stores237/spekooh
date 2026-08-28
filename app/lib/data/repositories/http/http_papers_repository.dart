@@ -134,6 +134,7 @@ class HttpPapersRepository implements PapersRepository {
         categoryKey: row['category_key'] as String?,
         requiresUnlock: row['requires_unlock'] as bool? ?? false,
         isUnlocked: row['is_unlocked'] as bool? ?? false,
+        hasMarkingGuide: row['has_marking_guide'] as bool? ?? false,
       );
 
   @override

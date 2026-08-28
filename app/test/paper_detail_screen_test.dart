@@ -500,4 +500,42 @@ void main() {
 
     expect(find.textContaining('marked in-house'), findsOneWidget);
   });
+
+  group('marking guide availability — a published exam paper no longer waits on the instructor pipeline', () {
+    testWidgets('with no real guide yet, shows an honest message instead of an unlock button', (tester) async {
+      // _entry defaults hasMarkingGuide to false, same as a real paper
+      // published before its instructor guide exists.
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: _entry, repository: _FileBackedPapersRepository(_entry), adController: _FakeRewardedAdController(grantsReward: false)),
+      ));
+      await tester.pump();
+
+      expect(find.text('Marking guide not yet available'), findsNothing); // that's the list-row copy, not this screen's
+      expect(find.textContaining("isn't ready yet"), findsOneWidget);
+      expect(find.text('Unlock: 500 FCFA'), findsNothing); // never sell a guide that doesn't exist
+      expect(find.text('Have a redeem code?'), findsNothing);
+    });
+
+    testWidgets('once a real guide exists, offers the real unlock flow', (tester) async {
+      final withGuide = PaperEntry(
+        id: _entry.id,
+        year: _entry.year,
+        system: _entry.system,
+        track: _entry.track,
+        status: _entry.status,
+        fileUrl: _entry.fileUrl,
+        createdAt: _entry.createdAt,
+        subjectTitle: _entry.subjectTitle,
+        examTypeName: _entry.examTypeName,
+        hasMarkingGuide: true,
+      );
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: withGuide, repository: _FileBackedPapersRepository(withGuide), adController: _FakeRewardedAdController(grantsReward: false)),
+      ));
+      await tester.pump();
+
+      expect(find.textContaining("isn't ready yet"), findsNothing);
+      expect(find.text('Unlock: 500 FCFA'), findsOneWidget);
+    });
+  });
 }

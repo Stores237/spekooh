@@ -908,6 +908,12 @@ abstract class AppLocalizations {
   /// **'Marking guide available'**
   String get paperMarkingGuideAvailable;
 
+  /// No description provided for @paperMarkingGuideNotYetAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Marking guide not yet available'**
+  String get paperMarkingGuideNotYetAvailable;
+
   /// No description provided for @paperUnderReview.
   ///
   /// In en, this message translates to:
@@ -1807,6 +1813,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Instructor-authored + in-house MCQ key'**
   String get markingGuideSubtitle;
+
+  /// No description provided for @markingGuideNotYetAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The paper is here, but its marking guide isn\'t ready yet. Check back soon.'**
+  String get markingGuideNotYetAvailable;
 
   /// No description provided for @reportDownloadTitle.
   ///

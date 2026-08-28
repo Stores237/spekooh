@@ -464,6 +464,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get paperMarkingGuideAvailable => 'Corrigé disponible';
 
   @override
+  String get paperMarkingGuideNotYetAvailable =>
+      'Corrigé pas encore disponible';
+
+  @override
   String get paperUnderReview => 'En cours de vérification';
 
   @override
@@ -985,6 +989,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get markingGuideSubtitle =>
       'Rédigé par l\'instructeur + clé QCM interne';
+
+  @override
+  String get markingGuideNotYetAvailable =>
+      'L\'épreuve est là, mais son corrigé n\'est pas encore prêt. Revenez bientôt.';
 
   @override
   String get reportDownloadTitle => 'Accès au téléchargement';
