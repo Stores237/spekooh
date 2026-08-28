@@ -32,7 +32,9 @@ class SubjectCard extends StatelessWidget {
       borderRadius: AppRadii.radiusLg,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        // 16 all round left too little headroom once a 2-line title,
+        // subtitle, and badge all stack up — see the maxLines note below.
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
           borderRadius: AppRadii.radiusLg,
@@ -54,9 +56,19 @@ class SubjectCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 icon,
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   title,
+                  // Subject titles are real, sometimes contributor-typed free
+                  // text (see SubjectSerializer.create) — some run long
+                  // ("Fondation of data science and programming of data
+                  // science"). Every card in the grid shares one fixed
+                  // childAspectRatio, so an unbounded title previously
+                  // overflowed past its own card into whatever sat below it
+                  // (found from a live screenshot, 2026-08-28). Capped so
+                  // every card in the grid stays a consistent height.
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: plusJakartaSansFamily,
                     fontWeight: FontWeight.w700,
@@ -65,7 +77,7 @@ class SubjectCard extends StatelessWidget {
                   ),
                 ),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     subtitle!,
                     style: TextStyle(
@@ -76,7 +88,7 @@ class SubjectCard extends StatelessWidget {
                   ),
                 ],
                 if (badgeText != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     badgeText!.toUpperCase(),
                     style: TextStyle(
