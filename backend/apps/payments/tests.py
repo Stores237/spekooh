@@ -10,14 +10,16 @@ from apps.credits.factories import RedeemCodeFactory
 from apps.papers.factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory
 
 from .factories import SubscriptionFactory
-from .models import PaperUnlock, PaymentTransactionStatus, Subscription, SubscriptionStatus
+from .models import PaperDownloadUnlock, PaperUnlock, PaymentTransactionStatus, Subscription, SubscriptionStatus
 from .services import (
     PAPER_UNLOCK_PRICE_FCFA,
     TRIAL_DAYS,
+    PaperDownloadUnlockError,
     PaperUnlockError,
     first_unlock_free_eligible,
     trial_days_remaining,
     unlock_paper,
+    unlock_paper_download,
 )
 
 
@@ -208,3 +210,130 @@ def test_unlock_paper_does_not_credit_referrer_again_on_a_second_unlock():
     unlock_paper(user=referred, paper_submission=first_paper, phone_number="670000000")
     unlock_paper(user=referred, paper_submission=second_paper, phone_number="670000000")
     assert CreditLedgerEntry.objects.filter(user=referrer).count() == 1
+
+
+@pytest.mark.django_db
+def test_unlock_paper_download_charges_the_category_price_and_creates_a_real_unlock():
+    user = UserFactory()
+    # ExamCategoryFactory's default key is "secondary" -> 75 FCFA.
+    paper = PaperSubmissionFactory()
+
+    unlock = unlock_paper_download(user=user, paper_submission=paper, phone_number="670000000")
+
+    assert unlock.amount_paid == 75
+    assert unlock.payment_transaction.status == PaymentTransactionStatus.SUCCESS
+    assert PaperDownloadUnlock.objects.has_unlocked(user, paper) is True
+
+
+@pytest.mark.django_db
+def test_unlock_paper_download_prices_by_exam_level():
+    user = UserFactory()
+    primary = ExamCategoryFactory(key="primary", requires_system=False)
+    primary_type = ExamTypeFactory(category=primary, system=None)
+    primary_paper = PaperSubmissionFactory(category=primary, exam_type=primary_type)
+
+    university = ExamCategoryFactory(key="university", requires_system=True)
+    university_type = ExamTypeFactory(category=university)
+    university_paper = PaperSubmissionFactory(category=university, exam_type=university_type)
+
+    primary_unlock = unlock_paper_download(user=user, paper_submission=primary_paper, phone_number="670000000")
+    university_unlock = unlock_paper_download(user=user, paper_submission=university_paper, phone_number="670000000")
+
+    assert primary_unlock.amount_paid == 50
+    assert university_unlock.amount_paid == 100
+
+
+@pytest.mark.django_db
+def test_unlock_paper_download_rejects_double_unlock():
+    user = UserFactory()
+    paper = PaperSubmissionFactory()
+    unlock_paper_download(user=user, paper_submission=paper, phone_number="670000000")
+    with pytest.raises(PaperDownloadUnlockError):
+        unlock_paper_download(user=user, paper_submission=paper, phone_number="670000000")
+
+
+@pytest.mark.django_db
+def test_unlock_paper_download_rejects_a_report():
+    """Reports use the existing unlock_paper-based download gate — this is
+    exam-paper only."""
+    user = UserFactory()
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    report = PaperSubmissionFactory(category=reports_category, exam_type=report_type, subject=None)
+
+    with pytest.raises(PaperDownloadUnlockError):
+        unlock_paper_download(user=user, paper_submission=report, phone_number="670000000")
+    assert PaperDownloadUnlock.objects.has_unlocked(user, report) is False
+
+
+@pytest.mark.django_db
+def test_unlock_paper_download_view_creates_a_real_unlock(api_client):
+    user = UserFactory()
+    paper = PaperSubmissionFactory()
+    api_client.force_authenticate(user=user)
+
+    response = api_client.post(
+        "/api/payments/unlock-download/",
+        {"paper_submission": paper.id, "phone_number": "670000000"},
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["amount_paid"] == 75
+    assert PaperDownloadUnlock.objects.has_unlocked(user, paper) is True
+
+
+@pytest.mark.django_db
+def test_unlock_paper_download_view_rejects_a_report(api_client):
+    user = UserFactory()
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    report = PaperSubmissionFactory(category=reports_category, exam_type=report_type, subject=None)
+    api_client.force_authenticate(user=user)
+
+    response = api_client.post(
+        "/api/payments/unlock-download/",
+        {"paper_submission": report.id, "phone_number": "670000000"},
+        format="json",
+    )
+
+    assert response.status_code == 402
+
+
+@pytest.mark.django_db
+def test_submitter_and_staff_can_download_their_own_exam_paper_without_unlocking():
+    from apps.papers.services import user_can_download_paper_file
+
+    submitter = UserFactory()
+    paper = PaperSubmissionFactory(submitted_by=submitter)
+    staff = UserFactory(is_staff=True)
+    stranger = UserFactory()
+
+    assert user_can_download_paper_file(submitter, paper) is True
+    assert user_can_download_paper_file(staff, paper) is True
+    assert user_can_download_paper_file(stranger, paper) is False
+
+
+@pytest.mark.django_db
+def test_paper_serializer_exposes_download_unlock_state_and_price(api_client):
+    from apps.papers.serializers import PaperSubmissionDetailSerializer
+
+    user = UserFactory()
+    paper = PaperSubmissionFactory()
+
+    unlocked_data = PaperSubmissionDetailSerializer(paper, context={"request": _fake_authed_request(user)}).data
+    assert unlocked_data["paper_download_unlocked"] is False
+    assert unlocked_data["paper_download_price_fcfa"] == 75
+
+    unlock_paper_download(user=user, paper_submission=paper, phone_number="670000000")
+    now_unlocked_data = PaperSubmissionDetailSerializer(paper, context={"request": _fake_authed_request(user)}).data
+    assert now_unlocked_data["paper_download_unlocked"] is True
+
+
+def _fake_authed_request(user):
+    class _Req:
+        pass
+
+    req = _Req()
+    req.user = user
+    return req

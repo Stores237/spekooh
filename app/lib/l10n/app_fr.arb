@@ -315,6 +315,7 @@
   "reportLockedTitle": "Ce rapport nécessite un déblocage",
   "reportLockedMessage": "Les thèses de Master et de Doctorat nécessitent un paiement pour être consultées. Débloquez ci-dessous pour la lire.",
   "unlockToDownloadHint": "Débloquez ci-dessous pour enregistrer une copie hors ligne.",
+  "unlockDownloadButton": "Débloquer le téléchargement : {amount} FCFA",
   "haveRedeemCode": "Vous avez un code de réduction ?",
   "redeemCodeHint": "Code de réduction",
   "mcqDisclaimer": "Les réponses aux questions à choix multiples sont corrigées en interne par l'équipe Spekooh, pas par l'instructeur.",

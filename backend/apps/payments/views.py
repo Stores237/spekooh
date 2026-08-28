@@ -6,15 +6,24 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import IsAuthenticatedNotGuest
 from apps.papers.models import PaperSubmission
 
-from .models import PaperUnlock, PaymentTransaction, Subscription
+from .models import PaperDownloadUnlock, PaperUnlock, PaymentTransaction, Subscription
 from .serializers import (
+    PaperDownloadUnlockSerializer,
     PaperUnlockSerializer,
     PaymentTransactionSerializer,
     SubscribeRequestSerializer,
     SubscriptionSerializer,
+    UnlockPaperDownloadRequestSerializer,
     UnlockRequestSerializer,
 )
-from .services import PaperUnlockError, SubscriptionError, subscribe, unlock_paper
+from .services import (
+    PaperDownloadUnlockError,
+    PaperUnlockError,
+    SubscriptionError,
+    subscribe,
+    unlock_paper,
+    unlock_paper_download,
+)
 
 
 class PaymentTransactionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -84,3 +93,38 @@ class UnlockPaperView(APIView):
         except PaperUnlockError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_402_PAYMENT_REQUIRED)
         return Response(PaperUnlockSerializer(unlock).data, status=status.HTTP_201_CREATED)
+
+
+class PaperDownloadUnlockViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    permission_classes = [IsAuthenticatedNotGuest]
+    serializer_class = PaperDownloadUnlockSerializer
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return PaperDownloadUnlock.objects.none()
+        return PaperDownloadUnlock.objects.filter(user=self.request.user)
+
+
+class UnlockPaperDownloadView(APIView):
+    """Exam papers only — see unlock_paper_download's docstring for why
+    this is a separate, smaller purchase from the marking-guide unlock
+    above, and why reports aren't handled here (they already have their
+    own unlock_paper-based download gate)."""
+
+    permission_classes = [IsAuthenticatedNotGuest]
+
+    @extend_schema(request=UnlockPaperDownloadRequestSerializer, responses=PaperDownloadUnlockSerializer)
+    def post(self, request):
+        serializer = UnlockPaperDownloadRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        try:
+            paper = PaperSubmission.objects.get(id=data["paper_submission"])
+        except PaperSubmission.DoesNotExist:
+            return Response({"detail": "Paper not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            unlock = unlock_paper_download(user=request.user, paper_submission=paper, phone_number=data["phone_number"])
+        except PaperDownloadUnlockError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_402_PAYMENT_REQUIRED)
+        return Response(PaperDownloadUnlockSerializer(unlock).data, status=status.HTTP_201_CREATED)

@@ -1027,6 +1027,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Débloquez ci-dessous pour enregistrer une copie hors ligne.';
 
   @override
+  String unlockDownloadButton(int amount) {
+    return 'Débloquer le téléchargement : $amount FCFA';
+  }
+
+  @override
   String get haveRedeemCode => 'Vous avez un code de réduction ?';
 
   @override

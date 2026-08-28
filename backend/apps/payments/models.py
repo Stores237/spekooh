@@ -7,6 +7,7 @@ from apps.core.models import TimeStampedModel
 class PaymentPurpose(models.TextChoices):
     SUBSCRIPTION = "SUBSCRIPTION", "Pro subscription"
     PAPER_UNLOCK = "PAPER_UNLOCK", "Marking guide unlock"
+    PAPER_DOWNLOAD = "PAPER_DOWNLOAD", "Exam paper download unlock"
     PAMPHLET_ORDER = "PAMPHLET_ORDER", "Pamphlet order"
 
 
@@ -98,3 +99,42 @@ class PaperUnlock(TimeStampedModel):
 
     def __str__(self):
         return f"{self.user} unlocked {self.paper_submission_id}"
+
+
+class PaperDownloadUnlockManager(models.Manager):
+    def has_unlocked(self, user, paper_submission) -> bool:
+        return self.filter(user=user, paper_submission=paper_submission).exists()
+
+
+class PaperDownloadUnlock(TimeStampedModel):
+    """Pay-per-unlock for downloading an exam paper's actual scanned file —
+    deliberately separate from PaperUnlock above, which gates the marking
+    guide, not the file. Owner decision (2026-08-28): an exam paper is free
+    to view in-app (ReportViewerScreen — the same in-app-only renderer
+    reports already use, so viewing here never exposes a save-able file the
+    OS's own viewer would), but downloading/saving it is a small,
+    exam-level-priced purchase (see
+    apps.papers.services.paper_download_price_fcfa). Reports keep their own
+    existing download gate (PaperUnlock + report_download_is_free)
+    untouched — this model is exam-paper only, never used for a report."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="paper_download_unlocks")
+    paper_submission = models.ForeignKey(
+        "papers.PaperSubmission", on_delete=models.CASCADE, related_name="download_unlocks"
+    )
+    amount_paid = models.PositiveIntegerField()
+    payment_transaction = models.ForeignKey(
+        PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True, related_name="paper_download_unlocks"
+    )
+
+    objects = PaperDownloadUnlockManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "paper_submission"], name="unique_download_unlock_per_user_per_paper"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user} unlocked download of {self.paper_submission_id}"

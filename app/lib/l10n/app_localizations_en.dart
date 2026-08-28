@@ -1011,6 +1011,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unlock below to save a copy for offline reading.';
 
   @override
+  String unlockDownloadButton(int amount) {
+    return 'Unlock download: $amount FCFA';
+  }
+
+  @override
   String get haveRedeemCode => 'Have a redeem code?';
 
   @override

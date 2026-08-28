@@ -93,6 +93,12 @@ abstract class PapersRepository {
   /// redeem code discount).
   Future<int> unlockPaper(int paperId, {String? redeemCode});
 
+  /// Exam papers only — a separate, smaller purchase from [unlockPaper]
+  /// above: unlocks downloading/saving the paper's actual scanned file
+  /// (viewing in-app is always free). Returns the amount actually charged,
+  /// priced by exam level (see PaperEntry.paperDownloadPriceFcfa).
+  Future<int> unlockPaperDownload(int paperId);
+
   /// Flags a paper for Review Team attention (spec §3.2). [reason] must be
   /// one of [paperFlagReasonKeys]. Throws [AlreadyReportedException] if
   /// this user already reported this paper — one flag per user per paper.
@@ -208,6 +214,9 @@ class MockPapersRepository implements PapersRepository {
 
   @override
   Future<int> unlockPaper(int paperId, {String? redeemCode}) async => 500;
+
+  @override
+  Future<int> unlockPaperDownload(int paperId) async => 75;
 
   @override
   Future<void> reportPaper(int paperId, {required String reason, String details = ''}) async {

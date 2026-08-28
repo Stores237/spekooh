@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import PaperUnlock, PaymentTransaction, Subscription
+from .models import PaperDownloadUnlock, PaperUnlock, PaymentTransaction, Subscription
 
 
 class PaymentTransactionSerializer(serializers.ModelSerializer):
@@ -32,3 +32,15 @@ class UnlockRequestSerializer(serializers.Serializer):
     paper_submission = serializers.IntegerField()
     phone_number = serializers.CharField(max_length=20)
     redeem_code = serializers.CharField(max_length=20, required=False, allow_blank=True)
+
+
+class PaperDownloadUnlockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaperDownloadUnlock
+        fields = ["id", "paper_submission", "amount_paid", "created_at"]
+        read_only_fields = fields
+
+
+class UnlockPaperDownloadRequestSerializer(serializers.Serializer):
+    paper_submission = serializers.IntegerField()
+    phone_number = serializers.CharField(max_length=20)

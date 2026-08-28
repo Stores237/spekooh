@@ -480,6 +480,23 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   against the real local backend: published one real paper via `mark_published` (no guide) and a
   second via the full `merge_and_publish` pipeline (real instructor guide), confirmed
   `has_marking_guide` correctly reads `false`/`true` for each via the live API, cleaned up both.
+- **Exam papers: free to view, small paid unlock to download** (2026-08-28, owner decision):
+  "similar to academic report[s], exam paper[s] can only be view[ed] in the app and download
+  [is] block[ed] ... user need to pay a small amount like 50-100 depending on the exam level."
+  Exam papers now render in-app (the same `ReportViewerScreen` reports already use — genuinely
+  generic despite the name, not a report-specific screen) instead of handing off to the OS's own
+  PDF/photo app, which is exactly the loophole that let anyone "view for free, then use the OS's
+  own Save" before a real download purchase existed for exam papers to gate against. New,
+  deliberately separate `PaperDownloadUnlock` model/purchase (distinct from `PaperUnlock`, which
+  still gates the marking guide, not the file) — priced by exam level via
+  `PAPER_DOWNLOAD_PRICE_FCFA_BY_CATEGORY` (primary/secondary/tertiary/university/concours; retune
+  freely, illustrative defaults within the owner's stated 50-100 range). New `paper_download_unlocked`
+  / `paper_download_price_fcfa` fields on the paper serializers; the app shows a real "Unlock
+  download: {price} FCFA" button (not a passive hint) when locked. Submitter and staff are always
+  exempt, same pattern as the existing view-gate. Verified end-to-end against the real local
+  backend: confirmed staff/submitter exemption, confirmed a fresh non-staff user is genuinely
+  gated, unlocked for real (charged the correct category price), confirmed the field flips true,
+  confirmed a second unlock attempt is correctly rejected — cleaned up all test data.
 
 ---
 

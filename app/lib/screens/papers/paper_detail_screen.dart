@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:open_filex/open_filex.dart';
 
 import '../../ads/rewarded_ad_controller.dart';
 import '../../data/offline_papers_store.dart';
@@ -65,6 +63,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   final _redeemController = TextEditingController();
   bool _showRedeemField = false;
   bool _savingOffline = false;
+  bool _unlockingDownload = false;
 
   int? get _entryId => widget.paper?.entry.id ?? widget.paperEntry?.id;
 
@@ -144,29 +143,37 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     }
   }
 
-  Future<void> _openFile(int paperId, String url) async {
+  /// Exam papers only — a separate, smaller purchase from [_unlock] above:
+  /// unlocks downloading/saving the file (viewing in-app stays free either
+  /// way). See PaperEntry.paperDownloadUnlocked's docstring.
+  Future<void> _unlockDownload(int paperId) async {
     final l10n = AppLocalizations.of(context)!;
-    // Prefer the offline copy when one's saved — the whole point of saving
-    // for later is not needing a connection to view it again.
-    final localPath = !kIsWeb ? await OfflinePapersStore.instance.absolutePathFor(paperId) : null;
-    if (localPath != null) {
-      final result = await OpenFilex.open(localPath);
-      if (result.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotOpenFile)));
+    setState(() => _unlockingDownload = true);
+    try {
+      await widget.repository.unlockPaperDownload(paperId);
+      if (mounted) {
+        // Refetch so paperDownloadUnlocked reflects the payment that just
+        // succeeded — same reasoning as _unlock's refetch above.
+        setState(() => _detail = widget.repository.getPaperDetail(paperId));
       }
-      return;
-    }
-    final uri = Uri.tryParse(url);
-    if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotOpenFile)));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.unlockFailedError('$e'))));
+      }
+    } finally {
+      if (mounted) setState(() => _unlockingDownload = false);
     }
   }
 
-  /// Reports render in-app (see ReportViewerScreen) instead of handing off
-  /// to the OS's own PDF/photo app — that handoff is exactly what would let
-  /// someone "view for free" and just use the OS's own Save option,
-  /// defeating "free to view, paid to download" (owner decision). Exam
-  /// papers keep the existing external-open behavior via _openFile.
+  /// Both reports and exam papers render in-app here (ReportViewerScreen —
+  /// genuinely generic despite the name) instead of handing off to the OS's
+  /// own PDF/photo app: that handoff is exactly what would let someone
+  /// "view for free" and just use the OS's own Save option, defeating
+  /// "free to view, paid to download" (owner decision, extended to exam
+  /// papers 2026-08-28 — see PaperEntry.paperDownloadUnlocked). An already
+  /// paid-and-saved-offline copy is still reachable later — just not from
+  /// this in-app viewer — via Home's "Ready offline" section, which opens
+  /// the real local file through the OS (legitimate once actually bought).
   void _openReportViewer(String title, String fileUrl) {
     Navigator.of(context).push(MaterialPageRoute(builder: (context) => ReportViewerScreen(title: title, fileUrl: fileUrl)));
   }
@@ -308,6 +315,12 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                   final isReport = detail?.categoryKey == 'reports' || selection?.category.key == ExamCategoryKey.reports;
                   final locked = isReport && (detail?.requiresUnlock ?? false);
                   final downloadUnlocked = detail?.isUnlocked ?? false;
+                  // Exam papers only (owner decision, 2026-08-28): a
+                  // separate, smaller purchase from the marking guide —
+                  // free to view in-app, paid to download. Reports keep
+                  // using downloadUnlocked above; this is irrelevant to them.
+                  final paperDownloadUnlocked = detail?.paperDownloadUnlocked ?? true;
+                  final paperDownloadPrice = detail?.paperDownloadPriceFcfa ?? 0;
                   // Branded default cover art (owner-supplied) — a submitted
                   // report's file has no cover page of its own, so this is
                   // shown in its place, in both the locked and unlocked
@@ -354,7 +367,16 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                   const SizedBox(height: AppSpacing.space2),
                                   SpekoohButton(
                                     size: SpekoohButtonSize.sm,
-                                    onPressed: () => isReport ? _openReportViewer(title, fileUrl) : _openFile(entry.id, fileUrl),
+                                    // Exam papers now render in-app too
+                                    // (ReportViewerScreen — genuinely
+                                    // generic despite the name), not a
+                                    // handoff to the OS's own PDF/photo app:
+                                    // that handoff is exactly what let
+                                    // someone "view for free" and use the
+                                    // OS's own Save option, before a real
+                                    // download purchase existed for exam
+                                    // papers to gate against.
+                                    onPressed: () => _openReportViewer(title, fileUrl),
                                     child: Text(isReport ? l10n.viewButton : l10n.openScannedPaper),
                                   ),
                                   // path_provider has no meaningful web implementation, and
@@ -363,6 +385,18 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                     const SizedBox(height: AppSpacing.space2),
                                     if (isReport && !downloadUnlocked)
                                       Text(l10n.unlockToDownloadHint, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textTertiary))
+                                    else if (!isReport && !paperDownloadUnlocked)
+                                      // Exam papers have no separate
+                                      // "download" card below (that one's
+                                      // the marking guide) — the unlock
+                                      // action lives right here instead.
+                                      SpekoohButton(
+                                        size: SpekoohButtonSize.sm,
+                                        onPressed: _unlockingDownload ? null : () => _unlockDownload(entry.id),
+                                        child: _unlockingDownload
+                                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                                            : Text(l10n.unlockDownloadButton(paperDownloadPrice)),
+                                      )
                                     else
                                       ListenableBuilder(
                                         listenable: OfflinePapersStore.instance,

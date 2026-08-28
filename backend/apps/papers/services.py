@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
-from apps.payments.models import PaperUnlock, Subscription
+from apps.payments.models import PaperDownloadUnlock, PaperUnlock, Subscription
 
 from .duplicate_detection import DuplicateDetector, TfidfDuplicateDetector, exact_duplicate_hash
 from .models import AdWatchEvent, PaperFlag, PaperStatus, PaperSubmission, PaperViewLog
@@ -43,6 +43,48 @@ def report_download_is_free(paper_submission: PaperSubmission) -> bool:
         paper_submission.category.key == "reports"
         and not paper_submission.exam_type.requires_payment_to_view
     )
+
+
+# Owner ask (2026-08-28): "similar to academic report[s], exam paper[s] can
+# only be view[ed] in the app and download [is] block[ed] ... user need to
+# pay a small amount like 50-100 depending on the exam level." Illustrative
+# per-category defaults within that stated range — retune freely, this is
+# the one place that would need to change. Deliberately separate from
+# PAPER_UNLOCK_PRICE_FCFA (apps.payments.services) — that one's the
+# marking-guide purchase, this is the file-download purchase; a paper can
+# need either, both, or neither independently.
+PAPER_DOWNLOAD_PRICE_FCFA_BY_CATEGORY = {
+    "primary": 50,
+    "secondary": 75,
+    "tertiary": 75,
+    "university": 100,
+    "concours": 100,
+}
+PAPER_DOWNLOAD_DEFAULT_PRICE_FCFA = 75
+
+
+def paper_download_price_fcfa(paper_submission: PaperSubmission) -> int:
+    return PAPER_DOWNLOAD_PRICE_FCFA_BY_CATEGORY.get(
+        paper_submission.category.key, PAPER_DOWNLOAD_DEFAULT_PRICE_FCFA
+    )
+
+
+def user_can_download_paper_file(user, paper_submission: PaperSubmission) -> bool:
+    """
+    Exam papers only — reports keep their own existing download gate
+    (report_download_is_free + PaperUnlock, checked separately by
+    PaperAccessFieldsMixin.get_is_unlocked). Always True for a report here,
+    since this function has nothing to say about them. The submitter and
+    staff always get their own/reviewed paper for free, same exemption
+    pattern as user_can_view_file above.
+    """
+    if paper_submission.category.key == "reports":
+        return True
+    if not user.is_authenticated:
+        return False
+    if user.is_staff or paper_submission.submitted_by_id == user.id:
+        return True
+    return PaperDownloadUnlock.objects.has_unlocked(user, paper_submission)
 
 
 class PaywallError(Exception):
