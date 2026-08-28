@@ -555,6 +555,20 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   app's `MaterialApp`, `lib/shell/route_observers.dart`) and made `ProfileScreen` a `RouteAware` —
   `didPopNext()` now refetches the user/achievements/submissions futures for real whenever Profile
   becomes visible again, not just on first open.
+- **Home: quick-actions restyled to one line, six distinct colors** (2026-08-28, found from a live
+  screenshot): the 6 category cards (Papers/Notes/Contribute/Shop/Forum/Quizzes) stacked icon over
+  label (2 lines) with the same uniform gold icon color on every card. Now icon and label sit on
+  one line, and each card gets a genuinely distinct tint from `IconChipTint` — added `gold` as a
+  6th tint (bg `gold200`/fg `gold700`, matching the avatar-circle color already used elsewhere) so
+  the existing categorical-color system covers exactly 6 without reusing a color across two cards.
+- **Home: daily-challenge card split into two, adapting a reference design** (2026-08-28): was one
+  dark `ink900` card with an internal vertical divider between the challenge info and the streak.
+  Now two separate white cards side by side (`IntrinsicHeight` + `CrossAxisAlignment.stretch` so
+  they match height) — same real data as before, nothing new fabricated: the real quiz title, the
+  real question count, the real streak from `quizzesRepository.getStreak()`. Added one genuinely
+  new real field to the display: `quiz.suggestedTime` (already tracked, backed by
+  `suggested_time_seconds` on the backend, previously shown only on the Quizzes tab) now shows as
+  a small time pill next to the "DAILY CHALLENGE" label — not a fabricated duration.
 
 ---
 

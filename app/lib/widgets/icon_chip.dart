@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 
-enum IconChipTint { blue, amber, green, purple, red }
+enum IconChipTint { blue, amber, green, purple, red, gold }
 
 /// Small tinted rounded-square wrapping one icon glyph — precedes almost
 /// every list-row title in Spekooh. Ported from components/core/IconChip.jsx.
@@ -33,6 +33,9 @@ class IconChip extends StatelessWidget {
       case IconChipTint.red:
         bg = AppColors.red100;
         fg = AppColors.red500;
+      case IconChipTint.gold:
+        bg = AppColors.gold200;
+        fg = AppColors.gold700;
     }
     return Container(
       width: size,
