@@ -427,7 +427,7 @@ I can write unilaterally. Grouped by what each one unblocks.
 
 ---
 
-## Recently shipped (2026-08-26 – 2026-08-27)
+## Recently shipped (2026-08-26 – 2026-08-28)
 
 Owner-requested features and bugs found from live screenshots, in one batch. Each is a real,
 tested, merged change (not a mock) — PR numbers are on `main`'s history for exact diffs.
@@ -497,6 +497,47 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   backend: confirmed staff/submitter exemption, confirmed a fresh non-staff user is genuinely
   gated, unlocked for real (charged the correct category price), confirmed the field flips true,
   confirmed a second unlock attempt is correctly rejected — cleaned up all test data.
+- **Real app icon replaces the default Flutter logo** (2026-08-28): every launcher/favicon asset
+  (Android `mipmap-*/ic_launcher.png`, iOS `AppIcon.appiconset`, web `favicon.png` +
+  `icons/Icon-*.png`) was still the stock blue Flutter "f" wordmark — the real
+  `assets/branding/spekooh_logo.png` was only ever wired into the splash screen. Generated the
+  full real set from a clean crop of the logo's gold-outlined "S" monogram (the "SPEKOOH" wordmark
+  and flanking accent shapes don't read at icon sizes) on the same gold50→gold200 gradient the
+  splash screen already uses, at every required platform size. Also fixed the leftover
+  `"A new Flutter project."` boilerplate description/theme-color in `pubspec.yaml`,
+  `web/manifest.json`, and `web/index.html`.
+- **Profile: real "Edit profile" (username/email/phone)** (2026-08-28, owner decision, adapting a
+  reference design): a pencil icon on the profile card now opens a real sheet, pre-filled from the
+  account, that saves via `PATCH /auth/me/` — a real endpoint that already accepted these fields
+  server-side before any UI reached it. Changing the email resets `email_verified_at` and sends a
+  fresh verification code (`UserSerializer.update`, new) so an unverified new address is never
+  left looking verified — the same real flow used at signup, not a new mechanism. 3 new backend
+  tests, 5 new app tests.
+- **Profile: real badges, replacing an always-empty grid** (2026-08-28, owner decision, adapting a
+  reference design already sketched in this app's own `ui_kits/spekooh-app/ProfileScreen.jsx`
+  mockup — the exact "Spark/Ember/Inferno/Scholar I" names were already there, just never backed
+  by real data): `HttpProfileRepository.getAchievements` previously always returned `[]` with a
+  comment explaining mock data would misrepresent a real user's progress. Now computes real
+  earned/locked state client-side from counts the profile screen already fetches
+  (`submissionsCount`/`quizzesCount`) — no new backend endpoint, same "compose from
+  already-existing data" pattern `getUser()` uses. The "Badges" section header now shows a real
+  "All N" count (N = however many are actually defined, never a fabricated round number) and opens
+  a real list of every badge, earned or not, with what it actually takes to earn it.
+- **Profile: "Spekooh Pro" promo card** (2026-08-28, owner decision, adapting a reference promo
+  card): a second, more visible entry point to the real paywall (Settings already had one) — same
+  real 500 FCFA/mo subscription, not a separate offer.
+- **A real, readable Privacy Policy** (2026-08-28, owner-provided reference policy adapted for
+  Spekooh): Settings' "Privacy policy" row had no `onTap` at all, and the signup screen asked every
+  new user to agree to a "Privacy Policy" that didn't exist anywhere reachable in the app. Adapted
+  the owner's reference policy — same structure and thoroughness, but every claim in it checked
+  against what Spekooh's own code actually does: real data categories (name/email/phone/photos/
+  submitted papers, no location, no push notifications since neither exists in this codebase),
+  the real third-party SDK (Google AdMob, for the opt-in rewarded-ad unlock only — not blanket
+  display ads), and the real in-app way to review/correct your data (Profile's new Edit profile
+  sheet above). No company name/address existed to state, so it refers to itself simply as
+  "Spekooh" throughout (owner-confirmed) with the real support email/phone already used elsewhere
+  in Settings. Wired into both the Settings row and a new "View Privacy Policy" link next to the
+  signup terms checkbox.
 
 ---
 

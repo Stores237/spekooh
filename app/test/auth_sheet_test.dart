@@ -49,6 +49,19 @@ void main() {
     expect(sentBody?['terms_accepted'], true);
   });
 
+  testWidgets('the terms checkbox\'s "View Privacy Policy" link opens a real, readable policy', (tester) async {
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
+
+    await tester.pumpWidget(l10nTestApp(const Scaffold(body: AuthSheet())));
+    await tester.tap(find.text('New here? Create an account'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('View Privacy Policy'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Spekooh ("we", "us", "our")'), findsOneWidget);
+  });
+
   testWidgets('registering with no referral code omits it entirely, not as an empty string', (tester) async {
     Map<String, dynamic>? sentBody;
     final mockClient = MockClient((request) async {

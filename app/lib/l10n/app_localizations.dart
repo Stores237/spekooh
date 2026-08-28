@@ -1712,6 +1712,108 @@ abstract class AppLocalizations {
   /// **'Could not open the link.'**
   String get couldNotOpenLink;
 
+  /// No description provided for @editProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get editProfileTitle;
+
+  /// No description provided for @editProfileUsernameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get editProfileUsernameLabel;
+
+  /// No description provided for @editProfilePhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get editProfilePhoneLabel;
+
+  /// No description provided for @editProfilePhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'670 12 34 56'**
+  String get editProfilePhoneHint;
+
+  /// No description provided for @saveChangesButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get saveChangesButton;
+
+  /// No description provided for @editProfileError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save your changes: {error}'**
+  String editProfileError(String error);
+
+  /// No description provided for @editProfileEmailChangedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a new verification code to your updated email.'**
+  String get editProfileEmailChangedNotice;
+
+  /// No description provided for @achievementSparkDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit your first exam paper or report'**
+  String get achievementSparkDescription;
+
+  /// No description provided for @achievementEmberDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit 5 papers or reports'**
+  String get achievementEmberDescription;
+
+  /// No description provided for @achievementInfernoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit 15 papers or reports'**
+  String get achievementInfernoDescription;
+
+  /// No description provided for @achievementScholarDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 10 quizzes'**
+  String get achievementScholarDescription;
+
+  /// No description provided for @badgesSectionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'All {count}'**
+  String badgesSectionCount(int count);
+
+  /// No description provided for @allBadgesSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Badges'**
+  String get allBadgesSheetTitle;
+
+  /// No description provided for @badgeEarnedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Earned'**
+  String get badgeEarnedLabel;
+
+  /// No description provided for @badgeLockedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get badgeLockedLabel;
+
+  /// No description provided for @privacyPolicyLastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated {date}'**
+  String privacyPolicyLastUpdated(String date);
+
+  /// No description provided for @viewPrivacyPolicyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'View Privacy Policy'**
+  String get viewPrivacyPolicyLink;
+
   /// No description provided for @viewOnlyNotice.
   ///
   /// In en, this message translates to:

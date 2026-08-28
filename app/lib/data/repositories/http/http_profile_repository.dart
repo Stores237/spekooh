@@ -2,6 +2,7 @@ import '../../../models/achievement.dart';
 import '../../../models/spekooh_user.dart';
 import '../../../models/submission.dart';
 import '../../../widgets/spekooh_badge.dart';
+import '../../achievement_definitions.dart';
 import '../../api_client.dart';
 import '../papers_repository.dart' show SubmissionFile;
 import '../profile_repository.dart';
@@ -68,12 +69,23 @@ class HttpProfileRepository implements ProfileRepository {
       firstUnlockFreeEligible: me['first_unlock_free_eligible'] as bool? ?? false,
       referralCode: me['referral_code'] as String? ?? '',
       avatarUrl: me['avatar_url'] as String?,
+      email: me['email'] as String? ?? '',
+      phoneNumber: me['phone_number'] as String? ?? '',
     );
   }
 
   @override
   Future<void> setLanguagePreference(String code) async {
     await _client.patch('/auth/me/', body: {'language_pref': code});
+  }
+
+  @override
+  Future<void> updateProfile({required String name, required String email, required String phoneNumber}) async {
+    await _client.patch('/auth/me/', body: {
+      'name': name,
+      'email': email.isEmpty ? null : email,
+      'phone_number': phoneNumber.isEmpty ? null : phoneNumber,
+    });
   }
 
   @override
@@ -90,12 +102,12 @@ class HttpProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<List<Achievement>> getAchievements() async {
-    // No backend concept for achievements/gamification — not in the confirmed
-    // spec (see the backend-wiring plan's "explicitly out of scope"). Empty
-    // rather than mock data, since mock content would misrepresent a real
-    // logged-in user's progress.
-    return const [];
+  Future<List<Achievement>> getAchievements(SpekoohUser user) async {
+    // Owner decision, 2026-08-28: real badges computed from [user]'s real,
+    // already-fetched counts (see data/achievement_definitions.dart) —
+    // still no separate backend achievements endpoint/model, same
+    // "compose client-side" pattern getUser() above uses.
+    return computeAchievements(user);
   }
 
   @override

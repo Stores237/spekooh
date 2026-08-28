@@ -11,10 +11,18 @@ class SpekoohUser {
     this.firstUnlockFreeEligible = false,
     this.referralCode = '',
     this.avatarUrl,
+    this.email = '',
+    this.phoneNumber = '',
   });
 
   final String name;
   final String joinDate;
+
+  /// Empty means genuinely not set (a guest, or a registered user who
+  /// skipped it) — never a fabricated placeholder. Pre-fills the real Edit
+  /// profile sheet; see ProfileRepository.updateProfile.
+  final String email;
+  final String phoneNumber;
   final int submissionsCount;
   final int quizzesCount;
   final int creditBalance;
