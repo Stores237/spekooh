@@ -12,10 +12,12 @@ import '../../models/offline_paper.dart';
 import '../../models/quiz.dart';
 import '../../models/spekooh_user.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/icon_chip.dart';
 import '../../widgets/spekooh_button.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:open_filex/open_filex.dart';
@@ -263,71 +265,146 @@ class LoggedInHomeScreen extends StatelessWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisSpacing: 8,
                         mainAxisSpacing: 8,
-                        childAspectRatio: 1.5,
+                        // Taller-than-wide before (icon over label, 2 lines);
+                        // icon-and-label now sit on one line (owner decision,
+                        // 2026-08-28), so each card needs far less height.
+                        childAspectRatio: 2.6,
                         children: [
-                          _quickAction(LucideIcons.fileText, l10n.navPapers, onOpenPapers),
-                          _quickAction(LucideIcons.bookOpen, l10n.notesTitle, onOpenNotes),
-                          _quickAction(LucideIcons.upload, l10n.quickActionContribute, onOpenSubmit),
-                          _quickAction(LucideIcons.shoppingBag, l10n.shopTitle, onOpenShop),
-                          _quickAction(LucideIcons.messageCircle, l10n.navForum, onOpenForum),
-                          _quickAction(LucideIcons.zap, l10n.navQuizzes, onOpenQuizzes),
+                          _quickAction(LucideIcons.fileText, l10n.navPapers, onOpenPapers, IconChipTint.blue),
+                          _quickAction(LucideIcons.bookOpen, l10n.notesTitle, onOpenNotes, IconChipTint.purple),
+                          _quickAction(LucideIcons.upload, l10n.quickActionContribute, onOpenSubmit, IconChipTint.gold),
+                          _quickAction(LucideIcons.shoppingBag, l10n.shopTitle, onOpenShop, IconChipTint.green),
+                          _quickAction(LucideIcons.messageCircle, l10n.navForum, onOpenForum, IconChipTint.red),
+                          _quickAction(LucideIcons.zap, l10n.navQuizzes, onOpenQuizzes, IconChipTint.amber),
                         ],
                       ),
                     ),
+                    // Two separate cards (owner decision, 2026-08-28, adapting a
+                    // reference design) instead of one dark card split by an
+                    // internal divider — same real data as before (quiz.title,
+                    // quiz.questionCount, the real quiz.suggestedTime, and the
+                    // real streak from quizzesRepository.getStreak()), just
+                    // restyled. IntrinsicHeight lets CrossAxisAlignment.stretch
+                    // make both cards match height even though their content
+                    // differs — without it, Expanded inside a Row that's
+                    // itself height-unconstrained (this Column sits inside a
+                    // SingleChildScrollView) throws at layout time.
                     Transform.translate(
                       offset: const Offset(0, -4),
-                      child: FutureBuilder<Quiz>(
-                        future: quizzesRepository.getDailyChallenge(),
-                        builder: (context, snapshot) {
-                          final quiz = snapshot.data;
-                          return GestureDetector(
-                            onTap: onOpenQuizzes,
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(color: AppColors.ink900, borderRadius: BorderRadius.circular(18)),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(l10n.dailyChallengeLabel, style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 13)),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          quiz == null ? l10n.dailyChallengeLoading : l10n.dailyChallengeInfo(quiz.title, quiz.questionCount),
-                                          style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 11),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                          decoration: BoxDecoration(color: AppColors.gold500, borderRadius: BorderRadius.circular(999)),
-                                          child: Text(l10n.playNow, style: const TextStyle(color: AppColors.ink900, fontWeight: FontWeight.w800, fontSize: 12)),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(width: 1, height: 44, color: Colors.white.withValues(alpha: 0.15)),
-                                  FutureBuilder<({int currentStreak, bool playedToday})>(
-                                    future: quizzesRepository.getStreak(),
-                                    builder: (context, streakSnapshot) {
-                                      final streak = streakSnapshot.data?.currentStreak ?? 0;
-                                      return Expanded(
-                                        child: Column(
-                                          children: [
-                                            Icon(LucideIcons.flame, size: 22, color: AppColors.gold500),
-                                            const SizedBox(height: 4),
-                                            Text(streak > 0 ? l10n.streakDaysCount(streak) : l10n.streakStart, style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 13)),
-                                            Text(streak > 0 ? l10n.streakKeepGoing : l10n.streakPlayToBegin, style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 10)),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: FutureBuilder<Quiz>(
+                                future: quizzesRepository.getDailyChallenge(),
+                                builder: (context, snapshot) {
+                                  final quiz = snapshot.data;
+                                  return GestureDetector(
+                                    onTap: onOpenQuizzes,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                l10n.dailyChallengeLabel.toUpperCase(),
+                                                style: const TextStyle(color: AppColors.gold700, fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
+                                              ),
+                                              if (quiz != null) ...[
+                                                const SizedBox(width: 8),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(color: AppColors.gold50, borderRadius: BorderRadius.circular(999)),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(LucideIcons.clock, size: 10, color: AppColors.gold700),
+                                                      const SizedBox(width: 3),
+                                                      Text(quiz.suggestedTime, style: const TextStyle(color: AppColors.gold700, fontWeight: FontWeight.w800, fontSize: 10)),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            quiz == null ? l10n.dailyChallengeLoading : quiz.title,
+                                            style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 15),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          if (quiz != null) ...[
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              l10n.dailyChallengeInfo(quiz.title, quiz.questionCount),
+                                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
+                                          const SizedBox(height: 12),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                                            decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(999)),
+                                            alignment: Alignment.center,
+                                            child: Text(l10n.playNow, style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          );
-                        },
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 2,
+                              child: FutureBuilder<({int currentStreak, bool playedToday})>(
+                                future: quizzesRepository.getStreak(),
+                                builder: (context, streakSnapshot) {
+                                  final streak = streakSnapshot.data?.currentStreak ?? 0;
+                                  return GestureDetector(
+                                    onTap: onOpenQuizzes,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            width: 48,
+                                            height: 48,
+                                            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.gold200, width: 3)),
+                                            alignment: Alignment.center,
+                                            child: const Icon(LucideIcons.flame, size: 20, color: AppColors.gold600),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            streak > 0 ? l10n.streakDaysCount(streak) : l10n.streakStart,
+                                            style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 14),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            streak > 0 ? l10n.streakKeepGoing : l10n.streakPlayToBegin,
+                                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     // Empty when nothing's been saved offline yet (or on
@@ -455,18 +532,31 @@ class LoggedInHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _quickAction(IconData icon, String label, VoidCallback? onTap) {
+  // Icon and label used to stack (2 lines, one uniform gold icon color for
+  // all 6 cards) — now a single line with a distinct tint per card, using
+  // the same IconChip tint system the rest of the app already uses for
+  // categorical color (owner decision, 2026-08-28, found from a live
+  // screenshot).
+  Widget _quickAction(IconData icon, String label, VoidCallback? onTap, IconChipTint tint) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(12), boxShadow: AppShadows.card),
-        child: Column(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: AppColors.gold700),
-            const SizedBox(height: 6),
-            Text(label, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            IconChip(icon: icon, tint: tint, size: 30),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),

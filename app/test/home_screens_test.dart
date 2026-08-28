@@ -132,9 +132,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     expect(tester.takeException(), isNull);
     expect(find.text('Guest'), findsOneWidget); // MockProfileRepository's real (if placeholder) name
-    expect(find.text('Daily challenge'), findsOneWidget);
+    expect(find.text('DAILY CHALLENGE'), findsOneWidget); // uppercased for the two-card daily-challenge layout
+    expect(find.text('Group VII the Halogens Quiz'), findsOneWidget); // real quiz.title, own line now
+    expect(find.text('8 min'), findsOneWidget); // real quiz.suggestedTime, not a fabricated duration
     expect(find.text('START A STREAK'), findsOneWidget); // MockQuizzesRepository starts at zero — honest, not fabricated
     expect(find.text('Ready offline'), findsNothing); // nothing saved yet — section shouldn't fabricate itself
+    // Quick-actions grid: single line (icon + label), a distinct tint each —
+    // still every real label, just restyled.
+    for (final label in ['Papers', 'Notes', 'Contribute', 'Shop', 'Forum', 'Quizzes']) {
+      expect(find.text(label), findsOneWidget);
+    }
   });
 
   testWidgets('LoggedInHomeScreen EN/FR pill actually switches the locale, not just decorative', (tester) async {
@@ -145,14 +152,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(LocaleController.instance.locale.languageCode, 'en');
-    expect(find.text('Daily challenge'), findsOneWidget); // English string, confirms starting locale
+    expect(find.text('DAILY CHALLENGE'), findsOneWidget); // English string, confirms starting locale
 
     await tester.tap(find.text('FR'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(LocaleController.instance.locale.languageCode, 'fr');
-    expect(find.text('Défi du jour'), findsOneWidget); // same section, now in French
+    expect(find.text('DÉFI DU JOUR'), findsOneWidget); // same section, now in French
   });
 
   testWidgets('LoggedInHomeScreen shows a real "Ready offline" section once a paper is actually saved', (tester) async {
@@ -227,9 +234,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Défi du jour'), findsOneWidget);
+    expect(find.text('DÉFI DU JOUR'), findsOneWidget);
     expect(find.text('COMMENCER UNE SÉRIE'), findsOneWidget);
-    expect(find.text('Daily challenge'), findsNothing);
+    expect(find.text('DAILY CHALLENGE'), findsNothing);
   });
 
   testWidgets('the "Ready offline" section renders in French once that locale is active', (tester) async {
