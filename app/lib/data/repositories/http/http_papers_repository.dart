@@ -135,6 +135,8 @@ class HttpPapersRepository implements PapersRepository {
         requiresUnlock: row['requires_unlock'] as bool? ?? false,
         isUnlocked: row['is_unlocked'] as bool? ?? false,
         hasMarkingGuide: row['has_marking_guide'] as bool? ?? false,
+        paperDownloadUnlocked: row['paper_download_unlocked'] as bool? ?? true,
+        paperDownloadPriceFcfa: row['paper_download_price_fcfa'] as int? ?? 0,
       );
 
   @override
@@ -234,6 +236,15 @@ class HttpPapersRepository implements PapersRepository {
       'paper_submission': paperId,
       'phone_number': '000000000',
       if (redeemCode != null && redeemCode.isNotEmpty) 'redeem_code': redeemCode,
+    });
+    return row['amount_paid'] as int;
+  }
+
+  @override
+  Future<int> unlockPaperDownload(int paperId) async {
+    final row = await _client.post('/payments/unlock-download/', body: {
+      'paper_submission': paperId,
+      'phone_number': '000000000',
     });
     return row['amount_paid'] as int;
   }

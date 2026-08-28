@@ -20,6 +20,8 @@ class PaperEntry {
     this.requiresUnlock = false,
     this.isUnlocked = false,
     this.hasMarkingGuide = false,
+    this.paperDownloadUnlocked = true,
+    this.paperDownloadPriceFcfa = 0,
   });
 
   final int id;
@@ -68,6 +70,15 @@ class PaperEntry {
   /// PaperAccessFieldsMixin.get_has_marking_guide on the backend). Never
   /// true for a report — reports have no marking-guide concept at all.
   final bool hasMarkingGuide;
+
+  /// Exam papers only (owner decision, 2026-08-28) — a separate, smaller
+  /// purchase from [isUnlocked] above: viewing an exam paper in-app is
+  /// always free, but downloading/saving it costs [paperDownloadPriceFcfa],
+  /// priced by exam level (see apps.papers.services.paper_download_price_fcfa
+  /// on the backend). Defaults true/0 — a report or anything not fetched
+  /// through the real serializer field is never gated by this.
+  final bool paperDownloadUnlocked;
+  final int paperDownloadPriceFcfa;
 
   bool get isReport => categoryKey == 'reports';
 

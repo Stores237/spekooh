@@ -4,7 +4,12 @@ from rest_framework import serializers
 from apps.payments.models import PaperUnlock
 
 from .models import AdWatchEvent, ExamCategory, ExamType, PaperFlag, PaperSubmission, PaperViewLog, Subject, SubjectLanguage
-from .services import report_download_is_free, user_can_view_file
+from .services import (
+    paper_download_price_fcfa,
+    report_download_is_free,
+    user_can_download_paper_file,
+    user_can_view_file,
+)
 
 
 class ExamCategorySerializer(serializers.ModelSerializer):
@@ -72,10 +77,19 @@ class PaperAccessFieldsMixin:
 
     is_unlocked: has this user actually completed a real PaperUnlock for
     this paper — independent of requires_unlock. Master's/PhD-tier reports
-    (already paid to view) and exam papers (whose PaperUnlock also gates
-    the marking guide) still require a real unlock to download. Lower-tier
+    (already paid to view) require a real unlock to download; exam papers'
+    PaperUnlock is a *different* purchase (it gates the marking guide, not
+    the file — see paper_download_unlocked below for the file). Lower-tier
     reports (Internship/Bachelor's/HND) are free to both view and download
     (owner decision) — see report_download_is_free.
+
+    paper_download_unlocked / paper_download_price_fcfa: exam papers only
+    (owner decision, 2026-08-28) — free to view in-app (ReportViewerScreen,
+    the same in-app-only renderer reports use), but downloading/saving the
+    file is a separate, small, exam-level-priced purchase (PaperDownloadUnlock
+    — see apps.papers.services.user_can_download_paper_file /
+    apps.payments.services.unlock_paper_download). Always True for a report
+    here — they keep the is_unlocked-based gate above instead.
     """
 
     def get_requires_unlock(self, obj) -> bool:
@@ -91,6 +105,16 @@ class PaperAccessFieldsMixin:
         if user is None or not user.is_authenticated:
             return False
         return PaperUnlock.objects.has_unlocked(user, obj)
+
+    def get_paper_download_unlocked(self, obj) -> bool:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is None:
+            return obj.category.key == "reports"
+        return user_can_download_paper_file(user, obj)
+
+    def get_paper_download_price_fcfa(self, obj) -> int:
+        return paper_download_price_fcfa(obj)
 
     def get_category_key(self, obj) -> str:
         return obj.category.key
@@ -121,6 +145,8 @@ class PaperSubmissionListSerializer(PaperAccessFieldsMixin, serializers.ModelSer
     requires_unlock = serializers.SerializerMethodField()
     is_unlocked = serializers.SerializerMethodField()
     has_marking_guide = serializers.SerializerMethodField()
+    paper_download_unlocked = serializers.SerializerMethodField()
+    paper_download_price_fcfa = serializers.SerializerMethodField()
 
     class Meta:
         model = PaperSubmission
@@ -141,6 +167,8 @@ class PaperSubmissionListSerializer(PaperAccessFieldsMixin, serializers.ModelSer
             "requires_unlock",
             "is_unlocked",
             "has_marking_guide",
+            "paper_download_unlocked",
+            "paper_download_price_fcfa",
             "status",
             "created_at",
         ]
@@ -152,6 +180,8 @@ class PaperSubmissionDetailSerializer(PaperAccessFieldsMixin, serializers.ModelS
     requires_unlock = serializers.SerializerMethodField()
     is_unlocked = serializers.SerializerMethodField()
     has_marking_guide = serializers.SerializerMethodField()
+    paper_download_unlocked = serializers.SerializerMethodField()
+    paper_download_price_fcfa = serializers.SerializerMethodField()
 
     class Meta:
         model = PaperSubmission
@@ -173,6 +203,8 @@ class PaperSubmissionDetailSerializer(PaperAccessFieldsMixin, serializers.ModelS
             "requires_unlock",
             "is_unlocked",
             "has_marking_guide",
+            "paper_download_unlocked",
+            "paper_download_price_fcfa",
             "ocr_text",
             "duplicate_hash",
             "is_duplicate",
@@ -207,6 +239,8 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
     category_key = serializers.SerializerMethodField()
     requires_unlock = serializers.SerializerMethodField()
     is_unlocked = serializers.SerializerMethodField()
+    paper_download_unlocked = serializers.SerializerMethodField()
+    paper_download_price_fcfa = serializers.SerializerMethodField()
 
     class Meta:
         model = PaperSubmission
@@ -227,6 +261,8 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
             "file_url",
             "requires_unlock",
             "is_unlocked",
+            "paper_download_unlocked",
+            "paper_download_price_fcfa",
             "status",
             "created_at",
             "mcq_section",

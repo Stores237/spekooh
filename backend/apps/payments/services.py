@@ -4,9 +4,10 @@ from django.utils import timezone
 
 from apps.core.payment_provider import MockPaymentProvider, PaymentProvider
 from apps.credits.services import RedeemCodeError, award_referral_bonus, redeem_code
-from apps.papers.services import report_download_is_free
+from apps.papers.services import paper_download_price_fcfa, report_download_is_free
 
 from .models import (
+    PaperDownloadUnlock,
     PaperUnlock,
     PaymentPurpose,
     PaymentTransaction,
@@ -127,3 +128,35 @@ def unlock_paper(*, user, paper_submission, phone_number: str, redeem_code_str: 
     )
     award_referral_bonus(user)
     return unlock
+
+
+class PaperDownloadUnlockError(Exception):
+    pass
+
+
+def unlock_paper_download(*, user, paper_submission, phone_number: str) -> PaperDownloadUnlock:
+    """Exam papers only — reports already have their own free-view-then-
+    pay-to-download gate (unlock_paper above handles that, keyed off
+    report_download_is_free). No trial waiver, no redeem-code discount, no
+    referral bonus here — those are specifically the marking-guide
+    economy's perks (see unlock_paper); this is a separate, much smaller
+    purchase and deliberately kept simple."""
+    if paper_submission.category.key == "reports":
+        raise PaperDownloadUnlockError("Reports use the existing report-download unlock, not this one.")
+    if PaperDownloadUnlock.objects.has_unlocked(user, paper_submission):
+        raise PaperDownloadUnlockError("Already unlocked.")
+
+    amount = paper_download_price_fcfa(paper_submission)
+    transaction = charge(
+        user=user,
+        purpose=PaymentPurpose.PAPER_DOWNLOAD,
+        amount_fcfa=amount,
+        phone_number=phone_number,
+        description=f"Paper download unlock: paper {paper_submission.id}",
+    )
+    if transaction.status != PaymentTransactionStatus.SUCCESS:
+        raise PaperDownloadUnlockError(transaction.failure_reason or "Payment failed.")
+
+    return PaperDownloadUnlock.objects.create(
+        user=user, paper_submission=paper_submission, amount_paid=amount, payment_transaction=transaction
+    )

@@ -1874,6 +1874,12 @@ abstract class AppLocalizations {
   /// **'Unlock below to save a copy for offline reading.'**
   String get unlockToDownloadHint;
 
+  /// No description provided for @unlockDownloadButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock download: {amount} FCFA'**
+  String unlockDownloadButton(int amount);
+
   /// No description provided for @haveRedeemCode.
   ///
   /// In en, this message translates to:

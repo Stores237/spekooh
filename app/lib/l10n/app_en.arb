@@ -418,6 +418,10 @@
   "reportLockedTitle": "This report requires unlocking",
   "reportLockedMessage": "PhD and Master's theses require payment to view. Unlock below to read it.",
   "unlockToDownloadHint": "Unlock below to save a copy for offline reading.",
+  "unlockDownloadButton": "Unlock download: {amount} FCFA",
+  "@unlockDownloadButton": {
+    "placeholders": {"amount": {"type": "int"}}
+  },
   "haveRedeemCode": "Have a redeem code?",
   "redeemCodeHint": "Redeem code",
   "mcqDisclaimer": "Objective/MCQ answers are marked in-house by the Spekooh review team, not the instructor.",

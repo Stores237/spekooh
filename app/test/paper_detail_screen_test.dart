@@ -538,4 +538,106 @@ void main() {
       expect(find.text('Unlock: 500 FCFA'), findsOneWidget);
     });
   });
+
+  group('exam paper download unlock (owner decision, 2026-08-28) — free to view, paid to download', () {
+    final notYetUnlocked = PaperEntry(
+      id: 5,
+      year: 2026,
+      system: null,
+      track: '',
+      status: 'PUBLISHED',
+      fileUrl: 'https://cdn.example.com/paper5.pdf',
+      createdAt: DateTime(2026, 1, 1),
+      examTypeName: 'GCE O Level',
+      paperDownloadUnlocked: false,
+      paperDownloadPriceFcfa: 75,
+    );
+
+    testWidgets('viewing an exam paper opens the real in-app viewer, not an external handoff', (tester) async {
+      final observer = _RecordingNavigatorObserver();
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: notYetUnlocked, repository: _FileBackedPapersRepository(notYetUnlocked), adController: _FakeRewardedAdController(grantsReward: false)),
+        navigatorObservers: [observer],
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.tap(find.text('Open scanned paper'));
+      final pushed = observer.lastPushed;
+      expect(pushed, isA<MaterialPageRoute>());
+      final builtWidget = (pushed as MaterialPageRoute).builder(tester.element(find.byType(PaperDetailScreen)));
+      expect(builtWidget, isA<ReportViewerScreen>());
+      expect((builtWidget as ReportViewerScreen).fileUrl, 'https://cdn.example.com/paper5.pdf');
+    });
+
+    testWidgets('with no real download unlock yet, shows a real unlock button instead of Save offline', (tester) async {
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: notYetUnlocked, repository: _FileBackedPapersRepository(notYetUnlocked), adController: _FakeRewardedAdController(grantsReward: false)),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Save offline'), findsNothing);
+      expect(find.text('Unlock download: 75 FCFA'), findsOneWidget);
+    });
+
+    testWidgets('paying unlocks Save offline immediately, without reopening the screen', (tester) async {
+      final unlocked = PaperEntry(
+        id: notYetUnlocked.id,
+        year: notYetUnlocked.year,
+        system: notYetUnlocked.system,
+        track: notYetUnlocked.track,
+        status: notYetUnlocked.status,
+        fileUrl: notYetUnlocked.fileUrl,
+        createdAt: notYetUnlocked.createdAt,
+        examTypeName: notYetUnlocked.examTypeName,
+        paperDownloadUnlocked: true,
+      );
+      final repository = _UnlockableDownloadRepository(gated: notYetUnlocked, unlocked: unlocked);
+      OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
+
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: notYetUnlocked, repository: repository, adController: _FakeRewardedAdController(grantsReward: false)),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Unlock download: 75 FCFA'), findsOneWidget);
+      await tester.tap(find.text('Unlock download: 75 FCFA'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(repository.unlockCalls, 1);
+      expect(find.text('Unlock download: 75 FCFA'), findsNothing);
+      expect(find.text('Save offline'), findsOneWidget);
+    });
+  });
+}
+
+/// getPaperDetail returns [gated] until [unlockPaperDownload] is actually
+/// called, then [unlocked] — same "does the screen actually re-fetch after
+/// paying" mirror as _UnlockableReportRepository, for the new exam-paper
+/// download-unlock flow instead of the report/marking-guide ones.
+class _UnlockableDownloadRepository implements PapersRepository {
+  _UnlockableDownloadRepository({required this.gated, required this.unlocked});
+  final PaperEntry gated;
+  final PaperEntry unlocked;
+  bool paid = false;
+  int unlockCalls = 0;
+
+  @override
+  Future<PaperEntry> getPaperDetail(int paperId) async => paid ? unlocked : gated;
+
+  @override
+  Future<void> recordView(int paperId) async {}
+
+  @override
+  Future<int> unlockPaperDownload(int paperId) async {
+    unlockCalls++;
+    paid = true;
+    return 75;
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by download-unlock tests');
 }
