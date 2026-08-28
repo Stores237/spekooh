@@ -585,6 +585,17 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   network, no router config) including the exact troubleshooting for both bugs above. Also added
   `backend/requirements.txt` (previously untracked entirely — a fresh clone had no way to know
   what to `pip install`), generated from the real working environment via `pip freeze`.
+- **Subject picker: long subject names no longer overflow their card** (2026-08-28, found from a
+  live screenshot): `SubjectCard`'s title had no `maxLines`/`overflow`, and the subject grid
+  (`papers_screen.dart`) uses a fixed `childAspectRatio` for every cell — a real, sometimes
+  contributor-typed subject name ("Research méthodologie and scientific writing", "Fondation of
+  data science and programming of data science") wrapped to 3+ lines and spilled out of its own
+  card into whatever sat below it (in the reported case, onto the AI assistant FAB). Capped the
+  title to 2 lines with ellipsis, tightened the card's internal padding/spacing, and gave the
+  subject grid specifically more vertical room (`childAspectRatio` 1.15 → 0.92 — the category
+  grid, which has no badge row and only ever shows short curated names, is untouched). Verified
+  against the exact reported title plus a comparably-long one, at a real narrow-phone cell size,
+  not just the default test viewport.
 
 ---
 

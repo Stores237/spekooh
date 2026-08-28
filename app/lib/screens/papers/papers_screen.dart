@@ -283,7 +283,15 @@ class _PapersScreenState extends State<PapersScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: AppSpacing.space3,
                 mainAxisSpacing: AppSpacing.space3,
-                childAspectRatio: 1.15,
+                // Shorter than the category grid's 1.15 — these cards carry
+                // an extra badge row category cards don't, and real subject
+                // names run long enough to wrap to 2 lines fairly often (see
+                // SubjectCard's own maxLines cap) — 1.15 was too short for
+                // icon + 2-line title + subtitle + badge together and
+                // overflowed past the card (found from a live screenshot,
+                // 2026-08-28). 0.92 leaves real headroom on narrower phones
+                // too, not just the width this was first noticed on.
+                childAspectRatio: 0.92,
                 children: subjects
                     .map((s) => SubjectCard(
                           icon: IconChip(icon: s.icon, tint: s.tint),
