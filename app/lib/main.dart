@@ -7,6 +7,7 @@ import 'data/offline_papers_store.dart';
 import 'l10n/app_localizations.dart';
 import 'theme/app_theme.dart';
 import 'shell/root_shell.dart';
+import 'shell/route_observers.dart';
 import 'shell/splash_screen.dart';
 
 void main() async {
@@ -45,6 +46,7 @@ class SpekoohApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        navigatorObservers: [profileRouteObserver],
         home: const SplashScreen(child: RootShell()),
       ),
     );

@@ -10,6 +10,7 @@ import 'package:spekooh/models/spekooh_user.dart';
 import 'package:spekooh/models/submission.dart';
 import 'package:spekooh/screens/profile/profile_screen.dart';
 import 'package:spekooh/sheets/achievements_sheet.dart';
+import 'package:spekooh/shell/route_observers.dart';
 
 import 'support/l10n_test_app.dart';
 
@@ -50,6 +51,35 @@ class _EditableProfileRepository implements ProfileRepository {
 
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by profile-edit tests');
+}
+
+/// A real, published contribution's count previously stayed 0 on an
+/// already-open Profile screen after popping back from a screen pushed on
+/// top of it (e.g. Settings) — found from a live report, 2026-08-28.
+/// [submissionsCount] is mutable to simulate "the admin published a paper
+/// while the user was elsewhere in the app".
+class _RefreshingProfileRepository implements ProfileRepository {
+  int submissionsCount = 0;
+
+  @override
+  Future<SpekoohUser> getUser() async => SpekoohUser(
+        name: 'Test User',
+        joinDate: 'Joined Jul 2026',
+        submissionsCount: submissionsCount,
+        quizzesCount: 0,
+        creditBalance: 0,
+        redeemCode: '',
+        redeemCodeSubtitle: '',
+      );
+
+  @override
+  Future<List<Achievement>> getAchievements(SpekoohUser user) async => computeAchievements(user);
+
+  @override
+  Future<List<Submission>> getSubmissions() async => const [];
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by the refresh test');
 }
 
 void _fakeLoggedIn() {
@@ -195,6 +225,46 @@ void main() {
 
       expect(repository.updateCalls, 0);
       expect(find.text('Original Name'), findsOneWidget);
+    });
+  });
+
+  group('Real counts refresh on return (owner-reported bug, 2026-08-28)', () {
+    testWidgets(
+        'a real contribution published while the user was on Settings shows up as soon as they return, not stuck at 0',
+        (tester) async {
+      _fakeLoggedIn();
+      final repository = _RefreshingProfileRepository();
+      await tester.pumpWidget(l10nTestApp(
+        Builder(
+          builder: (context) => ProfileScreen(
+            repository: repository,
+            onOpenSettings: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Settings placeholder'))),
+            ),
+          ),
+        ),
+        navigatorObservers: [profileRouteObserver],
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('0 SUBMISSIONS'), findsOneWidget);
+
+      // The admin publishes a real paper while the user has navigated away
+      // to Settings — this is the exact real scenario reported: the
+      // backend/data is correct, but the already-open Profile screen never
+      // knew to refetch.
+      repository.submissionsCount = 3;
+
+      await tester.tap(find.byIcon(LucideIcons.settings));
+      await tester.pumpAndSettle();
+      expect(find.text('Settings placeholder'), findsOneWidget);
+
+      Navigator.of(tester.element(find.text('Settings placeholder'))).pop();
+      await tester.pumpAndSettle();
+
+      expect(find.text('3 SUBMISSIONS'), findsOneWidget);
+      expect(find.text('0 SUBMISSIONS'), findsNothing);
     });
   });
 
