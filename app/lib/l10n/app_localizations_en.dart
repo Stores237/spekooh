@@ -916,6 +916,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotOpenLink => 'Could not open the link.';
 
   @override
+  String get editProfileTitle => 'Edit profile';
+
+  @override
+  String get editProfileUsernameLabel => 'Username';
+
+  @override
+  String get editProfilePhoneLabel => 'Phone';
+
+  @override
+  String get editProfilePhoneHint => '670 12 34 56';
+
+  @override
+  String get saveChangesButton => 'Save changes';
+
+  @override
+  String editProfileError(String error) {
+    return 'Could not save your changes: $error';
+  }
+
+  @override
+  String get editProfileEmailChangedNotice =>
+      'We sent a new verification code to your updated email.';
+
+  @override
+  String get achievementSparkDescription =>
+      'Submit your first exam paper or report';
+
+  @override
+  String get achievementEmberDescription => 'Submit 5 papers or reports';
+
+  @override
+  String get achievementInfernoDescription => 'Submit 15 papers or reports';
+
+  @override
+  String get achievementScholarDescription => 'Complete 10 quizzes';
+
+  @override
+  String badgesSectionCount(int count) {
+    return 'All $count';
+  }
+
+  @override
+  String get allBadgesSheetTitle => 'Badges';
+
+  @override
+  String get badgeEarnedLabel => 'Earned';
+
+  @override
+  String get badgeLockedLabel => 'Locked';
+
+  @override
+  String privacyPolicyLastUpdated(String date) {
+    return 'Last updated $date';
+  }
+
+  @override
+  String get viewPrivacyPolicyLink => 'View Privacy Policy';
+
+  @override
   String get viewOnlyNotice => 'View only. Unlock to download a copy';
 
   @override

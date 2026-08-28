@@ -70,6 +70,22 @@ class UserSerializer(serializers.ModelSerializer):
         url = obj.avatar.url
         return request.build_absolute_uri(url) if request else url
 
+    def update(self, instance, validated_data):
+        # Edit-profile (PATCH /accounts/me/) lets a user change their email
+        # freely — but email_verified_at was only ever set for the *old*
+        # address. Without this, changing your email to one you don't
+        # control would silently keep showing "verified", which is exactly
+        # what email verification exists to prevent (see PR #41). Reset and
+        # re-send, same real flow as at signup — not a new mechanism.
+        email_changed = "email" in validated_data and (validated_data["email"] or None) != instance.email
+        user = super().update(instance, validated_data)
+        if email_changed:
+            user.email_verified_at = None
+            user.save(update_fields=["email_verified_at"])
+            if user.email:
+                services.send_verification_email(user)
+        return user
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])

@@ -9,6 +9,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_form_field.dart';
 import '../widgets/spekooh_button.dart';
+import '../screens/legal/privacy_policy_screen.dart';
 import 'email_verification_sheet.dart';
 import 'password_reset_sheet.dart';
 
@@ -266,6 +267,21 @@ class _AuthSheetState extends State<AuthSheet> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              // Separate from the checkbox's own opaque GestureDetector
+              // above so this tap target doesn't fight it for the gesture —
+              // previously "Privacy Policy" in the label above was just
+              // static text asking users to agree to a document they had
+              // no way to actually read.
+              Padding(
+                padding: const EdgeInsets.only(left: 12, top: 2),
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
+                  child: Text(
+                    l10n.viewPrivacyPolicyLink,
+                    style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.gold700, decoration: TextDecoration.underline),
+                  ),
                 ),
               ),
             ],

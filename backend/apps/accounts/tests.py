@@ -223,6 +223,68 @@ def test_me_returns_null_avatar_url_when_none_set(api_client):
 
 
 @pytest.mark.django_db
+def test_me_patch_updates_name_and_phone_number(api_client):
+    """The real "Edit profile" flow (owner decision, 2026-08-28, adapting a
+    reference username/email/phone edit sheet) — no new endpoint needed,
+    PATCH /auth/me/ already accepts these fields."""
+    UserFactory(email="editme@example.com", password="correcthorse123", name="Old Name")
+    login = api_client.post(
+        "/api/auth/login/", {"email": "editme@example.com", "password": "correcthorse123"}, format="json"
+    )
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+    response = api_client.patch(
+        "/api/auth/me/", {"name": "New Name", "phone_number": "+237670000001"}, format="json"
+    )
+
+    assert response.status_code == 200
+    assert response.data["name"] == "New Name"
+    assert response.data["phone_number"] == "+237670000001"
+
+
+@pytest.mark.django_db
+def test_me_patch_changing_email_resets_verification_and_sends_a_new_code(api_client, mailoutbox):
+    user = UserFactory(email="oldaddress@example.com", password="correcthorse123")
+    user.email_verified_at = timezone.now()
+    user.save(update_fields=["email_verified_at"])
+    login = api_client.post(
+        "/api/auth/login/", {"email": "oldaddress@example.com", "password": "correcthorse123"}, format="json"
+    )
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+    response = api_client.patch("/api/auth/me/", {"email": "newaddress@example.com"}, format="json")
+
+    assert response.status_code == 200
+    assert response.data["email_verified"] is False
+    user.refresh_from_db()
+    assert user.email == "newaddress@example.com"
+    assert user.email_verified_at is None
+    assert len(mailoutbox) == 1
+    assert "newaddress@example.com" in mailoutbox[0].to
+
+
+@pytest.mark.django_db
+def test_me_patch_keeping_the_same_email_does_not_reset_verification(api_client, mailoutbox):
+    user = UserFactory(email="staysame@example.com", password="correcthorse123", name="Old Name")
+    user.email_verified_at = timezone.now()
+    user.save(update_fields=["email_verified_at"])
+    login = api_client.post(
+        "/api/auth/login/", {"email": "staysame@example.com", "password": "correcthorse123"}, format="json"
+    )
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+    response = api_client.patch(
+        "/api/auth/me/", {"name": "New Name", "email": "staysame@example.com"}, format="json"
+    )
+
+    assert response.status_code == 200
+    assert response.data["email_verified"] is True
+    user.refresh_from_db()
+    assert user.email_verified_at is not None
+    assert len(mailoutbox) == 0
+
+
+@pytest.mark.django_db
 def test_me_patch_replaces_an_existing_avatar(api_client):
     user = UserFactory(email="replaceavatar@example.com", password="correcthorse123")
     login = api_client.post(

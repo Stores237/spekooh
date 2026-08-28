@@ -379,6 +379,32 @@
   },
   "couldNotOpenFile": "Could not open the file.",
   "couldNotOpenLink": "Could not open the link.",
+  "editProfileTitle": "Edit profile",
+  "editProfileUsernameLabel": "Username",
+  "editProfilePhoneLabel": "Phone",
+  "editProfilePhoneHint": "670 12 34 56",
+  "saveChangesButton": "Save changes",
+  "editProfileError": "Could not save your changes: {error}",
+  "@editProfileError": {
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "editProfileEmailChangedNotice": "We sent a new verification code to your updated email.",
+  "achievementSparkDescription": "Submit your first exam paper or report",
+  "achievementEmberDescription": "Submit 5 papers or reports",
+  "achievementInfernoDescription": "Submit 15 papers or reports",
+  "achievementScholarDescription": "Complete 10 quizzes",
+  "badgesSectionCount": "All {count}",
+  "@badgesSectionCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "allBadgesSheetTitle": "Badges",
+  "badgeEarnedLabel": "Earned",
+  "badgeLockedLabel": "Locked",
+  "privacyPolicyLastUpdated": "Last updated {date}",
+  "@privacyPolicyLastUpdated": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "viewPrivacyPolicyLink": "View Privacy Policy",
   "viewOnlyNotice": "View only. Unlock to download a copy",
   "reportThanksMessage": "Thanks! The Review Team has been notified.",
   "reportSendError": "Could not send report: {error}",

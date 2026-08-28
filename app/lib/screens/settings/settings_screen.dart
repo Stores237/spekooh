@@ -17,6 +17,7 @@ import '../../widgets/icon_chip.dart';
 import '../../widgets/list_item_row.dart';
 import '../../sheets/password_reset_sheet.dart';
 import '../common/circular_back_button.dart';
+import '../legal/privacy_policy_screen.dart';
 
 /// Ported from ui_kits/spekooh-app/SettingsScreen.jsx. `onLogin` is called
 /// by the bottom "Log in" button (shown to guests); `onLogout` by "Log out"
@@ -172,7 +173,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // resolve to anything, and no onTap until one exists.
                 ListItemRow(icon: const IconChip(icon: LucideIcons.globe, tint: IconChipTint.blue, size: 38), title: l10n.aboutWebsiteTitle, subtitle: l10n.notAvailableYet),
                 const Divider(height: 1),
-                ListItemRow(icon: const IconChip(icon: LucideIcons.lock, tint: IconChipTint.blue, size: 38), title: l10n.aboutPrivacyTitle),
+                ListItemRow(
+                  icon: const IconChip(icon: LucideIcons.lock, tint: IconChipTint.blue, size: 38),
+                  title: l10n.aboutPrivacyTitle,
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
+                ),
               ]),
               const SizedBox(height: AppSpacing.space6),
               if (AuthSession.instance.isLoggedIn)

@@ -158,6 +158,15 @@ void main() {
     expect(opened, isTrue);
   });
 
+  testWidgets('SettingsScreen "Privacy policy" opens a real screen, not a dead row', (tester) async {
+    await _pumpAndCheck(tester, SettingsScreen(profileRepository: MockProfileRepository()));
+    await tester.ensureVisible(find.text('Privacy policy'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Privacy policy'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Spekooh ("we", "us", "our")'), findsOneWidget);
+  });
+
   testWidgets('ProfileScreen builds with no exceptions', (tester) async {
     _fakeLoggedIn();
     await _pumpAndCheck(tester, ProfileScreen(repository: MockProfileRepository()));

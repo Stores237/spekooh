@@ -929,6 +929,66 @@ class AppLocalizationsFr extends AppLocalizations {
   String get couldNotOpenLink => 'Impossible d\'ouvrir le lien.';
 
   @override
+  String get editProfileTitle => 'Modifier le profil';
+
+  @override
+  String get editProfileUsernameLabel => 'Nom d\'utilisateur';
+
+  @override
+  String get editProfilePhoneLabel => 'Téléphone';
+
+  @override
+  String get editProfilePhoneHint => '670 12 34 56';
+
+  @override
+  String get saveChangesButton => 'Enregistrer';
+
+  @override
+  String editProfileError(String error) {
+    return 'Impossible d\'enregistrer vos modifications : $error';
+  }
+
+  @override
+  String get editProfileEmailChangedNotice =>
+      'Nous avons envoyé un nouveau code de vérification à votre nouvelle adresse e-mail.';
+
+  @override
+  String get achievementSparkDescription =>
+      'Soumettez votre première épreuve ou votre premier rapport';
+
+  @override
+  String get achievementEmberDescription => 'Soumettez 5 épreuves ou rapports';
+
+  @override
+  String get achievementInfernoDescription =>
+      'Soumettez 15 épreuves ou rapports';
+
+  @override
+  String get achievementScholarDescription => 'Terminez 10 quiz';
+
+  @override
+  String badgesSectionCount(int count) {
+    return 'Tout ($count)';
+  }
+
+  @override
+  String get allBadgesSheetTitle => 'Badges';
+
+  @override
+  String get badgeEarnedLabel => 'Obtenu';
+
+  @override
+  String get badgeLockedLabel => 'Verrouillé';
+
+  @override
+  String privacyPolicyLastUpdated(String date) {
+    return 'Dernière mise à jour : $date';
+  }
+
+  @override
+  String get viewPrivacyPolicyLink => 'Voir la politique de confidentialité';
+
+  @override
   String get viewOnlyNotice =>
       'Consultation uniquement. Débloquez pour télécharger une copie';
 

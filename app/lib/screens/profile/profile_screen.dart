@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../data/achievement_definitions.dart';
 import '../../data/auth_session.dart';
 import '../../data/repositories/papers_repository.dart' show SubmissionFile;
 import '../../data/repositories/profile_repository.dart';
@@ -9,6 +10,8 @@ import '../../l10n/app_localizations.dart';
 import '../../models/achievement.dart';
 import '../../models/spekooh_user.dart';
 import '../../models/submission.dart';
+import '../../sheets/achievements_sheet.dart';
+import '../../sheets/edit_profile_sheet.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
@@ -22,12 +25,18 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Ported from ui_kits/spekooh-app/ProfileScreen.jsx.
 class ProfileScreen extends StatefulWidget {
-  ProfileScreen({super.key, ProfileRepository? repository, this.onOpenSettings, this.onLogin})
+  ProfileScreen({super.key, ProfileRepository? repository, this.onOpenSettings, this.onLogin, this.onOpenPaywall})
       : repository = repository ?? RepositoryLocator.instance.profile;
 
   final ProfileRepository repository;
   final VoidCallback? onOpenSettings;
   final VoidCallback? onLogin;
+
+  /// Settings already has a "Spekooh Pro" upsell row leading here — this is
+  /// a second, more visible entry point on Profile itself (owner decision,
+  /// 2026-08-28, adapting a reference promo card), same real paywall/price,
+  /// not a separate offer.
+  final VoidCallback? onOpenPaywall;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -37,8 +46,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // `late` defers evaluation to first access — guarded by _isLoggedIn in
   // build() below, so a guest never actually fires these (all three need
   // auth: /auth/me/, /credits/..., /papers/submissions/?submitted_by=me).
-  late final Future<SpekoohUser> _userFuture = widget.repository.getUser();
-  late final Future<List<Achievement>> _achievementsFuture = widget.repository.getAchievements();
+  // Not `final`: _openEditProfile below re-assigns it after a real save so
+  // the card reflects the new name/email/phone immediately, without a full
+  // screen reopen.
+  late Future<SpekoohUser> _userFuture = widget.repository.getUser();
+  late Future<List<Achievement>> _achievementsFuture = _userFuture.then(widget.repository.getAchievements);
   late final Future<List<Submission>> _submissionsFuture = widget.repository.getSubmissions();
 
   // The avatar Container used to be a plain, non-interactive initial-letter
@@ -49,6 +61,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isUploadingAvatar = false;
 
   bool get _isLoggedIn => AuthSession.instance.isLoggedIn;
+
+  Future<void> _openEditProfile(SpekoohUser user) async {
+    final l10n = AppLocalizations.of(context)!;
+    final emailChanged = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => EditProfileSheet(user: user, repository: widget.repository),
+    );
+    if (emailChanged == null || !mounted) return;
+    setState(() {
+      _userFuture = widget.repository.getUser();
+      _achievementsFuture = _userFuture.then(widget.repository.getAchievements);
+    });
+    if (emailChanged) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.editProfileEmailChangedNotice)));
+    }
+  }
 
   Future<void> _pickAvatar() async {
     final l10n = AppLocalizations.of(context)!;
@@ -173,6 +203,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ],
                                   ),
                                 ],
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => _openEditProfile(user),
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(LucideIcons.pencil, size: 18, color: AppColors.textTertiary),
                               ),
                             ),
                           ],
@@ -316,7 +353,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
-              _sectionLabel(l10n.badgesSectionLabel),
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.space5, bottom: AppSpacing.space2),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(l10n.badgesSectionLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.6)),
+                    GestureDetector(
+                      onTap: () async {
+                        final items = await _achievementsFuture;
+                        if (context.mounted) {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => AchievementsSheet(items: items),
+                          );
+                        }
+                      },
+                      child: Text(
+                        l10n.badgesSectionCount(achievementDefinitions.length),
+                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.gold700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               FutureBuilder<List<Achievement>>(
                 future: _achievementsFuture,
                 builder: (context, snapshot) {
@@ -347,6 +409,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         .toList(),
                   );
                 },
+              ),
+              const SizedBox(height: AppSpacing.space4),
+              InkWell(
+                onTap: widget.onOpenPaywall,
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(18)),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
+                        alignment: Alignment.center,
+                        child: const Icon(LucideIcons.star, size: 20, color: AppColors.white),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(l10n.spekoohProTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.white)),
+                            Text(l10n.spekoohProSubtitle, style: const TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: Colors.white70)),
+                          ],
+                        ),
+                      ),
+                      const Icon(LucideIcons.chevronRight, color: Colors.white70),
+                    ],
+                  ),
+                ),
               ),
               _sectionLabel(l10n.submissionStatusSectionLabel),
               FutureBuilder<List<Submission>>(
