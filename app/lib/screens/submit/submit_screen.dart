@@ -17,6 +17,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/spekooh_banner.dart';
 import '../../widgets/spekooh_button.dart';
+import 'contribution_reward_screen.dart';
 
 enum _SubmitType { paper, report }
 
@@ -467,32 +468,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     if (_submitted != null) {
-      return Scaffold(
-        backgroundColor: AppColors.surfaceBg,
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const IconChip(icon: LucideIcons.check, tint: IconChipTint.green, size: 64),
-                  const SizedBox(height: AppSpacing.space4),
-                  Text(l10n.contributionReceivedTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
-                  const SizedBox(height: AppSpacing.space2),
-                  Text(
-                    l10n.contributionReceivedBody,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: AppSpacing.space4),
-                  SpekoohButton(onPressed: _reset, child: Text(l10n.submitAnother)),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
+      return ContributionRewardScreen(onSubmitAnother: _reset);
     }
 
     return Scaffold(
