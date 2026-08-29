@@ -27,6 +27,28 @@ class BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Previously one flat Row with MainAxisAlignment.spaceBetween — with
+    // French labels ("Accueil"/"Épreuves" on the left running noticeably
+    // wider than "Forum"/"Quiz" on the right), spaceBetween's equal-gap
+    // distribution put more real content before the center button than
+    // after it, visibly pushing it right of center (found from a live
+    // screenshot, 2026-08-28). Splitting the flanking tabs into their own
+    // two Expanded halves — each spread independently around the fixed-
+    // width center button — keeps the button at the true geometric middle
+    // no matter how wide either side's labels are, in any locale.
+    final centerIndex = items.indexWhere((i) => i.center);
+    // No item marked center: everything falls into "before" and this
+    // degrades to one plain, evenly-spread row (Expanded + spaceAround) —
+    // still correct, just without a raised middle button.
+    final before = List.generate(centerIndex == -1 ? items.length : centerIndex, (i) => i);
+    final after = centerIndex == -1 ? const <int>[] : List.generate(items.length - centerIndex - 1, (i) => centerIndex + 1 + i);
+
+    Widget navButton(int i) => _NavButton(
+          item: items[i],
+          isActive: i == active,
+          onTap: () => onChanged(i),
+        );
+
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 14),
       decoration: const BoxDecoration(
@@ -34,14 +56,20 @@ class BottomNav extends StatelessWidget {
         border: Border(top: BorderSide(color: AppColors.borderSubtle)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          for (var i = 0; i < items.length; i++)
-            _NavButton(
-              item: items[i],
-              isActive: i == active,
-              onTap: () => onChanged(i),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: before.map(navButton).toList(),
             ),
+          ),
+          if (centerIndex != -1) navButton(centerIndex),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: after.map(navButton).toList(),
+            ),
+          ),
         ],
       ),
     );

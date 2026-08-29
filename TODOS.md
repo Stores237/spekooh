@@ -596,6 +596,17 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   grid, which has no badge row and only ever shows short curated names, is untouched). Verified
   against the exact reported title plus a comparably-long one, at a real narrow-phone cell size,
   not just the default test viewport.
+- **Bottom nav's raised center button no longer sits right of center** (2026-08-28, found from a
+  live screenshot): `BottomNav` laid out all 5 tabs in one flat `Row` with
+  `MainAxisAlignment.spaceBetween` — that distributes equal *gaps*, not equal *halves*, so
+  asymmetric flanking label widths (French "Accueil"/"Épreuves" run noticeably wider than
+  "Forum"/"Quiz") pushed the fixed-width center button visibly off true center. Split the
+  flanking tabs into two independent `Expanded` halves, each spread with its own
+  `spaceAround`, with the center button placed directly between them — its position is now the
+  true geometric middle regardless of how wide either side's labels run, in any locale. New test
+  reproduces the exact asymmetric-label scenario and asserts the center button's x-position
+  directly (confirmed it fails against the old layout before the fix, not just that it passes
+  after).
 
 ---
 
