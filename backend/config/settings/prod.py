@@ -1,3 +1,5 @@
+import os
+
 from .base import *  # noqa: F401,F403
 
 DEBUG = False
@@ -5,3 +7,40 @@ DEBUG = False
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+# Render injects this at runtime — the service's own onrender.com hostname
+# isn't known until the first deploy assigns it, so it can't be a fixed
+# value in DJANGO_ALLOWED_HOSTS. See RENDER_STAGING.md.
+RENDER_HOST = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_HOST:
+    ALLOWED_HOSTS = [*ALLOWED_HOSTS, RENDER_HOST]  # noqa: F405
+    CSRF_TRUSTED_ORIGINS = [f"https://{RENDER_HOST}"]
+
+# WhiteNoise serves static files directly from the app process — Render's
+# free web-service plan has no separate static-asset host. Inserted right
+# after SecurityMiddleware (WhiteNoise's own documented placement), rather
+# than redeclaring the whole MIDDLEWARE list, so base.py stays the one
+# source of truth for everything else in it.
+MIDDLEWARE = list(MIDDLEWARE)  # noqa: F405
+MIDDLEWARE.insert(
+    MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+)
+
+# base.py never needed this (dev serves static files via runserver's own
+# auto-discovery, no collectstatic step) — collectstatic errors out without
+# it. Media (STORAGES["default"]) stays whatever base.py already resolved
+# (real Supabase Storage when AWS_STORAGE_BUCKET_NAME is set, local disk
+# otherwise) — only STATICFILES_STORAGE changes for prod.
+STATIC_ROOT = BASE_DIR / "staticfiles"  # noqa: F405
+STORAGES = {  # noqa: F405
+    **STORAGES,  # noqa: F405
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
+
+# Required with Supabase's transaction-mode pooler (port 6543, see
+# RENDER_STAGING.md §1): that pooler doesn't support Postgres session
+# state persisting across requests the way a normal connection pool
+# expects, so Django must open a fresh connection every request rather
+# than reusing one.
+DATABASES["default"]["CONN_MAX_AGE"] = 0  # noqa: F405

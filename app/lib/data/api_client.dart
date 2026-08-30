@@ -16,6 +16,14 @@ import 'auth_session.dart';
 /// your machine's LAN IP via the dart-define above.
 const String _defaultBaseUrl = kIsWeb ? 'http://localhost:8000/api' : 'http://10.0.2.2:8000/api';
 
+/// Generous rather than snappy — a free-tier host (e.g. Render's staging
+/// plan, see RENDER_STAGING.md) spins down after 15 minutes idle and takes
+/// roughly a minute to wake on the next request. Every request path below
+/// used to have no timeout at all — an unreachable host just hung forever
+/// with no error and no way for the UI to ever recover — so this is a
+/// strict improvement even against a normal always-on host.
+const Duration _requestTimeout = Duration(seconds: 90);
+
 class ApiException implements Exception {
   ApiException(this.statusCode, this.body);
   final int statusCode;
@@ -87,7 +95,7 @@ class ApiClient {
     final access = bearerTokenOverride ?? authSession.accessToken;
     if (access != null) request.headers['Authorization'] = 'Bearer $access';
 
-    final streamed = await _client.send(request);
+    final streamed = await _client.send(request).timeout(_requestTimeout);
     final response = await http.Response.fromStream(streamed);
 
     if (response.statusCode == 401 && !isRetry && bearerTokenOverride == null && authSession.refreshToken != null) {
@@ -120,11 +128,13 @@ class ApiClient {
   /// token or JSON content-type belongs on this request at all, and the
   /// usual 401-refresh-retry doesn't apply (a presigned URL doesn't 401).
   Future<void> putBytes(String absoluteUrl, {required List<int> bytes, String? contentType}) async {
-    final response = await _client.put(
-      Uri.parse(absoluteUrl),
-      headers: contentType != null ? {'Content-Type': contentType} : null,
-      body: bytes,
-    );
+    final response = await _client
+        .put(
+          Uri.parse(absoluteUrl),
+          headers: contentType != null ? {'Content-Type': contentType} : null,
+          body: bytes,
+        )
+        .timeout(_requestTimeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, response.body);
     }
@@ -153,13 +163,13 @@ class ApiClient {
     final encoded = body == null ? null : jsonEncode(body);
     switch (method) {
       case 'GET':
-        return _client.get(uri, headers: headers);
+        return _client.get(uri, headers: headers).timeout(_requestTimeout);
       case 'POST':
-        return _client.post(uri, headers: headers, body: encoded);
+        return _client.post(uri, headers: headers, body: encoded).timeout(_requestTimeout);
       case 'PATCH':
-        return _client.patch(uri, headers: headers, body: encoded);
+        return _client.patch(uri, headers: headers, body: encoded).timeout(_requestTimeout);
       case 'DELETE':
-        return _client.delete(uri, headers: headers);
+        return _client.delete(uri, headers: headers).timeout(_requestTimeout);
       default:
         throw ArgumentError('Unsupported method: $method');
     }

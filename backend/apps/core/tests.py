@@ -5,6 +5,7 @@ from django.test import Client, RequestFactory
 from apps.accounts.factories import UserFactory
 
 from .admin_dashboard import dashboard_callback
+from .views import TRIGGERABLE_COMMANDS
 
 
 def _dashboard_for(user):
@@ -93,3 +94,62 @@ def test_dashboard_page_hides_sections_a_reviewer_cant_open():
     assert "Instructors" in content
     assert "Credits" not in content
     assert "Payments" not in content
+
+
+# --- Render staging deployment (2026-08-30) ---
+# See RENDER_STAGING.md. /healthz/ is what Render's own health check polls
+# to decide whether a deploy is live; /internal/tasks/<name>/ stands in for
+# a real crontab on the free plan, which can't run one at all.
+
+
+def test_healthz_reports_ok():
+    response = Client().get("/healthz/")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_run_task_requires_the_token_header(monkeypatch):
+    monkeypatch.delenv("TASK_TRIGGER_TOKEN", raising=False)
+    response = Client().post("/internal/tasks/prune-stale-guest-accounts/")
+    assert response.status_code == 403
+
+
+def test_run_task_rejects_a_wrong_token(monkeypatch):
+    monkeypatch.setenv("TASK_TRIGGER_TOKEN", "the-real-token")
+    response = Client().post(
+        "/internal/tasks/prune-stale-guest-accounts/", HTTP_X_TASK_TOKEN="not-the-real-token"
+    )
+    assert response.status_code == 403
+
+
+def test_run_task_rejects_get(monkeypatch):
+    """State-mutating — never triggerable by a plain GET (e.g. a crawler,
+    or someone pasting the URL into a browser)."""
+    monkeypatch.setenv("TASK_TRIGGER_TOKEN", "the-real-token")
+    response = Client().get(
+        "/internal/tasks/prune-stale-guest-accounts/", HTTP_X_TASK_TOKEN="the-real-token"
+    )
+    assert response.status_code == 405
+
+
+def test_run_task_rejects_an_unknown_task_name(monkeypatch):
+    monkeypatch.setenv("TASK_TRIGGER_TOKEN", "the-real-token")
+    response = Client().post("/internal/tasks/not-a-real-task/", HTTP_X_TASK_TOKEN="the-real-token")
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("name", list(TRIGGERABLE_COMMANDS))
+def test_run_task_actually_runs_the_real_management_command(monkeypatch, name):
+    """Each triggerable name really does invoke the same real, cron-driven
+    command scripts/crontab.example runs on a machine with a real crontab —
+    not a stand-in Celery task that doesn't exist in this codebase."""
+    monkeypatch.setenv("TASK_TRIGGER_TOKEN", "the-real-token")
+    calls = []
+    monkeypatch.setattr("apps.core.views.call_command", lambda cmd: calls.append(cmd))
+
+    response = Client().post(f"/internal/tasks/{name}/", HTTP_X_TASK_TOKEN="the-real-token")
+
+    assert response.status_code == 200
+    assert response.json() == {"ran": TRIGGERABLE_COMMANDS[name]}
+    assert calls == [TRIGGERABLE_COMMANDS[name]]
