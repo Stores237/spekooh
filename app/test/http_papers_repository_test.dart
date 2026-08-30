@@ -12,6 +12,7 @@ import 'package:http/testing.dart';
 import 'package:spekooh/data/api_client.dart';
 import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/repositories/http/http_papers_repository.dart';
+import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/widgets/icon_chip.dart';
 
@@ -71,5 +72,94 @@ void main() {
     await repo.createSubject(title: 'Geology', examTypeName: 'O Level', guestAccessToken: 'guest-token-123');
 
     expect(authHeader, 'Bearer guest-token-123');
+  });
+
+  // Direct-to-storage upload (2026-08-30 latency fix): a live timed test
+  // isolated the slow "submitted" message to Django's own synchronous
+  // re-upload of the file to Supabase Storage. The client now PUTs the
+  // bytes straight to storage first, then submits only a small metadata
+  // request — see HttpPapersRepository.submitPaper.
+  group('submitPaper', () {
+    const file = SubmissionFile(bytes: [1, 2, 3, 4], fileName: 'gce-bio-2024.pdf', mimeType: 'application/pdf');
+
+    test('uploads directly to storage when the server offers a presigned URL, skipping multipart', () async {
+      final requests = <http.Request>[];
+      final mockClient = MockClient((request) async {
+        requests.add(request);
+        if (request.url.path.endsWith('/upload_url/')) {
+          return http.Response(
+            jsonEncode({'upload_url': 'https://storage.example.com/put/some-key', 'storage_key': 'paper_submissions/2026/08/abc123.pdf'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (request.url.host == 'storage.example.com') {
+          expect(request.method, 'PUT');
+          expect(request.bodyBytes, file.bytes);
+          return http.Response('', 200);
+        }
+        // The final metadata POST — a real submission-create response.
+        expect(jsonDecode(request.body)['storage_key'], 'paper_submissions/2026/08/abc123.pdf');
+        return http.Response(
+          jsonEncode({'id': 42, 'year': 2024, 'status': 'PENDING_REVIEW'}),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      final entry = await repo.submitPaper(categoryId: 1, examTypeId: 2, year: 2024, file: file);
+
+      expect(entry.id, 42);
+      // Never a multipart request — the whole point of this path.
+      expect(requests.any((r) => r.headers['content-type']?.contains('multipart') ?? false), isFalse);
+    });
+
+    test('falls back to multipart when the server has no presigning concept (local-disk dev)', () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.endsWith('/upload_url/')) {
+          return http.Response(jsonEncode({'detail': "Direct upload isn't available on this server."}), 503);
+        }
+        // Multipart POST reaching the real submission-create endpoint.
+        return http.Response(
+          jsonEncode({'id': 7, 'year': 2024, 'status': 'PENDING_REVIEW'}),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      final entry = await repo.submitPaper(categoryId: 1, examTypeId: 2, year: 2024, file: file);
+
+      expect(entry.id, 7);
+    });
+
+    test('falls back to multipart when the direct PUT itself fails', () async {
+      var putAttempted = false;
+      final mockClient = MockClient((request) async {
+        if (request.url.path.endsWith('/upload_url/')) {
+          return http.Response(
+            jsonEncode({'upload_url': 'https://storage.example.com/put/some-key', 'storage_key': 'paper_submissions/2026/08/abc123.pdf'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (request.url.host == 'storage.example.com') {
+          putAttempted = true;
+          return http.Response('server error', 500);
+        }
+        return http.Response(
+          jsonEncode({'id': 9, 'year': 2024, 'status': 'PENDING_REVIEW'}),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      final entry = await repo.submitPaper(categoryId: 1, examTypeId: 2, year: 2024, file: file);
+
+      expect(putAttempted, isTrue);
+      expect(entry.id, 9); // the submission still succeeds, via multipart
+    });
   });
 }

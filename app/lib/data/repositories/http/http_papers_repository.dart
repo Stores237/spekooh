@@ -190,19 +190,52 @@ class HttpPapersRepository implements PapersRepository {
     required SubmissionFile file,
     String? guestAccessToken,
   }) async {
-    final fields = <String, String>{
-      'category': '$categoryId',
-      'exam_type': '$examTypeId',
-      'year': '$year',
+    final jsonFields = <String, Object?>{
+      'category': categoryId,
+      'exam_type': examTypeId,
+      'year': year,
       'exam_board': examBoard,
+      'subject': ?subjectId,
+      if (system != null) 'system': system.name,
+      if (track != null && track.isNotEmpty) 'track': track,
+      if (institution.isNotEmpty) 'institution': institution,
+      if (discipline.isNotEmpty) 'discipline': discipline,
+      if (supervisorName.isNotEmpty) 'supervisor_name': supervisorName,
     };
-    if (subjectId != null) fields['subject'] = '$subjectId';
-    if (system != null) fields['system'] = system.name;
-    if (track != null && track.isNotEmpty) fields['track'] = track;
-    if (institution.isNotEmpty) fields['institution'] = institution;
-    if (discipline.isNotEmpty) fields['discipline'] = discipline;
-    if (supervisorName.isNotEmpty) fields['supervisor_name'] = supervisorName;
 
+    // Real fix (2026-08-30) for "the waiting time between the submission and
+    // the submitted message is too long": a live timed test isolated the
+    // bottleneck to Django's own synchronous re-upload of the file to
+    // Supabase Storage. Ask for a presigned URL and PUT the bytes straight
+    // there first — Django then only ever handles the small metadata
+    // request below. Any failure at any step of this (local-disk dev server
+    // has no presigning concept and 404s/503s; a flaky connection mid-PUT;
+    // anything else) falls back to the always-reliable multipart path
+    // rather than losing the submission over a plumbing hiccup.
+    try {
+      final presigned = await _client.post(
+        '/papers/submissions/upload_url/',
+        body: {'filename': file.fileName, 'content_type': file.mimeType ?? 'application/octet-stream'},
+        bearerTokenOverride: guestAccessToken,
+      ) as Map<String, dynamic>;
+
+      await _client.putBytes(
+        presigned['upload_url'] as String,
+        bytes: file.bytes,
+        contentType: file.mimeType,
+      );
+
+      final row = await _client.post(
+        '/papers/submissions/',
+        body: {...jsonFields, 'storage_key': presigned['storage_key']},
+        bearerTokenOverride: guestAccessToken,
+      );
+      return _paperFromJson(row as Map<String, dynamic>);
+    } catch (_) {
+      // Falls through to the multipart path below.
+    }
+
+    final fields = jsonFields.map((key, value) => MapEntry(key, '$value'));
     final row = await _client.postMultipart(
       '/papers/submissions/',
       fileFieldName: 'uploaded_file',

@@ -27,7 +27,15 @@ from .models import (
     PaperViewLog,
     Subject,
 )
-from .services import DAILY_FREE_VIEWS, PaywallError, record_ad_watch, record_paper_view, user_can_view_file
+from .services import (
+    DAILY_FREE_VIEWS,
+    STORAGE_KEY_RE,
+    PaywallError,
+    presign_paper_upload,
+    record_ad_watch,
+    record_paper_view,
+    user_can_view_file,
+)
 
 
 def _admin_action_request():
@@ -992,6 +1000,155 @@ def test_admin_file_link_shows_a_placeholder_when_there_is_no_file():
     paper = PaperSubmissionFactory(uploaded_file=None)
     admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
     assert admin_instance.file_link(paper) == "-"
+
+
+# --- Direct-to-storage upload (2026-08-30 latency fix) ---
+#
+# Root cause was live-measured, not guessed: a timed curl against the
+# multipart submit endpoint took 9.8s for a 3MB file with zero phone/tunnel
+# network involved — the backend's own synchronous re-upload of the bytes to
+# Supabase Storage was the entire bottleneck. This lets the client PUT the
+# file straight to storage via a presigned URL, so Django only ever handles
+# a small metadata request. See apps.papers.services.presign_paper_upload.
+
+
+@pytest.mark.django_db
+def test_upload_url_requires_authentication(api_client):
+    response = api_client.post(
+        "/api/papers/submissions/upload_url/", {"filename": "x.pdf", "content_type": "application/pdf"}
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_upload_url_requires_filename_and_content_type(authed_client):
+    client, _ = authed_client
+    response = client.post("/api/papers/submissions/upload_url/", {"filename": "x.pdf"})
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_upload_url_endpoint_returns_a_real_presigned_url_and_matching_key(authed_client):
+    client, _ = authed_client
+    response = client.post(
+        "/api/papers/submissions/upload_url/", {"filename": "gce-bio-2024.pdf", "content_type": "application/pdf"}
+    )
+    assert response.status_code == 200
+    assert response.data["upload_url"].startswith("https://")
+    assert STORAGE_KEY_RE.match(response.data["storage_key"])
+    assert response.data["storage_key"].endswith(".pdf")
+
+
+@pytest.mark.django_db
+def test_guest_can_also_request_an_upload_url():
+    """Same permission bar as create — a guest account may submit a paper,
+    so it must be able to get an upload URL for one too."""
+    from apps.accounts.models import User
+
+    guest = User.objects.create_guest(name="Live Verify Guest")
+    client = APIClient()
+    client.force_authenticate(user=guest)
+    response = client.post(
+        "/api/papers/submissions/upload_url/", {"filename": "x.pdf", "content_type": "application/pdf"}
+    )
+    assert response.status_code == 200
+
+
+def test_presign_paper_upload_issues_a_key_matching_the_fieldfields_own_layout():
+    """Same shape as uploaded_file's own upload_to="paper_submissions/%Y/%m/"
+    — proves the two paths land files in the same place on real storage."""
+    presigned = presign_paper_upload(filename="thesis.pdf", content_type="application/pdf")
+    assert STORAGE_KEY_RE.match(presigned["storage_key"])
+
+
+@pytest.mark.django_db
+def test_submit_with_storage_key_skips_the_multipart_reupload(authed_client):
+    """The whole point of this fix: create() never touches the bytes when a
+    storage_key is given — it just points uploaded_file at the key the
+    client already PUT the file to directly."""
+    client, user = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    presigned = presign_paper_upload(filename="gce-bio-2024.pdf", content_type="application/pdf")
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "storage_key": presigned["storage_key"],
+        },
+        format="json",
+    )
+    assert response.status_code == 201
+    submission = PaperSubmission.objects.get(id=response.data["id"])
+    assert submission.submitted_by == user
+    assert submission.uploaded_file.name == presigned["storage_key"]
+
+
+@pytest.mark.django_db
+def test_submit_rejects_neither_uploaded_file_nor_storage_key(authed_client):
+    client, _ = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    response = client.post(
+        "/api/papers/submissions/",
+        {"category": category.id, "exam_type": exam_type.id, "system": "anglophone", "year": 2024},
+        format="json",
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_submit_rejects_both_uploaded_file_and_storage_key(authed_client):
+    client, _ = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    upload = SimpleUploadedFile("gce-bio-2024.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf")
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "uploaded_file": upload,
+            "storage_key": "paper_submissions/2026/08/" + "a" * 32 + ".pdf",
+        },
+        format="multipart",
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_submit_rejects_a_storage_key_that_was_never_actually_presigned(authed_client):
+    """A malicious client can't just make up a key and have Django point a
+    submission at an arbitrary object in the bucket — only a key shaped like
+    one this server actually issued via /upload_url/ is accepted."""
+    client, _ = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "storage_key": "some/other/path/not-a-real-key.pdf",
+        },
+        format="json",
+    )
+    assert response.status_code == 400
+    assert "storage_key" in response.data
 
 
 @pytest.mark.django_db

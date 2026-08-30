@@ -5,6 +5,7 @@ from apps.payments.models import PaperUnlock
 
 from .models import AdWatchEvent, ExamCategory, ExamType, PaperFlag, PaperSubmission, PaperViewLog, Subject, SubjectLanguage
 from .services import (
+    STORAGE_KEY_RE,
     paper_download_price_fcfa,
     report_download_is_free,
     user_can_download_paper_file,
@@ -241,6 +242,13 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
     is_unlocked = serializers.SerializerMethodField()
     paper_download_unlocked = serializers.SerializerMethodField()
     paper_download_price_fcfa = serializers.SerializerMethodField()
+    # Alternative to uploaded_file (2026-08-30 direct-to-storage upload fix,
+    # see apps.papers.services.presign_paper_upload): the app PUTs the file
+    # straight to storage first, then submits just this key instead of the
+    # bytes themselves. Exactly one of uploaded_file/storage_key is required
+    # — see validate() below. Never client-chosen freely: validate_storage_key
+    # only accepts a key shaped like one presign_upload actually issued.
+    storage_key = serializers.CharField(required=False, write_only=True, allow_blank=False)
 
     class Meta:
         model = PaperSubmission
@@ -258,6 +266,7 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
             "discipline",
             "supervisor_name",
             "uploaded_file",
+            "storage_key",
             "file_url",
             "requires_unlock",
             "is_unlocked",
@@ -269,21 +278,42 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
             "non_mcq_section",
         ]
         read_only_fields = ["id", "file_url", "status", "created_at"]
-        extra_kwargs = {"uploaded_file": {"required": True, "write_only": True}}
+        extra_kwargs = {"uploaded_file": {"required": False, "write_only": True}}
+
+    def validate_storage_key(self, value):
+        if not STORAGE_KEY_RE.match(value):
+            raise serializers.ValidationError("Not a key this server issued via the upload-url endpoint.")
+        return value
 
     def validate(self, attrs):
-        exam_type = attrs.get("exam_type")
         uploaded_file = attrs.get("uploaded_file")
+        storage_key = attrs.get("storage_key")
+        if bool(uploaded_file) == bool(storage_key):
+            raise serializers.ValidationError({"uploaded_file": "Provide exactly one of uploaded_file or storage_key."})
+        exam_type = attrs.get("exam_type")
         if exam_type is not None and uploaded_file is not None:
             max_bytes = exam_type.max_upload_mb * 1024 * 1024
             if uploaded_file.size > max_bytes:
                 raise serializers.ValidationError(
                     {"uploaded_file": f"File is too large. {exam_type.name} allows up to {exam_type.max_upload_mb}MB."}
                 )
+            # storage_key path can't be size-checked server-side (Django
+            # never receives the bytes) — relies on the app's own
+            # client-side pre-check before it ever requests a presigned URL.
         return attrs
 
     def create(self, validated_data):
         validated_data["submitted_by"] = self.context["request"].user
+        storage_key = validated_data.pop("storage_key", None)
+        if storage_key:
+            instance = PaperSubmission(**validated_data)
+            # Assigning a plain string (not a File/UploadedFile) to a
+            # FileField sets .name directly without triggering any storage
+            # write — the bytes are already at that key, PUT there straight
+            # by the client. This is the entire point of this path.
+            instance.uploaded_file.name = storage_key
+            instance.save()
+            return instance
         return super().create(validated_data)
 
 

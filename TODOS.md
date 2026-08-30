@@ -623,6 +623,24 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   real platform channel unavailable in widget tests, so the full submit-to-success flow can't be
   driven end-to-end in a test; the extraction sidesteps that. New tests assert the real facts
   render and explicitly assert no fabricated "+N" amount ever appears.
+- **Direct-to-storage upload — the long wait between submitting and seeing "submitted" fixed at
+  the root** (2026-08-30, owner-reported): a live timed test isolated the cause precisely rather
+  than guessing — with zero phone/tunnel network involved, a 3MB submission still took ~7-8s of
+  pure backend time, because the old flow made the contributor's file cross the network *twice,
+  sequentially*: once to Django (multipart), then again from Django to Supabase Storage,
+  synchronously, inside the same request the app was waiting on. The app now asks
+  `POST /papers/submissions/upload_url/` for a presigned URL first, PUTs the file straight to
+  Supabase itself, then submits just the metadata (`storage_key` instead of the file) — Django
+  never touches the bytes at all. Measured live against the real local backend: the metadata-only
+  request that used to carry the full re-upload dropped from ~7-8s to ~0.2s. `storage_key` is
+  never trusted blindly — it must match the exact shape (`paper_submissions/YYYY/MM/<32-hex>.ext`)
+  a real presign call actually issues, or the submission is rejected. Server-size validation
+  against `exam_type.max_upload_mb` still applies to the old multipart path; the direct-upload
+  path relies on the app's existing client-side pre-check instead, since Django never receives
+  those bytes to measure. Local-disk dev (no `AWS_STORAGE_BUCKET_NAME` configured) has no
+  presigning concept — `upload_url` returns 503 there, and the app transparently falls back to
+  the original multipart path, same as it does on any other failure at any step (a flaky
+  connection mid-PUT included) — a plumbing hiccup never loses a contributor's submission.
 
 ---
 
