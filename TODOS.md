@@ -16,6 +16,13 @@ Everything below needs an account, real content, a decision, or a person — non
 I can write unilaterally. Grouped by what each one unblocks.
 
 ### Accounts & credentials to set up
+- **Render staging deployment**: all the code/config side is done (2026-08-30, see
+  `RENDER_STAGING.md`) — `render.yaml`, `build.sh`, `config/settings/prod.py`, `/healthz/`, the
+  token-gated `/internal/tasks/<name>/` trigger for the three real cron commands. What's left is
+  pure account setup, not engineering: a separate `spekooh-staging` Supabase project, a Render
+  account, and pasting the real secrets into Render's dashboard (`RENDER_STAGING.md` §1/§4 have
+  the exact steps). Once deployed, this gives the app a permanent staging URL for Flutter testing
+  that doesn't depend on this session's own machine/tunnel being up.
 - **Real payment provider**: the backend runs on `MockPaymentProvider` (explicitly a stand-in,
   documented as such in the code) for subscriptions, marking-guide unlocks, and pamphlet
   payments. Going live needs a real MTN MoMo / Orange Money merchant integration, or an
@@ -641,6 +648,21 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   presigning concept — `upload_url` returns 503 there, and the app transparently falls back to
   the original multipart path, same as it does on any other failure at any step (a flaky
   connection mid-PUT included) — a plumbing hiccup never loses a contributor's submission.
+- **Render staging deployment infra** (2026-08-30, owner-provided deployment guide): adapted a
+  generic guide to this repo's real structure rather than following it verbatim — it assumed
+  `spekooh.*` module names (real ones are `config.*`), a Celery worker+beat (this codebase has
+  none — its scheduled work is already three real cron-driven management commands, see
+  `scripts/crontab.example`), and a Flutterwave webhook against an integration that doesn't exist
+  yet (`apps.payments` still runs on `MockPaymentProvider`). Added `render.yaml`/`build.sh`, the
+  real `config/settings/prod.py` changes (`RENDER_EXTERNAL_HOSTNAME`, WhiteNoise, `STATIC_ROOT`,
+  `CONN_MAX_AGE = 0` for Supabase's pooler), `/healthz/`, and a token-gated
+  `/internal/tasks/<name>/` endpoint that runs the three real management commands directly (no
+  invented Celery tasks) — bridges the free tier's missing cron/worker via a free external cron
+  service instead. Full adaptation notes and the remaining owner-only steps (Supabase staging
+  project, Render account, real secrets) are in `RENDER_STAGING.md`, not repeated here. Verified
+  live: `config.settings.prod` loads and `collectstatic` succeeds against it (failed before
+  `STATIC_ROOT` was added); 270/271 backend tests pass (the 1 excluded is a pre-existing,
+  unrelated flaky real-network test, reproduced in isolation).
 
 ---
 
