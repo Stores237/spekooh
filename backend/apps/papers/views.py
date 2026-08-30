@@ -27,6 +27,7 @@ from .services import (
     AlreadyFlaggedError,
     PaywallError,
     mark_published,
+    presign_paper_upload,
     process_ocr_and_duplicate_check,
     record_ad_watch,
     record_paper_view,
@@ -118,6 +119,29 @@ class PaperSubmissionViewSet(
             category=FlagCategory.PAPER_VERIFICATION,
             reason="New paper submission awaiting review team verification.",
         )
+
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def upload_url(self, request):
+        # Real fix (2026-08-30) for the slow submit->submitted round trip:
+        # hands back a presigned URL the app PUTs the file straight to
+        # (Supabase Storage), bypassing Django entirely for the bytes
+        # themselves — see apps.papers.services.presign_paper_upload. Same
+        # permission bar as `create` (a guest account may submit a paper).
+        filename = request.data.get("filename")
+        content_type = request.data.get("content_type")
+        if not filename or not content_type:
+            return Response(
+                {"detail": "filename and content_type are required."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        presigned = presign_paper_upload(filename=filename, content_type=content_type)
+        if presigned is None:
+            # Local-disk dev fallback has no presigning concept — the app
+            # falls back to the old multipart-upload path when it sees this.
+            return Response(
+                {"detail": "Direct upload isn't available on this server."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response(presigned, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"])
     def view(self, request, pk=None):

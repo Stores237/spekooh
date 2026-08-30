@@ -113,6 +113,23 @@ class ApiClient {
     throw ApiException(response.statusCode, response.body);
   }
 
+  /// Raw PUT of file bytes to an absolute URL that is NOT this API's own
+  /// baseUrl — used only for direct-to-storage uploads (see
+  /// PapersRepository.submitPaper): the URL is a presigned Supabase Storage
+  /// link handed back by /papers/submissions/upload_url/, so no bearer
+  /// token or JSON content-type belongs on this request at all, and the
+  /// usual 401-refresh-retry doesn't apply (a presigned URL doesn't 401).
+  Future<void> putBytes(String absoluteUrl, {required List<int> bytes, String? contentType}) async {
+    final response = await _client.put(
+      Uri.parse(absoluteUrl),
+      headers: contentType != null ? {'Content-Type': contentType} : null,
+      body: bytes,
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(response.statusCode, response.body);
+    }
+  }
+
   Future<dynamic> _send(String method, Uri uri, {Object? body, String? bearerTokenOverride, bool isRetry = false}) async {
     final headers = <String, String>{'Content-Type': 'application/json'};
     final access = bearerTokenOverride ?? authSession.accessToken;

@@ -78,4 +78,40 @@ void main() {
     );
     expect(requestCount, 1);
   });
+
+  test('putBytes PUTs raw bytes with the given content-type and no bearer token', () async {
+    String? capturedMethod;
+    String? capturedContentType;
+    String? capturedAuthHeader;
+    List<int>? capturedBody;
+    final mockClient = MockClient((request) async {
+      capturedMethod = request.method;
+      capturedContentType = request.headers['content-type'];
+      capturedAuthHeader = request.headers['Authorization'];
+      capturedBody = request.bodyBytes;
+      return http.Response('', 200);
+    });
+    final authSession = AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient);
+    authSession.accessToken = 'real-logged-in-token';
+    final client = ApiClient(authSession: authSession, httpClient: mockClient, baseUrl: 'http://test/api');
+
+    await client.putBytes('https://storage.example.com/put/some-key', bytes: [9, 8, 7], contentType: 'application/pdf');
+
+    expect(capturedMethod, 'PUT');
+    expect(capturedContentType, 'application/pdf');
+    // A presigned Supabase URL never carries this app's own bearer token.
+    expect(capturedAuthHeader, isNull);
+    expect(capturedBody, [9, 8, 7]);
+  });
+
+  test('putBytes throws ApiException on a non-2xx response', () async {
+    final mockClient = MockClient((request) async => http.Response('server error', 500));
+    final authSession = AuthSession(storage: InMemoryTokenStorage(), httpClient: mockClient);
+    final client = ApiClient(authSession: authSession, httpClient: mockClient, baseUrl: 'http://test/api');
+
+    await expectLater(
+      () => client.putBytes('https://storage.example.com/put/some-key', bytes: [1]),
+      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 500)),
+    );
+  });
 }

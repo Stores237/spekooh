@@ -1,4 +1,8 @@
+import re
+import uuid
+
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db import transaction
 from django.utils import timezone
 
@@ -12,6 +16,40 @@ from .ocr import extract_text, extract_text_from_fieldfile
 from .watermark import watermark_bytes
 
 DAILY_FREE_VIEWS = 3
+
+# Real fix (2026-08-30) for "waiting time between submission and the
+# submitted message is too long": a live timed curl test isolated the
+# bottleneck to the backend's own synchronous re-upload of the file to
+# Supabase Storage (9.8s for a 3MB file with zero phone/network involved).
+# This lets the client upload the bytes directly to storage via a presigned
+# PUT URL, so Django only ever handles the small metadata request — one
+# network hop for the file instead of two.
+#
+# Keys are only ever generated here (not client-chosen), same shape the
+# FileField's own upload_to="paper_submissions/%Y/%m/" would produce, plus a
+# random uuid4 hex so nobody can guess (and thus reuse) another
+# contributor's key. PaperSubmissionCreateSerializer.validate_storage_key
+# checks incoming keys against this same pattern before ever accepting one.
+STORAGE_KEY_RE = re.compile(r"^paper_submissions/\d{4}/\d{2}/[0-9a-f]{32}(\.[A-Za-z0-9]{1,10})?$")
+
+
+def presign_paper_upload(*, filename: str, content_type: str) -> dict | None:
+    """Returns {"upload_url", "storage_key"} for a direct-to-storage PUT, or
+    None when the server isn't configured for real remote storage (local-disk
+    dev fallback — FileSystemStorage has no presigning concept, the app falls
+    back to the old multipart-upload path in that case)."""
+    if not hasattr(default_storage, "connection"):
+        return None
+    now = timezone.now()
+    ext = filename.rsplit(".", 1)[-1] if "." in filename else ""
+    key = f"paper_submissions/{now.year}/{now.month:02d}/{uuid.uuid4().hex}" + (f".{ext}" if ext else "")
+    client = default_storage.connection.meta.client
+    upload_url = client.generate_presigned_url(
+        "put_object",
+        Params={"Bucket": default_storage.bucket_name, "Key": key, "ContentType": content_type},
+        ExpiresIn=600,
+    )
+    return {"upload_url": upload_url, "storage_key": key}
 
 
 def user_can_view_file(user, paper_submission: PaperSubmission) -> bool:
