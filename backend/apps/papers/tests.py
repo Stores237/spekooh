@@ -1,5 +1,6 @@
 import io
 from pathlib import Path
+from unittest import mock
 
 import pytest
 from django.contrib.admin.sites import AdminSite
@@ -1012,6 +1013,37 @@ def test_admin_file_link_shows_a_placeholder_when_there_is_no_file():
 # a small metadata request. See apps.papers.services.presign_paper_upload.
 
 
+@pytest.fixture
+def fake_s3_storage(monkeypatch):
+    """Stands in for real Supabase/S3 credentials (this dev sandbox's .env
+    has real ones, but CI — and any fresh clone — deliberately doesn't, see
+    STORAGES' local-disk fallback in config/settings/base.py). Presigning is
+    a local signature computation, never a live request, so a fake client
+    exercises the exact same code path deterministically everywhere."""
+    from apps.papers import services as papers_services
+
+    fake_client = mock.Mock()
+    fake_client.generate_presigned_url.return_value = "https://storage.example.com/put/fake-key"
+    fake_storage = mock.Mock()
+    fake_storage.connection.meta.client = fake_client
+    fake_storage.bucket_name = "spekooh-media-test"
+    monkeypatch.setattr(papers_services, "default_storage", fake_storage)
+    return fake_storage
+
+
+@pytest.mark.django_db
+def test_upload_url_returns_503_when_storage_has_no_presign_concept(authed_client, settings):
+    """Local-disk dev fallback (no AWS_STORAGE_BUCKET_NAME configured, e.g. a
+    fresh clone or CI) has no presigning concept at all — the app is
+    expected to see this and fall back to the multipart path instead."""
+    settings.STORAGES = {**settings.STORAGES, "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}}
+    client, _ = authed_client
+    response = client.post(
+        "/api/papers/submissions/upload_url/", {"filename": "x.pdf", "content_type": "application/pdf"}
+    )
+    assert response.status_code == 503
+
+
 @pytest.mark.django_db
 def test_upload_url_requires_authentication(api_client):
     response = api_client.post(
@@ -1028,7 +1060,7 @@ def test_upload_url_requires_filename_and_content_type(authed_client):
 
 
 @pytest.mark.django_db
-def test_upload_url_endpoint_returns_a_real_presigned_url_and_matching_key(authed_client):
+def test_upload_url_endpoint_returns_a_real_presigned_url_and_matching_key(authed_client, fake_s3_storage):
     client, _ = authed_client
     response = client.post(
         "/api/papers/submissions/upload_url/", {"filename": "gce-bio-2024.pdf", "content_type": "application/pdf"}
@@ -1040,7 +1072,7 @@ def test_upload_url_endpoint_returns_a_real_presigned_url_and_matching_key(authe
 
 
 @pytest.mark.django_db
-def test_guest_can_also_request_an_upload_url():
+def test_guest_can_also_request_an_upload_url(fake_s3_storage):
     """Same permission bar as create — a guest account may submit a paper,
     so it must be able to get an upload URL for one too."""
     from apps.accounts.models import User
@@ -1054,15 +1086,27 @@ def test_guest_can_also_request_an_upload_url():
     assert response.status_code == 200
 
 
-def test_presign_paper_upload_issues_a_key_matching_the_fieldfields_own_layout():
+def test_presign_paper_upload_issues_a_key_matching_the_fieldfields_own_layout(fake_s3_storage):
     """Same shape as uploaded_file's own upload_to="paper_submissions/%Y/%m/"
     — proves the two paths land files in the same place on real storage."""
     presigned = presign_paper_upload(filename="thesis.pdf", content_type="application/pdf")
     assert STORAGE_KEY_RE.match(presigned["storage_key"])
 
 
+def test_presign_paper_upload_returns_none_for_local_disk_storage(monkeypatch):
+    """No real storage configured (fresh clone/CI default) — no presigning
+    concept exists, so this returns None rather than raising. Forced via a
+    bare stand-in (not the ambient default_storage, which — in this dev
+    sandbox — really is Supabase-backed, see fake_s3_storage above) so this
+    test's outcome doesn't depend on which environment it runs in."""
+    from apps.papers import services as papers_services
+
+    monkeypatch.setattr(papers_services, "default_storage", object())
+    assert presign_paper_upload(filename="thesis.pdf", content_type="application/pdf") is None
+
+
 @pytest.mark.django_db
-def test_submit_with_storage_key_skips_the_multipart_reupload(authed_client):
+def test_submit_with_storage_key_skips_the_multipart_reupload(authed_client, fake_s3_storage):
     """The whole point of this fix: create() never touches the bytes when a
     storage_key is given — it just points uploaded_file at the key the
     client already PUT the file to directly."""
