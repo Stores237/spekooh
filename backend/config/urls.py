@@ -21,11 +21,14 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from apps.core.views import healthz, run_task
 from apps.pamphlets.views import redeem_page
 
 urlpatterns = [
     path('', RedirectView.as_view(url='api/docs/', permanent=False)),
     path('admin/', admin.site.urls),
+    path('healthz/', healthz, name='healthz'),
+    path('internal/tasks/<str:name>/', run_task, name='internal-task'),
     path('redeem/<str:token>/', redeem_page, name='pamphlet-redeem'),
     path('api/auth/', include('apps.accounts.urls')),
     path('api/papers/', include('apps.papers.urls')),

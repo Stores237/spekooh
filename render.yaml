@@ -1,0 +1,49 @@
+# Render Blueprint for spekooh-staging — see RENDER_STAGING.md for the full
+# deployment guide, including which values are owner action items (Supabase
+# staging project, Render account, secrets) versus what's already handled
+# here as code.
+#
+# This is a monorepo (app/ + backend/) — rootDir points every build/start
+# command at the Django project.
+services:
+  - type: web
+    name: spekooh-staging
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: main
+    rootDir: backend
+    buildCommand: "./build.sh"
+    # DJANGO_SETTINGS_MODULE must be prod (not the config/wsgi.py default of
+    # dev) or ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS/SECURE_SSL_REDIRECT never
+    # take effect — see config/settings/prod.py.
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-2}"
+    healthCheckPath: /healthz/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: WEB_CONCURRENCY
+        value: 2
+      # Everything below is a real secret/value that must be set by hand in
+      # the Render dashboard (Environment tab) — never committed here. See
+      # RENDER_STAGING.md §4 for the full list and where each one comes from.
+      - key: DATABASE_URL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        sync: false
+      - key: TASK_TRIGGER_TOKEN
+        sync: false
