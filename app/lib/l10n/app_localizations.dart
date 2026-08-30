@@ -1178,6 +1178,30 @@ abstract class AppLocalizations {
   /// **'We\'ll check it against existing papers first. If it\'s new, it moves to instructor review. Track it under Profile.'**
   String get contributionReceivedBody;
 
+  /// No description provided for @contributionRewardsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Real contributions earn real rewards. Here\'s how it works:'**
+  String get contributionRewardsSubtitle;
+
+  /// No description provided for @contributionBenefitCreditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus credit'**
+  String get contributionBenefitCreditTitle;
+
+  /// No description provided for @contributionBenefitDiscountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A real discount code'**
+  String get contributionBenefitDiscountTitle;
+
+  /// No description provided for @contributionBenefitCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A quick check first'**
+  String get contributionBenefitCheckTitle;
+
   /// No description provided for @submissionFailed.
   ///
   /// In en, this message translates to:

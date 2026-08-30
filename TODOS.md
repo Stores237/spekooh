@@ -427,7 +427,7 @@ I can write unilaterally. Grouped by what each one unblocks.
 
 ---
 
-## Recently shipped (2026-08-26 – 2026-08-28)
+## Recently shipped (2026-08-26 – 2026-08-30)
 
 Owner-requested features and bugs found from live screenshots, in one batch. Each is a real,
 tested, merged change (not a mock) — PR numbers are on `main`'s history for exact diffs.
@@ -607,6 +607,22 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   reproduces the exact asymmetric-label scenario and asserts the center button's x-position
   directly (confirmed it fails against the old layout before the fix, not just that it passes
   after).
+- **A real rewards explainer after a contribution, adapted from a reference design** (2026-08-30,
+  owner-provided reference): the post-submission screen was a single checkmark + one paragraph —
+  real, but told a contributor nothing about what contributing is actually worth. Adapted a
+  reference gamified-rewards design's structure (decorative badge, headline, three benefit rows,
+  CTA) — but every fact in it is real, nothing invented: Spekooh has exactly one currency (bonus
+  credit, `CreditLedgerEntry`), not a fabricated points/XP/level system, and credit is only ever
+  awarded once a submission is actually verified and published (`mark_published`) — never claimed
+  as already earned on this screen, since nothing has been credited yet at submission time. The
+  three rows: bonus credit (reuses the real `contributionBonusBanner` copy already shown on the
+  submit form itself), a real redeem-code discount once enough contributions accumulate (reuses
+  the real `redeemCodeEarnHint` copy already shown on Profile), and the real duplicate-check +
+  instructor-routing explanation (reuses the original screen's own accurate copy). Extracted into
+  its own `ContributionRewardScreen` widget so it's independently testable — `file_picker` needs a
+  real platform channel unavailable in widget tests, so the full submit-to-success flow can't be
+  driven end-to-end in a test; the extraction sidesteps that. New tests assert the real facts
+  render and explicitly assert no fabricated "+N" amount ever appears.
 
 ---
 

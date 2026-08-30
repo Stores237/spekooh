@@ -233,6 +233,10 @@
   "submitAnother": "Submit another",
   "contributionReceivedTitle": "Contribution received",
   "contributionReceivedBody": "We'll check it against existing papers first. If it's new, it moves to instructor review. Track it under Profile.",
+  "contributionRewardsSubtitle": "Real contributions earn real rewards. Here's how it works:",
+  "contributionBenefitCreditTitle": "Bonus credit",
+  "contributionBenefitDiscountTitle": "A real discount code",
+  "contributionBenefitCheckTitle": "A quick check first",
   "submissionFailed": "Submission failed: {error}",
   "@submissionFailed": {
     "placeholders": {"error": {"type": "String"}}

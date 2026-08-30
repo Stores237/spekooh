@@ -614,6 +614,20 @@ class AppLocalizationsFr extends AppLocalizations {
       'Nous la vérifierons d\'abord par rapport aux épreuves existantes. Si elle est nouvelle, elle passe en revue par l\'instructeur. Suivez-la depuis Profil.';
 
   @override
+  String get contributionRewardsSubtitle =>
+      'Les contributions réelles rapportent de vraies récompenses. Voici comment ça marche :';
+
+  @override
+  String get contributionBenefitCreditTitle => 'Bonus de crédit';
+
+  @override
+  String get contributionBenefitDiscountTitle => 'Un vrai code de réduction';
+
+  @override
+  String get contributionBenefitCheckTitle =>
+      'Une vérification rapide d\'abord';
+
+  @override
   String submissionFailed(String error) {
     return 'Échec de la soumission : $error';
   }

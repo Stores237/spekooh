@@ -606,6 +606,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'We\'ll check it against existing papers first. If it\'s new, it moves to instructor review. Track it under Profile.';
 
   @override
+  String get contributionRewardsSubtitle =>
+      'Real contributions earn real rewards. Here\'s how it works:';
+
+  @override
+  String get contributionBenefitCreditTitle => 'Bonus credit';
+
+  @override
+  String get contributionBenefitDiscountTitle => 'A real discount code';
+
+  @override
+  String get contributionBenefitCheckTitle => 'A quick check first';
+
+  @override
   String submissionFailed(String error) {
     return 'Submission failed: $error';
   }
