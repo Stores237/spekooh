@@ -29,6 +29,11 @@ TRIGGERABLE_COMMANDS = {
     "process-instructor-timeouts": "process_instructor_timeouts",
     "process-pamphlet-expiry": "process_pamphlet_expiry",
     "prune-stale-guest-accounts": "prune_stale_guest_accounts",
+    # Not a cron job — an on-demand cleanup for the real @example.com rows
+    # that live-testing a real deployment leaves behind (there's no Shell
+    # tab on the free plan to delete them by hand — see "Create an admin
+    # user" in RENDER_STAGING.md).
+    "delete-test-accounts": "delete_test_accounts",
 }
 
 
