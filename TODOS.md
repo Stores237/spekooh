@@ -16,13 +16,18 @@ Everything below needs an account, real content, a decision, or a person — non
 I can write unilaterally. Grouped by what each one unblocks.
 
 ### Accounts & credentials to set up
-- **Render staging deployment**: all the code/config side is done (2026-08-30, see
-  `RENDER_STAGING.md`) — `render.yaml`, `build.sh`, `config/settings/prod.py`, `/healthz/`, the
-  token-gated `/internal/tasks/<name>/` trigger for the three real cron commands. What's left is
-  pure account setup, not engineering: a separate `spekooh-staging` Supabase project, a Render
-  account, and pasting the real secrets into Render's dashboard (`RENDER_STAGING.md` §1/§4 have
-  the exact steps). Once deployed, this gives the app a permanent staging URL for Flutter testing
-  that doesn't depend on this session's own machine/tunnel being up.
+- ~~**Render staging deployment**~~ — done (2026-08-31). Live at
+  `https://spekooh-staging.onrender.com`, real Supabase Postgres + Storage behind it, verified
+  end-to-end against the actual deployed site (not just locally): registration, login, the full
+  papers taxonomy (categories → systems → exam types, real seeded data), and the direct-to-storage
+  upload fix all confirmed working. Two real bugs were only findable once this existed and got
+  live-tested — see "Recently shipped" below (registration's missing `EMAIL_BACKEND`, and the free
+  plan's total absence of a Shell tab/one-off Jobs, worked around with `ensure_superuser` +
+  the token-gated `/internal/tasks/` trigger). See `RENDER_STAGING.md` for the full guide,
+  including a "What each piece does" section explaining Render/Supabase/gunicorn/WhiteNoise/
+  cron-job.org/GitHub Actions' individual roles. The real Android build now points permanently at
+  this URL (`--dart-define=API_BASE_URL=https://spekooh-staging.onrender.com/api`) instead of a
+  local machine's tunnel — it keeps working after this session's sandbox goes away.
 - **Real payment provider**: the backend runs on `MockPaymentProvider` (explicitly a stand-in,
   documented as such in the code) for subscriptions, marking-guide unlocks, and pamphlet
   payments. Going live needs a real MTN MoMo / Orange Money merchant integration, or an
@@ -663,6 +668,27 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   live: `config.settings.prod` loads and `collectstatic` succeeds against it (failed before
   `STATIC_ROOT` was added); 270/271 backend tests pass (the 1 excluded is a pre-existing,
   unrelated flaky real-network test, reproduced in isolation).
+- **Render staging deployment — three real bugs only findable by actually deploying it**
+  (2026-08-31): the infra above went live, and real end-to-end use surfaced problems no local test
+  run could have. (1) The free plan has **no Shell tab and no one-off Jobs at all** (confirmed
+  against Render's own docs) — `python manage.py createsuperuser` had nowhere to run, so
+  `apps.accounts.management.commands.ensure_superuser` creates the admin account idempotently from
+  `DJANGO_SUPERUSER_EMAIL`/`DJANGO_SUPERUSER_PASSWORD` on every `build.sh` run instead, safe to
+  re-run on every deploy without erroring or resetting a changed password. (2) **Every registration
+  on the live site 500'd** — `config/settings/prod.py` never overrode `EMAIL_BACKEND`, so Django's
+  real default (SMTP, no host configured) crashed the verification-code email with
+  `ConnectionRefusedError`; reproduced locally before fixing, confirmed fixed by registering a real
+  account end-to-end afterward. `EMAIL_BACKEND` is now env-configurable (defaulting to real SMTP,
+  so actual production still fails loudly rather than silently discarding mail) and set to the
+  console backend for staging specifically. (3) Live-testing those two fixes isn't mocked — it
+  leaves real `@example.com` rows in the real staging database — `delete-test-accounts` (same
+  token-gated `/internal/tasks/` mechanism, on-demand rather than scheduled) cleans them up.
+  Verified live end-to-end: registered a real account through an actual headless-browser session
+  pointed at `https://spekooh-staging.onrender.com` (real taxonomy, real categories/exam-types, no
+  fabricated data), hit the bug, fixed it, re-verified via curl (201 + real tokens + real
+  verification code), ran the cleanup, confirmed the freed email could re-register. The real
+  Android build (`app-release.apk`) now points at this URL permanently — see `RENDER_STAGING.md`'s
+  "What each piece does" section for the full architecture.
 
 ---
 
