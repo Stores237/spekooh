@@ -445,6 +445,41 @@ def test_ensure_superuser_does_not_recreate_or_error_on_a_second_deploy(monkeypa
     assert User.objects.get(email="owner@example.com").password == original_password_hash
 
 
+# --- delete_test_accounts (2026-08-31) ---
+# Live-testing a real deployment (see RENDER_STAGING.md) isn't mocked — a
+# curl or browser round-trip against /api/auth/register/ that verifies a
+# fix works leaves the same kind of real row a genuine signup would. This
+# is the cleanup for that, gated to the one domain no real student uses.
+
+
+@pytest.mark.django_db
+def test_delete_test_accounts_removes_example_dot_com_users():
+    UserFactory(email="staging-test-123@example.com")
+    UserFactory(email="Reverify-Test-456@EXAMPLE.COM")  # case-insensitive match
+
+    call_command("delete_test_accounts")
+
+    assert User.objects.filter(email__iendswith="@example.com").count() == 0
+
+
+@pytest.mark.django_db
+def test_delete_test_accounts_never_touches_a_real_user():
+    real_user = UserFactory(email="real-student@gmail.com")
+
+    call_command("delete_test_accounts")
+
+    assert User.objects.filter(id=real_user.id).exists()
+
+
+@pytest.mark.django_db
+def test_delete_test_accounts_is_a_noop_when_none_exist():
+    UserFactory(email="real-student@gmail.com")
+
+    call_command("delete_test_accounts")  # must not raise
+
+    assert User.objects.count() == 1
+
+
 @pytest.mark.django_db
 def test_user_admin_never_exposes_email_or_phone_for_browsing():
     """Owner decision (data minimization): nobody browsing this admin —

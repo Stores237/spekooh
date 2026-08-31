@@ -326,6 +326,7 @@ TRIGGERABLE_COMMANDS = {
     "process-instructor-timeouts": "process_instructor_timeouts",
     "process-pamphlet-expiry": "process_pamphlet_expiry",
     "prune-stale-guest-accounts": "prune_stale_guest_accounts",
+    "delete-test-accounts": "delete_test_accounts",
 }
 
 
@@ -355,6 +356,15 @@ https://spekooh-staging.onrender.com/internal/tasks/prune-stale-guest-accounts/
 
 each with header `X-Task-Token: <the TASK_TRIGGER_TOKEN you set in §4>`, on
 the same cadence as the real crontab table above.
+
+A fourth endpoint on the same mechanism, but on-demand rather than
+scheduled: `.../internal/tasks/delete-test-accounts/` deletes every `User`
+row whose email ends in `@example.com` (the reserved test domain — see
+`apps/accounts/management/commands/delete_test_accounts.py`). Live-testing
+a real deployment (registering through curl or the app to confirm a fix
+actually works) isn't mocked — it leaves real rows in the real staging
+database, and the free plan has no Shell tab to delete them by hand. Safe
+to hit any time; a no-op once none remain.
 
 A side benefit: regular hits keep the instance warm, so testers hit the
 cold start less often.
