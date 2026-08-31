@@ -30,6 +30,14 @@ services:
         value: "False"
       - key: WEB_CONCURRENCY
         value: 2
+      # No real email provider exists yet (see TODOS.md) — base.py's real
+      # default (SMTP, no host configured) crashes every send_mail call
+      # with ConnectionRefusedError, found live: it 500'd every single
+      # staging registration. Console backend just logs the email instead
+      # of pretending to deliver it — an honest stand-in for staging only,
+      # never set this way for real production.
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.console.EmailBackend
       # Everything below is a real secret/value that must be set by hand in
       # the Render dashboard (Environment tab) — never committed here. See
       # RENDER_STAGING.md §4 for the full list and where each one comes from.
