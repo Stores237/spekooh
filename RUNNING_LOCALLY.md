@@ -95,7 +95,20 @@ permission to make network calls at all.
 
 ### 3.1 Get a real, phone-reachable backend URL
 
-Two options — use whichever fits:
+Three options — use whichever fits. **Option C is the default now** unless
+you're testing local, unmerged backend changes.
+
+**Option C — the permanent staging deployment (recommended default).**
+`https://spekooh-staging.onrender.com/api` is a real, always-there backend —
+see `RENDER_STAGING.md` for what it is and how it's deployed. No local
+machine, tunnel, or `cloudflared` process needs to be running at all; the
+URL never changes between sessions. Only reflects whatever's merged to
+`main`, though — for testing local/unmerged backend changes on a real
+phone, use Option A or B instead, same as before.
+
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=https://spekooh-staging.onrender.com/api
+```
 
 **Option A — same Wi-Fi, ChromeOS/router port forwarding.** Find your machine's LAN IP (e.g.
 `192.168.8.197`), forward TCP port 8000 to it (ChromeOS: Settings → Advanced → Developers →
@@ -187,6 +200,10 @@ the compiled APK (3.3), a new tunnel URL means **rebuild the APK**, not just res
 Keep the tunnel and the backend running for as long as you want the installed app to keep
 working — closing either one breaks the app until you restart them (and, if the tunnel URL
 changed, reinstall).
+
+This whole problem is exactly why Option C (3.1) is the default now — a real deployment's URL
+doesn't change, and nothing on your own machine needs to stay running for the installed app to
+keep working.
 
 ---
 

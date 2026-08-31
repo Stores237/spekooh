@@ -12,6 +12,42 @@ This doc replaces an earlier draft that assumed a different project layout
 Flutterwave already wired up). None of those match this repo — the
 corrections are called out inline below, not silently made.
 
+**Status: live (2026-08-31).** `https://spekooh-staging.onrender.com` is
+deployed and verified end-to-end — registration, login, the full papers
+taxonomy against real seeded data, and the direct-to-storage upload fix all
+confirmed working against the actual site, not just locally. The real
+Android build points at this URL permanently now.
+
+---
+
+## 0. What each piece does
+
+Six different services are involved in "the app is live." None of them do
+each other's job — this is the map of who's responsible for what, and why
+each one is there rather than something else.
+
+| Piece | Role | Why this one |
+|---|---|---|
+| **Render** | Runs the Django process itself (`gunicorn`), assigns the permanent `https://spekooh-staging.onrender.com` URL, builds on every push to `main` via `build.sh`, and polls `/healthz/` to decide whether a deploy is healthy. | Free web-service tier, no card required — the actual compute + hosting. |
+| **Supabase** | Two separate real services, not one: (1) managed Postgres, reached through its connection **pooler** (port `6543`) since Render restarts the process on every deploy/spin-down and a pooler survives that churn better than direct connections; (2) S3-compatible **Storage**, for real uploaded files (paper scans, avatars) — private bucket, signed URLs only, MIME/size-restricted (§ below). | Already the same provider the app's local/dev setup uses — one less thing to keep in sync between environments. |
+| **gunicorn** | The actual WSGI server that runs Django's application code and answers HTTP requests inside Render's container. | `runserver` (used locally) is explicitly not for real traffic; gunicorn is Django's own recommended production server. |
+| **WhiteNoise** | Serves static files (admin CSS/JS, DRF browsable-API assets) directly from the Django process. | Render's free web-service plan has no separate static-asset host/CDN — WhiteNoise means one process does both jobs with no extra infrastructure. |
+| **cron-job.org** | A free external scheduler that periodically POSTs to this app's own `/internal/tasks/<name>/` endpoint, which then runs one of this repo's real Django management commands (§6). | Render's free tier has no cron and no background-worker service at all — this is the entire workaround for that gap. |
+| **GitHub Actions (CI)** | Runs the backend/app test suites on every PR before it can merge to `main` — the branch Render actually deploys from. | The gate that caught PR #51's own test-environment mismatch (§ below) before it reached staging; merging straight to `main` with no CI would mean Render deploys whatever broke. |
+
+Two things that are **not** part of this architecture, on purpose:
+
+- **cloudflared / the local tunnel** — was the *previous* way to get a real
+  phone talking to a backend (tunneling into whatever machine happened to
+  be running Django locally that session). It's now only used to distribute
+  the built `.apk` file itself for download; the installed app's actual API
+  traffic goes straight to Render, no tunnel involved, and keeps working
+  after the tunnel (and the machine behind it) are long gone.
+- **Celery / a message broker** — this codebase has never used one. Its
+  three scheduled jobs are plain Django management commands, cron-driven
+  locally (`scripts/crontab.example`) and HTTP-triggered on Render (§6) —
+  not tasks queued onto a broker.
+
 ---
 
 ## 1. Before you start
@@ -490,17 +526,17 @@ the endpoint at all.
 
 ## 10. Deployment checklist
 
-- [ ] Separate staging Supabase project created
-- [ ] Pooler connection string (port 6543) — `CONN_MAX_AGE = 0` already set in code
-- [ ] `backend/build.sh` — already committed and executable
-- [ ] `render.yaml` — already committed at repo root
-- [ ] `RENDER_EXTERNAL_HOSTNAME` / `DJANGO_SETTINGS_MODULE=config.settings.prod` — already handled in code/`render.yaml`
-- [ ] `/healthz/` — already responding
-- [ ] All secrets set in the Render dashboard, none in git
-- [ ] `DJANGO_SUPERUSER_EMAIL`/`DJANGO_SUPERUSER_PASSWORD` set — no Shell tab on the free plan, `ensure_superuser` (run by `build.sh`) creates the account from these instead
-- [ ] Flutter pointed at staging via `--dart-define=API_BASE_URL=...`
-- [ ] Client timeouts — already raised to 90s in code
-- [ ] Real Flutterwave integration built (§8) — **before** wiring a sandbox webhook URL, not after
+- [x] Separate staging Supabase project created — confirmed live (real seeded taxonomy loads)
+- [x] Pooler connection string (port 6543) — `CONN_MAX_AGE = 0` already set in code
+- [x] `backend/build.sh` — already committed and executable
+- [x] `render.yaml` — already committed at repo root
+- [x] `RENDER_EXTERNAL_HOSTNAME` / `DJANGO_SETTINGS_MODULE=config.settings.prod` — confirmed live (HTTPS redirect + plain prod 404 page prove it, not the dev fallback)
+- [x] `/healthz/` — confirmed responding (200)
+- [x] All secrets set in the Render dashboard, none in git
+- [x] `DJANGO_SUPERUSER_EMAIL`/`DJANGO_SUPERUSER_PASSWORD` set, `ensure_superuser` mechanism tested — confirm your own `/admin/` login still works after any future redeploy
+- [x] Flutter pointed at staging via `--dart-define=API_BASE_URL=...` — the real Android build now uses this permanently
+- [x] Client timeouts — already raised to 90s in code
+- [ ] Real Flutterwave integration built (§8) — **before** wiring a sandbox webhook URL, not after (still not built — see TODOS.md)
 
 ---
 
