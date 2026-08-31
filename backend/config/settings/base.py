@@ -218,6 +218,19 @@ QR_SIGNING_SALT = env("QR_SIGNING_SALT", default="spekooh-pamphlet-qr")
 # (an EMAIL_HOST/API-key-based backend, e.g. SendGrid/SES/Postmark).
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@spekooh.app")
 
+# Left at Django's real default (SMTP) so actual production fails loudly if
+# it's ever run with no real provider configured, rather than silently
+# discarding emails. dev.py overrides this to the console backend directly
+# (not via env — it's the file that's guaranteed to have no real provider).
+# Found live (2026-08-31): staging had neither dev.py's override nor a real
+# EMAIL_HOST, so registration's send_mail crashed every single signup with
+# an unhandled ConnectionRefusedError (localhost:25 refused) — a real 500,
+# reproduced locally against config.settings.prod before this existed.
+# RENDER_STAGING.md sets EMAIL_BACKEND=...console.EmailBackend via env for
+# the staging service specifically, so its registrations work (logged, not
+# delivered) without pretending it has a real provider it doesn't have.
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+
 # Supabase Edge Function that verifies a registration email's domain has
 # real MX records (see supabase/functions/verify-email-domain) — both unset
 # by default, same no-op-safely pattern as SENTRY_DSN/REDIS_URL above: a

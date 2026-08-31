@@ -138,6 +138,65 @@ def test_run_task_rejects_an_unknown_task_name(monkeypatch):
     assert response.status_code == 404
 
 
+def test_email_backend_defaults_to_real_smtp_when_unconfigured():
+    """Regression test for a real bug found live (2026-08-31): prod.py never
+    overrode EMAIL_BACKEND, so with no EMAIL_HOST configured, Django's real
+    default (SMTP against localhost:25) crashed every single registration
+    on the actual deployed staging site with an unhandled
+    ConnectionRefusedError — reproduced locally against config.settings.prod
+    before this fix existed. base.py now makes EMAIL_BACKEND
+    env-configurable (RENDER_STAGING.md sets it to the console backend for
+    staging specifically) but keeps the real SMTP default, so real
+    production still fails loudly instead of silently discarding mail.
+
+    Run in a fresh subprocess rather than asserting on this test process's
+    own settings — pytest-django unconditionally overrides EMAIL_BACKEND to
+    the locmem backend for every test regardless of what settings.py says,
+    which is exactly why this bug shipped without any test catching it."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    env = {**os.environ}
+    env.pop("EMAIL_BACKEND", None)
+    env["DJANGO_SETTINGS_MODULE"] = "config.settings.base"
+    result = subprocess.run(
+        [sys.executable, "-c", "import django; django.setup(); from django.conf import settings; print(settings.EMAIL_BACKEND)"],
+        env=env,
+        cwd=Path(__file__).resolve().parents[2],  # backend/ — where manage.py/config/ live
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.stdout.strip() == "django.core.mail.backends.smtp.EmailBackend", result.stderr
+
+
+def test_email_backend_is_actually_overridable_via_env_var():
+    """The actual fix: before this, nothing in settings.py read an
+    EMAIL_BACKEND env var at all, so setting one in Render's dashboard
+    would have silently done nothing — Django's own SMTP default (equal to
+    the un-overridden case above) would apply regardless. This is what
+    RENDER_STAGING.md's EMAIL_BACKEND=...console.EmailBackend env var
+    actually relies on working."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    env = {**os.environ, "DJANGO_SETTINGS_MODULE": "config.settings.base"}
+    env["EMAIL_BACKEND"] = "django.core.mail.backends.console.EmailBackend"
+    result = subprocess.run(
+        [sys.executable, "-c", "import django; django.setup(); from django.conf import settings; print(settings.EMAIL_BACKEND)"],
+        env=env,
+        cwd=Path(__file__).resolve().parents[2],  # backend/ — where manage.py/config/ live
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.stdout.strip() == "django.core.mail.backends.console.EmailBackend", result.stderr
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize("name", list(TRIGGERABLE_COMMANDS))
 def test_run_task_actually_runs_the_real_management_command(monkeypatch, name):

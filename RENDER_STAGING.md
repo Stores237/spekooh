@@ -238,6 +238,8 @@ First build takes 3–5 minutes. You get a URL like
 | `TASK_TRIGGER_TOKEN` | long random string (see §6) |
 | `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` | your real admin login (see "Create an admin user" below — no Shell tab on the free plan) |
 
+**Already set for you by `render.yaml`, not the dashboard:** `EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend`. Found live (2026-08-31): with no real email provider configured (see §8-adjacent "Owner action items" in `TODOS.md`), `config/settings/prod.py` had no `EMAIL_BACKEND` override at all, so Django's real default (SMTP, no host configured) crashed **every single registration** with an unhandled `ConnectionRefusedError` — a real 500 on the live site, not a hypothetical. The console backend just logs the email content instead of pretending to deliver it — an honest stand-in for staging, never appropriate for real production.
+
 (No `SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_KEY`/`FLUTTERWAVE_*` rows — nothing
 in this codebase reads those env vars today. Adding them now would be dead
 config; see §8.)
