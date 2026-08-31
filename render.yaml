@@ -47,3 +47,11 @@ services:
         sync: false
       - key: TASK_TRIGGER_TOKEN
         sync: false
+      # Free-tier web services have no Shell tab and no one-off Jobs (both
+      # paid-only), so the usual `createsuperuser` has nowhere interactive
+      # to run — build.sh runs apps.accounts.management.commands
+      # .ensure_superuser instead, idempotently, on every deploy.
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false

@@ -397,6 +397,54 @@ def test_prune_stale_guest_accounts_never_touches_registered_users():
     assert User.objects.filter(id=old_registered.id).exists()
 
 
+# --- ensure_superuser (2026-08-31, Render staging deployment) ---
+# Render's free web-service plan has no Shell tab and no one-off Jobs — the
+# usual interactive `createsuperuser` has nowhere to run. This command runs
+# unconditionally on every deploy (see build.sh) instead, so it has to be a
+# genuine no-op past the first successful run, not just "safe to run twice
+# because nobody will."
+
+
+@pytest.mark.django_db
+def test_ensure_superuser_creates_one_from_env_vars(monkeypatch):
+    monkeypatch.setenv("DJANGO_SUPERUSER_EMAIL", "owner@example.com")
+    monkeypatch.setenv("DJANGO_SUPERUSER_PASSWORD", "a-real-strong-password")
+
+    call_command("ensure_superuser")
+
+    user = User.objects.get(email="owner@example.com")
+    assert user.is_staff is True
+    assert user.is_superuser is True
+    assert user.check_password("a-real-strong-password") is True
+
+
+@pytest.mark.django_db
+def test_ensure_superuser_is_a_noop_without_both_env_vars(monkeypatch):
+    monkeypatch.delenv("DJANGO_SUPERUSER_EMAIL", raising=False)
+    monkeypatch.delenv("DJANGO_SUPERUSER_PASSWORD", raising=False)
+
+    call_command("ensure_superuser")
+
+    assert User.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_ensure_superuser_does_not_recreate_or_error_on_a_second_deploy(monkeypatch):
+    """The real scenario this exists for: build.sh runs this on every
+    deploy, not just the first — a second run must not error out (breaking
+    set -o errexit in build.sh) or reset the real password someone may have
+    since changed via /admin/."""
+    monkeypatch.setenv("DJANGO_SUPERUSER_EMAIL", "owner@example.com")
+    monkeypatch.setenv("DJANGO_SUPERUSER_PASSWORD", "a-real-strong-password")
+    call_command("ensure_superuser")
+    original_password_hash = User.objects.get(email="owner@example.com").password
+
+    call_command("ensure_superuser")
+
+    assert User.objects.filter(email="owner@example.com").count() == 1
+    assert User.objects.get(email="owner@example.com").password == original_password_hash
+
+
 @pytest.mark.django_db
 def test_user_admin_never_exposes_email_or_phone_for_browsing():
     """Owner decision (data minimization): nobody browsing this admin —

@@ -113,6 +113,10 @@ services:
         sync: false
       - key: TASK_TRIGGER_TOKEN
         sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
 ```
 
 Three real corrections from the earlier draft, all already applied above:
@@ -232,6 +236,7 @@ First build takes 3–5 minutes. You get a URL like
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | staging Supabase Storage S3 credentials |
 | `AWS_STORAGE_BUCKET_NAME` / `AWS_S3_ENDPOINT_URL` / `AWS_S3_REGION_NAME` | staging Storage bucket |
 | `TASK_TRIGGER_TOKEN` | long random string (see §6) |
+| `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` | your real admin login (see "Create an admin user" below — no Shell tab on the free plan) |
 
 (No `SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_KEY`/`FLUTTERWAVE_*` rows — nothing
 in this codebase reads those env vars today. Adding them now would be dead
@@ -241,11 +246,25 @@ Saving triggers a redeploy.
 
 ### Create an admin user
 
-Dashboard → **Shell** tab:
+**Correction (2026-08-31, found live): the free plan has no Shell tab and no
+one-off Jobs at all** — both are paid-plan-only (confirmed against Render's
+own docs). The usual `python manage.py createsuperuser` has nowhere
+interactive to run.
 
-```bash
-python manage.py createsuperuser
-```
+Instead, set two more env vars in the dashboard:
+
+| Key | Value |
+|---|---|
+| `DJANGO_SUPERUSER_EMAIL` | your real admin email |
+| `DJANGO_SUPERUSER_PASSWORD` | a real, strong password |
+
+`build.sh` runs `python manage.py ensure_superuser` on every deploy — a
+small idempotent command (`apps/accounts/management/commands/ensure_superuser.py`)
+that creates exactly one superuser from those two env vars the first time,
+then silently no-ops on every deploy after (it never resets the password if
+you've since changed it via `/admin/`, and never errors out the way
+Django's own `createsuperuser --noinput` would on a second run). Saving the
+env vars triggers a redeploy, which creates the account.
 
 Then log in at `https://spekooh-staging.onrender.com/admin/`.
 
@@ -446,7 +465,9 @@ the endpoint at all.
 - **750 instance hours per workspace per month** — one always-on service
   exceeds this, but a spinning-down staging service will not.
 - **Spin-down after 15 minutes idle**, ~1 minute cold start.
-- **No background workers, no shell-free cron** — see §6.
+- **No background workers, no cron, no Shell tab, no one-off Jobs at all** —
+  confirmed against Render's own docs, not assumed. See §6 for background
+  tasks and "Create an admin user" above for what replaces the Shell tab.
 - **512 MB RAM** — sufficient for Django as this repo stands; tight if
   heavy PDF/OCR processing (already present — `apps.papers.ocr`) turns out
   to need more under real load. Worth watching, not yet a known problem.
@@ -464,7 +485,7 @@ the endpoint at all.
 - [ ] `RENDER_EXTERNAL_HOSTNAME` / `DJANGO_SETTINGS_MODULE=config.settings.prod` — already handled in code/`render.yaml`
 - [ ] `/healthz/` — already responding
 - [ ] All secrets set in the Render dashboard, none in git
-- [ ] Superuser created via the dashboard Shell tab
+- [ ] `DJANGO_SUPERUSER_EMAIL`/`DJANGO_SUPERUSER_PASSWORD` set — no Shell tab on the free plan, `ensure_superuser` (run by `build.sh`) creates the account from these instead
 - [ ] Flutter pointed at staging via `--dart-define=API_BASE_URL=...`
 - [ ] Client timeouts — already raised to 90s in code
 - [ ] Real Flutterwave integration built (§8) — **before** wiring a sandbox webhook URL, not after
