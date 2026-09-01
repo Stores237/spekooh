@@ -16,7 +16,7 @@ from .models import (
     PublishedGuide,
     Subject,
 )
-from .services import mark_published
+from .services import mark_published, reject_submission
 
 
 def _uploaded_file_link(uploaded_file):
@@ -41,6 +41,7 @@ STATUS_LABELS = {
     PaperStatus.MERGED: "primary",
     PaperStatus.PUBLISHED: "success",
     PaperStatus.UNASSIGNED_ADMIN_QUEUE: "danger",
+    PaperStatus.REJECTED: "danger",
 }
 
 
@@ -68,7 +69,7 @@ class PaperSubmissionAdmin(ModelAdmin):
     list_filter = ("status", "category", "exam_type")
     search_fields = ("id", "submitted_by__name", "duplicate_hash")
     readonly_fields = ("created_at", "updated_at")
-    actions = ["publish_selected"]
+    actions = ["publish_selected", "reject_selected"]
 
     @display(description="Status", label=STATUS_LABELS, ordering="status")
     def status_badge(self, obj):
@@ -103,6 +104,26 @@ class PaperSubmissionAdmin(ModelAdmin):
             request,
             f"Published {eligible.count()} paper(s)."
             + (f" Skipped {skipped}: already Published." if skipped else ""),
+            level=messages.SUCCESS if eligible.count() else messages.WARNING,
+        )
+
+    @admin.action(description="Reject selected (requires Rejection reason to already be filled in)")
+    def reject_selected(self, request, queryset):
+        # Bulk admin actions can't collect free-text input per row — the
+        # workflow is: open the submission, type the real reason into
+        # Rejection reason, save, then select it and run this action. A row
+        # with that field still blank is skipped rather than rejected with
+        # no explanation, since the contributor-facing notification quotes
+        # this field directly (apps.papers.services.reject_submission) —
+        # an unexplained rejection is worse than no action at all.
+        eligible = queryset.exclude(status=PaperStatus.REJECTED).exclude(rejection_reason="")
+        for paper in eligible:
+            reject_submission(paper, reason=paper.rejection_reason)
+        skipped = queryset.count() - eligible.count()
+        self.message_user(
+            request,
+            f"Rejected {eligible.count()} paper(s)."
+            + (f" Skipped {skipped}: already Rejected, or Rejection reason is blank." if skipped else ""),
             level=messages.SUCCESS if eligible.count() else messages.WARNING,
         )
 

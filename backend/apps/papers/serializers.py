@@ -171,8 +171,11 @@ class PaperSubmissionListSerializer(PaperAccessFieldsMixin, serializers.ModelSer
             "paper_download_unlocked",
             "paper_download_price_fcfa",
             "status",
+            "rejection_reason",
+            "dismissed_by_contributor",
             "created_at",
         ]
+        read_only_fields = ["rejection_reason", "dismissed_by_contributor"]
 
 
 class PaperSubmissionDetailSerializer(PaperAccessFieldsMixin, serializers.ModelSerializer):
@@ -213,6 +216,8 @@ class PaperSubmissionDetailSerializer(PaperAccessFieldsMixin, serializers.ModelS
             "mcq_section",
             "non_mcq_section",
             "status",
+            "rejection_reason",
+            "dismissed_by_contributor",
             "created_at",
             "updated_at",
         ]
@@ -223,6 +228,8 @@ class PaperSubmissionDetailSerializer(PaperAccessFieldsMixin, serializers.ModelS
             "is_duplicate",
             "duplicate_of",
             "status",
+            "rejection_reason",
+            "dismissed_by_contributor",
             "created_at",
             "updated_at",
         ]

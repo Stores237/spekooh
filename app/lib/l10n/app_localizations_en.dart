@@ -1254,4 +1254,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiAssistantInputHint => 'Ask about a topic or paper...';
+
+  @override
+  String get submissionRejectedTitle => 'Submission not accepted';
+
+  @override
+  String get submissionRejectedIntro =>
+      'The Review Team didn\'t accept this submission:';
+
+  @override
+  String get dismissSubmissionButton => 'Got it, dismiss';
 }

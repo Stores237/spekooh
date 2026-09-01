@@ -55,7 +55,55 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
   // didPopNext) — without a full screen reopen.
   late Future<SpekoohUser> _userFuture = widget.repository.getUser();
   late Future<List<Achievement>> _achievementsFuture = _userFuture.then(widget.repository.getAchievements);
-  late Future<List<Submission>> _submissionsFuture = widget.repository.getSubmissions();
+  late Future<List<Submission>> _submissionsFuture = _loadSubmissions();
+
+  // A real Review Team verdict (owner decision, 2026-09-01) — a rejected
+  // submission the contributor hasn't seen yet gets a real popup with the
+  // actual reason, not a silent status-badge change they might never
+  // notice. Checked every time submissions load/refresh; shown one at a
+  // time (dismissing re-triggers the check for whatever's left).
+  Future<List<Submission>> _loadSubmissions() {
+    final future = widget.repository.getSubmissions();
+    future.then(_maybeShowRejectionPopup);
+    return future;
+  }
+
+  void _maybeShowRejectionPopup(List<Submission> submissions) {
+    final rejected = submissions.where((s) => s.isRejected && !s.dismissedByContributor).toList();
+    if (rejected.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      final submission = rejected.first;
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.submissionRejectedTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(submission.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: AppSpacing.space2),
+              Text(l10n.submissionRejectedIntro),
+              const SizedBox(height: AppSpacing.space1),
+              Text(submission.rejectionReason ?? ''),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await widget.repository.dismissSubmission(submission.id);
+                if (mounted) _refresh();
+              },
+              child: Text(l10n.dismissSubmissionButton),
+            ),
+          ],
+        ),
+      );
+    });
+  }
 
   // The avatar Container used to be a plain, non-interactive initial-letter
   // circle — tapping it did nothing. Overlays the freshly-uploaded URL on
@@ -99,7 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
     setState(() {
       _userFuture = widget.repository.getUser();
       _achievementsFuture = _userFuture.then(widget.repository.getAchievements);
-      _submissionsFuture = widget.repository.getSubmissions();
+      _submissionsFuture = _loadSubmissions();
     });
   }
 

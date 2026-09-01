@@ -15,6 +15,14 @@ abstract class ProfileRepository {
   Future<List<Achievement>> getAchievements(SpekoohUser user);
   Future<List<Submission>> getSubmissions();
 
+  /// Clears a rejected submission out of the contributor's own "My
+  /// submissions" list (Submission.dismissedByContributor) — only valid
+  /// once a real Review Team verdict has actually been given (see
+  /// apps.papers.services.reject_submission); the backend rejects this call
+  /// for anything not currently REJECTED. Never deletes the underlying
+  /// record, just this one contributor's "seen it" acknowledgement.
+  Future<void> dismissSubmission(int id);
+
   /// Persists the user's language choice on their account (User.language_pref)
   /// so it follows them to other devices — see LocaleController.syncFromAccount.
   Future<void> setLanguagePreference(String code);
@@ -37,6 +45,10 @@ class MockProfileRepository implements ProfileRepository {
   MockProfileRepository({SpekoohUser? user}) : _user = user ?? mockGuestUser;
 
   final SpekoohUser _user;
+  // Own mutable copy per instance — dismissSubmission below mutates this,
+  // and reusing the shared `mockSubmissions` const list directly would leak
+  // state between tests/instances.
+  final List<Submission> _submissions = List.of(mockSubmissions);
 
   @override
   Future<SpekoohUser> getUser() => Future.value(_user);
@@ -45,7 +57,24 @@ class MockProfileRepository implements ProfileRepository {
   Future<List<Achievement>> getAchievements(SpekoohUser user) => Future.value(computeAchievements(user));
 
   @override
-  Future<List<Submission>> getSubmissions() => Future.value(mockSubmissions);
+  Future<List<Submission>> getSubmissions() => Future.value(List.unmodifiable(_submissions));
+
+  @override
+  Future<void> dismissSubmission(int id) async {
+    final index = _submissions.indexWhere((s) => s.id == id);
+    if (index == -1) return;
+    final s = _submissions[index];
+    _submissions[index] = Submission(
+      id: s.id,
+      title: s.title,
+      status: s.status,
+      rawStatus: s.rawStatus,
+      tone: s.tone,
+      date: s.date,
+      rejectionReason: s.rejectionReason,
+      dismissedByContributor: true,
+    );
+  }
 
   @override
   Future<void> setLanguagePreference(String code) async {}

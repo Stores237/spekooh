@@ -1276,4 +1276,14 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get aiAssistantInputHint =>
       'Posez une question sur un sujet ou une épreuve...';
+
+  @override
+  String get submissionRejectedTitle => 'Soumission non acceptée';
+
+  @override
+  String get submissionRejectedIntro =>
+      'L\'équipe de vérification n\'a pas accepté cette soumission :';
+
+  @override
+  String get dismissSubmissionButton => 'Compris, masquer';
 }

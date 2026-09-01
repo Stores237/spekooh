@@ -189,6 +189,26 @@ class PaperSubmissionViewSet(
         paper = mark_published(self.get_object())
         return Response(PaperSubmissionDetailSerializer(paper).data)
 
+    @action(detail=True, methods=["post"])
+    def dismiss(self, request, pk=None):
+        # Same auth bar as `report` — a real account, guests excluded (class
+        # default IsAuthenticatedNotGuest, no override needed here). The
+        # explicit ownership check matters specifically for staff: their
+        # get_queryset is unfiltered (every submission, any status), so
+        # without this a staff member could clear a rejection out of a
+        # *contributor's own* list on their behalf — this is deliberately
+        # something only the contributor themselves does.
+        paper = self.get_object()
+        if paper.submitted_by_id != request.user.id:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        if paper.status != PaperStatus.REJECTED:
+            return Response(
+                {"detail": "Only a rejected submission can be dismissed."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        paper.dismissed_by_contributor = True
+        paper.save(update_fields=["dismissed_by_contributor", "updated_at"])
+        return Response(PaperSubmissionDetailSerializer(paper, context={"request": request}).data)
+
 
 class AdWatchView(APIView):
     permission_classes = [IsAuthenticatedNotGuest]

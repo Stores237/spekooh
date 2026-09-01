@@ -390,5 +390,9 @@
   "aiPromptExplainPhysics": "Expliquer une notion difficile de Physique",
   "aiPromptMathsQuestions": "Donne-moi 5 questions d'entraînement en Maths",
   "aiPromptSummarizeGuide": "Résume le corrigé de cette épreuve",
-  "aiAssistantInputHint": "Posez une question sur un sujet ou une épreuve..."
+  "aiAssistantInputHint": "Posez une question sur un sujet ou une épreuve...",
+
+  "submissionRejectedTitle": "Soumission non acceptée",
+  "submissionRejectedIntro": "L'équipe de vérification n'a pas accepté cette soumission :",
+  "dismissSubmissionButton": "Compris, masquer"
 }

@@ -96,6 +96,13 @@ class PaperStatus(models.TextChoices):
     MERGED = "MERGED", "Merged"
     PUBLISHED = "PUBLISHED", "Published"
     UNASSIGNED_ADMIN_QUEUE = "UNASSIGNED_ADMIN_QUEUE", "Unassigned: admin queue"
+    # A real Review Team verdict (2026-09-01, owner decision) — distinct
+    # from INSTRUCTOR_REJECTED above, which is a narrow, unrelated pipeline
+    # step (an instructor declining to write a marking guide, nothing to do
+    # with whether the submission itself was any good). This is terminal:
+    # a rejected submission isn't retried through the pipeline, the
+    # contributor just sees why and submits a fresh, corrected one.
+    REJECTED = "REJECTED", "Rejected"
 
 
 class PaperSubmission(TimeStampedModel):
@@ -143,6 +150,18 @@ class PaperSubmission(TimeStampedModel):
     )
 
     status = models.CharField(max_length=32, choices=PaperStatus.choices, default=PaperStatus.PENDING_REVIEW)
+
+    # Only meaningful once status == REJECTED — the Review Team's real
+    # reason, shown to the contributor (see apps.papers.services
+    # .reject_submission). Blank otherwise, never fabricated.
+    rejection_reason = models.CharField(max_length=500, blank=True)
+    # Lets the contributor clear a seen rejection out of their own "My
+    # submissions" list without deleting the real underlying record (the
+    # Review Team's history of it stays intact either way). Meaningless
+    # outside REJECTED, but not hard-restricted to it at the model level —
+    # the app only ever sets it via the dismiss action, which does enforce
+    # that (apps.papers.views.PaperSubmissionViewSet.dismiss).
+    dismissed_by_contributor = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-created_at"]

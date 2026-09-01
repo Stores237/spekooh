@@ -523,5 +523,9 @@
   "aiPromptExplainPhysics": "Explain a hard Physics topic",
   "aiPromptMathsQuestions": "Give me 5 Maths practice questions",
   "aiPromptSummarizeGuide": "Summarize this paper's marking guide",
-  "aiAssistantInputHint": "Ask about a topic or paper..."
+  "aiAssistantInputHint": "Ask about a topic or paper...",
+
+  "submissionRejectedTitle": "Submission not accepted",
+  "submissionRejectedIntro": "The Review Team didn't accept this submission:",
+  "dismissSubmissionButton": "Got it, dismiss"
 }
