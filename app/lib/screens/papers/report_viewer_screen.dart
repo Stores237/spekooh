@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../common/circular_back_button.dart';
+import '../../widgets/spekooh_loader.dart';
 
 /// A real in-app document viewer — renders the file inline instead of
 /// handing off to the OS's own PDF/photo app, which typically offers its
@@ -95,8 +96,8 @@ class _PdfViewerState extends State<_PdfViewer> {
       controller: _controller,
       builders: PdfViewPinchBuilders<DefaultBuilderOptions>(
         options: const DefaultBuilderOptions(),
-        documentLoaderBuilder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.gold500)),
-        pageLoaderBuilder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.gold500)),
+        documentLoaderBuilder: (context) => const SpekoohLoader(),
+        pageLoaderBuilder: (context) => const SpekoohLoader(),
         errorBuilder: (context, error) => Center(
           child: Text(l10n.couldNotOpenFile, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.white)),
         ),
@@ -115,7 +116,7 @@ class _ImageViewer extends StatelessWidget {
     return PhotoView(
       imageProvider: NetworkImage(fileUrl),
       backgroundDecoration: const BoxDecoration(color: AppColors.ink900),
-      loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator(color: AppColors.gold500)),
+      loadingBuilder: (context, event) => const SpekoohLoader(),
       errorBuilder: (context, error, stackTrace) => Center(
         child: Text(l10n.couldNotOpenFile, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.white)),
       ),
