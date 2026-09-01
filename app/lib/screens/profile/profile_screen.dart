@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
@@ -61,6 +63,12 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
   // whole profile just to pick up one changed field.
   String? _avatarUrlOverride;
   bool _isUploadingAvatar = false;
+  // Owner-reported (2026-09-01): picking a new photo showed a bare spinner
+  // with no visual confirmation of *which* photo was picked until the
+  // upload finished — the circle just went blank. Shows the picked bytes
+  // immediately, in the same rounded frame the real avatar renders in,
+  // while the real upload is still in flight.
+  Uint8List? _pendingAvatarBytes;
 
   bool get _isLoggedIn => AuthSession.instance.isLoggedIn;
 
@@ -138,7 +146,10 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
     if (xfile == null || !mounted) return;
 
     final bytes = await xfile.readAsBytes();
-    setState(() => _isUploadingAvatar = true);
+    setState(() {
+      _isUploadingAvatar = true;
+      _pendingAvatarBytes = bytes;
+    });
     try {
       final avatarUrl = await widget.repository.updateAvatar(
         SubmissionFile(bytes: bytes, fileName: xfile.name, mimeType: xfile.mimeType ?? 'image/jpeg'),
@@ -147,8 +158,67 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.avatarUploadError)));
     } finally {
-      if (mounted) setState(() => _isUploadingAvatar = false);
+      // Real network URL (or the pre-upload avatar, on failure) takes over
+      // display once this resolves — the local preview was only ever a
+      // stand-in for the upload window itself.
+      if (mounted) {
+        setState(() {
+          _isUploadingAvatar = false;
+          _pendingAvatarBytes = null;
+        });
+      }
     }
+  }
+
+  /// The picked-but-not-yet-uploaded photo (if any) always wins over the
+  /// last-known real avatar — otherwise the circle blanks to a bare spinner
+  /// mid-upload with no confirmation of which photo was actually picked.
+  /// A dimmed overlay + small spinner sit on top of that same preview
+  /// rather than replacing it, so the frame the picture will actually
+  /// render in is visible the whole time, not just after the upload lands.
+  Widget _avatarCircle(SpekoohUser user) {
+    final pending = _pendingAvatarBytes;
+    final url = _avatarUrlOverride ?? user.avatarUrl;
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold200),
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        alignment: Alignment.center,
+        fit: StackFit.expand,
+        children: [
+          if (pending != null)
+            ClipOval(child: Image.memory(pending, width: 52, height: 52, fit: BoxFit.cover))
+          else if (url != null)
+            ClipOval(
+              child: Image.network(
+                url,
+                width: 52,
+                height: 52,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Text(
+                  user.name[0],
+                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700),
+                ),
+              ),
+            )
+          else
+            Text(user.name[0], style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700)),
+          if (_isUploadingAvatar)
+            Container(
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black.withValues(alpha: 0.35)),
+              alignment: Alignment.center,
+              child: const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppColors.white)),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -193,29 +263,7 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                           children: [
                             GestureDetector(
                               onTap: _isUploadingAvatar ? null : _pickAvatar,
-                              child: Container(
-                                width: 52,
-                                height: 52,
-                                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold200),
-                                alignment: Alignment.center,
-                                clipBehavior: Clip.antiAlias,
-                                child: _isUploadingAvatar
-                                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                    : (_avatarUrlOverride ?? user.avatarUrl) != null
-                                        ? ClipOval(
-                                            child: Image.network(
-                                              (_avatarUrlOverride ?? user.avatarUrl)!,
-                                              width: 52,
-                                              height: 52,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) => Text(
-                                                user.name[0],
-                                                style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700),
-                                              ),
-                                            ),
-                                          )
-                                        : Text(user.name[0], style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700)),
-                              ),
+                              child: _avatarCircle(user),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
