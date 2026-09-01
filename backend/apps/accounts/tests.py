@@ -4,6 +4,7 @@ import pytest
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import Group
 from django.core.management import call_command
+from django.db import IntegrityError
 from django.test import Client
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -175,7 +176,7 @@ def test_me_returns_authenticated_user_profile(api_client):
 
 @pytest.mark.django_db
 def test_registered_user_requires_email_at_db_level():
-    with pytest.raises(Exception):
+    with pytest.raises(IntegrityError):
         User.objects.create(account_type=AccountType.REGISTERED, email=None)
 
 

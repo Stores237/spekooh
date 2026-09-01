@@ -4,7 +4,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import AdminFlagQueue
-from .serializers import AdminFlagQueueSerializer, AssignFlagSerializer, ResolveFlagSerializer
+from .serializers import (
+    AdminFlagQueueSerializer,
+    AssignFlagSerializer,
+    ResolveFlagSerializer,
+)
 from .services import assign, resolve
 
 

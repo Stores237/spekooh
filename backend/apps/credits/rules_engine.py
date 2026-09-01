@@ -71,8 +71,8 @@ class PaperCreditCalculator:
         demand_factor = getattr(subject, "demand_factor", None)
         demand = Decimal(demand_factor.factor) if demand_factor is not None else Decimal("1.0")
 
-        subtotal = sum((Decimal(rates[q.question_type]) * multiplier for q in questions), Decimal("0"))
-        raw_total = int((subtotal * demand).quantize(Decimal("1")))
+        subtotal = sum((Decimal(rates[q.question_type]) * multiplier for q in questions), Decimal(0))
+        raw_total = int((subtotal * demand).quantize(Decimal(1)))
 
         ceiling_config = CreditCeilingConfig.objects.first() or CreditCeilingConfig.objects.create()
         ceiling = ceiling_config.max_credit_per_paper_xaf
@@ -82,10 +82,10 @@ class PaperCreditCalculator:
 
 
 __all__ = [
-    "PaperCreditCalculator",
-    "MarkingQuestion",
+    "ComplexityLevel",
     "CreditCalculationResult",
     "CreditRulesError",
-    "ComplexityLevel",
+    "MarkingQuestion",
+    "PaperCreditCalculator",
     "QuestionType",
 ]

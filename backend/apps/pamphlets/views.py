@@ -8,7 +8,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .escrow import AlreadyRedeemedError, EscrowError, dispute, redeem_qr, self_confirm_receipt
+from .escrow import (
+    AlreadyRedeemedError,
+    EscrowError,
+    dispute,
+    redeem_qr,
+    self_confirm_receipt,
+)
 from .models import Pamphlet, PamphletOrder, PamphletOrderStatus
 from .qr import QR_EXPIRY_DAYS, verify_qr_token
 from .serializers import (

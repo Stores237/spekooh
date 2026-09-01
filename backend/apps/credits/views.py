@@ -6,7 +6,11 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import IsAuthenticatedNotGuest
 
 from .models import CreditLedgerEntry, RedeemCode
-from .serializers import CreditLedgerEntrySerializer, RedeemCodeApplySerializer, RedeemCodeSerializer
+from .serializers import (
+    CreditLedgerEntrySerializer,
+    RedeemCodeApplySerializer,
+    RedeemCodeSerializer,
+)
 from .services import CreditEngineError, RedeemCodeError, RedeemCodeIssuer, redeem_code
 
 

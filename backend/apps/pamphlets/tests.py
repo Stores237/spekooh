@@ -9,7 +9,14 @@ from rest_framework.test import APIClient
 from apps.accounts.factories import UserFactory
 from apps.admin_queue.models import AdminFlagQueue, FlagCategory
 
-from .escrow import AlreadyRedeemedError, EscrowError, dispute, issue_qr, redeem_qr, self_confirm_receipt
+from .escrow import (
+    AlreadyRedeemedError,
+    EscrowError,
+    dispute,
+    issue_qr,
+    redeem_qr,
+    self_confirm_receipt,
+)
 from .factories import PamphletFactory
 from .models import PamphletOrder, PamphletOrderStatus
 from .services import place_order

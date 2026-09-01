@@ -1,7 +1,13 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import AdWatchView, ExamCategoryViewSet, ExamTypeViewSet, PaperSubmissionViewSet, SubjectViewSet
+from .views import (
+    AdWatchView,
+    ExamCategoryViewSet,
+    ExamTypeViewSet,
+    PaperSubmissionViewSet,
+    SubjectViewSet,
+)
 
 app_name = "papers"
 

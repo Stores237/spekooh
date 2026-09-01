@@ -3,7 +3,12 @@ import datetime
 import factory
 from django.utils import timezone
 
-from .models import PaymentPurpose, PaymentTransaction, PaymentTransactionStatus, Subscription
+from .models import (
+    PaymentPurpose,
+    PaymentTransaction,
+    PaymentTransactionStatus,
+    Subscription,
+)
 
 
 class PaymentTransactionFactory(factory.django.DjangoModelFactory):

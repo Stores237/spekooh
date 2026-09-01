@@ -10,7 +10,11 @@ from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
 from apps.payments.models import PaperDownloadUnlock, PaperUnlock, Subscription
 
-from .duplicate_detection import DuplicateDetector, TfidfDuplicateDetector, exact_duplicate_hash
+from .duplicate_detection import (
+    DuplicateDetector,
+    TfidfDuplicateDetector,
+    exact_duplicate_hash,
+)
 from .models import AdWatchEvent, PaperFlag, PaperStatus, PaperSubmission, PaperViewLog
 from .ocr import extract_text, extract_text_from_fieldfile
 from .watermark import watermark_bytes

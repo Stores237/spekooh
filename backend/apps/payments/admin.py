@@ -3,7 +3,13 @@ from django.utils import timezone
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
-from .models import PaperUnlock, PaymentTransaction, PaymentTransactionStatus, Subscription, SubscriptionStatus
+from .models import (
+    PaperUnlock,
+    PaymentTransaction,
+    PaymentTransactionStatus,
+    Subscription,
+    SubscriptionStatus,
+)
 
 TRANSACTION_STATUS_LABELS = {
     PaymentTransactionStatus.SUCCESS: "success",

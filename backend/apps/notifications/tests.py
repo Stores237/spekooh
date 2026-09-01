@@ -9,7 +9,12 @@ from apps.instructors.services import (
     merge_and_publish,
     route_next_instructor,
 )
-from apps.papers.factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory, SubjectFactory
+from apps.papers.factories import (
+    ExamCategoryFactory,
+    ExamTypeFactory,
+    PaperSubmissionFactory,
+    SubjectFactory,
+)
 from apps.papers.models import MCQAnswerKey
 
 from .factories import NotificationFactory

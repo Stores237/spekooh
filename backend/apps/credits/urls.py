@@ -1,8 +1,12 @@
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from django.urls import include, path
-
-from .views import CreditLedgerEntryViewSet, RedeemCodeApplyView, RedeemCodeIssueView, RedeemCodeViewSet
+from .views import (
+    CreditLedgerEntryViewSet,
+    RedeemCodeApplyView,
+    RedeemCodeIssueView,
+    RedeemCodeViewSet,
+)
 
 app_name = "credits"
 
