@@ -289,3 +289,27 @@ def mark_published(paper: PaperSubmission) -> PaperSubmission:
     paper.save(update_fields=["status", "updated_at"])
     award_contributor_bonus(paper)
     return paper
+
+
+def reject_submission(paper: PaperSubmission, *, reason: str) -> PaperSubmission:
+    """
+    A real Review Team verdict (2026-09-01, owner decision) — terminal, no
+    retry through the pipeline. Distinct from INSTRUCTOR_REJECTED (an
+    instructor declining to write a marking guide, an unrelated pipeline
+    step). Notifies the contributor with the real reason; they see it and
+    dismiss it (PaperSubmissionViewSet.dismiss) rather than the app ever
+    inventing a generic "rejected" message with no explanation.
+    """
+    from apps.notifications.models import NotificationKind
+    from apps.notifications.services import notify
+
+    paper.status = PaperStatus.REJECTED
+    paper.rejection_reason = reason
+    paper.save(update_fields=["status", "rejection_reason", "updated_at"])
+    notify(
+        user=paper.submitted_by,
+        kind=NotificationKind.SUBMISSION_STATUS,
+        title="Your submission wasn't accepted",
+        body=reason,
+    )
+    return paper

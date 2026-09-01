@@ -17,6 +17,7 @@ const _statusDisplay = {
   'MERGED': 'Merging',
   'PUBLISHED': 'Published',
   'UNASSIGNED_ADMIN_QUEUE': 'Needs admin review',
+  'REJECTED': 'Not accepted',
 };
 
 const _statusTone = {
@@ -27,6 +28,7 @@ const _statusTone = {
   'INSTRUCTOR_REQUEST_SENT': SpekoohBadgeTone.amber,
   'INSTRUCTOR_REJECTED': SpekoohBadgeTone.dark,
   'UNASSIGNED_ADMIN_QUEUE': SpekoohBadgeTone.dark,
+  'REJECTED': SpekoohBadgeTone.dark,
 };
 
 /// Composes the profile summary client-side from several already-existing,
@@ -121,11 +123,20 @@ class HttpProfileRepository implements ProfileRepository {
       final year = row['year'] as int;
       final date = DateTime.tryParse(row['created_at'] as String? ?? '');
       return Submission(
+        id: row['id'] as int,
         title: subjectTitle != null ? '$subjectTitle, $examTypeName $year' : '$examTypeName $year',
         status: _statusDisplay[status] ?? status,
+        rawStatus: status,
         tone: _statusTone[status] ?? SpekoohBadgeTone.neutral,
         date: date == null ? '' : '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+        rejectionReason: (row['rejection_reason'] as String?)?.isEmpty ?? true ? null : row['rejection_reason'] as String,
+        dismissedByContributor: row['dismissed_by_contributor'] as bool? ?? false,
       );
     }).toList();
+  }
+
+  @override
+  Future<void> dismissSubmission(int id) async {
+    await _client.post('/papers/submissions/$id/dismiss/');
   }
 }

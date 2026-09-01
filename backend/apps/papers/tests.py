@@ -971,6 +971,139 @@ def test_admin_publish_selected_does_not_republish_an_already_published_report()
     assert CreditLedgerEntry.objects.filter(paper_submission=report).count() == 0
 
 
+# --- Real Review Team rejection verdict + contributor-side dismiss (2026-09-01) ---
+# Distinct from INSTRUCTOR_REJECTED (a narrow, unrelated pipeline step — an
+# instructor declining to write a marking guide, nothing to do with whether
+# the submission itself was any good).
+
+
+@pytest.mark.django_db
+def test_reject_submission_sets_status_reason_and_notifies():
+    from apps.notifications.models import Notification, NotificationKind
+
+    from .services import reject_submission
+
+    paper = PaperSubmissionFactory(status=PaperStatus.PENDING_REVIEW)
+
+    reject_submission(paper, reason="Scan is unreadable in Section B — please resubmit a clearer photo.")
+
+    paper.refresh_from_db()
+    assert paper.status == PaperStatus.REJECTED
+    assert paper.rejection_reason == "Scan is unreadable in Section B — please resubmit a clearer photo."
+    notification = Notification.objects.get(user=paper.submitted_by, kind=NotificationKind.SUBMISSION_STATUS)
+    assert "Scan is unreadable in Section B" in notification.body
+
+
+@pytest.mark.django_db
+def test_admin_reject_selected_rejects_only_rows_with_a_real_reason_filled_in():
+    """Bulk actions can't collect free-text input per row — a row whose
+    Rejection reason is still blank is skipped rather than rejected with no
+    explanation, since the contributor-facing notification quotes it
+    directly."""
+    ready = PaperSubmissionFactory(status=PaperStatus.PENDING_REVIEW, rejection_reason="Duplicate of an existing paper.")
+    not_ready = PaperSubmissionFactory(status=PaperStatus.PENDING_REVIEW, rejection_reason="")
+
+    admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
+    admin_instance.reject_selected(
+        _admin_action_request(), PaperSubmission.objects.filter(id__in=[ready.id, not_ready.id])
+    )
+
+    ready.refresh_from_db()
+    not_ready.refresh_from_db()
+    assert ready.status == PaperStatus.REJECTED
+    assert not_ready.status == PaperStatus.PENDING_REVIEW
+
+
+@pytest.mark.django_db
+def test_admin_reject_selected_skips_an_already_rejected_submission():
+    already = PaperSubmissionFactory(status=PaperStatus.REJECTED, rejection_reason="Original reason.")
+
+    admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
+    admin_instance.reject_selected(_admin_action_request(), PaperSubmission.objects.filter(id=already.id))
+
+    already.refresh_from_db()
+    assert already.rejection_reason == "Original reason."  # untouched, not silently overwritten
+
+
+@pytest.mark.django_db
+def test_dismiss_requires_authentication(api_client):
+    paper = PaperSubmissionFactory(status=PaperStatus.REJECTED, rejection_reason="Not eligible.")
+    response = api_client.post(f"/api/papers/submissions/{paper.id}/dismiss/")
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_guest_cannot_dismiss_a_rejected_submission():
+    """Same real-account-only bar as `report` — a guest token isn't enough
+    for account-management-style actions past the initial create."""
+    from apps.accounts.models import User
+
+    guest = User.objects.create_guest(name="Live Verify Guest")
+    paper = PaperSubmissionFactory(submitted_by=guest, status=PaperStatus.REJECTED, rejection_reason="Not eligible.")
+    client = APIClient()
+    client.force_authenticate(user=guest)
+
+    response = client.post(f"/api/papers/submissions/{paper.id}/dismiss/")
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_owner_can_dismiss_their_own_rejected_submission(authed_client):
+    client, user = authed_client
+    paper = PaperSubmissionFactory(submitted_by=user, status=PaperStatus.REJECTED, rejection_reason="Not eligible.")
+
+    response = client.post(f"/api/papers/submissions/{paper.id}/dismiss/")
+
+    assert response.status_code == 200
+    assert response.data["dismissed_by_contributor"] is True
+    paper.refresh_from_db()
+    assert paper.dismissed_by_contributor is True
+
+
+@pytest.mark.django_db
+def test_cannot_dismiss_a_submission_that_isnt_rejected(authed_client):
+    client, user = authed_client
+    paper = PaperSubmissionFactory(submitted_by=user, status=PaperStatus.PENDING_REVIEW)
+
+    response = client.post(f"/api/papers/submissions/{paper.id}/dismiss/")
+
+    assert response.status_code == 400
+    paper.refresh_from_db()
+    assert paper.dismissed_by_contributor is False
+
+
+@pytest.mark.django_db
+def test_cannot_dismiss_someone_elses_rejected_submission(authed_client):
+    """Matters specifically for staff: their queryset is unfiltered (every
+    submission, any status), so without this a staff member could clear a
+    rejection out of a *contributor's own* list on their behalf."""
+    client, staff_user = authed_client
+    staff_user.is_staff = True
+    staff_user.save(update_fields=["is_staff"])
+    other_user = UserFactory()
+    paper = PaperSubmissionFactory(submitted_by=other_user, status=PaperStatus.REJECTED, rejection_reason="Not eligible.")
+
+    response = client.post(f"/api/papers/submissions/{paper.id}/dismiss/")
+
+    assert response.status_code == 403
+    paper.refresh_from_db()
+    assert paper.dismissed_by_contributor is False
+
+
+@pytest.mark.django_db
+def test_rejection_fields_exposed_on_list_and_detail(authed_client):
+    client, user = authed_client
+    PaperSubmissionFactory(submitted_by=user, status=PaperStatus.REJECTED, rejection_reason="Blurry scan.")
+
+    list_response = client.get("/api/papers/submissions/")
+    rows = list_response.data["results"] if isinstance(list_response.data, dict) else list_response.data
+    row = rows[0]
+    assert row["status"] == PaperStatus.REJECTED
+    assert row["rejection_reason"] == "Blurry scan."
+    assert row["dismissed_by_contributor"] is False
+
+
 @pytest.mark.django_db
 def test_academic_report_admin_section_only_shows_reports():
     reports_category = ExamCategoryFactory(key="reports", requires_system=False)

@@ -11,6 +11,7 @@ import 'package:spekooh/models/submission.dart';
 import 'package:spekooh/screens/profile/profile_screen.dart';
 import 'package:spekooh/sheets/achievements_sheet.dart';
 import 'package:spekooh/shell/route_observers.dart';
+import 'package:spekooh/widgets/spekooh_badge.dart';
 
 import 'support/l10n_test_app.dart';
 
@@ -80,6 +81,57 @@ class _RefreshingProfileRepository implements ProfileRepository {
 
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by the refresh test');
+}
+
+/// A real Review Team rejection verdict (owner decision, 2026-09-01) — a
+/// rejected-but-not-yet-dismissed submission gets a real popup with the
+/// actual reason on load, and dismissing it calls the real dismiss action.
+class _RejectionProfileRepository implements ProfileRepository {
+  List<Submission> submissions = const [];
+  int dismissCallCount = 0;
+  int? lastDismissedId;
+
+  @override
+  Future<SpekoohUser> getUser() async => const SpekoohUser(
+        name: 'Test User',
+        joinDate: 'Joined Jul 2026',
+        submissionsCount: 1,
+        quizzesCount: 0,
+        creditBalance: 0,
+        redeemCode: '',
+        redeemCodeSubtitle: '',
+      );
+
+  @override
+  Future<List<Achievement>> getAchievements(SpekoohUser user) async => computeAchievements(user);
+
+  @override
+  Future<List<Submission>> getSubmissions() async => submissions;
+
+  @override
+  Future<void> dismissSubmission(int id) async {
+    dismissCallCount++;
+    lastDismissedId = id;
+    submissions = [
+      for (final s in submissions)
+        if (s.id == id)
+          Submission(
+            id: s.id,
+            title: s.title,
+            status: s.status,
+            rawStatus: s.rawStatus,
+            tone: s.tone,
+            date: s.date,
+            rejectionReason: s.rejectionReason,
+            dismissedByContributor: true,
+          )
+        else
+          s,
+    ];
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by the rejection test');
 }
 
 void _fakeLoggedIn() {
@@ -285,6 +337,79 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Spekooh Pro'));
       expect(opened, isTrue);
+    });
+  });
+
+  group('Real Review Team rejection verdict (owner decision, 2026-09-01)', () {
+    Submission rejectedSubmission({bool dismissed = false}) => Submission(
+          id: 42,
+          title: 'Physics, GCE A Level 2025',
+          status: 'Not accepted',
+          rawStatus: 'REJECTED',
+          tone: SpekoohBadgeTone.dark,
+          date: '2026-09-01',
+          rejectionReason: 'Scan is unreadable in Section B — please resubmit a clearer photo.',
+          dismissedByContributor: dismissed,
+        );
+
+    testWidgets('shows a real popup with the actual reason for a rejected, not-yet-seen submission', (tester) async {
+      _fakeLoggedIn();
+      final repository = _RejectionProfileRepository()..submissions = [rejectedSubmission()];
+
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: repository)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Submission not accepted'), findsOneWidget);
+      expect(find.textContaining('Scan is unreadable in Section B'), findsOneWidget);
+    });
+
+    testWidgets('dismissing calls the real dismiss action and closes the popup', (tester) async {
+      _fakeLoggedIn();
+      final repository = _RejectionProfileRepository()..submissions = [rejectedSubmission()];
+
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: repository)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.tap(find.text('Got it, dismiss'));
+      await tester.pumpAndSettle();
+
+      expect(repository.dismissCallCount, 1);
+      expect(repository.lastDismissedId, 42);
+      expect(find.text('Submission not accepted'), findsNothing);
+    });
+
+    testWidgets('an already-dismissed rejection never shows a popup', (tester) async {
+      _fakeLoggedIn();
+      final repository = _RejectionProfileRepository()..submissions = [rejectedSubmission(dismissed: true)];
+
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: repository)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Submission not accepted'), findsNothing);
+    });
+
+    testWidgets('a real published submission never triggers a rejection popup', (tester) async {
+      _fakeLoggedIn();
+      final repository = _RejectionProfileRepository()
+        ..submissions = [
+          const Submission(
+            id: 1,
+            title: 'Chemistry, GCE O Level 2025',
+            status: 'Published',
+            rawStatus: 'PUBLISHED',
+            tone: SpekoohBadgeTone.green,
+            date: '2026-08-01',
+          ),
+        ];
+
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: repository)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Submission not accepted'), findsNothing);
     });
   });
 }

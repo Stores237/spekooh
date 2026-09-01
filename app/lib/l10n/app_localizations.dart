@@ -2299,6 +2299,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ask about a topic or paper...'**
   String get aiAssistantInputHint;
+
+  /// No description provided for @submissionRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission not accepted'**
+  String get submissionRejectedTitle;
+
+  /// No description provided for @submissionRejectedIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'The Review Team didn\'t accept this submission:'**
+  String get submissionRejectedIntro;
+
+  /// No description provided for @dismissSubmissionButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it, dismiss'**
+  String get dismissSubmissionButton;
 }
 
 class _AppLocalizationsDelegate
