@@ -1,4 +1,4 @@
-from .base import *  # noqa: F401,F403
+from .base import *
 
 DEBUG = True
 # "*" so a real phone on the same Wi-Fi/LAN as this dev machine can reach the

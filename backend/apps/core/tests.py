@@ -168,6 +168,7 @@ def test_email_backend_defaults_to_real_smtp_when_unconfigured():
         capture_output=True,
         text=True,
         timeout=30,
+        check=False,
     )
     assert result.stdout.strip() == "django.core.mail.backends.smtp.EmailBackend", result.stderr
 
@@ -193,6 +194,7 @@ def test_email_backend_is_actually_overridable_via_env_var():
         capture_output=True,
         text=True,
         timeout=30,
+        check=False,
     )
     assert result.stdout.strip() == "django.core.mail.backends.console.EmailBackend", result.stderr
 

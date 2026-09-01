@@ -5,13 +5,36 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
-from apps.papers.factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory, SubjectFactory
+from apps.papers.factories import (
+    ExamCategoryFactory,
+    ExamTypeFactory,
+    PaperSubmissionFactory,
+    SubjectFactory,
+)
 from apps.papers.models import PaperStatus
 
 from .factories import CreditLedgerEntryFactory, RedeemCodeFactory
-from .models import ContributorBonusConfig, CreditLedgerEntry, ReferralBonusConfig, RedeemCodeStatus, SubjectDemandFactor
-from .rules_engine import ComplexityLevel, CreditRulesError, MarkingQuestion, PaperCreditCalculator, QuestionType
-from .services import RedeemCodeError, RedeemCodeIssuer, award_contributor_bonus, award_referral_bonus, redeem_code
+from .models import (
+    ContributorBonusConfig,
+    CreditLedgerEntry,
+    RedeemCodeStatus,
+    ReferralBonusConfig,
+    SubjectDemandFactor,
+)
+from .rules_engine import (
+    ComplexityLevel,
+    CreditRulesError,
+    MarkingQuestion,
+    PaperCreditCalculator,
+    QuestionType,
+)
+from .services import (
+    RedeemCodeError,
+    RedeemCodeIssuer,
+    award_contributor_bonus,
+    award_referral_bonus,
+    redeem_code,
+)
 
 
 @pytest.fixture

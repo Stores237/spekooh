@@ -13,7 +13,14 @@ from .serializers import (
     InstructorWebhookEnvelopeSerializer,
     MarkingGuideSubmissionWebhookSerializer,
 )
-from .services import MergeError, RoutingError, handle_instructor_response, handle_marking_guide_submission, merge_and_publish, route_next_instructor
+from .services import (
+    MergeError,
+    RoutingError,
+    handle_instructor_response,
+    handle_marking_guide_submission,
+    merge_and_publish,
+    route_next_instructor,
+)
 from .webhook import WebhookError, verify_webhook_request
 
 

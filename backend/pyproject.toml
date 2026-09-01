@@ -1,0 +1,20 @@
+[tool.ruff]
+# Migrations are frozen, generated snapshots — not hand-maintained,
+# style-conscious code. Linting them just produces noise (import-sort
+# order, dict() vs {} literal style) on files nobody should be editing for
+# style reasons anyway.
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+ignore = [
+    # Flags Django/DRF's extremely common class-level config idiom
+    # (Meta.fields = [...], filterset_fields = [...], a ViewSet's
+    # TRIGGERABLE_COMMANDS = {...}) as a "mutable default" — these are real
+    # Django/DRF conventions, never mutated at runtime, and this rule's
+    # false-positive rate on Django code is a widely documented ruff/Django
+    # friction point (2026-09-01: 245 of 294 findings on this codebase from
+    # ruff 0.6.9 -> 0.16.5 were this single rule). Ignored project-wide
+    # rather than annotating ~250 individual class attributes with
+    # typing.ClassVar for no real behavior change.
+    "RUF012",
+]

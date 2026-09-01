@@ -1,6 +1,6 @@
 import os
 
-from .base import *  # noqa: F401,F403
+from .base import *
 
 DEBUG = False
 
@@ -13,7 +13,7 @@ CSRF_COOKIE_SECURE = True
 # value in DJANGO_ALLOWED_HOSTS. See RENDER_STAGING.md.
 RENDER_HOST = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_HOST:
-    ALLOWED_HOSTS = [*ALLOWED_HOSTS, RENDER_HOST]  # noqa: F405
+    ALLOWED_HOSTS = [*ALLOWED_HOSTS, RENDER_HOST]
     CSRF_TRUSTED_ORIGINS = [f"https://{RENDER_HOST}"]
 
 # WhiteNoise serves static files directly from the app process — Render's
@@ -21,7 +21,7 @@ if RENDER_HOST:
 # after SecurityMiddleware (WhiteNoise's own documented placement), rather
 # than redeclaring the whole MIDDLEWARE list, so base.py stays the one
 # source of truth for everything else in it.
-MIDDLEWARE = list(MIDDLEWARE)  # noqa: F405
+MIDDLEWARE = list(MIDDLEWARE)
 MIDDLEWARE.insert(
     MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -32,9 +32,9 @@ MIDDLEWARE.insert(
 # it. Media (STORAGES["default"]) stays whatever base.py already resolved
 # (real Supabase Storage when AWS_STORAGE_BUCKET_NAME is set, local disk
 # otherwise) — only STATICFILES_STORAGE changes for prod.
-STATIC_ROOT = BASE_DIR / "staticfiles"  # noqa: F405
-STORAGES = {  # noqa: F405
-    **STORAGES,  # noqa: F405
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    **STORAGES,
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
 
@@ -43,4 +43,4 @@ STORAGES = {  # noqa: F405
 # state persisting across requests the way a normal connection pool
 # expects, so Django must open a fresh connection every request rather
 # than reusing one.
-DATABASES["default"]["CONN_MAX_AGE"] = 0  # noqa: F405
+DATABASES["default"]["CONN_MAX_AGE"] = 0

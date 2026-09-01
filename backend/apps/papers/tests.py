@@ -16,8 +16,17 @@ from apps.credits.models import CreditLedgerEntry
 from apps.payments.factories import SubscriptionFactory
 from apps.payments.models import PaperUnlock
 
-from .admin import AcademicReportSubmissionAdmin, PaperSubmissionAdmin, PaperViewLogAdmin
-from .factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory, SubjectFactory
+from .admin import (
+    AcademicReportSubmissionAdmin,
+    PaperSubmissionAdmin,
+    PaperViewLogAdmin,
+)
+from .factories import (
+    ExamCategoryFactory,
+    ExamTypeFactory,
+    PaperSubmissionFactory,
+    SubjectFactory,
+)
 from .models import (
     AcademicReportSubmission,
     AdWatchEvent,
@@ -221,7 +230,7 @@ def test_submit_requires_a_real_file(authed_client):
 def test_submit_academic_report_with_no_subject_but_real_institution_fields(authed_client):
     """Reports have no Subject taxonomy of their own — institution/discipline
     are free text instead, and supervisor_name is genuinely optional."""
-    client, user = authed_client
+    client, _ = authed_client
     reports_category = ExamCategoryFactory(key="reports", requires_system=False)
     report_type = ExamTypeFactory(category=reports_category, system=None, name="Mémoire")
     upload = SimpleUploadedFile("memoire.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf")
@@ -268,7 +277,7 @@ def test_only_masters_and_phd_reports_require_payment_to_view():
 
 @pytest.mark.django_db
 def test_submitting_a_report_watermarks_the_real_file(authed_client):
-    client, user = authed_client
+    client, _ = authed_client
     reports_category = ExamCategoryFactory(key="reports", requires_system=False)
     report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
     original = _real_pdf_bytes()
@@ -305,7 +314,7 @@ def test_submitting_a_report_watermarks_the_real_file(authed_client):
 def test_submitting_an_exam_paper_is_not_watermarked(authed_client):
     """Watermarking is a reports-only behavior — marking guides aren't a
     shareable document the way a report is."""
-    client, user = authed_client
+    client, _ = authed_client
     category = ExamCategoryFactory()
     exam_type = ExamTypeFactory(category=category)
     subject = SubjectFactory()
@@ -342,7 +351,7 @@ def test_watermarking_refreshes_file_ref_for_local_disk_storage(authed_client, t
     file_ref directly) would try to open a file that no longer exists."""
     settings.MEDIA_ROOT = tmp_path
     settings.STORAGES = {**settings.STORAGES, "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}}
-    client, user = authed_client
+    client, _ = authed_client
     reports_category = ExamCategoryFactory(key="reports", requires_system=False)
     report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
     upload = SimpleUploadedFile("internship.pdf", _real_pdf_bytes(), content_type="application/pdf")
@@ -506,7 +515,7 @@ def test_exam_type_serializer_exposes_max_upload_mb(api_client):
 
 @pytest.mark.django_db
 def test_upload_over_its_exam_types_limit_is_rejected(authed_client):
-    client, user = authed_client
+    client, _ = authed_client
     reports_category = ExamCategoryFactory(key="reports", requires_system=False)
     internship = ExamTypeFactory(category=reports_category, system=None, name="Internship Report", max_upload_mb=20)
     oversized = SimpleUploadedFile("internship.pdf", b"x" * (21 * 1024 * 1024), content_type="application/pdf")
@@ -533,7 +542,7 @@ def test_thesis_tier_report_accepts_upload_that_would_be_rejected_for_standard_t
     """Proves the limit is genuinely per-exam-type, not a fixed global cap —
     the same file size that gets rejected for a standard report succeeds
     here purely because this exam_type has a higher max_upload_mb."""
-    client, user = authed_client
+    client, _ = authed_client
     reports_category = ExamCategoryFactory(key="reports", requires_system=False)
     phd = ExamTypeFactory(category=reports_category, system=None, name="PhD Thesis (Thèse)", max_upload_mb=50)
     between_20_and_50mb = SimpleUploadedFile("thesis.pdf", b"x" * (35 * 1024 * 1024), content_type="application/pdf")

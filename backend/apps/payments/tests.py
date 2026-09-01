@@ -7,10 +7,20 @@ from rest_framework.test import APIClient
 from apps.accounts.factories import UserFactory
 from apps.accounts.models import User
 from apps.credits.factories import RedeemCodeFactory
-from apps.papers.factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory
+from apps.papers.factories import (
+    ExamCategoryFactory,
+    ExamTypeFactory,
+    PaperSubmissionFactory,
+)
 
 from .factories import SubscriptionFactory
-from .models import PaperDownloadUnlock, PaperUnlock, PaymentTransactionStatus, Subscription, SubscriptionStatus
+from .models import (
+    PaperDownloadUnlock,
+    PaperUnlock,
+    PaymentTransactionStatus,
+    Subscription,
+    SubscriptionStatus,
+)
 from .services import (
     PAPER_UNLOCK_PRICE_FCFA,
     TRIAL_DAYS,

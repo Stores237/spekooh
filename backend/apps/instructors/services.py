@@ -5,7 +5,11 @@ from django.utils import timezone
 
 from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
-from apps.credits.rules_engine import ComplexityLevel, MarkingQuestion, PaperCreditCalculator
+from apps.credits.rules_engine import (
+    ComplexityLevel,
+    MarkingQuestion,
+    PaperCreditCalculator,
+)
 from apps.credits.services import award_contributor_bonus
 from apps.notifications.models import NotificationKind
 from apps.notifications.services import notify

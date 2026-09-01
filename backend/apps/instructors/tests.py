@@ -10,7 +10,12 @@ from rest_framework.test import APIClient
 from apps.accounts.factories import UserFactory
 from apps.admin_queue.models import AdminFlagQueue, FlagCategory
 from apps.credits.models import CreditLedgerEntry
-from apps.papers.factories import ExamCategoryFactory, ExamTypeFactory, PaperSubmissionFactory, SubjectFactory
+from apps.papers.factories import (
+    ExamCategoryFactory,
+    ExamTypeFactory,
+    PaperSubmissionFactory,
+    SubjectFactory,
+)
 from apps.papers.models import MCQAnswerKey, PaperStatus
 
 from .factories import InstructorSubjectQueueFactory, PartnerCredentialFactory
@@ -101,11 +106,10 @@ def test_one_active_instructor_request_per_paper_enforced_at_db_level():
     InstructorRequest.objects.create(
         paper=paper, instructor_id="instructor-a", sent_at=now, responds_by=now + datetime.timedelta(hours=48)
     )
-    with pytest.raises(IntegrityError):
-        with transaction.atomic():
-            InstructorRequest.objects.create(
-                paper=paper, instructor_id="instructor-b", sent_at=now, responds_by=now + datetime.timedelta(hours=48)
-            )
+    with pytest.raises(IntegrityError), transaction.atomic():
+        InstructorRequest.objects.create(
+            paper=paper, instructor_id="instructor-b", sent_at=now, responds_by=now + datetime.timedelta(hours=48)
+        )
 
 
 # --- Instructor response handling ---

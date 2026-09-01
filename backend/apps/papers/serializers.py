@@ -3,7 +3,16 @@ from rest_framework import serializers
 
 from apps.payments.models import PaperUnlock
 
-from .models import AdWatchEvent, ExamCategory, ExamType, PaperFlag, PaperSubmission, PaperViewLog, Subject, SubjectLanguage
+from .models import (
+    AdWatchEvent,
+    ExamCategory,
+    ExamType,
+    PaperFlag,
+    PaperSubmission,
+    PaperViewLog,
+    Subject,
+    SubjectLanguage,
+)
 from .services import (
     STORAGE_KEY_RE,
     paper_download_price_fcfa,
