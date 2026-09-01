@@ -5,6 +5,12 @@
          a real device install just silently blocked all network access, which is why
          splash worked but nothing past it ever loaded real data. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- cunning_document_scanner (2026-09-01) accesses the camera directly
+         for live edge detection while scanning a paper — unlike the plain
+         image_picker camera flow elsewhere in this app, which delegates to
+         the system camera app via an implicit intent and never needed this
+         permission declared. -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <application
         android:label="spekooh"
         android:name="${applicationName}"
