@@ -12,6 +12,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
+import '../../widgets/spekooh_loader.dart';
 import '../../widgets/icon_chip.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -134,7 +135,7 @@ class HomeScreen extends StatelessWidget {
                 builder: (context, snapshot) {
                   final paper = snapshot.data;
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const SizedBox(height: 64, child: Center(child: CircularProgressIndicator()));
+                    return const SizedBox(height: 64, child: SpekoohLoader());
                   }
                   if (paper == null) {
                     return Container(
@@ -228,7 +229,7 @@ class HomeScreen extends StatelessWidget {
                 builder: (context, snapshot) {
                   final pamphlet = snapshot.data;
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const SizedBox(height: 64, child: Center(child: CircularProgressIndicator()));
+                    return const SizedBox(height: 64, child: SpekoohLoader());
                   }
                   if (pamphlet == null) {
                     return Container(

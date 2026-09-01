@@ -13,6 +13,7 @@ import '../../theme/responsive.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/search_input.dart';
 import '../../widgets/spekooh_badge.dart';
+import '../../widgets/spekooh_loader.dart';
 import '../../widgets/subject_card.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -371,7 +372,7 @@ class _PapersScreenState extends State<PapersScreen> {
               if (loading)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 48),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: SpekoohLoader(),
                 )
               else if (allPapers.isEmpty)
                 _noPapersYet(l10n, subject != null ? l10n.noPapersYetBody(subject.title) : l10n.noReportsYetBody(examType.name))

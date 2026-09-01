@@ -17,6 +17,7 @@ import '../../theme/report_covers.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/spekooh_banner.dart';
+import '../../widgets/spekooh_loader.dart';
 import 'papers_screen.dart';
 import 'report_viewer_screen.dart';
 
@@ -303,7 +304,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                 future: _detail,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Padding(padding: EdgeInsets.symmetric(vertical: 48), child: Center(child: CircularProgressIndicator()));
+                    return const Padding(padding: EdgeInsets.symmetric(vertical: 48), child: SpekoohLoader());
                   }
                   final detail = snapshot.data;
                   final fileUrl = detail?.fileUrl;
