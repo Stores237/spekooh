@@ -70,5 +70,13 @@
 	     requested — see app/lib/ads/ad_ids.dart for the ad unit IDs themselves. -->
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-6272769995522353~8764029955</string>
+	<!-- Required for real camera access on iOS — found missing (2026-09-01)
+	     while adding cunning_document_scanner's direct camera capture, but
+	     this was already a real gap: image_picker's own camera flow
+	     (ProfileScreen avatar, SubmitScreen file picker) needs this key too
+	     to not crash outright on a real iPhone. Only ever discovered now
+	     because this app's real-device testing has so far been Android-only. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Spekooh uses your camera to scan and submit past papers, academic reports, and your profile photo.</string>
 </dict>
 </plist>

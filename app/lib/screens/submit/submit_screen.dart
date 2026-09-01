@@ -1,6 +1,8 @@
+import 'dart:io';
+
+import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/auth_session.dart';
@@ -296,12 +298,33 @@ class _SubmitScreenState extends State<SubmitScreen> {
         setState(() => _file = SubmissionFile(bytes: picked!.bytes!, fileName: picked.name, mimeType: _mimeFor(picked.extension)));
       }
     } else if (choice == 'camera') {
-      final xfile = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 90);
-      if (xfile != null) {
-        final bytes = await xfile.readAsBytes();
-        setState(() => _file = SubmissionFile(bytes: bytes, fileName: xfile.name, mimeType: 'image/jpeg'));
-      }
+      final scanned = await _captureViaScanner();
+      if (scanned != null) setState(() => _file = scanned);
     }
+  }
+
+  /// Owner-requested (2026-09-01): a submitted paper is a photo of a real
+  /// physical document — this finds its real edges/corners and auto-crops
+  /// to just the page (ML Kit on Android, VisionKit on iOS), the same way
+  /// a real scanner app does, instead of submitting whatever's in frame
+  /// around it. One page per submission, matching this screen's existing
+  /// one-file-per-submission model — not the multi-page/PDF-assembly mode
+  /// the package also supports. `null` covers both a user-cancelled scan
+  /// and a real scanner error (CunningDocumentScannerException) — this
+  /// screen already treats "no file picked" as a plain no-op everywhere
+  /// else, so a failed scan surfaces the same way instead of a distinct
+  /// error state for a case the contributor can just retry.
+  Future<SubmissionFile?> _captureViaScanner() async {
+    List<String>? paths;
+    try {
+      paths = await CunningDocumentScanner.getPictures(noOfPages: 1);
+    } catch (_) {
+      return null;
+    }
+    final path = paths?.firstOrNull;
+    if (path == null) return null;
+    final bytes = await File(path).readAsBytes();
+    return SubmissionFile(bytes: bytes, fileName: path.split('/').last, mimeType: 'image/jpeg');
   }
 
   String? _mimeFor(String? extension) {
@@ -369,11 +392,8 @@ class _SubmitScreenState extends State<SubmitScreen> {
         setState(() => _reportFile = SubmissionFile(bytes: picked!.bytes!, fileName: picked.name, mimeType: _mimeFor(picked.extension)));
       }
     } else if (choice == 'camera') {
-      final xfile = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 90);
-      if (xfile != null) {
-        final bytes = await xfile.readAsBytes();
-        setState(() => _reportFile = SubmissionFile(bytes: bytes, fileName: xfile.name, mimeType: 'image/jpeg'));
-      }
+      final scanned = await _captureViaScanner();
+      if (scanned != null) setState(() => _reportFile = scanned);
     }
   }
 

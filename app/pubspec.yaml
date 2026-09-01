@@ -50,6 +50,14 @@ dependencies:
   file_picker: ^11.0.3
   image_picker: ^1.1.2
 
+  # Owner-requested (2026-09-01): a submitted paper is a photo of a physical
+  # document — this finds its real edges/corners and auto-crops to just the
+  # page, the same way a real scanner app does, instead of submitting
+  # whatever's in frame around it. Real ML Kit (Android) / VisionKit (iOS)
+  # detection, not a fake overlay — falls back to a manual-crop scanner on
+  # Android devices without Google Play Services.
+  cunning_document_scanner: ^3.0.2
+
   # Opens a submitted paper's real uploaded file in a new tab/viewer.
   url_launcher: ^6.3.1
 
