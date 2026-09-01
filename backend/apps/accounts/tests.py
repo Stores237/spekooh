@@ -507,6 +507,84 @@ def test_reviewer_group_has_expected_moderation_permissions():
 
 
 @pytest.mark.django_db
+def test_reviewer_group_can_manage_notes_and_pamphlets_content():
+    """Owner decision (2026-09-01): Notes/Pamphlets were superuser-only —
+    Reviewer (the team already moderating papers/guides) now manages this
+    catalog content too. PartnerBookshop stays add/change only: deleting one
+    cascades and deletes every pamphlet under it (Pamphlet.partner is
+    on_delete=CASCADE) — a business decision the Owner tier keeps, not a
+    content-moderation one."""
+    reviewer = Group.objects.get(name="Reviewer")
+    codenames = set(reviewer.permissions.values_list("codename", flat=True))
+    assert {"view_note", "add_note", "change_note", "delete_note"} <= codenames
+    assert {"view_pamphlet", "add_pamphlet", "change_pamphlet", "delete_pamphlet"} <= codenames
+    assert {"view_partnerbookshop", "add_partnerbookshop", "change_partnerbookshop"} <= codenames
+    assert "delete_partnerbookshop" not in codenames
+    # The pre-existing paper-moderation permissions must still be there —
+    # this migration adds to the group, it must never silently replace it.
+    assert {"view_papersubmission", "change_papersubmission"} <= codenames
+
+
+@pytest.mark.django_db
+def test_reviewer_staff_can_actually_create_a_note_and_a_pamphlet():
+    from apps.pamphlets.factories import PartnerBookshopFactory
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Reviewer"))
+    partner = PartnerBookshopFactory()
+
+    client = Client()
+    client.force_login(staff)
+
+    note_response = client.post(
+        "/admin/notes/note/add/",
+        {"title": "Physics Revision Notes", "subtitle": "", "subject_title": "", "academic_level": "", "sort_order": 0},
+    )
+    assert note_response.status_code == 302  # real redirect-after-save, not a re-rendered form with errors
+    from apps.notes.models import Note
+
+    assert Note.objects.filter(title="Physics Revision Notes").exists()
+
+    pamphlet_response = client.post(
+        "/admin/pamphlets/pamphlet/add/",
+        {
+            "partner": partner.id,
+            "title": "GCE Physics Pack",
+            "description": "",
+            "subject_title": "",
+            "academic_level": "",
+            "price_fcfa": 2500,
+            "delivery_available": False,
+            "delivery_fee_fcfa": 0,
+            "is_active": "on",
+            "is_featured": "",
+        },
+    )
+    assert pamphlet_response.status_code == 302
+    from apps.pamphlets.models import Pamphlet
+
+    assert Pamphlet.objects.filter(title="GCE Physics Pack").exists()
+
+
+@pytest.mark.django_db
+def test_reviewer_staff_cannot_delete_a_partner_bookshop():
+    from apps.pamphlets.factories import PartnerBookshopFactory
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Reviewer"))
+    partner = PartnerBookshopFactory()
+
+    client = Client()
+    client.force_login(staff)
+
+    response = client.post(f"/admin/pamphlets/partnerbookshop/{partner.id}/delete/", {"post": "yes"})
+    assert response.status_code == 403
+    from apps.pamphlets.models import PartnerBookshop
+
+    assert PartnerBookshop.objects.filter(id=partner.id).exists()
+
+
+@pytest.mark.django_db
 def test_support_group_is_read_only_with_no_moderation_access():
     support = Group.objects.get(name="Support")
     codenames = set(support.permissions.values_list("codename", flat=True))
