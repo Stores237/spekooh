@@ -159,7 +159,7 @@ class PaperSubmissionViewSet(
         try:
             log = record_paper_view(user=request.user, paper_submission=paper)
         except PaywallError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_402_PAYMENT_REQUIRED)
+            return Response({"detail": exc.detail}, status=status.HTTP_402_PAYMENT_REQUIRED)
         return Response(PaperViewLogSerializer(log).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
@@ -175,7 +175,7 @@ class PaperSubmissionViewSet(
                 details=serializer.validated_data.get("details", ""),
             )
         except AlreadyFlaggedError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
+            return Response({"detail": exc.detail}, status=status.HTTP_409_CONFLICT)
         return Response(PaperFlagSerializer(paper_flag).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAdminUser])

@@ -3,10 +3,12 @@ import datetime
 from django.db import transaction
 from django.utils import timezone
 
+from apps.core.exceptions import SafeMessageError
+
 from .models import Quiz, QuizAttempt
 
 
-class QuizError(Exception):
+class QuizError(SafeMessageError):
     pass
 
 

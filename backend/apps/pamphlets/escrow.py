@@ -4,12 +4,13 @@ from django.utils import timezone
 
 from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
+from apps.core.exceptions import SafeMessageError
 
 from .models import PamphletOrder, PamphletOrderStatus
 from .qr import QR_EXPIRY_DAYS, generate_qr_token, verify_qr_token
 
 
-class EscrowError(Exception):
+class EscrowError(SafeMessageError):
     pass
 
 

@@ -10,10 +10,12 @@ import time
 
 from django.conf import settings
 
+from apps.core.exceptions import SafeMessageError
+
 from .models import PartnerCredential
 
 
-class WebhookError(Exception):
+class WebhookError(SafeMessageError):
     pass
 
 

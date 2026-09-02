@@ -56,7 +56,7 @@ class PamphletOrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, vie
         try:
             confirmed = self_confirm_receipt(order, user=request.user)
         except EscrowError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
         return Response(PamphletOrderSerializer(confirmed).data)
 
     @action(detail=True, methods=["post"])
@@ -89,7 +89,7 @@ class PlacePamphletOrderView(APIView):
                 phone_number=data["phone_number"],
             )
         except PamphletOrderError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_402_PAYMENT_REQUIRED)
+            return Response({"detail": exc.detail}, status=status.HTTP_402_PAYMENT_REQUIRED)
         return Response(PamphletOrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
 
@@ -109,7 +109,7 @@ class IssueQrView(APIView):
         try:
             issued = issue_qr(order)
         except EscrowError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
         return Response(PamphletOrderSerializer(issued).data)
 
 
@@ -144,9 +144,9 @@ def redeem_page(request, token):
         try:
             released = redeem_qr(token)
         except AlreadyRedeemedError as exc:
-            return render(request, "pamphlets/redeem.html", {"error": str(exc)})
+            return render(request, "pamphlets/redeem.html", {"error": exc.detail})
         except EscrowError as exc:
-            return render(request, "pamphlets/redeem.html", {"error": str(exc)})
+            return render(request, "pamphlets/redeem.html", {"error": exc.detail})
         return render(
             request,
             "pamphlets/redeem.html",

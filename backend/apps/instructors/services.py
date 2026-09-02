@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
+from apps.core.exceptions import SafeMessageError
 from apps.credits.rules_engine import (
     ComplexityLevel,
     MarkingQuestion,
@@ -29,7 +30,7 @@ GUIDE_WINDOW_DAYS = 7
 GUIDE_REMINDER_DAYS = [4, 6]
 
 
-class RoutingError(Exception):
+class RoutingError(SafeMessageError):
     pass
 
 
@@ -191,7 +192,7 @@ def handle_marking_guide_submission(*, instructor_request_id: int, content: list
     return guide
 
 
-class MergeError(Exception):
+class MergeError(SafeMessageError):
     pass
 
 

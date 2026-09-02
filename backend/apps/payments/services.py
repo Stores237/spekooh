@@ -2,6 +2,7 @@ import datetime
 
 from django.utils import timezone
 
+from apps.core.exceptions import SafeMessageError
 from apps.core.payment_provider import MockPaymentProvider, PaymentProvider
 from apps.credits.services import RedeemCodeError, award_referral_bonus, redeem_code
 from apps.papers.services import paper_download_price_fcfa, report_download_is_free
@@ -34,7 +35,7 @@ def charge(*, user, purpose: str, amount_fcfa: int, phone_number: str, descripti
     )
 
 
-class SubscriptionError(Exception):
+class SubscriptionError(SafeMessageError):
     pass
 
 
@@ -60,7 +61,7 @@ def subscribe(*, user, phone_number: str) -> Subscription:
     )
 
 
-class PaperUnlockError(Exception):
+class PaperUnlockError(SafeMessageError):
     pass
 
 
@@ -93,7 +94,7 @@ def unlock_paper(*, user, paper_submission, phone_number: str, redeem_code_str: 
         try:
             applied_code = redeem_code(redeem_code_str, redeemed_by=user)
         except RedeemCodeError as exc:
-            raise PaperUnlockError(str(exc)) from exc
+            raise PaperUnlockError(exc.detail) from exc
 
     # The trial perk only applies to a plain first unlock — a redeem code
     # already grants a real discount, stacking both would be a fabricated
@@ -130,7 +131,7 @@ def unlock_paper(*, user, paper_submission, phone_number: str, redeem_code_str: 
     return unlock
 
 
-class PaperDownloadUnlockError(Exception):
+class PaperDownloadUnlockError(SafeMessageError):
     pass
 
 

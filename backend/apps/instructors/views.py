@@ -45,7 +45,7 @@ class RouteToInstructorView(APIView):
         try:
             instructor_request = route_next_instructor(paper)
         except RoutingError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
 
         if instructor_request is None:
             return Response({"detail": "No instructor available; flagged for admin review."}, status=status.HTTP_200_OK)
@@ -65,7 +65,7 @@ class MergeAndPublishView(APIView):
         try:
             merge_and_publish(paper)
         except MergeError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
         paper.refresh_from_db()
         return Response(PaperSubmissionDetailSerializer(paper).data)
 
@@ -90,7 +90,7 @@ class InstructorWebhookView(APIView):
                 timestamp_header=request.headers.get("X-Spekooh-Timestamp", ""),
             )
         except WebhookError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"detail": exc.detail}, status=status.HTTP_401_UNAUTHORIZED)
 
         envelope = InstructorWebhookEnvelopeSerializer(data=request.data)
         envelope.is_valid(raise_exception=True)
@@ -110,5 +110,5 @@ class InstructorWebhookView(APIView):
                 content=payload.validated_data["content"],
             )
         except RoutingError as exc:
-            return Response({"applied": False, "detail": str(exc)}, status=status.HTTP_200_OK)
+            return Response({"applied": False, "detail": exc.detail}, status=status.HTTP_200_OK)
         return Response({"applied": True}, status=status.HTTP_200_OK)

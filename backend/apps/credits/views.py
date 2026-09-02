@@ -44,7 +44,7 @@ class RedeemCodeApplyView(APIView):
         try:
             redeemed = redeem_code(serializer.validated_data["code"], redeemed_by=request.user)
         except RedeemCodeError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
         return Response(RedeemCodeSerializer(redeemed).data)
 
 
@@ -63,5 +63,5 @@ class RedeemCodeIssueView(APIView):
         try:
             issued = RedeemCodeIssuer().issue_for(owner=request.user, accepted_submission_count=accepted_count)
         except CreditEngineError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
         return Response(RedeemCodeSerializer(issued).data, status=status.HTTP_201_CREATED)

@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
+from apps.core.exceptions import SafeMessageError
 from apps.payments.models import PaperDownloadUnlock, PaperUnlock, Subscription
 
 from .duplicate_detection import (
@@ -129,11 +130,11 @@ def user_can_download_paper_file(user, paper_submission: PaperSubmission) -> boo
     return PaperDownloadUnlock.objects.has_unlocked(user, paper_submission)
 
 
-class PaywallError(Exception):
+class PaywallError(SafeMessageError):
     pass
 
 
-class AlreadyFlaggedError(Exception):
+class AlreadyFlaggedError(SafeMessageError):
     pass
 
 

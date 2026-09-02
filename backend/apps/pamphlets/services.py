@@ -1,3 +1,4 @@
+from apps.core.exceptions import SafeMessageError
 from apps.payments.models import PaymentPurpose, PaymentTransactionStatus
 from apps.payments.services import charge
 
@@ -5,7 +6,7 @@ from .escrow import issue_qr
 from .models import PamphletOrder, PamphletOrderStatus
 
 
-class PamphletOrderError(Exception):
+class PamphletOrderError(SafeMessageError):
     pass
 
 

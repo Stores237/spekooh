@@ -3,6 +3,8 @@ import datetime
 from django.db import transaction
 from django.utils import timezone
 
+from apps.core.exceptions import SafeMessageError
+
 from .models import (
     ContributorBonusConfig,
     CreditLedgerEntry,
@@ -13,11 +15,11 @@ from .models import (
 )
 
 
-class RedeemCodeError(Exception):
+class RedeemCodeError(SafeMessageError):
     pass
 
 
-class CreditEngineError(Exception):
+class CreditEngineError(SafeMessageError):
     pass
 
 
