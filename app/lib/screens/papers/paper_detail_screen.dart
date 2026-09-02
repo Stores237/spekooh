@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../ads/rewarded_ad_controller.dart';
+import '../../data/api_client.dart';
 import '../../data/offline_papers_store.dart';
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
@@ -111,7 +112,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       await widget.repository.recordAdWatch();
       await _recordView(paperId);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adLoadError('$e'))));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adLoadError(apiErrorDetail(e) ?? l10n.authErrorUnknown))));
     } finally {
       if (mounted) setState(() => _watchingAd = false);
     }
@@ -137,7 +138,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.unlockFailedError('$e'))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.unlockFailedError(apiErrorDetail(e) ?? l10n.authErrorUnknown))));
       }
     } finally {
       if (mounted) setState(() => _unlocking = false);
@@ -159,7 +160,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.unlockFailedError('$e'))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.unlockFailedError(apiErrorDetail(e) ?? l10n.authErrorUnknown))));
       }
     } finally {
       if (mounted) setState(() => _unlockingDownload = false);
@@ -192,7 +193,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     } on NoOfflineFileAvailableError {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noScannedFileYet)));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.offlineSaveError('$e'))));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.offlineSaveError(apiErrorDetail(e) ?? l10n.authErrorUnknown))));
     } finally {
       if (mounted) setState(() => _savingOffline = false);
     }
@@ -215,7 +216,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     } on AlreadyReportedException catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.alreadyReportedMessage)));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.reportSendError('$e'))));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.reportSendError(apiErrorDetail(e) ?? l10n.authErrorUnknown))));
     }
   }
 

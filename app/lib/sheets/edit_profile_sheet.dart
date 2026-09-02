@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/api_client.dart';
 import '../l10n/app_localizations.dart';
 import '../models/spekooh_user.dart';
 import '../theme/app_colors.dart';
@@ -58,7 +59,7 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
       );
       if (mounted) Navigator.of(context).pop(emailChanged);
     } catch (e) {
-      if (mounted) setState(() => _error = l10n.editProfileError('$e'));
+      if (mounted) setState(() => _error = l10n.editProfileError(apiErrorDetail(e) ?? l10n.authErrorUnknown));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/api_client.dart';
 import '../data/repositories/payments_repository.dart';
 import '../data/repository_locator.dart';
 import '../l10n/app_localizations.dart';
@@ -56,7 +57,7 @@ class _PaywallSheetState extends State<PaywallSheet> {
     } on SubscriptionError catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (e) {
-      if (mounted) setState(() => _error = l10n.paywallSubscriptionFailed('$e'));
+      if (mounted) setState(() => _error = l10n.paywallSubscriptionFailed(apiErrorDetail(e) ?? l10n.authErrorUnknown));
     } finally {
       if (mounted) setState(() => _subscribing = false);
     }
