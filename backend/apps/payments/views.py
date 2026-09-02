@@ -125,6 +125,6 @@ class UnlockPaperDownloadView(APIView):
 
         try:
             unlock = unlock_paper_download(user=request.user, paper_submission=paper, phone_number=data["phone_number"])
-        except PaperDownloadUnlockError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_402_PAYMENT_REQUIRED)
+        except PaperDownloadUnlockError:
+            return Response({"detail": "Unable to unlock paper download."}, status=status.HTTP_402_PAYMENT_REQUIRED)
         return Response(PaperDownloadUnlockSerializer(unlock).data, status=status.HTTP_201_CREATED)
