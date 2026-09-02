@@ -50,7 +50,7 @@
   "authSwitchToRegister": "New here? Create an account",
   "authErrorLogin": "Login failed. Check your email and password.",
   "authErrorLoginEmailNotVerified": "Please verify your email before logging in.",
-  "verifyEmailLoginRecoveryDoneMessage": "Email verified — log in again to continue.",
+  "verifyEmailLoginRecoveryDoneMessage": "Email verified. Log in again to continue.",
   "authErrorRegisterReferral": "Registration failed. Check your details, and that the referral code is correct.",
   "authErrorRegisterGeneric": "Registration failed. That email may already be in use.",
   "authErrorRegisterInvalidEmailDomain": "That email domain doesn't appear to accept mail. Check for a typo.",

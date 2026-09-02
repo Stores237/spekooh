@@ -359,7 +359,7 @@ abstract class AppLocalizations {
   /// No description provided for @verifyEmailLoginRecoveryDoneMessage.
   ///
   /// In en, this message translates to:
-  /// **'Email verified — log in again to continue.'**
+  /// **'Email verified. Log in again to continue.'**
   String get verifyEmailLoginRecoveryDoneMessage;
 
   /// No description provided for @authErrorRegisterReferral.
