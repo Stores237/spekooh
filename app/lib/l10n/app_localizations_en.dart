@@ -142,7 +142,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get verifyEmailLoginRecoveryDoneMessage =>
-      'Email verified — log in again to continue.';
+      'Email verified. Log in again to continue.';
 
   @override
   String get authErrorRegisterReferral =>

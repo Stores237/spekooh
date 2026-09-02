@@ -471,7 +471,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(confirmedCode, '111222');
-    expect(find.text('Email verified — log in again to continue.'), findsOneWidget);
+    expect(find.text('Email verified. Log in again to continue.'), findsOneWidget);
 
     // The password field is still filled in from before — log in again for real.
     await tester.tap(find.widgetWithText(SpekoohButton, 'Log in'));

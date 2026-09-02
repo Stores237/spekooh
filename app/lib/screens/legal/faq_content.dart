@@ -38,24 +38,24 @@ const faqEntries = [
   FaqEntry(
     'How do I submit a past paper or academic report?',
     'Open the Submit tab, choose "Exam paper" or "Academic report", fill in the category/exam type/subject and '
-        'year, then attach the file — take a photo (the camera automatically finds the page\'s edges and crops to '
+        'year, then attach the file: take a photo (the camera automatically finds the page\'s edges and crops to '
         'it), choose a photo from your gallery, or pick a PDF. A guest can submit too, but needs to type a real '
         'name first so the submission is attributed to someone.',
   ),
   FaqEntry(
     'Do I need an account to submit a paper?',
-    'No — you can submit as a guest. Creating a real account is only required to report/flag a paper, track your '
+    'No. You can submit as a guest. Creating a real account is only required to report/flag a paper, track your '
         'submissions over time on Profile, or earn bonus credit and badges.',
   ),
   FaqEntry(
     'What happens to my submission after I send it?',
     'It goes to the Review Team for verification. If it\'s accepted and published, you earn bonus credit. If it\'s '
-        'rejected, you\'ll see a real popup on Profile with the Review Team\'s actual reason — dismiss it once '
+        'rejected, you\'ll see a real popup on Profile with the Review Team\'s actual reason; dismiss it once '
         'you\'ve read it, then submit a corrected version.',
   ),
   FaqEntry(
     'Why was my submission rejected?',
-    'The exact reason is always shown to you — common ones are an unreadable scan, a duplicate of a paper '
+    'The exact reason is always shown to you. Common ones are an unreadable scan, a duplicate of a paper '
         'already on Spekooh, or details that don\'t match the file (wrong subject or exam type). A rejected '
         'submission isn\'t automatically retried; submit a fresh, corrected one.',
   ),
@@ -77,7 +77,7 @@ const faqEntries = [
   ),
   FaqEntry(
     'What is Spekooh Pro?',
-    '500 FCFA per month for unlimited paper views, zero ads, and instructor status alerts — no more 3-a-day '
+    '500 FCFA per month for unlimited paper views, zero ads, and instructor status alerts, with no more 3-a-day '
         'limit or rewarded ads.',
   ),
   FaqEntry(
@@ -89,27 +89,27 @@ const faqEntries = [
   FaqEntry(
     'How does the referral program work?',
     'Share your referral code from Profile → Invite a friend. The first time the person you referred unlocks '
-        'their first paper, you earn a bonus credit — once per referred friend, not repeatedly.',
+        'their first paper, you earn a bonus credit, once per referred friend, not repeatedly.',
   ),
   FaqEntry(
     'Can I change the app\'s language?',
-    'Yes — Settings → Language → English or Français. If you\'re logged in, your choice is saved to your account '
+    'Yes. Settings → Language → English or Français. If you\'re logged in, your choice is saved to your account '
         'and follows you to other devices.',
   ),
   FaqEntry(
-    'I haven\'t set a profile picture — is that normal?',
-    'Yes — until you set one, your profile shows your name\'s first letter instead. To add a real photo, tap '
+    'Is it normal that I haven\'t set a profile picture?',
+    'Yes. Until you set one, your profile shows your name\'s first letter instead. To add a real photo, tap '
         'your avatar on Profile and choose "Take a photo" or "Choose from gallery".',
   ),
   FaqEntry(
     'Can I edit my name, email, or phone number?',
-    'Yes — Profile → the pencil (edit) icon. Changing your email resets its verified status and sends a fresh '
+    'Yes. Profile → the pencil (edit) icon. Changing your email resets its verified status and sends a fresh '
         'code to confirm the new address.',
   ),
   FaqEntry(
     'What if I forget my password?',
-    'On the login screen, tap "Forgot password?" (or, if you\'re already logged in, Settings → Change password) '
-        '— a real reset code is emailed to you.',
+    'On the login screen, tap "Forgot password?" (or, if you\'re already logged in, Settings → Change password); '
+        'a real reset code is emailed to you.',
   ),
   FaqEntry(
     'Is my submission checked for duplicates?',

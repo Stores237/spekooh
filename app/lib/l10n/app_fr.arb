@@ -46,7 +46,7 @@
   "authSwitchToRegister": "Nouveau ici ? Créez un compte",
   "authErrorLogin": "Échec de la connexion. Vérifiez votre email et votre mot de passe.",
   "authErrorLoginEmailNotVerified": "Veuillez vérifier votre email avant de vous connecter.",
-  "verifyEmailLoginRecoveryDoneMessage": "Email vérifié — connectez-vous à nouveau pour continuer.",
+  "verifyEmailLoginRecoveryDoneMessage": "Email vérifié. Connectez-vous à nouveau pour continuer.",
   "authErrorRegisterReferral": "Échec de l'inscription. Vérifiez vos informations et que le code de parrainage est correct.",
   "authErrorRegisterGeneric": "Échec de l'inscription. Cet email est peut-être déjà utilisé.",
   "authErrorRegisterInvalidEmailDomain": "Ce domaine d'email ne semble pas accepter de courrier. Vérifiez qu'il n'y a pas de faute de frappe.",

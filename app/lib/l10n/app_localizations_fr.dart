@@ -143,7 +143,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get verifyEmailLoginRecoveryDoneMessage =>
-      'Email vérifié — connectez-vous à nouveau pour continuer.';
+      'Email vérifié. Connectez-vous à nouveau pour continuer.';
 
   @override
   String get authErrorRegisterReferral =>

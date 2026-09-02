@@ -33,13 +33,13 @@ const privacyPolicySections = [
         'reports you submit, along with any subject, exam board, or institution details you enter for them; '
         'messages you send us for support; and the phone number you provide when paying to unlock a marking '
         'guide, a paper download, a subscription, or a pamphlet order (used only to route that one mobile-money '
-        'charge, e.g. via MTN Mobile Money or Orange Money — Spekooh does not store your mobile-money PIN).\n\n'
+        'charge, e.g. via MTN Mobile Money or Orange Money; Spekooh does not store your mobile-money PIN).\n\n'
         'Information collected automatically: standard technical data every server receives (IP address, device/'
-        'browser type, request timestamps), and basic in-app activity needed to run real features honestly — for '
+        'browser type, request timestamps), and basic in-app activity needed to run real features honestly: for '
         'example, which papers you have viewed (so a paywall or "already unlocked" state is accurate) and which '
         'quizzes you have completed (so quiz stats and badges reflect real activity, not fabricated numbers).\n\n'
         'Camera and photo library access: requested only when you choose to submit a scanned paper or set a '
-        'profile photo — you can decline and use the equivalent feature (e.g. Choose from gallery) instead, or '
+        'profile photo; you can decline and use the equivalent feature (e.g. Choose from gallery) instead, or '
         'revoke access anytime in your device settings.\n\n'
         'What we do not collect: Spekooh does not request your device\'s location, and does not currently send '
         'push notifications. If a future version adds either, this notice will be updated first.',
@@ -54,7 +54,7 @@ const privacyPolicySections = [
         '• To respond to support requests, paper reports/flags, and other messages you send us.\n'
         '• To show you a rewarded ad, through Google AdMob, on the occasions you choose to watch one in exchange '
         'for a free unlock.\n'
-        '• To keep the service secure — detecting abuse, fraud, or violations of our submission rules.\n'
+        '• To keep the service secure: detecting abuse, fraud, or violations of our submission rules.\n'
         '• To comply with a legal obligation, such as a valid request from a Cameroonian or other authority.',
   ),
   PolicySection(
@@ -67,11 +67,11 @@ const privacyPolicySections = [
   PolicySection(
     '4. When we share information',
     'We do not sell your personal information. We share it only:\n\n'
-        '• With Google, through the AdMob SDK, only when you choose to watch a rewarded ad — Google\'s own '
+        '• With Google, through the AdMob SDK, only when you choose to watch a rewarded ad; Google\'s own '
         'privacy practices apply to that processing; see policies.google.com/privacy.\n'
         '• With the mobile-money network you choose (MTN Mobile Money or Orange Money) to route a payment you '
-        'initiated — only the phone number and amount needed to complete that one charge.\n'
-        '• With an instructor, in anonymized form, when your submitted paper is routed for marking — instructors '
+        'initiated; only the phone number and amount needed to complete that one charge.\n'
+        '• With an instructor, in anonymized form, when your submitted paper is routed for marking; instructors '
         'see the exam paper itself, not your account details.\n'
         '• In a merger, acquisition, or sale of Spekooh\'s business, as with any company.\n'
         '• When required by law, or to protect the rights, safety, or property of Spekooh, our users, or others.',
@@ -79,7 +79,7 @@ const privacyPolicySections = [
   PolicySection(
     '5. Third-party links',
     'Spekooh may link out to third-party sites or services we do not control (for example, a support contact '
-        'on WhatsApp, or content in an ad shown through AdMob). This notice does not cover their practices — '
+        'on WhatsApp, or content in an ad shown through AdMob). This notice does not cover their practices; '
         'review their own privacy notices before sharing information with them.',
   ),
   PolicySection(
@@ -90,8 +90,8 @@ const privacyPolicySections = [
   ),
   PolicySection(
     '7. How we keep your information safe',
-    'We use reasonable technical and organizational measures — including encrypted transport (HTTPS) and '
-        'access-controlled storage — to protect your information. No system is 100% secure, so we cannot '
+    'We use reasonable technical and organizational measures, including encrypted transport (HTTPS) and '
+        'access-controlled storage, to protect your information. No system is 100% secure, so we cannot '
         'guarantee against every possible unauthorized access, and use of Spekooh is at your own risk.',
   ),
   PolicySection(
@@ -99,8 +99,8 @@ const privacyPolicySections = [
     'Depending on where you live, you may have the right to access, correct, or request deletion of your '
         'personal information, restrict or object to some processing, or receive a copy of your data. The '
         'quickest way to review or correct your name, email, or phone number is Profile → the edit (pencil) '
-        'icon, right in the app, no request needed. For anything else — including deleting your account '
-        'entirely, which Spekooh does not yet support as a self-service action — email storefix237@gmail.com and '
+        'icon, right in the app, no request needed. For anything else, including deleting your account '
+        'entirely (which Spekooh does not yet support as a self-service action), email storefix237@gmail.com and '
         'we will handle it directly. If you are in the EEA or UK, you also have the right to complain to your '
         'local data protection authority.',
   ),
