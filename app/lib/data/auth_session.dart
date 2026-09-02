@@ -281,6 +281,17 @@ class AuthSession extends ChangeNotifier {
 
   /// Attempts a silent refresh using the stored refresh token. Returns
   /// whether it succeeded — on failure, [ApiClient] surfaces the original 401.
+  ///
+  /// Security hardening (2026-09-02): the backend now rotates the refresh
+  /// token on every use and blacklists the one just spent
+  /// (SIMPLE_JWT.ROTATE_REFRESH_TOKENS/BLACKLIST_AFTER_ROTATION) — a stolen
+  /// refresh token becomes single-use instead of valid for its whole
+  /// lifetime. That only works if this client actually keeps up: it must
+  /// persist the new `refresh` value from every response, or its own next
+  /// refresh attempt would present the now-blacklisted old one and force a
+  /// real logout. Falls back to keeping the current token if the backend
+  /// response doesn't include a new one (e.g. rotation ever gets disabled
+  /// again) — never leaves refreshToken null after a successful refresh.
   Future<bool> refreshAccessToken() async {
     final refresh = refreshToken;
     if (refresh == null) return false;
@@ -291,8 +302,14 @@ class AuthSession extends ChangeNotifier {
         body: jsonEncode({'refresh': refresh}),
       );
       if (response.statusCode != 200) return false;
-      accessToken = (jsonDecode(response.body) as Map<String, dynamic>)['access'] as String;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      accessToken = data['access'] as String;
       await _storage.write(_accessKey, accessToken!);
+      final rotatedRefresh = data['refresh'] as String?;
+      if (rotatedRefresh != null) {
+        refreshToken = rotatedRefresh;
+        await _storage.write(_refreshKey, rotatedRefresh);
+      }
       return true;
     } catch (_) {
       return false;
