@@ -174,8 +174,8 @@ class PaperSubmissionViewSet(
                 reason=serializer.validated_data["reason"],
                 details=serializer.validated_data.get("details", ""),
             )
-        except AlreadyFlaggedError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
+        except AlreadyFlaggedError:
+            return Response({"detail": "You have already reported this paper."}, status=status.HTTP_409_CONFLICT)
         return Response(PaperFlagSerializer(paper_flag).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAdminUser])
