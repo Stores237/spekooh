@@ -99,6 +99,88 @@ def test_refresh_issues_new_access_token(api_client):
 
 
 @pytest.mark.django_db
+def test_refresh_rotates_the_refresh_token_and_blacklists_the_old_one(api_client):
+    """Security hardening (2026-09-02): SIMPLE_JWT.ROTATE_REFRESH_TOKENS +
+    BLACKLIST_AFTER_ROTATION — a leaked refresh token is now single-use
+    instead of valid, unrevocable, for its whole lifetime. Real end-to-end
+    check, not just a settings assertion: an old refresh token that's
+    already been rotated away actually gets rejected on reuse."""
+    UserFactory(email="rotate@example.com", password="correcthorse123")
+    login = api_client.post(
+        "/api/auth/login/", {"email": "rotate@example.com", "password": "correcthorse123"}, format="json"
+    )
+    old_refresh = login.data["refresh"]
+
+    first_refresh = api_client.post("/api/auth/refresh/", {"refresh": old_refresh}, format="json")
+    assert first_refresh.status_code == 200
+    new_refresh = first_refresh.data["refresh"]
+    assert new_refresh != old_refresh  # a genuinely new token, not the same one echoed back
+
+    reuse_attempt = api_client.post("/api/auth/refresh/", {"refresh": old_refresh}, format="json")
+    assert reuse_attempt.status_code == 401  # the blacklisted old token no longer works
+
+    still_works = api_client.post("/api/auth/refresh/", {"refresh": new_refresh}, format="json")
+    assert still_works.status_code == 200  # the legitimate, rotated-to token is unaffected
+
+
+@pytest.mark.django_db
+def test_login_is_rate_limited_per_ip(api_client, monkeypatch):
+    """Security hardening (2026-09-02): LoginView had no throttle at all —
+    nothing stopped a script from brute-forcing/credential-stuffing a real
+    account's password. Same monkeypatch approach as
+    test_guest_endpoint_is_rate_limited_per_ip — see that test's docstring
+    for why overriding settings.REST_FRAMEWORK directly wouldn't work
+    here."""
+    from rest_framework.throttling import SimpleRateThrottle
+
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "login", "2/hour")
+    UserFactory(email="throttlelogin@example.com", password="correcthorse123")
+
+    first = api_client.post(
+        "/api/auth/login/", {"email": "throttlelogin@example.com", "password": "wrongpass"}, format="json"
+    )
+    second = api_client.post(
+        "/api/auth/login/", {"email": "throttlelogin@example.com", "password": "wrongpass"}, format="json"
+    )
+    third = api_client.post(
+        "/api/auth/login/", {"email": "throttlelogin@example.com", "password": "wrongpass"}, format="json"
+    )
+
+    assert first.status_code == 401
+    assert second.status_code == 401
+    assert third.status_code == 429
+
+
+@pytest.mark.django_db
+def test_register_is_rate_limited_per_ip(api_client, monkeypatch):
+    """Security hardening (2026-09-02): RegisterView had no throttle at all
+    — nothing stopped a script from creating unlimited real accounts."""
+    from rest_framework.throttling import SimpleRateThrottle
+
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "register", "2/hour")
+
+    first = api_client.post(
+        "/api/auth/register/",
+        {"email": "throttle1@example.com", "name": "A", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+    second = api_client.post(
+        "/api/auth/register/",
+        {"email": "throttle2@example.com", "name": "B", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+    third = api_client.post(
+        "/api/auth/register/",
+        {"email": "throttle3@example.com", "name": "C", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+    assert third.status_code == 429
+
+
+@pytest.mark.django_db
 def test_guest_endpoint_creates_real_guest_user_row(api_client):
     response = api_client.post("/api/auth/guest/", {}, format="json")
     assert response.status_code == 201

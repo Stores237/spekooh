@@ -26,6 +26,10 @@ from .serializers import (
 class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = RegisterSerializer
+    # Security hardening (2026-09-02): previously unthrottled entirely —
+    # nothing stopped a script from creating unlimited real accounts.
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "register"
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -51,6 +55,11 @@ class RegisterView(generics.CreateAPIView):
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = EmailTokenObtainPairSerializer
+    # Security hardening (2026-09-02): previously unthrottled entirely —
+    # nothing stopped a script from brute-forcing/credential-stuffing a
+    # real account's password. Per-IP, same mechanism as guest_mint below.
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
 
 
 class RefreshView(TokenRefreshView):

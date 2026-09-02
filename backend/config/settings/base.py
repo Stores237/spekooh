@@ -2,6 +2,7 @@
 Shared settings for every environment. dev.py / prod.py layer on top.
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "django_filters",
     "django_extensions",
@@ -181,6 +183,16 @@ REST_FRAMEWORK = {
         # attempt; 10/hour is generous for retries but stops scripted
         # spam from creating unlimited real accounts.
         "guest_mint": "10/hour",
+        # Security hardening (2026-09-02): login and registration had no
+        # rate limit at all — LoginView/RegisterView declared no
+        # throttle_classes, and DEFAULT_THROTTLE_RATES alone does nothing
+        # without a view opting in. Left credential-stuffing/brute-force
+        # against login, and spam account creation against registration,
+        # completely unthrottled. Per-IP, same mechanism as guest_mint —
+        # generous enough that a real user mistyping a password or retrying
+        # a signup isn't affected, tight enough to slow a script down hard.
+        "login": "20/hour",
+        "register": "10/hour",
         # Per-IP. A real user retrying a typo'd email is rare; a script
         # probing which emails are registered is the thing this stops.
         "password_reset_request": "5/hour",
@@ -199,6 +211,30 @@ REST_FRAMEWORK = {
         "email_verification_request_by_email": "5/hour",
         "email_verification_confirm_by_email": "20/hour",
     },
+}
+
+# Security hardening (2026-09-02): explicitly pinning simplejwt's own
+# unconfigured defaults (5-minute access, 1-day refresh) so a future
+# library upgrade can't silently change real session behavior — the
+# lifetimes below are unchanged from what was already in effect. The real
+# addition is rotation + blacklisting: without it, one refresh token stays
+# valid, unrevocable, for its full lifetime even if it leaks — a client
+# could keep minting fresh access tokens from a stolen refresh token
+# indefinitely, and there was no way to invalidate it short of rotating
+# DJANGO_SECRET_KEY (which would log out every user, not just the
+# compromised one). With rotation on, every refresh both issues a new
+# refresh token AND blacklists the one just used — a legitimate client
+# that keeps refreshing stays logged in seamlessly (app/lib/data/
+# auth_session.dart's refreshAccessToken() now persists the rotated
+# token), but a stolen refresh token becomes a single-use item: the moment
+# either the real client or the attacker uses it, the other's copy is
+# blacklisted on the next attempt — turning "permanently valid until it
+# expires" into "detectably invalidated on reuse."
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
 SPECTACULAR_SETTINGS = {
