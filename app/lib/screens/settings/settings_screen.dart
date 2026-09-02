@@ -17,6 +17,7 @@ import '../../widgets/icon_chip.dart';
 import '../../widgets/list_item_row.dart';
 import '../../sheets/password_reset_sheet.dart';
 import '../common/circular_back_button.dart';
+import '../legal/faq_screen.dart';
 import '../legal/privacy_policy_screen.dart';
 
 /// Ported from ui_kits/spekooh-app/SettingsScreen.jsx. `onLogin` is called
@@ -145,6 +146,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ]),
               _sectionLabel(l10n.helpSection),
               _card([
+                // Self-serve answers before nudging to contact a real
+                // person — same ordering most real help sections use.
+                ListItemRow(
+                  icon: const IconChip(icon: LucideIcons.circleHelp, tint: IconChipTint.blue, size: 38),
+                  title: l10n.helpFaqTitle,
+                  subtitle: l10n.helpFaqSubtitle,
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FaqScreen())),
+                ),
+                const Divider(height: 1),
                 ListItemRow(
                   icon: const IconChip(icon: LucideIcons.phone, tint: IconChipTint.blue, size: 38),
                   title: l10n.helpSupportTitle,

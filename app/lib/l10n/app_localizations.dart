@@ -176,6 +176,18 @@ abstract class AppLocalizations {
   /// **'Help'**
   String get helpSection;
 
+  /// No description provided for @helpFaqTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'FAQ'**
+  String get helpFaqTitle;
+
+  /// No description provided for @helpFaqSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers to common questions'**
+  String get helpFaqSubtitle;
+
   /// No description provided for @helpSupportTitle.
   ///
   /// In en, this message translates to:

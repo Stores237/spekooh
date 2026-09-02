@@ -49,6 +49,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get helpSection => 'Aide';
 
   @override
+  String get helpFaqTitle => 'FAQ';
+
+  @override
+  String get helpFaqSubtitle => 'Réponses aux questions fréquentes';
+
+  @override
   String get helpSupportTitle => 'Aide et assistance';
 
   @override

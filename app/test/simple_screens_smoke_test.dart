@@ -167,6 +167,15 @@ void main() {
     expect(find.textContaining('Spekooh ("we", "us", "our")'), findsOneWidget);
   });
 
+  testWidgets('SettingsScreen "FAQ" opens a real answers screen, not a dead row', (tester) async {
+    await _pumpAndCheck(tester, SettingsScreen(profileRepository: MockProfileRepository()));
+    await tester.ensureVisible(find.text('FAQ'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('FAQ'));
+    await tester.pumpAndSettle();
+    expect(find.text('How do I submit a past paper or academic report?'), findsOneWidget);
+  });
+
   testWidgets('ProfileScreen builds with no exceptions', (tester) async {
     _fakeLoggedIn();
     await _pumpAndCheck(tester, ProfileScreen(repository: MockProfileRepository()));
