@@ -33,6 +33,37 @@ class ApiException implements Exception {
   String toString() => 'ApiException($statusCode): $body';
 }
 
+/// Owner-reported (2026-09-02, from a live screenshot): a raw caught
+/// exception's own toString() was being shown straight to the user in
+/// several screens' error SnackBars — for a network failure that's a
+/// SocketException/ClientException whose text includes the backend's real
+/// hostname and port ("...address = spekooh-staging.onrender.com, port =
+/// 42216..."), and for an ApiException it's the class name plus the raw
+/// JSON body. Neither belongs in front of a user.
+///
+/// The backend's own error responses are already safe to show as-is — every
+/// `{"detail": str(exc)}` in this codebase's views wraps one of its own
+/// curated domain exceptions (PaperUnlockError("Already unlocked."),
+/// RedeemCodeError("Redeem code has expired."), etc. — verified 2026-09-02
+/// against every "information exposure through an exception" CodeQL finding
+/// at the time, none of which wrap a real system exception). So an
+/// ApiException's `detail` is worth surfacing; anything else (a network
+/// failure before any response ever came back, a malformed/non-JSON body,
+/// or an unexpected exception type) is not — callers should fall back to a
+/// generic, translated message (AppLocalizations.authErrorUnknown reads
+/// naturally for this) instead.
+String? apiErrorDetail(Object error) {
+  if (error is! ApiException) return null;
+  try {
+    final body = jsonDecode(error.body);
+    if (body is Map && body['detail'] is String) return body['detail'] as String;
+  } catch (_) {
+    // Not JSON (e.g. an HTML error page from an unhandled 500) — no safe
+    // detail to extract, fall through to the generic fallback.
+  }
+  return null;
+}
+
 /// Thin JSON HTTP client: attaches the bearer access token to every request,
 /// and on a 401 attempts exactly one silent refresh-and-retry via
 /// [AuthSession] before surfacing the error.

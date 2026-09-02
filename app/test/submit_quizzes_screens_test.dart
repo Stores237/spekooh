@@ -5,6 +5,7 @@ import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/data/repositories/quizzes_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
+import 'package:spekooh/models/exam_taxonomy.dart';
 import 'package:spekooh/screens/submit/submit_screen.dart';
 import 'package:spekooh/screens/quizzes/quizzes_screen.dart';
 import 'package:spekooh/widgets/spekooh_button.dart';
@@ -204,4 +205,36 @@ void main() {
     await tester.pump();
     expect(find.text('Quiz'), findsOneWidget);
   });
+
+  testWidgets(
+    'a raw network failure loading categories shows a generic message, never the exception\'s own text',
+    (tester) async {
+      // Owner-reported (2026-09-02, from a live screenshot): tapping
+      // "Education level" while the backend was unreachable showed the
+      // caught exception's own toString() in the SnackBar — a
+      // SocketException whose text includes the real backend hostname and
+      // port. _FailingCategoriesRepository reproduces exactly that: a raw
+      // exception, not one of the app's own safe typed errors.
+      await tester.pumpWidget(l10nTestApp(SubmitScreen(repository: _FailingCategoriesRepository())));
+      await tester.pump();
+
+      await tester.tap(find.text('Education level'));
+      await tester.pump();
+
+      expect(find.textContaining('spekooh-staging.onrender.com'), findsNothing);
+      expect(find.textContaining('SocketException'), findsNothing);
+      expect(find.textContaining('Could not load options: Something went wrong'), findsOneWidget);
+    },
+  );
+}
+
+class _FailingCategoriesRepository extends MockPapersRepository {
+  @override
+  Future<List<ExamCategory>> getCategories() => Future.error(
+        Exception(
+          'ClientException with SocketException: Connection reset by peer (OS Error: Connection reset by '
+          'peer, errno = 104), address = spekooh-staging.onrender.com, port = 42216, '
+          'uri=https://spekooh-staging.onrender.com/api/papers/categories/',
+        ),
+      );
 }

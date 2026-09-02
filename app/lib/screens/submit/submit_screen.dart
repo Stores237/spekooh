@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../data/api_client.dart';
 import '../../data/auth_session.dart';
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
@@ -166,7 +167,8 @@ class _SubmitScreenState extends State<SubmitScreen> {
       return await fetch();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.couldNotLoadOptionsError('$e'))));
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotLoadOptionsError(apiErrorDetail(e) ?? l10n.authErrorUnknown))));
       }
       return null;
     }
@@ -428,7 +430,10 @@ class _SubmitScreenState extends State<SubmitScreen> {
       );
       if (mounted) setState(() => _submitted = entry);
     } catch (e) {
-      if (mounted) setState(() => _reportSubmitError = AppLocalizations.of(context)!.submissionFailed('$e'));
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _reportSubmitError = l10n.submissionFailed(apiErrorDetail(e) ?? l10n.authErrorUnknown));
+      }
     } finally {
       if (mounted) setState(() => _submittingReport = false);
     }
@@ -456,7 +461,10 @@ class _SubmitScreenState extends State<SubmitScreen> {
       );
       if (mounted) setState(() => _submitted = entry);
     } catch (e) {
-      if (mounted) setState(() => _submitError = AppLocalizations.of(context)!.submissionFailed('$e'));
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _submitError = l10n.submissionFailed(apiErrorDetail(e) ?? l10n.authErrorUnknown));
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -677,7 +685,14 @@ class _SubmitScreenState extends State<SubmitScreen> {
             Text(label, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
             Row(
               children: [
-                Text(value ?? (enabled ? l10n.selectPlaceholder : '-'),
+                // Owner-reported (2026-09-02): a disabled field (Type
+                // d'examen/Matière before their prerequisite is picked)
+                // showed a bare "-" while every other field showed the
+                // same "Choisir"/"Choose" placeholder — an inconsistent,
+                // uninformative dash next to otherwise-identical rows.
+                // The dimmed chevron below already signals "not tappable
+                // yet"; the label text stays consistent regardless.
+                Text(value ?? l10n.selectPlaceholder,
                     style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: value == null ? AppColors.textTertiary : AppColors.textPrimary)),
                 const SizedBox(width: 6),
                 Icon(LucideIcons.chevronRight, size: 14, color: enabled ? AppColors.textTertiary : AppColors.textTertiary.withValues(alpha: 0.4)),
