@@ -412,4 +412,45 @@ void main() {
       expect(find.text('Submission not accepted'), findsNothing);
     });
   });
+
+  group('Avatar circle always shows something honest (owner-reported, 2026-09-02)', () {
+    // Real bug: a real network avatar_url that's slow to load (staging's
+    // free-tier cold start, see RENDER_STAGING.md — up to ~60s) rendered
+    // neither the real photo nor the initial-letter placeholder while
+    // still loading — Image.network draws nothing at all until a frame
+    // decodes, and only errorBuilder covered the *failure* case, leaving a
+    // real gap mid-load where nothing meaningful showed. Fixed via
+    // loadingBuilder falling back to the same letter errorBuilder already
+    // used. Not independently reproducible here: this test's fake network
+    // call fails near-instantly with no real HTTP stack behind it, so both
+    // the old (errorBuilder-only) and new (loadingBuilder+errorBuilder)
+    // code converge on the same visible result — this asserts that
+    // convergence point stays correct, not the loading-gap fix in
+    // isolation, which needs a real slow network to observe.
+    testWidgets('a set avatar that fails to load still shows the initial letter, never a blank circle', (tester) async {
+      _fakeLoggedIn();
+      final repository = _EditableProfileRepository(
+        const SpekoohUser(
+          name: 'Lucien',
+          joinDate: 'Joined Aug 2026',
+          submissionsCount: 0,
+          quizzesCount: 0,
+          creditBalance: 0,
+          redeemCode: '',
+          redeemCodeSubtitle: '',
+          avatarUrl: 'https://example.com/avatar.jpg',
+        ),
+      );
+
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: repository)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // No real HTTP client in a widget test — the fetch never succeeds,
+      // so this is exactly the "still loading" / "ultimately failed" state
+      // real users hit against a slow or broken avatar URL. Either way,
+      // the real fix is the same: show the letter, not nothing.
+      expect(find.text('L'), findsOneWidget);
+    });
+  });
 }

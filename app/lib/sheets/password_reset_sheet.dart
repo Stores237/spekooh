@@ -98,7 +98,10 @@ class _PasswordResetSheetState extends State<PasswordResetSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.fromLTRB(22, 10, 22, 26),
+      // Grows with the keyboard (see AuthSheet's own comment on this same
+      // fix) so it shifts the field above the keyboard instead of letting
+      // the keyboard cover it.
+      padding: EdgeInsets.fromLTRB(22, 10, 22, 26 + MediaQuery.of(context).viewInsets.bottom),
       decoration: const BoxDecoration(
         color: AppColors.surfaceCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
