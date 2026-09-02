@@ -56,7 +56,7 @@ class SubscribeView(APIView):
         try:
             subscription = subscribe(user=request.user, phone_number=serializer.validated_data["phone_number"])
         except SubscriptionError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_402_PAYMENT_REQUIRED)
+            return Response({"detail": exc.detail}, status=status.HTTP_402_PAYMENT_REQUIRED)
         return Response(SubscriptionSerializer(subscription).data, status=status.HTTP_201_CREATED)
 
 
@@ -91,7 +91,7 @@ class UnlockPaperView(APIView):
                 redeem_code_str=data.get("redeem_code") or None,
             )
         except PaperUnlockError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_402_PAYMENT_REQUIRED)
+            return Response({"detail": exc.detail}, status=status.HTTP_402_PAYMENT_REQUIRED)
         return Response(PaperUnlockSerializer(unlock).data, status=status.HTTP_201_CREATED)
 
 
@@ -126,5 +126,5 @@ class UnlockPaperDownloadView(APIView):
         try:
             unlock = unlock_paper_download(user=request.user, paper_submission=paper, phone_number=data["phone_number"])
         except PaperDownloadUnlockError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_402_PAYMENT_REQUIRED)
+            return Response({"detail": exc.detail}, status=status.HTTP_402_PAYMENT_REQUIRED)
         return Response(PaperDownloadUnlockSerializer(unlock).data, status=status.HTTP_201_CREATED)

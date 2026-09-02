@@ -60,7 +60,7 @@ class QuizViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         try:
             attempt = submit_attempt(quiz=quiz, user=request.user, answers=serializer.validated_data["answers"])
         except QuizError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
         return Response(QuizAttemptSerializer(attempt).data, status=status.HTTP_201_CREATED)
 
     @extend_schema(responses=None)
