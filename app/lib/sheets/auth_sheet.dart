@@ -191,7 +191,12 @@ class _AuthSheetState extends State<AuthSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.fromLTRB(22, 10, 22, 26),
+      // Owner-reported (2026-09-02): the keyboard slid up over the email/
+      // password fields instead of the sheet shifting to stay above it —
+      // showModalBottomSheet doesn't account for the keyboard on its own,
+      // the content has to grow its own bottom padding by the keyboard's
+      // height (MediaQuery.viewInsets.bottom, 0 when no keyboard is up).
+      padding: EdgeInsets.fromLTRB(22, 10, 22, 26 + MediaQuery.of(context).viewInsets.bottom),
       decoration: const BoxDecoration(
         color: AppColors.surfaceCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),

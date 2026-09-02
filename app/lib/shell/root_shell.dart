@@ -192,35 +192,48 @@ class RootShellState extends State<RootShell> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      backgroundColor: AppColors.surfaceBg,
-      body: SafeArea(
-        bottom: false,
-        child: IndexedStack(
-          index: _activeTab,
-          children: [
-            Builder(builder: _buildHomeTab),
-            Builder(
-              builder: (context) => PapersScreen(onOpenPaper: (paper) => _openPaperDetail(context, paper)),
-            ),
-            SubmitScreen(),
-            ForumScreen(),
-            QuizzesScreen(),
+    // Owner-reported (2026-09-02): the hardware/gesture back button closed
+    // the whole app outright while on a non-Home tab — RootShell's route is
+    // the first (only) one on the root Navigator, so with nothing left to
+    // pop, Android's default behavior is to exit. Real bottom-tab apps
+    // (Instagram, Twitter, ...) instead treat "back" as "go to Home" first;
+    // only a further back press once already on Home actually exits, which
+    // is what canPop: true for that case falls through to.
+    return PopScope(
+      canPop: _activeTab == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) goToTab(0);
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.surfaceBg,
+        body: SafeArea(
+          bottom: false,
+          child: IndexedStack(
+            index: _activeTab,
+            children: [
+              Builder(builder: _buildHomeTab),
+              Builder(
+                builder: (context) => PapersScreen(onOpenPaper: (paper) => _openPaperDetail(context, paper)),
+              ),
+              SubmitScreen(),
+              ForumScreen(),
+              QuizzesScreen(),
+            ],
+          ),
+        ),
+        bottomNavigationBar: BottomNav(
+          active: _activeTab,
+          onChanged: goToTab,
+          items: [
+            SpekoohNavItem(icon: const Icon(LucideIcons.home), label: l10n.navHome),
+            SpekoohNavItem(icon: const Icon(LucideIcons.fileText), label: l10n.navPapers),
+            const SpekoohNavItem(icon: Icon(LucideIcons.upload), center: true),
+            SpekoohNavItem(icon: const Icon(LucideIcons.messageCircle), label: l10n.navForum),
+            SpekoohNavItem(icon: const Icon(LucideIcons.zap), label: l10n.navQuizzes),
           ],
         ),
+        floatingActionButton: _isLoggedIn ? const AIAssistantFab() : null,
       ),
-      bottomNavigationBar: BottomNav(
-        active: _activeTab,
-        onChanged: goToTab,
-        items: [
-          SpekoohNavItem(icon: const Icon(LucideIcons.home), label: l10n.navHome),
-          SpekoohNavItem(icon: const Icon(LucideIcons.fileText), label: l10n.navPapers),
-          const SpekoohNavItem(icon: Icon(LucideIcons.upload), center: true),
-          SpekoohNavItem(icon: const Icon(LucideIcons.messageCircle), label: l10n.navForum),
-          SpekoohNavItem(icon: const Icon(LucideIcons.zap), label: l10n.navQuizzes),
-        ],
-      ),
-      floatingActionButton: _isLoggedIn ? const AIAssistantFab() : null,
     );
   }
 

@@ -480,4 +480,33 @@ void main() {
     expect(loginAttempts, 2);
     expect(AuthSession.instance.isLoggedIn, isTrue);
   });
+
+  testWidgets('grows its own bottom padding by the keyboard height so a field can never sit behind it', (tester) async {
+    // Owner-reported (2026-09-02): the keyboard opened on top of the sheet
+    // instead of the sheet shifting to stay above it — showModalBottomSheet
+    // doesn't account for MediaQuery.viewInsets on its own, the sheet's own
+    // content has to grow its own bottom padding by the keyboard's height.
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
+
+    // A bare Material ancestor, not Scaffold — real usage shows AuthSheet
+    // straight from showModalBottomSheet, with no Scaffold in between.
+    // Scaffold's own resizeToAvoidBottomInset would consume viewInsets
+    // itself and hand descendants a zeroed one, which would pass even the
+    // pre-fix code — the opposite of what this needs to catch.
+    await tester.pumpWidget(l10nTestApp(const Material(child: AuthSheet())));
+    final noKeyboard = tester.widget<Container>(find.byType(Container).first);
+    expect((noKeyboard.padding as EdgeInsets).bottom, 26);
+
+    // Simulate a real on-screen keyboard's height, the same way the OS
+    // reports one via MediaQuery.viewInsets.bottom.
+    await tester.pumpWidget(l10nTestApp(
+      MediaQuery(
+        data: const MediaQueryData(viewInsets: EdgeInsets.only(bottom: 300)),
+        child: const Material(child: AuthSheet()),
+      ),
+    ));
+    final withKeyboard = tester.widget<Container>(find.byType(Container).first);
+
+    expect((withKeyboard.padding as EdgeInsets).bottom, 26 + 300);
+  });
 }

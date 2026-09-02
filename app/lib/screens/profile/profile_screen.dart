@@ -224,6 +224,11 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
   /// A dimmed overlay + small spinner sit on top of that same preview
   /// rather than replacing it, so the frame the picture will actually
   /// render in is visible the whole time, not just after the upload lands.
+  Widget _initialLetter(SpekoohUser user) => Text(
+        user.name.isEmpty ? '?' : user.name[0],
+        style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700),
+      );
+
   Widget _avatarCircle(SpekoohUser user) {
     final pending = _pendingAvatarBytes;
     final url = _avatarUrlOverride ?? user.avatarUrl;
@@ -246,14 +251,23 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                 width: 52,
                 height: 52,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Text(
-                  user.name[0],
-                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700),
-                ),
+                // Owner-reported (2026-09-02): with neither of these, a
+                // slow/still-loading fetch (staging's free-tier cold start
+                // can take up to ~60s — see RENDER_STAGING.md) or a broken
+                // URL rendered as an indistinct blob instead of the letter
+                // the "no picture" state already uses correctly — Image
+                // draws nothing at all while still loading, revealing
+                // whatever's underneath, and errorBuilder alone only
+                // covers the failure case, not the loading gap. The
+                // initial letter now covers both: shown until a real,
+                // fully-decoded frame is ready, and again if the fetch
+                // ultimately fails.
+                loadingBuilder: (context, child, progress) => progress == null ? child : _initialLetter(user),
+                errorBuilder: (context, error, stackTrace) => _initialLetter(user),
               ),
             )
           else
-            Text(user.name[0], style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700)),
+            _initialLetter(user),
           if (_isUploadingAvatar)
             Container(
               decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black.withValues(alpha: 0.35)),
