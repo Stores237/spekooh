@@ -2,13 +2,7 @@ import os
 
 from .base import *
 
-# TEMPORARY (2026-09-03): diagnosing a live 500 on every write endpoint
-# (register/guest/password-reset) where DEBUG=False's blank error page and
-# a total absence of server-side logging (no ADMINS, no SENTRY_DSN
-# configured) leaves genuinely zero way to see the real traceback. Reverts
-# to the hardcoded `DEBUG = False` immediately after capturing it — see
-# TODOS.md/commit history for the follow-up that removes this again.
-DEBUG = env.bool("DJANGO_DEBUG", default=False)
+DEBUG = False
 
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
