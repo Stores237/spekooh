@@ -226,9 +226,15 @@ on. Staging/production never render Django's own debug traceback pages.
 - **The real payment provider isn't integrated yet** — see "Payments"
   above. No real financial risk today since nothing charges real money,
   but the real provider's own error-handling hasn't been exercised.
-- **Staging's Supabase Storage credentials may not be fully configured**
-  in Render's dashboard — a real, previously-observed symptom (an
-  uploaded avatar's URL 404s) traces back to this, not to a code bug. An
-  operational gap, not a security one, but noted here since it's the kind
-  of thing that looks like "uploads aren't working right" without an
-  obvious cause.
+- **Zero server-side error visibility on staging.** No `ADMINS`
+  configured (Django's default logging for unhandled exceptions goes
+  nowhere without it when `DEBUG=False`), and `SENTRY_DSN` isn't set
+  anywhere (`sentry_sdk.init(dsn=None, ...)` is a silent no-op). Found the
+  hard way (2026-09-02): three real infra misconfigurations (missing
+  `REDIS_URL`, missing `AWS_STORAGE_BUCKET_NAME`, wrong
+  `AWS_S3_REGION_NAME`) were causing live 500s with no way to see why —
+  diagnosing them required a temporary, deliberate code change to bypass
+  `DEBUG=False` for one request, which is not a sustainable way to debug
+  production. A real Sentry project (there's a free tier) would close
+  this properly; not set up here since it needs the owner's own
+  account/DSN.
