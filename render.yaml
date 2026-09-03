@@ -43,6 +43,21 @@ services:
       # RENDER_STAGING.md §4 for the full list and where each one comes from.
       - key: DATABASE_URL
         sync: false
+      # Found missing live (2026-09-02): this wasn't declared here at all,
+      # so nothing prompted setting it — DEFAULT_THROTTLE_RATES (login,
+      # register, guest signup, password reset) all silently 500'd with
+      # ConnectionError: Error 111 connecting to localhost:6379 (the
+      # code's own local-dev fallback when this is unset). A real Redis
+      # instance's connection string, e.g. Render's own Key Value add-on.
+      - key: REDIS_URL
+        sync: false
+      # AWS_STORAGE_BUCKET_NAME and AWS_S3_REGION_NAME are the two easiest
+      # to get wrong (found live, 2026-09-02): the former is easy to skip
+      # entirely (uploads then silently fall back to local disk with no
+      # error — see presign_paper_upload's own not-configured branch), and
+      # the latter needs a real AWS-style region code from Supabase's own
+      # Storage → S3 Connection panel (e.g. "eu-west-1") — NOT the bucket
+      # name; a wrong region breaks S3 SigV4 request signing outright.
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_SECRET_ACCESS_KEY
