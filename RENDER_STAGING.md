@@ -12,11 +12,15 @@ This doc replaces an earlier draft that assumed a different project layout
 Flutterwave already wired up). None of those match this repo — the
 corrections are called out inline below, not silently made.
 
-**Status: live (2026-08-31).** `https://spekooh-staging.onrender.com` is
-deployed and verified end-to-end — registration, login, the full papers
-taxonomy against real seeded data, and the direct-to-storage upload fix all
-confirmed working against the actual site, not just locally. The real
-Android build points at this URL permanently now.
+**Status: live (2026-08-31, infra gaps closed 2026-09-02).**
+`https://spekooh-staging.onrender.com` is deployed and verified end-to-end
+— registration, login, the full papers taxonomy against real seeded data,
+and real Supabase Storage uploads (avatars, papers) all confirmed working
+against the actual site, not just locally. The real Android build points
+at this URL permanently now. Three real infra gaps found and fixed live on
+2026-09-02 — missing `REDIS_URL`, missing `AWS_STORAGE_BUCKET_NAME`, and a
+wrong `AWS_S3_REGION_NAME` — see §4's env var table for what each one
+actually needs.
 
 ---
 
@@ -34,6 +38,7 @@ each one is there rather than something else.
 | **WhiteNoise** | Serves static files (admin CSS/JS, DRF browsable-API assets) directly from the Django process. | Render's free web-service plan has no separate static-asset host/CDN — WhiteNoise means one process does both jobs with no extra infrastructure. |
 | **cron-job.org** | A free external scheduler that periodically POSTs to this app's own `/internal/tasks/<name>/` endpoint, which then runs one of this repo's real Django management commands (§6). | Render's free tier has no cron and no background-worker service at all — this is the entire workaround for that gap. |
 | **GitHub Actions (CI)** | Runs the backend/app test suites on every PR before it can merge to `main` — the branch Render actually deploys from. | The gate that caught PR #51's own test-environment mismatch (§ below) before it reached staging; merging straight to `main` with no CI would mean Render deploys whatever broke. |
+| **Redis** | Backs `CACHES["default"]`, which every rate-limited endpoint (login, register, guest signup, password reset, email verification) needs for its throttle counters. **Found missing entirely from this deployment, live (2026-09-02)** — every one of those endpoints 500'd until a real instance's connection string was set as `REDIS_URL` (see §4). | `django-redis`'s cache backend is what DRF's `ScopedRateThrottle` reads/writes to; without a real Redis reachable, it errors instead of just failing open. |
 
 Two things that are **not** part of this architecture, on purpose:
 
@@ -82,9 +87,17 @@ connection limit; the pooler in transaction mode handles this — paired with
 `CONN_MAX_AGE = 0` in `config/settings/prod.py` (already set, see §3).
 
 You'll also want a separate Storage bucket on this staging project (same
-role as the real `spekooh-media` bucket documented in TODOS.md) if you want
-staging file uploads to actually land somewhere real rather than falling
-back to local disk.
+role as the real `spekooh-media` bucket documented in TODOS.md) — required,
+not optional, if you want staging file uploads to actually land somewhere
+real rather than silently falling back to local disk. See the
+`AWS_STORAGE_BUCKET_NAME`/`AWS_S3_REGION_NAME` rows in §4's env var table
+below for the two easy-to-get-wrong values found live (2026-09-02).
+
+You'll also need a real Redis instance (Render's own **Key Value** add-on
+is the simplest option — same dashboard, same region) for `REDIS_URL` —
+see that row in §4 too. Also found missing live (2026-09-02): every
+rate-limited endpoint (login, register, guest signup, password reset)
+needs it and 500s outright without it.
 
 ---
 
@@ -269,8 +282,11 @@ First build takes 3–5 minutes. You get a URL like
 | Key | Value |
 |---|---|
 | `DATABASE_URL` | staging Supabase pooler string (port 6543) |
+| `REDIS_URL` | a real Redis instance's connection string (e.g. Render's own Key Value add-on). **Easy to miss — found missing live (2026-09-02)**: DEFAULT_THROTTLE_RATES (login, register, guest signup, password reset) all need this; without it every one of those 500s with `ConnectionError: Error 111 connecting to localhost:6379`, since that's the code's own safe local-dev fallback when this is unset. |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | staging Supabase Storage S3 credentials |
-| `AWS_STORAGE_BUCKET_NAME` / `AWS_S3_ENDPOINT_URL` / `AWS_S3_REGION_NAME` | staging Storage bucket |
+| `AWS_STORAGE_BUCKET_NAME` | staging Storage bucket's exact name. **Easy to skip entirely** — without it, uploads silently fall back to local disk (no error at all) regardless of the other AWS_* values being correct. |
+| `AWS_S3_ENDPOINT_URL` | from Supabase's Storage → S3 Connection panel |
+| `AWS_S3_REGION_NAME` | the real AWS-style region code from that same S3 Connection panel (e.g. `eu-west-1`) — **not the bucket name**. Found live (2026-09-02): pasting the bucket name here instead breaks S3's SigV4 request signing outright. |
 | `TASK_TRIGGER_TOKEN` | long random string (see §6) |
 | `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` | your real admin login (see "Create an admin user" below — no Shell tab on the free plan) |
 
