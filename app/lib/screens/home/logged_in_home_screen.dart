@@ -19,6 +19,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/spekooh_button.dart';
+import '../../widgets/user_avatar.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:open_filex/open_filex.dart';
 
@@ -78,7 +79,6 @@ class LoggedInHomeScreen extends StatelessWidget {
                 future: profileRepository.getUser(),
                 builder: (context, userSnapshot) {
                   final user = userSnapshot.data;
-                  final initial = (user?.name.isNotEmpty ?? false) ? user!.name[0].toUpperCase() : '·';
                   return FutureBuilder<({int currentStreak, bool playedToday})>(
                     future: quizzesRepository.getStreak(),
                     builder: (context, streakSnapshot) {
@@ -100,13 +100,13 @@ class LoggedInHomeScreen extends StatelessWidget {
                                   onTap: onOpenProfile,
                                   child: Row(
                                     children: [
-                                      Container(
-                                        width: 38,
-                                        height: 38,
-                                        decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold200),
-                                        alignment: Alignment.center,
-                                        child: Text(initial, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, color: AppColors.gold700)),
-                                      ),
+                                      // Owner-reported (2026-09-03): a real,
+                                      // set-and-visible-on-Profile avatar
+                                      // never showed here — this was its own
+                                      // separate copy that only ever
+                                      // rendered the initial letter, never
+                                      // checking avatarUrl at all.
+                                      UserAvatar(name: user?.name ?? '', avatarUrl: user?.avatarUrl, size: 38),
                                       const SizedBox(width: 10),
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
