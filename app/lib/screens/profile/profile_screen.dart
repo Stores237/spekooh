@@ -23,6 +23,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
+import '../../widgets/user_avatar.dart';
 import '../common/circular_back_button.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -224,11 +225,10 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
   /// A dimmed overlay + small spinner sit on top of that same preview
   /// rather than replacing it, so the frame the picture will actually
   /// render in is visible the whole time, not just after the upload lands.
-  Widget _initialLetter(SpekoohUser user) => Text(
-        user.name.isEmpty ? '?' : user.name[0],
-        style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.gold700),
-      );
-
+  /// The non-pending case is [UserAvatar] itself (2026-09-03) — the same
+  /// widget Home's own header now uses, after a real bug where Home had
+  /// its own separate, never-updated copy that only ever showed the
+  /// initial letter, regardless of a real, set avatarUrl.
   Widget _avatarCircle(SpekoohUser user) {
     final pending = _pendingAvatarBytes;
     final url = _avatarUrlOverride ?? user.avatarUrl;
@@ -244,30 +244,8 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
         children: [
           if (pending != null)
             ClipOval(child: Image.memory(pending, width: 52, height: 52, fit: BoxFit.cover))
-          else if (url != null)
-            ClipOval(
-              child: Image.network(
-                url,
-                width: 52,
-                height: 52,
-                fit: BoxFit.cover,
-                // Owner-reported (2026-09-02): with neither of these, a
-                // slow/still-loading fetch (staging's free-tier cold start
-                // can take up to ~60s — see RENDER_STAGING.md) or a broken
-                // URL rendered as an indistinct blob instead of the letter
-                // the "no picture" state already uses correctly — Image
-                // draws nothing at all while still loading, revealing
-                // whatever's underneath, and errorBuilder alone only
-                // covers the failure case, not the loading gap. The
-                // initial letter now covers both: shown until a real,
-                // fully-decoded frame is ready, and again if the fetch
-                // ultimately fails.
-                loadingBuilder: (context, child, progress) => progress == null ? child : _initialLetter(user),
-                errorBuilder: (context, error, stackTrace) => _initialLetter(user),
-              ),
-            )
           else
-            _initialLetter(user),
+            UserAvatar(name: user.name, avatarUrl: url, size: 52),
           if (_isUploadingAvatar)
             Container(
               decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black.withValues(alpha: 0.35)),

@@ -8,12 +8,14 @@ import 'package:spekooh/data/repositories/quizzes_repository.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
 import 'package:spekooh/data/repository_locator.dart';
 import 'package:spekooh/models/paper_entry.dart';
+import 'package:spekooh/models/spekooh_user.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/screens/home/home_screen.dart';
 import 'package:spekooh/screens/home/logged_in_home_screen.dart';
 import 'package:spekooh/main.dart';
 import 'package:spekooh/shell/root_shell.dart';
+import 'package:spekooh/widgets/user_avatar.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'support/l10n_test_app.dart';
@@ -143,6 +145,37 @@ void main() {
       expect(find.text(label), findsOneWidget);
     }
   });
+
+  testWidgets(
+    'LoggedInHomeScreen header shows the real avatar, not just the initial letter (owner-reported, 2026-09-03)',
+    (tester) async {
+      // Real bug: Home's header avatar was its own separate, never-updated
+      // copy that only ever rendered the user's initial letter — it never
+      // checked avatarUrl at all, so a real, set-and-visible-on-Profile
+      // avatar never showed up here. UserAvatar (shared with Profile now)
+      // fixes this; a widget test's fake network fails near-instantly with
+      // no real HTTP stack, so this asserts the same honest-fallback
+      // behavior the shared widget guarantees, not a real image render.
+      const user = SpekoohUser(
+        name: 'Lucien',
+        joinDate: 'Joined Aug 2026',
+        submissionsCount: 0,
+        quizzesCount: 0,
+        creditBalance: 0,
+        redeemCode: '',
+        redeemCodeSubtitle: '',
+        avatarUrl: 'https://example.com/avatar.jpg',
+      );
+      await tester.pumpWidget(l10nTestApp(
+        LoggedInHomeScreen(profileRepository: MockProfileRepository(user: user), quizzesRepository: MockQuizzesRepository()),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.byType(UserAvatar), findsOneWidget);
+      expect(tester.widget<UserAvatar>(find.byType(UserAvatar)).avatarUrl, 'https://example.com/avatar.jpg');
+    },
+  );
 
   testWidgets('LoggedInHomeScreen EN/FR pill actually switches the locale, not just decorative', (tester) async {
     await tester.pumpWidget(l10nTestApp(
