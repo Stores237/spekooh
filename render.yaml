@@ -70,6 +70,12 @@ services:
         sync: false
       - key: TASK_TRIGGER_TOKEN
         sync: false
+      # Optional — from https://aistudio.google.com/apikey. Without it,
+      # apps.ai's generate_pending_artifacts fails each pending artifact
+      # cleanly (AIUnavailable) instead of crashing; the feature just
+      # stays inert until this is set. See RENDER_STAGING.md §4.
+      - key: GEMINI_API_KEY
+        sync: false
       # Free-tier web services have no Shell tab and no one-off Jobs (both
       # paid-only), so the usual `createsuperuser` has nowhere interactive
       # to run — build.sh runs apps.accounts.management.commands
