@@ -45,6 +45,11 @@ void main() {
 
   testWidgets('PaywallSheet requires a phone number before it will subscribe', (tester) async {
     await _showSheet(tester, PaywallSheet(repository: MockPaymentsRepository()));
+    // The benefits list (now 4 rows, including AI chat) pushes the Pay
+    // button below the sheet's initial visible area — scroll it into view
+    // first, same as a real user would, rather than relying on it already
+    // fitting on-screen.
+    await tester.ensureVisible(find.text('Pay 500 FCFA'));
     await tester.tap(find.text('Pay 500 FCFA'));
     await tester.pump();
     expect(find.textContaining('Enter your'), findsOneWidget);
@@ -54,6 +59,7 @@ void main() {
   testWidgets('PaywallSheet subscribes for real and flips to a confirmed state', (tester) async {
     await _showSheet(tester, PaywallSheet(repository: MockPaymentsRepository()));
     await tester.enterText(find.byType(TextField), '670123456');
+    await tester.ensureVisible(find.text('Pay 500 FCFA'));
     await tester.tap(find.text('Pay 500 FCFA'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

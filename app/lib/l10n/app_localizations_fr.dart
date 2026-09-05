@@ -1139,6 +1139,37 @@ class AppLocalizationsFr extends AppLocalizations {
       'Généré par IA — vérifiez toujours l\'épreuve originale pour la formulation exacte.';
 
   @override
+  String get chatEntryButtonLabel =>
+      'Demander à l\'IA à propos de cette épreuve';
+
+  @override
+  String get chatScreenTitle => 'Demander à l\'IA';
+
+  @override
+  String get chatEmptyStateHint =>
+      'Posez-moi n\'importe quelle question sur cette épreuve — je peux expliquer les concepts et comment aborder chaque question.';
+
+  @override
+  String get chatInputHint => 'Tapez votre question…';
+
+  @override
+  String chatQuotaRemaining(int count) {
+    return '$count gratuit(s) restant(s) aujourd\'hui';
+  }
+
+  @override
+  String get chatQuotaExceededMessage =>
+      'Vous avez utilisé vos messages gratuits d\'aujourd\'hui.';
+
+  @override
+  String get chatUpgradeButton => 'Passer à Plus';
+
+  @override
+  String chatSendError(String detail) {
+    return 'Impossible d\'envoyer : $detail';
+  }
+
+  @override
   String get reportDialogTitle => 'Signaler un problème';
 
   @override
@@ -1216,6 +1247,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get paywallBenefitAlerts => 'Alertes de statut instructeur';
+
+  @override
+  String get paywallBenefitChat =>
+      'Chat IA illimité sur n\'importe quelle épreuve';
 
   @override
   String get spekoohProCaps => 'SPEKOOH PRO';

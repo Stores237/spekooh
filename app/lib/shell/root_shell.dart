@@ -162,11 +162,11 @@ class RootShellState extends State<RootShell> {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotificationsScreen()));
 
   void _openPaperDetail(BuildContext context, [PaperSelection? paper]) => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => PaperDetailScreen(paper: paper)),
+        MaterialPageRoute(builder: (_) => PaperDetailScreen(paper: paper, onOpenPaywall: () => _openPaywall(context))),
       );
 
   void _openPaperEntryDetail(BuildContext context, PaperEntry entry) => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => PaperDetailScreen(paperEntry: entry)),
+        MaterialPageRoute(builder: (_) => PaperDetailScreen(paperEntry: entry, onOpenPaywall: () => _openPaywall(context))),
       );
 
   void _openPaywall(BuildContext context) => showModalBottomSheet(

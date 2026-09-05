@@ -311,4 +311,17 @@ class HttpPapersRepository implements PapersRepository {
       rethrow;
     }
   }
+
+  @override
+  Future<ChatReply> sendChatMessage(int paperId, List<ChatMessage> messages) async {
+    try {
+      final row = await _client.post('/ai/papers/$paperId/chat/', body: {
+        'messages': messages.map((m) => {'role': m.role, 'content': m.content}).toList(),
+      }) as Map<String, dynamic>;
+      return ChatReply(content: row['content'] as String, quotaRemaining: row['quota_remaining'] as int?);
+    } on ApiException catch (e) {
+      if (e.statusCode == 429) throw const ChatQuotaExceededException();
+      rethrow;
+    }
+  }
 }

@@ -462,6 +462,20 @@
   "aiSummaryFailed": "A summary isn't available for this paper yet.",
   "aiSummaryCheckAgain": "Check again",
   "aiSummaryDisclaimer": "AI-generated — always check the original paper for the exact wording.",
+  "chatEntryButtonLabel": "Ask AI about this paper",
+  "chatScreenTitle": "Ask AI",
+  "chatEmptyStateHint": "Ask me anything about this paper — I can explain concepts and how to approach each question.",
+  "chatInputHint": "Type your question…",
+  "chatQuotaRemaining": "{count} free left today",
+  "@chatQuotaRemaining": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "chatQuotaExceededMessage": "You've used today's free chat messages.",
+  "chatUpgradeButton": "Upgrade",
+  "chatSendError": "Couldn't send that: {detail}",
+  "@chatSendError": {
+    "placeholders": {"detail": {"type": "String"}}
+  },
   "reportDialogTitle": "Report an issue",
   "reportWhatsWrong": "What's wrong?",
   "reportDetailsOptional": "Details (optional)",
@@ -495,6 +509,7 @@
   "paywallBenefitViews": "Unlimited question paper views",
   "paywallBenefitAds": "Zero ads while you study",
   "paywallBenefitAlerts": "Instructor status alerts",
+  "paywallBenefitChat": "Unlimited AI chat about any paper",
   "spekoohProCaps": "SPEKOOH PRO",
   "momoOrangeLabel": "MTN MOMO OR ORANGE MONEY NUMBER",
   "payButton": "Pay 500 FCFA",

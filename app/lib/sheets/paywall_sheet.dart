@@ -27,6 +27,10 @@ class _PaywallSheetState extends State<PaywallSheet> {
         (LucideIcons.eye, l10n.paywallBenefitViews),
         (LucideIcons.ban, l10n.paywallBenefitAds),
         (LucideIcons.bell, l10n.paywallBenefitAlerts),
+        // Real, as of apps.ai.views.PaperChatView (2026-09-05) — a
+        // Subscription-active user skips the free daily chat quota
+        // entirely (Subscription.objects.has_active), not aspirational copy.
+        (LucideIcons.messageCircle, l10n.paywallBenefitChat),
       ];
 
   final _phoneController = TextEditingController();
@@ -126,7 +130,16 @@ class _PaywallSheetState extends State<PaywallSheet> {
                               child: Icon(benefits[i].$1, size: 14, color: AppColors.green600),
                             ),
                             const SizedBox(width: 10),
-                            Text(benefits[i].$2, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textPrimary)),
+                            // Expanded, not a bare Text: every benefit
+                            // string here used to be short enough in both
+                            // languages to never overflow this Row by
+                            // accident — adding the AI-chat benefit's own
+                            // longer French copy overflowed it outright,
+                            // a real latent bug this just happened to
+                            // surface (see paywall_sheet_test.dart).
+                            Expanded(
+                              child: Text(benefits[i].$2, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textPrimary)),
+                            ),
                           ],
                         ),
                       ),

@@ -2066,6 +2066,54 @@ abstract class AppLocalizations {
   /// **'AI-generated — always check the original paper for the exact wording.'**
   String get aiSummaryDisclaimer;
 
+  /// No description provided for @chatEntryButtonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI about this paper'**
+  String get chatEntryButtonLabel;
+
+  /// No description provided for @chatScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI'**
+  String get chatScreenTitle;
+
+  /// No description provided for @chatEmptyStateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask me anything about this paper — I can explain concepts and how to approach each question.'**
+  String get chatEmptyStateHint;
+
+  /// No description provided for @chatInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your question…'**
+  String get chatInputHint;
+
+  /// No description provided for @chatQuotaRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} free left today'**
+  String chatQuotaRemaining(int count);
+
+  /// No description provided for @chatQuotaExceededMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used today\'s free chat messages.'**
+  String get chatQuotaExceededMessage;
+
+  /// No description provided for @chatUpgradeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade'**
+  String get chatUpgradeButton;
+
+  /// No description provided for @chatSendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send that: {detail}'**
+  String chatSendError(String detail);
+
   /// No description provided for @reportDialogTitle.
   ///
   /// In en, this message translates to:
@@ -2209,6 +2257,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Instructor status alerts'**
   String get paywallBenefitAlerts;
+
+  /// No description provided for @paywallBenefitChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited AI chat about any paper'**
+  String get paywallBenefitChat;
 
   /// No description provided for @spekoohProCaps.
   ///
