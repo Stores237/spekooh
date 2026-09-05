@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/ads/rewarded_ad_controller.dart';
+import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/offline_file_store.dart';
 import 'package:spekooh/data/offline_papers_store.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/models/paper_entry.dart';
+import 'package:spekooh/screens/papers/chat_screen.dart';
 import 'package:spekooh/screens/papers/paper_detail_screen.dart';
 import 'package:spekooh/screens/papers/report_viewer_screen.dart';
+import 'package:spekooh/sheets/auth_sheet.dart';
 
 import 'support/l10n_test_app.dart';
 
@@ -139,6 +142,7 @@ void main() {
   tearDown(() {
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
     OfflinePapersStore.debugSetInstance(OfflinePapersStore());
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
   });
 
   testWidgets('paywalled paper shows the banner and a real "Watch ad" button', (tester) async {
@@ -231,6 +235,52 @@ void main() {
     await tester.tap(find.byTooltip('Signaler un problème avec cette épreuve'));
     await tester.pumpAndSettle();
     expect(find.text('Signaler un problème'), findsOneWidget);
+  });
+
+  group('chat entry point', () {
+    testWidgets('a logged-in user tapping "Ask AI" goes straight to ChatScreen', (tester) async {
+      AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage())..accessToken = 'fake-access-token');
+      final repository = _PaywalledPapersRepository();
+      await _pump(tester, repository, _FakeRewardedAdController(grantsReward: true));
+
+      await tester.tap(find.text('Ask AI about this paper'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChatScreen), findsOneWidget);
+      expect(find.byType(AuthSheet), findsNothing);
+    });
+
+    testWidgets('a guest tapping "Ask AI" sees the real login sheet first, not ChatScreen', (tester) async {
+      AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
+      final repository = _PaywalledPapersRepository();
+      await _pump(tester, repository, _FakeRewardedAdController(grantsReward: true));
+
+      await tester.tap(find.text('Ask AI about this paper'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AuthSheet), findsOneWidget);
+      expect(find.byType(ChatScreen), findsNothing);
+    });
+
+    testWidgets('a gated PhD/Masters report never offers chat at all', (tester) async {
+      final gatedEntry = PaperEntry(
+        id: 3,
+        year: 2025,
+        system: null,
+        track: '',
+        status: 'PUBLISHED',
+        fileUrl: 'https://files.example.com/thesis.pdf',
+        createdAt: DateTime(2025, 1, 1),
+        categoryKey: 'reports',
+        requiresUnlock: true,
+      );
+      final repository = _FileBackedPapersRepository(gatedEntry);
+      await tester.pumpWidget(l10nTestApp(PaperDetailScreen(paperEntry: gatedEntry, repository: repository)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Ask AI about this paper'), findsNothing);
+    });
   });
 
   group('save offline', () {

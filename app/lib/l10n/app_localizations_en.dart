@@ -1121,6 +1121,36 @@ class AppLocalizationsEn extends AppLocalizations {
       'AI-generated — always check the original paper for the exact wording.';
 
   @override
+  String get chatEntryButtonLabel => 'Ask AI about this paper';
+
+  @override
+  String get chatScreenTitle => 'Ask AI';
+
+  @override
+  String get chatEmptyStateHint =>
+      'Ask me anything about this paper — I can explain concepts and how to approach each question.';
+
+  @override
+  String get chatInputHint => 'Type your question…';
+
+  @override
+  String chatQuotaRemaining(int count) {
+    return '$count free left today';
+  }
+
+  @override
+  String get chatQuotaExceededMessage =>
+      'You\'ve used today\'s free chat messages.';
+
+  @override
+  String get chatUpgradeButton => 'Upgrade';
+
+  @override
+  String chatSendError(String detail) {
+    return 'Couldn\'t send that: $detail';
+  }
+
+  @override
   String get reportDialogTitle => 'Report an issue';
 
   @override
@@ -1198,6 +1228,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallBenefitAlerts => 'Instructor status alerts';
+
+  @override
+  String get paywallBenefitChat => 'Unlimited AI chat about any paper';
 
   @override
   String get spekoohProCaps => 'SPEKOOH PRO';

@@ -208,4 +208,47 @@ void main() {
       expect(() => repo.getPaperSummary(42), throwsA(isA<ApiException>()));
     });
   });
+
+  group('sendChatMessage', () {
+    test('sends the real conversation and returns the assistant reply with its quota', () async {
+      Map<String, dynamic>? sentBody;
+      final mockClient = MockClient((request) async {
+        expect(request.url.path, endsWith('/ai/papers/7/chat/'));
+        sentBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(jsonEncode({'role': 'assistant', 'content': 'A real reply.', 'quota_remaining': 9}), 200, headers: {'content-type': 'application/json'});
+      });
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      final reply = await repo.sendChatMessage(7, const [ChatMessage(role: 'user', content: 'Explain question 1.')]);
+
+      expect(reply.content, 'A real reply.');
+      expect(reply.quotaRemaining, 9);
+      expect(sentBody?['messages'], [
+        {'role': 'user', 'content': 'Explain question 1.'},
+      ]);
+    });
+
+    test('a Pro users unlimited reply carries no quota_remaining', () async {
+      final mockClient = MockClient((request) async => http.Response(jsonEncode({'role': 'assistant', 'content': 'ok', 'quota_remaining': null}), 200, headers: {'content-type': 'application/json'}));
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      final reply = await repo.sendChatMessage(7, const [ChatMessage(role: 'user', content: 'hi')]);
+
+      expect(reply.quotaRemaining, isNull);
+    });
+
+    test('a 429 becomes a real ChatQuotaExceededException, not a raw ApiException', () async {
+      final mockClient = MockClient((request) async => http.Response(jsonEncode({'detail': 'nope', 'upgrade_required': true}), 429, headers: {'content-type': 'application/json'}));
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      expect(() => repo.sendChatMessage(7, const [ChatMessage(role: 'user', content: 'hi')]), throwsA(isA<ChatQuotaExceededException>()));
+    });
+
+    test('a real server error stays a real exception', () async {
+      final mockClient = MockClient((request) async => http.Response('boom', 500));
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      expect(() => repo.sendChatMessage(7, const [ChatMessage(role: 'user', content: 'hi')]), throwsA(isA<ApiException>()));
+    });
+  });
 }

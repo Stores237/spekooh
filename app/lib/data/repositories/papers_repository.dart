@@ -113,6 +113,42 @@ abstract class PapersRepository {
   /// failure all collapse to null. This is a nice-to-have enhancement, not
   /// core enough to justify an error state on the paper detail screen.
   Future<PaperSummaryResult?> getPaperSummary(int paperId);
+
+  /// Sends the student's own running conversation about this paper to the
+  /// real-time chatbot (Lane B — apps.ai.views.PaperChatView, Groq) and
+  /// returns the assistant's reply. [messages] is the full conversation so
+  /// far, oldest first, ending on the student's newest message — nothing
+  /// is persisted server-side, so the caller owns keeping this list.
+  ///
+  /// Requires a real (non-guest) login — throws normally (a 401/403
+  /// [ApiException]) otherwise, same as any other authenticated-only
+  /// action in this app; callers should check
+  /// [AuthSession.isLoggedIn]/prompt a real login before calling this at
+  /// all rather than relying on that. Throws [ChatQuotaExceededException]
+  /// once today's free quota is used — see [ChatReply.quotaRemaining] to
+  /// show a running count before then.
+  Future<ChatReply> sendChatMessage(int paperId, List<ChatMessage> messages);
+}
+
+class ChatMessage {
+  const ChatMessage({required this.role, required this.content});
+  final String role; // 'user' | 'assistant' — mirrors apps.ai.services.validate_chat_messages
+  final String content;
+}
+
+class ChatReply {
+  const ChatReply({required this.content, this.quotaRemaining});
+  final String content;
+
+  /// Free messages left today, or null for a Subscription-active (Kawlo
+  /// Plus) user, who has no cap to count down (see PaperChatView).
+  final int? quotaRemaining;
+}
+
+/// Carries no message — the UI supplies its own upgrade-prompt copy at the
+/// catch site (see ChatScreen), same reasoning as PaywallException.
+class ChatQuotaExceededException implements Exception {
+  const ChatQuotaExceededException();
 }
 
 /// Mirrors apps.ai.models.ArtifactStatus — [ready] is the only one with a
@@ -251,4 +287,18 @@ class MockPapersRepository implements PapersRepository {
 
   @override
   Future<PaperSummaryResult?> getPaperSummary(int paperId) async => mockSummary;
+
+  /// A canned reply by default. Set [mockChatError] to make the next call
+  /// throw instead (e.g. `const ChatQuotaExceededException()`).
+  ChatReply mockChatReply = const ChatReply(content: 'This is a mock reply.', quotaRemaining: 14);
+  Object? mockChatError;
+  final List<List<ChatMessage>> chatCalls = [];
+
+  @override
+  Future<ChatReply> sendChatMessage(int paperId, List<ChatMessage> messages) async {
+    chatCalls.add(messages);
+    final error = mockChatError;
+    if (error != null) throw error;
+    return mockChatReply;
+  }
 }

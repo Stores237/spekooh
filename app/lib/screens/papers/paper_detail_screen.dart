@@ -4,12 +4,14 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../ads/rewarded_ad_controller.dart';
 import '../../data/api_client.dart';
+import '../../data/auth_session.dart';
 import '../../data/offline_papers_store.dart';
 import '../../data/repositories/papers_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/exam_taxonomy.dart';
 import '../../models/paper_entry.dart';
+import '../../sheets/auth_sheet.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
@@ -20,6 +22,7 @@ import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/spekooh_banner.dart';
 import '../../widgets/spekooh_loader.dart';
+import 'chat_screen.dart';
 import 'papers_screen.dart';
 import 'report_viewer_screen.dart';
 
@@ -34,8 +37,14 @@ String _paperTitle({required String? subjectTitle, required String examTypeLabel
 /// Ported from ui_kits/spekooh-app/PaperDetailScreen.jsx. Pushed as a
 /// full-screen overlay when a paper is tapped in PapersScreen's paper list.
 class PaperDetailScreen extends StatefulWidget {
-  PaperDetailScreen({super.key, this.paper, this.paperEntry, PapersRepository? repository, RewardedAdController? adController})
-      : repository = repository ?? RepositoryLocator.instance.papers,
+  PaperDetailScreen({
+    super.key,
+    this.paper,
+    this.paperEntry,
+    this.onOpenPaywall,
+    PapersRepository? repository,
+    RewardedAdController? adController,
+  })  : repository = repository ?? RepositoryLocator.instance.papers,
         adController = adController ?? RewardedAdController.instance;
 
   /// Set when opened from Papers' full taxonomy drill-down — carries the
@@ -45,6 +54,12 @@ class PaperDetailScreen extends StatefulWidget {
   /// Set when opened from a simpler entry point (e.g. Home's featured-paper
   /// card) that only has the raw submission, not the full taxonomy chain.
   final PaperEntry? paperEntry;
+
+  /// Opens the real PaywallSheet (RootShell._openPaywall) — threaded down
+  /// so ChatScreen can offer it once a student's free daily AI chat quota
+  /// runs out (see PaperChatView's own 429/upgrade_required). Null in
+  /// tests that don't exercise that path.
+  final VoidCallback? onOpenPaywall;
 
   final PapersRepository repository;
 
@@ -198,6 +213,29 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     } finally {
       if (mounted) setState(() => _savingOffline = false);
     }
+  }
+
+  /// Chat requires a real (non-guest) login — apps.ai.views.PaperChatView
+  /// is IsAuthenticated-only, see that class's own doc comment for why.
+  /// Shows the real AuthSheet inline rather than threading yet another
+  /// onLogin callback through from RootShell: AuthSession is a shared
+  /// singleton ChangeNotifier, so a real login here is immediately visible
+  /// to the rest of the app (Home, etc.) without this screen needing to
+  /// coordinate that itself.
+  Future<void> _openChat(int paperId, String title) async {
+    if (!AuthSession.instance.isLoggedIn) {
+      final loggedIn = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => const AuthSheet(),
+      );
+      if (loggedIn != true || !mounted) return;
+    }
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ChatScreen(paperId: paperId, paperTitle: title, repository: widget.repository, onOpenPaywall: widget.onOpenPaywall)),
+    );
   }
 
   Future<void> _openReportDialog(int paperId) async {
@@ -448,6 +486,25 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                       // Its own top margin is conditional on it actually
                       // having something to show — see the widget itself.
                       if (detail != null && !locked) PaperSummaryCard(paperId: entry.id, repository: widget.repository),
+                      // Chat shares the exact same view gate as the summary
+                      // card above (and PaperChatView server-side) — never
+                      // offered for a paper the caller can't view yet.
+                      if (detail != null && !locked) ...[
+                        const SizedBox(height: AppSpacing.space3),
+                        SpekoohButton(
+                          size: SpekoohButtonSize.sm,
+                          variant: SpekoohButtonVariant.secondary,
+                          onPressed: () => _openChat(entry.id, title),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(LucideIcons.messageCircle, size: 14),
+                              const SizedBox(width: 6),
+                              Text(l10n.chatEntryButtonLabel),
+                            ],
+                          ),
+                        ),
+                      ],
                       if (detail != null && detail.examBoard.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.space3),
