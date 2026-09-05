@@ -289,6 +289,11 @@ First build takes 3–5 minutes. You get a URL like
 | `AWS_S3_REGION_NAME` | the real AWS-style region code from that same S3 Connection panel (e.g. `eu-west-1`) — **not the bucket name**. Found live (2026-09-02): pasting the bucket name here instead breaks S3's SigV4 request signing outright. |
 | `TASK_TRIGGER_TOKEN` | long random string (see §6) |
 | `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` | your real admin login (see "Create an admin user" below — no Shell tab on the free plan) |
+| `GEMINI_API_KEY` | (2026-09-05, optional) a real Gemini API key, from [Google AI Studio](https://aistudio.google.com/apikey). Without it, `generate_pending_artifacts` (see §6) fails every artifact with a clean "GEMINI_API_KEY is not configured" error instead of crashing — feature stays off, not broken. |
+| `AI_ENABLED` | (optional, default `True`) set to `False` to kill-switch AI generation entirely — the cron command becomes a no-op and the summary endpoint returns 503, without touching `GEMINI_API_KEY`. |
+| `GEMINI_MODEL` | (optional, default `gemini-2.5-flash`) |
+| `AI_PROMPT_VERSION` | (optional, default `1`) bump this to force every cached summary to regenerate under a new prompt, without touching any existing row by hand — see `apps/ai/models.py`'s `GeneratedArtifact.prompt_version`. |
+| `GEMINI_DAILY_BUDGET` | (optional, default `1200`) a hard cap on Gemini calls per day (`Africa/Douala` day boundary), enforced in Redis by `apps/ai/quota.py` — stops `generate_pending_artifacts` for the rest of the run once hit, rather than risking a surprise bill. |
 
 **Already set for you by `render.yaml`, not the dashboard:** `EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend`. Found live (2026-08-31): with no real email provider configured (see §8-adjacent "Owner action items" in `TODOS.md`), `config/settings/prod.py` had no `EMAIL_BACKEND` override at all, so Django's real default (SMTP, no host configured) crashed **every single registration** with an unhandled `ConnectionRefusedError` — a real 500 on the live site, not a hypothetical. The console backend just logs the email content instead of pretending to deliver it — an honest stand-in for staging, never appropriate for real production.
 
@@ -379,6 +384,11 @@ TRIGGERABLE_COMMANDS = {
     "process-pamphlet-expiry": "process_pamphlet_expiry",
     "prune-stale-guest-accounts": "prune_stale_guest_accounts",
     "delete-test-accounts": "delete_test_accounts",
+    # AI generation (2026-09-05) — this same mechanism is also this
+    # project's real replacement for a Celery task queue, which it
+    # deliberately doesn't run (see apps.ai.management.commands
+    # .generate_pending_artifacts's own docstring for why).
+    "generate-ai-artifacts": "generate_pending_artifacts",
 }
 
 
@@ -398,16 +408,24 @@ def run_task(request, name):
 
 Routed at `config/urls.py`: `path('internal/tasks/<str:name>/', run_task)`.
 
-At cron-job.org (free), create three jobs POSTing to:
+At cron-job.org (free), create four jobs POSTing to:
 
 ```
 https://spekooh-staging.onrender.com/internal/tasks/process-instructor-timeouts/
 https://spekooh-staging.onrender.com/internal/tasks/process-pamphlet-expiry/
 https://spekooh-staging.onrender.com/internal/tasks/prune-stale-guest-accounts/
+https://spekooh-staging.onrender.com/internal/tasks/generate-ai-artifacts/
 ```
 
 each with header `X-Task-Token: <the TASK_TRIGGER_TOKEN you set in §4>`, on
-the same cadence as the real crontab table above.
+the same cadence as the real crontab table above. The fourth
+(`generate-ai-artifacts`, added 2026-09-05) is this project's real
+replacement for a Celery worker — see `apps/ai/management/commands
+/generate_pending_artifacts.py`'s own docstring for why there isn't one.
+Every few minutes is reasonable; it's a capped batch per run (`BATCH_SIZE
+= 20`) and a no-op once nothing is pending. Requires `GEMINI_API_KEY` to
+actually generate anything (see §4) — safe to schedule before that key
+exists, it'll just no-op-fail each pending row until it's set.
 
 A fourth endpoint on the same mechanism, but on-demand rather than
 scheduled: `.../internal/tasks/delete-test-accounts/` deletes every `User`

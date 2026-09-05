@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "apps.forum",
     "apps.quizzes",
     "apps.notifications",
+    "apps.ai",
 ]
 
 MIDDLEWARE = [
@@ -337,3 +338,31 @@ UNFOLD = {
         },
     },
 }
+
+# AI features (2026-09-05) — Lane A only so far (batch generation against
+# Spekooh's own content; see apps/ai/models.py). No student-typed text is
+# ever sent to Gemini — see apps/ai/prompts/summarise.py's own note on
+# why that split is deliberate, not incidental.
+#
+# Same no-op-safely-when-unconfigured posture as SENTRY_DSN/REDIS_URL/
+# AWS_* above: a fresh clone with no GEMINI_API_KEY set doesn't crash —
+# generate_pending_artifacts just fails each row with a clear
+# "not configured" error (apps.ai.providers.gemini.GeminiProvider) instead
+# of a confusing HTTP exception, and AI_ENABLED=False turns the whole
+# feature off outright without touching any of the above.
+AI_ENABLED = env.bool("AI_ENABLED", default=True)
+GEMINI_API_KEY = env("GEMINI_API_KEY", default=None)
+AI_MODELS = {
+    # Verify the current free-tier model roster before launch — these
+    # rosters change often; see https://ai.google.dev/pricing
+    "gemini_primary": env("GEMINI_MODEL", default="gemini-2.5-flash"),
+}
+# Bump this to invalidate every cached artifact at once (e.g. after a real
+# prompt-quality improvement) — old rows stay valid until a new
+# (source, kind, language, prompt_version) row generates lazily; no
+# migration, no mass delete.
+AI_PROMPT_VERSION = env.int("AI_PROMPT_VERSION", default=1)
+# Below the real ~1,500/day Gemini Flash ceiling, deliberately, so a
+# traffic spike doesn't have the account itself throttled by Google —
+# generate_pending_artifacts just waits for tomorrow's reset instead.
+GEMINI_DAILY_BUDGET = env.int("GEMINI_DAILY_BUDGET", default=1200)
