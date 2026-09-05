@@ -5,9 +5,11 @@ from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
 
 from .models import ArtifactKind, ArtifactStatus, GeneratedArtifact
+from .prompts import chat as chat_prompts
 from .prompts import summarise
-from .providers.base import AIError, AIUnavailable
+from .providers.base import AIError, AIResult, AIUnavailable
 from .providers.gemini import GeminiProvider
+from .providers.groq import GroqProvider
 
 
 def get_or_queue_artifact(source, kind: str, language: str = "en") -> tuple[GeneratedArtifact, bool]:
@@ -92,3 +94,47 @@ def run_pending_generation(artifact: GeneratedArtifact) -> None:
         artifact.status = ArtifactStatus.READY
         artifact.error = ""
         artifact.save()
+
+
+# --- Lane B: the real-time student chatbot (apps.ai.views.PaperChatView) ---
+# Stateless by design (a deliberate, deferred simplification — see the
+# resolved AskUserQuestion on chat scope): the client resends its own
+# running conversation on every call, so there is no ChatMessage model, no
+# migration, and nothing about a student's conversation is ever persisted
+# server-side.
+
+CHAT_MAX_MESSAGES = 12
+CHAT_MAX_CHARS = 4000
+
+
+def validate_chat_messages(messages) -> str | None:
+    """Returns a human-readable error, or None if `messages` (the client's
+    own running conversation, oldest first) is well-formed and safe to
+    forward to Groq. Deliberately hand-rolled rather than a DRF serializer
+    — this is a list of free-form dicts, not a model-backed shape."""
+    if not isinstance(messages, list) or not messages:
+        return "messages must be a non-empty list."
+    if len(messages) > CHAT_MAX_MESSAGES:
+        return f"Send at most {CHAT_MAX_MESSAGES} messages of conversation history."
+    total_chars = 0
+    for message in messages:
+        if not isinstance(message, dict) or message.get("role") not in ("user", "assistant"):
+            return "Each message needs a role of 'user' or 'assistant'."
+        content = message.get("content")
+        if not isinstance(content, str) or not content.strip():
+            return "Each message needs non-empty string content."
+        total_chars += len(content)
+    if total_chars > CHAT_MAX_CHARS:
+        return "That's too much text for one request."
+    if messages[-1]["role"] != "user":
+        return "The last message must be from the student."
+    return None
+
+
+def send_chat_message(*, paper, messages: list[dict]) -> AIResult:
+    """The one Groq call. Raises an AIError subclass on failure — the view
+    is what turns that into a real HTTP response, same split as Lane A's
+    generate_paper_summary/run_pending_generation."""
+    text = paper.ocr_text[:60_000]  # same generous, pathological-OCR-dump guard as generate_paper_summary
+    system = chat_prompts.SYSTEM_CHAT["en"].format(ocr_text=text)
+    return GroqProvider().chat(system=system, messages=messages)

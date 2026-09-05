@@ -20,21 +20,36 @@ def _day_key(prefix: str) -> str:
     return f"{prefix}:{today}"
 
 
-def consume_provider_budget(provider: str, limit: int) -> bool:
-    """Returns False once today's budget for `provider` is used up. A
-    real day boundary (Africa/Douala, not UTC) — the daily reset should
-    line up with when Cameroonian students are actually asleep, not an
-    arbitrary UTC midnight."""
-    key = _day_key(f"aibudget:{provider}")
+def _consume(key: str, limit: int) -> tuple[bool, int]:
+    """Shared by consume_provider_budget and consume_chat_quota below.
+    Returns (allowed, remaining-after-this-call)."""
     # One day plus a small margin, so a key created right at midnight
     # doesn't expire a few seconds early and silently reset the count.
     used = cache.get_or_set(key, 0, timeout=90_000)
     if used >= limit:
-        return False
+        return False, 0
     try:
         cache.incr(key)
     except ValueError:
         # incr() on an already-expired key raises rather than treating it
         # as zero — reseed it explicitly instead of failing the request.
         cache.set(key, 1, timeout=90_000)
-    return True
+    return True, limit - used - 1
+
+
+def consume_provider_budget(provider: str, limit: int) -> bool:
+    """Returns False once today's budget for `provider` is used up. A
+    real day boundary (Africa/Douala, not UTC) — the daily reset should
+    line up with when Cameroonian students are actually asleep, not an
+    arbitrary UTC midnight."""
+    allowed, _ = _consume(_day_key(f"aibudget:{provider}"), limit)
+    return allowed
+
+
+def consume_chat_quota(identity: str, limit: int) -> tuple[bool, int]:
+    """Per-user daily Lane B chat message cap (apps.ai.chat) — [identity]
+    is a real User's str(pk); chat requires a real account, see
+    apps.ai.chat.views's own doc comment for why. Returns
+    (allowed, remaining-after-this-message) so the response can tell the
+    student how many free messages are left today."""
+    return _consume(_day_key(f"aichat:{identity}"), limit)

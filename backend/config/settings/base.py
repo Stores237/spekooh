@@ -356,6 +356,9 @@ AI_MODELS = {
     # Verify the current free-tier model roster before launch — these
     # rosters change often; see https://ai.google.dev/pricing
     "gemini_primary": env("GEMINI_MODEL", default="gemini-2.5-flash"),
+    # Groq's own model roster also changes often — see
+    # https://console.groq.com/docs/models
+    "groq_chat": env("GROQ_CHAT_MODEL", default="llama-3.3-70b-versatile"),
 }
 # Bump this to invalidate every cached artifact at once (e.g. after a real
 # prompt-quality improvement) — old rows stay valid until a new
@@ -366,3 +369,22 @@ AI_PROMPT_VERSION = env.int("AI_PROMPT_VERSION", default=1)
 # traffic spike doesn't have the account itself throttled by Google —
 # generate_pending_artifacts just waits for tomorrow's reset instead.
 GEMINI_DAILY_BUDGET = env.int("GEMINI_DAILY_BUDGET", default=1200)
+
+# Lane B (2026-09-05): the Groq real-time student chatbot. A separate
+# switch from AI_ENABLED — chat is a materially different cost/abuse
+# profile from Lane A's cron-batch summaries (interactive, per-message,
+# no queue to just stop draining), so it needs to be killable on its own
+# without also taking summaries down.
+AI_CHAT_ENABLED = env.bool("AI_CHAT_ENABLED", default=True)
+GROQ_API_KEY = env("GROQ_API_KEY", default=None)
+# Owner decision (resolved via AskUserQuestion): free for everyone with a
+# daily per-user message quota, then an upgrade prompt pointing at the
+# existing Subscription/Pro flow (apps.payments) — a Pro subscriber skips
+# this cap entirely (see apps.ai.chat.views), same "give Pro real value"
+# reasoning already covering ad-free + unlimited paper views.
+AI_CHAT_DAILY_LIMIT = env.int("AI_CHAT_DAILY_LIMIT", default=15)
+# A hard, provider-wide daily ceiling that even a Pro subscriber's
+# unlimited-seeming chat is still subject to — the same defense-in-depth
+# GEMINI_DAILY_BUDGET already provides for Lane A, against a runaway bug
+# or abuse producing a surprise bill regardless of any one user's own cap.
+GROQ_DAILY_BUDGET = env.int("GROQ_DAILY_BUDGET", default=500)
