@@ -294,4 +294,21 @@ class HttpPapersRepository implements PapersRepository {
       rethrow;
     }
   }
+
+  @override
+  Future<PaperSummaryResult?> getPaperSummary(int paperId) async {
+    try {
+      final row = await _client.get('/ai/papers/$paperId/summary/') as Map<String, dynamic>;
+      final status = PaperSummaryStatus.values.asNameMap()[row['status'] as String?];
+      if (status == null) return null;
+      return PaperSummaryResult(status: status, body: row['body'] as String?);
+    } on ApiException catch (e) {
+      // 402 (paywalled — shouldn't normally even be asked for, see this
+      // method's own doc comment), 404 (not visible to this caller), and
+      // 503 (AI_ENABLED off) are all real, valid "no summary" states, not
+      // errors worth surfacing for a feature this optional.
+      if (e.statusCode == 402 || e.statusCode == 404 || e.statusCode == 503) return null;
+      rethrow;
+    }
+  }
 }

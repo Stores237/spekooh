@@ -1104,6 +1104,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Objective/MCQ answers are marked in-house by the Spekooh review team, not the instructor.';
 
   @override
+  String get aiSummaryTitle => 'AI summary';
+
+  @override
+  String get aiSummaryGenerating => 'Generating a summary of this paper…';
+
+  @override
+  String get aiSummaryFailed =>
+      'A summary isn\'t available for this paper yet.';
+
+  @override
+  String get aiSummaryCheckAgain => 'Check again';
+
+  @override
+  String get aiSummaryDisclaimer =>
+      'AI-generated — always check the original paper for the exact wording.';
+
+  @override
   String get reportDialogTitle => 'Report an issue';
 
   @override

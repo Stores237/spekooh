@@ -1122,6 +1122,23 @@ class AppLocalizationsFr extends AppLocalizations {
       'Les réponses aux questions à choix multiples sont corrigées en interne par l\'équipe Spekooh, pas par l\'instructeur.';
 
   @override
+  String get aiSummaryTitle => 'Résumé IA';
+
+  @override
+  String get aiSummaryGenerating => 'Génération d\'un résumé de cette épreuve…';
+
+  @override
+  String get aiSummaryFailed =>
+      'Aucun résumé n\'est encore disponible pour cette épreuve.';
+
+  @override
+  String get aiSummaryCheckAgain => 'Vérifier à nouveau';
+
+  @override
+  String get aiSummaryDisclaimer =>
+      'Généré par IA — vérifiez toujours l\'épreuve originale pour la formulation exacte.';
+
+  @override
   String get reportDialogTitle => 'Signaler un problème';
 
   @override

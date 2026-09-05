@@ -162,4 +162,50 @@ void main() {
       expect(entry.id, 9); // the submission still succeeds, via multipart
     });
   });
+
+  group('getPaperSummary', () {
+    test('a ready summary returns its real body', () async {
+      final mockClient = MockClient((request) async {
+        expect(request.url.path, endsWith('/ai/papers/42/summary/'));
+        return http.Response(jsonEncode({'status': 'ready', 'body': 'A real summary.'}), 200, headers: {'content-type': 'application/json'});
+      });
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      final result = await repo.getPaperSummary(42);
+
+      expect(result?.status, PaperSummaryStatus.ready);
+      expect(result?.body, 'A real summary.');
+    });
+
+    test('a still-generating summary reports pending with no body', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response(jsonEncode({'status': 'pending', 'retry_after': 15}), 202, headers: {'content-type': 'application/json'});
+      });
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      final result = await repo.getPaperSummary(42);
+
+      expect(result?.status, PaperSummaryStatus.pending);
+      expect(result?.body, isNull);
+    });
+
+    // 402/404/503 are all real, valid "nothing to show" states from
+    // apps.ai.views.PaperSummaryView — never an error worth surfacing for a
+    // feature this optional.
+    for (final code in [402, 404, 503]) {
+      test('a $code response is treated as "no summary", not an error', () async {
+        final mockClient = MockClient((request) async => http.Response(jsonEncode({'detail': 'nope'}), code, headers: {'content-type': 'application/json'}));
+        final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+        expect(await repo.getPaperSummary(42), isNull);
+      });
+    }
+
+    test('a genuine server error is a real exception, not silently swallowed', () async {
+      final mockClient = MockClient((request) async => http.Response('boom', 500));
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      expect(() => repo.getPaperSummary(42), throwsA(isA<ApiException>()));
+    });
+  });
 }

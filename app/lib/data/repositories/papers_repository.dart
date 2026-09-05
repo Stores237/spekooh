@@ -103,6 +103,26 @@ abstract class PapersRepository {
   /// one of [paperFlagReasonKeys]. Throws [AlreadyReportedException] if
   /// this user already reported this paper — one flag per user per paper.
   Future<void> reportPaper(int paperId, {required String reason, String details});
+
+  /// AI-generated summary of a paper's own extracted text (apps.ai on the
+  /// backend — Gemini, cron-generated, cached per paper). Never throws:
+  /// AI_ENABLED being off, the paper not being visible/viewable to this
+  /// caller (a paywalled report — same gate as [PaperEntry.requiresUnlock],
+  /// so callers should just not call this at all when that's true rather
+  /// than rely on this returning null for it), and any genuine network
+  /// failure all collapse to null. This is a nice-to-have enhancement, not
+  /// core enough to justify an error state on the paper detail screen.
+  Future<PaperSummaryResult?> getPaperSummary(int paperId);
+}
+
+/// Mirrors apps.ai.models.ArtifactStatus — [ready] is the only one with a
+/// non-empty [PaperSummaryResult.body].
+enum PaperSummaryStatus { pending, running, ready, failed }
+
+class PaperSummaryResult {
+  const PaperSummaryResult({required this.status, this.body});
+  final PaperSummaryStatus status;
+  final String? body;
 }
 
 /// Carries no message — there's exactly one reason this fires (the daily
@@ -224,4 +244,11 @@ class MockPapersRepository implements PapersRepository {
       throw const AlreadyReportedException();
     }
   }
+
+  /// Null by default — real usage starts with nothing generated yet. Set
+  /// [mockSummary] in a test to exercise the generating/ready states.
+  PaperSummaryResult? mockSummary;
+
+  @override
+  Future<PaperSummaryResult?> getPaperSummary(int paperId) async => mockSummary;
 }
