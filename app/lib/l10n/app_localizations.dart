@@ -2036,6 +2036,36 @@ abstract class AppLocalizations {
   /// **'Objective/MCQ answers are marked in-house by the Spekooh review team, not the instructor.'**
   String get mcqDisclaimer;
 
+  /// No description provided for @aiSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI summary'**
+  String get aiSummaryTitle;
+
+  /// No description provided for @aiSummaryGenerating.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating a summary of this paper…'**
+  String get aiSummaryGenerating;
+
+  /// No description provided for @aiSummaryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'A summary isn\'t available for this paper yet.'**
+  String get aiSummaryFailed;
+
+  /// No description provided for @aiSummaryCheckAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get aiSummaryCheckAgain;
+
+  /// No description provided for @aiSummaryDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'AI-generated — always check the original paper for the exact wording.'**
+  String get aiSummaryDisclaimer;
+
   /// No description provided for @reportDialogTitle.
   ///
   /// In en, this message translates to:

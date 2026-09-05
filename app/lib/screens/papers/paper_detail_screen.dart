@@ -15,6 +15,7 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/report_covers.dart';
+import '../../widgets/paper_summary_card.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/spekooh_banner.dart';
@@ -439,6 +440,14 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.space3),
+                      // Never asked for a paywalled report — `locked` here
+                      // is exactly the same user_can_view_file gate
+                      // apps.ai.views.PaperSummaryView applies server-side
+                      // (see PaperEntry.requiresUnlock's own doc comment),
+                      // so there's no 402 state for this widget to handle.
+                      // Its own top margin is conditional on it actually
+                      // having something to show — see the widget itself.
+                      if (detail != null && !locked) PaperSummaryCard(paperId: entry.id, repository: widget.repository),
                       if (detail != null && detail.examBoard.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.space3),
