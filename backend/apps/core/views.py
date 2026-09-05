@@ -34,6 +34,11 @@ TRIGGERABLE_COMMANDS = {
     # tab on the free plan to delete them by hand — see "Create an admin
     # user" in RENDER_STAGING.md).
     "delete-test-accounts": "delete_test_accounts",
+    # AI generation (2026-09-05) — this project's real replacement for a
+    # Celery task queue, which it deliberately doesn't run (see
+    # apps.ai.management.commands.generate_pending_artifacts's own
+    # docstring). Point a cron-job.org schedule at this every few minutes.
+    "generate-ai-artifacts": "generate_pending_artifacts",
 }
 
 
