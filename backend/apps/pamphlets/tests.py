@@ -76,6 +76,24 @@ def test_place_order_endpoint_issues_qr_immediately(api_client):
 
 
 @pytest.mark.django_db
+def test_a_guest_account_cannot_place_an_order(api_client):
+    """Hardening (2026-09-06): was plain IsAuthenticated, which a guest JWT
+    also satisfies — the app has never actually sent one here, but every
+    other paid endpoint in this codebase explicitly excludes guests too."""
+    from apps.accounts.models import User
+
+    guest = User.objects.create_guest(name="Live Verify Guest")
+    pamphlet = PamphletFactory()
+    api_client.force_authenticate(user=guest)
+    response = api_client.post(
+        "/api/pamphlets/orders/place/",
+        {"pamphlet": pamphlet.id, "is_delivery": False, "phone_number": "670000000"},
+        format="json",
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
 def test_orders_list_shows_only_own_orders(api_client):
     me = UserFactory()
     other = UserFactory()

@@ -3,7 +3,6 @@ import '../../data/repositories/papers_repository.dart';
 import '../../data/repositories/shop_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/paper_entry.dart';
 import '../../models/pamphlet.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_gradients.dart';
@@ -22,27 +21,32 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 class HomeScreen extends StatelessWidget {
   HomeScreen({
     super.key,
-    this.onOpenPaywall,
     this.onOpenSettings,
-    this.onOpenPaper,
     this.onOpenPamphlet,
     this.onOpenProfile,
     this.onOpenNotes,
     this.onOpenShop,
     this.onOpenSubmit,
+    this.onLogin,
     PapersRepository? papersRepository,
     ShopRepository? shopRepository,
   })  : papersRepository = papersRepository ?? RepositoryLocator.instance.papers,
         shopRepository = shopRepository ?? RepositoryLocator.instance.shop;
 
-  final VoidCallback? onOpenPaywall;
   final VoidCallback? onOpenSettings;
-  final ValueChanged<PaperEntry>? onOpenPaper;
   final VoidCallback? onOpenPamphlet;
   final VoidCallback? onOpenProfile;
   final VoidCallback? onOpenNotes;
   final VoidCallback? onOpenShop;
   final VoidCallback? onOpenSubmit;
+
+  /// Opens the real AuthSheet (RootShell._openAuthSheet) — owner decision
+  /// (2026-09-06): viewing a paper/report is no longer guest-accessible at
+  /// all (only contributing one still is), so the featured-paper card this
+  /// screen used to show guests a live preview through is gone; this is
+  /// its replacement, an honest "log in to browse" prompt instead of a
+  /// call that would now just 401.
+  final VoidCallback? onLogin;
   final PapersRepository papersRepository;
   final ShopRepository shopRepository;
 
@@ -108,77 +112,33 @@ class HomeScreen extends StatelessWidget {
                 const SpekoohBadge(text: 'EN / FR', tone: SpekoohBadgeTone.blue),
               ]),
               const SizedBox(height: AppSpacing.space4),
+              // Owner decision (2026-09-06): viewing a paper/report is no
+              // longer guest-accessible at all — PaperSubmissionViewSet's
+              // list/retrieve/view now require a real (non-guest) account,
+              // so there's no live paper to preview here without one, and
+              // showing "3 free views a day, no account needed" would be
+              // an outright false promise. This replaces both the old
+              // free-views pitch and the featured-paper card with one
+              // honest prompt, and makes no network call at all — a guest
+              // hitting getLatestPublished() would just 401 now anyway.
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(color: AppColors.ink900, borderRadius: BorderRadius.circular(18)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.homeFreeViewsLabel, style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                    Text(l10n.homeBrowsePapersLabel, style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
                     const SizedBox(height: 4),
-                    Text(l10n.homeFreeViewsCount, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 24, color: AppColors.white)),
+                    Text(l10n.homeBrowsePapersTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.white)),
                     const SizedBox(height: 6),
-                    // No account means no server-side counter to check against — a
-                    // live "N of 3 used" figure would just be fabricated for guests.
-                    Text(l10n.homeFreeViewsHint, style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
+                    Text(l10n.homeBrowsePapersHint, style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
-                      child: SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onOpenPaywall, child: Text(l10n.goPro)),
+                      child: SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onLogin, child: Text(l10n.logIn)),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              FutureBuilder<PaperEntry?>(
-                future: papersRepository.getLatestPublished(),
-                builder: (context, snapshot) {
-                  final paper = snapshot.data;
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const SizedBox(height: 64, child: SpekoohLoader());
-                  }
-                  if (paper == null) {
-                    return Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                      child: Text(l10n.homeNoPapersYet, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                    );
-                  }
-                  final label = [paper.subjectTitle, paper.examTypeName].whereType<String>().join(' · ');
-                  return InkWell(
-                    onTap: () => onOpenPaper?.call(paper),
-                    borderRadius: BorderRadius.circular(18),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                      child: Row(
-                        children: [
-                          const IconChip(icon: LucideIcons.sigma, tint: IconChipTint.purple),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(l10n.homePaperLabelWithYear(label, paper.year), style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                // Reports have no marking-guide/instructor
-                                // pipeline at all, unlike exam papers — the
-                                // "marking guide sold separately" line would
-                                // be a false claim for one.
-                                Text(
-                                  paper.isReport
-                                      ? (paper.requiresUnlock ? l10n.homeReportPaymentRequired : l10n.homeFreeToViewReport)
-                                      : l10n.homeFreeToView,
-                                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
-                        ],
-                      ),
-                    ),
-                  );
-                },
               ),
               const SizedBox(height: AppSpacing.space6),
               Text(l10n.homeContributionTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),

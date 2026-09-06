@@ -7,7 +7,6 @@ import 'package:spekooh/data/repositories/profile_repository.dart';
 import 'package:spekooh/data/repositories/quizzes_repository.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
 import 'package:spekooh/data/repository_locator.dart';
-import 'package:spekooh/models/paper_entry.dart';
 import 'package:spekooh/models/spekooh_user.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/token_storage.dart';
@@ -35,7 +34,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     expect(tester.takeException(), isNull);
     expect(find.text('Guest'), findsOneWidget);
-    expect(find.text('No papers published yet. Check back soon.'), findsOneWidget);
     expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget); // real featured pamphlet from the mock
   });
 
@@ -51,79 +49,24 @@ void main() {
     expect(opened, isTrue);
   });
 
-  testWidgets('HomeScreen (guest) shows the real latest published paper when one exists', (tester) async {
-    final seeded = PaperEntry(
-      id: 7,
-      year: 2025,
-      system: null,
-      track: '',
-      status: 'PUBLISHED',
-      fileUrl: null,
-      createdAt: DateTime(2025, 1, 1),
-      subjectTitle: 'Mathématiques',
-      examTypeName: 'Baccalauréat',
-    );
-    PaperEntry? opened;
+  // Owner decision (2026-09-06): viewing a paper/report is no longer
+  // guest-accessible at all — this screen used to preview the real latest
+  // published paper right here and let a guest open it; that's gone,
+  // replaced by an honest "log in to browse" prompt that makes no
+  // getLatestPublished() call at all (a guest hitting that endpoint now
+  // just 401s).
+  testWidgets('HomeScreen (guest) shows an honest "log in to browse" prompt, never a live paper preview', (tester) async {
+    var loginOpened = false;
     await tester.pumpWidget(l10nTestApp(
-      HomeScreen(
-        papersRepository: MockPapersRepository(seedPublished: [seeded]),
-        shopRepository: MockShopRepository(),
-        onOpenPaper: (p) => opened = p,
-      ),
+      HomeScreen(papersRepository: MockPapersRepository(), shopRepository: MockShopRepository(), onLogin: () => loginOpened = true),
     ));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    expect(find.textContaining('Mathématiques · Baccalauréat 2025'), findsOneWidget);
 
-    await tester.tap(find.textContaining('Mathématiques · Baccalauréat 2025'));
-    await tester.pump();
-    expect(opened?.id, 7);
-    expect(find.text('Free to view (marking guide sold separately)'), findsOneWidget);
-  });
+    expect(find.text('Log in to browse papers'), findsOneWidget);
 
-  testWidgets('HomeScreen (guest) does not claim a marking guide exists for a free-to-view report', (tester) async {
-    // Regression: this card used to show the exam-paper-flavored "marking
-    // guide sold separately" copy for reports too, which have no
-    // marking-guide/instructor pipeline at all.
-    final seeded = PaperEntry(
-      id: 9,
-      year: 2024,
-      system: null,
-      track: '',
-      status: 'PUBLISHED',
-      fileUrl: null,
-      createdAt: DateTime(2024, 1, 1),
-      examTypeName: 'Internship Report',
-      categoryKey: 'reports',
-    );
-    await tester.pumpWidget(l10nTestApp(
-      HomeScreen(papersRepository: MockPapersRepository(seedPublished: [seeded]), shopRepository: MockShopRepository()),
-    ));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-    expect(find.textContaining('marking guide'), findsNothing);
-    expect(find.text('Free to view and download'), findsOneWidget);
-  });
-
-  testWidgets('HomeScreen (guest) shows a payment-required note for a gated report', (tester) async {
-    final seeded = PaperEntry(
-      id: 10,
-      year: 2024,
-      system: null,
-      track: '',
-      status: 'PUBLISHED',
-      fileUrl: null,
-      createdAt: DateTime(2024, 1, 1),
-      examTypeName: 'PhD Thesis (Thèse)',
-      categoryKey: 'reports',
-      requiresUnlock: true,
-    );
-    await tester.pumpWidget(l10nTestApp(
-      HomeScreen(papersRepository: MockPapersRepository(seedPublished: [seeded]), shopRepository: MockShopRepository()),
-    ));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-    expect(find.text('Payment required to view'), findsOneWidget);
+    await tester.tap(find.text('Log in'));
+    expect(loginOpened, isTrue);
   });
 
   testWidgets('LoggedInHomeScreen builds with real profile/streak/daily-challenge data', (tester) async {
@@ -254,7 +197,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Invité'), findsOneWidget);
-    expect(find.text("Aucune épreuve publiée pour l'instant. Revenez bientôt."), findsOneWidget);
+    expect(find.text('Connectez-vous pour parcourir les épreuves'), findsOneWidget);
     expect(find.text('Guest'), findsNothing);
   });
 

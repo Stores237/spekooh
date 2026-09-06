@@ -251,36 +251,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get homeExploringBadge => 'Vous explorez : sans compte';
 
   @override
-  String get homeFreeViewsLabel => 'ÉPREUVES GRATUITES';
+  String get accountRequiredTitle => 'Connectez-vous pour continuer';
 
   @override
-  String get homeFreeViewsCount => '3 par jour';
+  String get papersRequireAccountBody =>
+      'Parcourir et consulter de vraies épreuves et rapports nécessite un compte gratuit.';
 
   @override
-  String get homeFreeViewsHint =>
-      'Aucun compte requis. Inscrivez-vous pour suivre votre utilisation et débloquer plus.';
+  String get homeBrowsePapersLabel => 'ÉPREUVES ET RAPPORTS';
 
   @override
-  String get goPro => 'Passer à Pro';
+  String get homeBrowsePapersTitle =>
+      'Connectez-vous pour parcourir les épreuves';
 
   @override
-  String get homeNoPapersYet =>
-      'Aucune épreuve publiée pour l\'instant. Revenez bientôt.';
-
-  @override
-  String homePaperLabelWithYear(String label, int year) {
-    return '$label $year';
-  }
-
-  @override
-  String get homeFreeToView =>
-      'Consultation gratuite (corrigé vendu séparément)';
-
-  @override
-  String get homeFreeToViewReport => 'Gratuit à consulter et télécharger';
-
-  @override
-  String get homeReportPaymentRequired => 'Paiement requis pour consulter';
+  String get homeBrowsePapersHint =>
+      'Consulter et télécharger de vraies épreuves et rapports nécessite un compte gratuit.';
 
   @override
   String get homeContributionTitle => 'Contribution : gagnez des crédits';
@@ -491,6 +477,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get searchPapersInCategory => 'Rechercher par année...';
+
+  @override
+  String get searchReportsInCategory => 'Rechercher par titre ou année...';
 
   @override
   String get paperSearchNoResultsTitle => 'Aucun résultat';

@@ -394,17 +394,18 @@ def test_free_tier_report_is_viewable_by_anyone_without_unlock():
 
 
 @pytest.mark.django_db
-def test_free_tier_report_is_free_to_download_without_any_unlock(api_client):
+def test_free_tier_report_is_free_to_download_without_any_unlock(authed_client):
     """Owner decision: Internship/Bachelor's/HND reports need no PaperUnlock
     to download — unlike Master's/PhD-tier reports and exam papers, whose
     PaperUnlock also gates the marking guide."""
+    client, _user = authed_client
     reports_category = ExamCategoryFactory(key="reports", requires_system=False)
     internship = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
     submission = PaperSubmissionFactory(
         category=reports_category, exam_type=internship, subject=None, status=PaperStatus.PUBLISHED
     )
 
-    response = api_client.get(f"/api/papers/submissions/{submission.id}/")
+    response = client.get(f"/api/papers/submissions/{submission.id}/")
 
     assert response.data["is_unlocked"] is True
 
@@ -585,10 +586,38 @@ def test_detail_returns_full_fields(authed_client):
 
 
 @pytest.mark.django_db
-def test_guest_can_browse_published_papers_but_not_others(api_client):
+def test_an_unauthenticated_request_cannot_browse_papers_at_all(api_client):
+    """Owner decision (2026-09-06, supersedes the original spec): viewing a
+    paper/report — including just browsing the list — now requires a real,
+    non-guest account. Only contributing one is still guest-accessible."""
+    PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+    response = api_client.get("/api/papers/submissions/")
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_a_guest_account_cannot_browse_papers_either_only_a_real_one_can():
+    """The precise class of bug this supersedes: a guest is a real DB row
+    with a real JWT (User.objects.create_guest), not merely "no auth" — so
+    the fix has to specifically exclude account_type=GUEST
+    (IsAuthenticatedNotGuest), not just require *some* authentication."""
+    from apps.accounts.models import User
+
+    guest = User.objects.create_guest(name="Live Verify Guest")
+    client = APIClient()
+    client.force_authenticate(user=guest)
+    PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+
+    response = client.get("/api/papers/submissions/")
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_a_real_account_can_browse_published_papers_but_not_others(authed_client):
+    client, _user = authed_client
     published = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
     PaperSubmissionFactory(status=PaperStatus.PENDING_REVIEW)
-    response = api_client.get("/api/papers/submissions/")
+    response = client.get("/api/papers/submissions/")
     assert response.status_code == 200
     rows = response.data["results"] if isinstance(response.data, dict) else response.data
     ids = [row["id"] for row in rows]
@@ -672,17 +701,15 @@ def test_view_endpoint_enforces_paywall(api_client):
 
 
 @pytest.mark.django_db
-def test_view_endpoint_allows_guests_without_tracking_or_paywalling_them(api_client):
-    """Reading stays open to guests (spec) — there's no identity to
-    rate-limit an anonymous viewer against, so the daily-view paywall never
-    applies to them. Previously this 401'd (the endpoint defaulted to the
-    viewset's class-level IsAuthenticated), silently swallowed by the
-    client — guests already got unlimited views in practice, just via a
-    console error instead of a real 204."""
+def test_view_endpoint_rejects_an_unauthenticated_request_outright(api_client):
+    """Owner decision (2026-09-06, supersedes the original spec): reading —
+    viewing a paper at all, this action included — is no longer
+    guest-accessible. This used to be a deliberate 204 no-op exemption for
+    guests specifically; the whole viewset (not just this action) now
+    requires a real, non-guest account before it's ever reached."""
     paper = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
-    for _ in range(DAILY_FREE_VIEWS + 3):
-        response = api_client.post(f"/api/papers/submissions/{paper.id}/view/")
-        assert response.status_code == 204
+    response = api_client.post(f"/api/papers/submissions/{paper.id}/view/")
+    assert response.status_code == 401
     assert PaperViewLog.objects.filter(paper_submission=paper).count() == 0
 
 
@@ -802,6 +829,134 @@ def test_process_ocr_endpoint_works_for_staff(tmp_path, api_client):
     response = api_client.post(f"/api/papers/submissions/{paper.id}/process_ocr/")
     assert response.status_code == 200
     assert "paper text" in response.data["ocr_text"].lower()
+
+
+class TestRunPendingOcr:
+    """apps.papers.services.run_pending_ocr — the wrapper
+    process_pending_ocr (cron-driven) actually calls, same split as
+    apps.ai.services.run_pending_generation."""
+
+    @pytest.mark.django_db
+    def test_a_real_success_marks_the_row_done(self, tmp_path):
+        from .models import OcrStatus
+        from .services import run_pending_ocr
+
+        file_path = _fixture_image(tmp_path, "Geography Rivers And Mountains")
+        paper = PaperSubmissionFactory(file_ref=file_path)
+        assert paper.ocr_status == OcrStatus.PENDING  # the model's own default
+
+        run_pending_ocr(paper)
+
+        paper.refresh_from_db()
+        assert paper.ocr_status == OcrStatus.DONE
+        assert "Geography" in paper.ocr_text
+        assert paper.ocr_attempts == 1
+
+    @pytest.mark.django_db
+    def test_a_real_failure_fails_the_row_but_creates_no_ticket_before_three_attempts(self):
+        from apps.admin_queue.models import AdminFlagQueue
+
+        from .models import OcrStatus
+        from .services import run_pending_ocr
+
+        # No real file at this path at all — extract_text_from_fieldfile's
+        # own FieldFile.open() raises, a real, uncontrived OCR failure.
+        paper = PaperSubmissionFactory(file_ref="", uploaded_file=None)
+
+        with pytest.raises(TypeError):
+            run_pending_ocr(paper)
+
+        paper.refresh_from_db()
+        assert paper.ocr_status == OcrStatus.FAILED
+        assert paper.ocr_attempts == 1
+        assert paper.ocr_error != ""
+        assert AdminFlagQueue.objects.count() == 0
+
+    @pytest.mark.django_db
+    def test_the_third_failed_attempt_raises_a_real_review_team_ticket(self):
+        from apps.admin_queue.models import AdminFlagQueue, FlagCategory
+
+        from .models import OcrStatus
+        from .services import run_pending_ocr
+
+        paper = PaperSubmissionFactory(file_ref="", uploaded_file=None)
+        paper.ocr_attempts = 2  # simulate two prior failed cron runs
+        paper.save(update_fields=["ocr_attempts"])
+
+        with pytest.raises(TypeError):
+            run_pending_ocr(paper)
+
+        paper.refresh_from_db()
+        assert paper.ocr_status == OcrStatus.FAILED
+        assert paper.ocr_attempts == 3
+        ticket = AdminFlagQueue.objects.get()
+        assert ticket.category == FlagCategory.OTHER
+        assert ticket.object_id == str(paper.pk)
+        assert "3 attempts" in ticket.reason
+
+
+class TestProcessPendingOcrCommand:
+    @pytest.mark.django_db
+    def test_processes_a_real_pending_submission_end_to_end(self, tmp_path):
+        from django.core.management import call_command
+
+        from .models import OcrStatus
+
+        file_path = _fixture_image(tmp_path, "Literature Poetry Analysis")
+        paper = PaperSubmissionFactory(file_ref=file_path)
+
+        call_command("process_pending_ocr")
+
+        paper.refresh_from_db()
+        assert paper.ocr_status == OcrStatus.DONE
+        assert "Literature" in paper.ocr_text
+
+    @pytest.mark.django_db
+    def test_a_report_category_submission_is_processed_identically_to_an_exam_paper(self, tmp_path):
+        """The real regression test for what this whole feature fixes:
+        nothing in the OCR pipeline or this command singles out
+        category="reports" — same command, same query, same code path."""
+        from django.core.management import call_command
+
+        from .models import OcrStatus
+
+        reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+        internship = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+        file_path = _fixture_image(tmp_path, "Software Engineering Internship Summary")
+        report = PaperSubmissionFactory(category=reports_category, exam_type=internship, subject=None, file_ref=file_path)
+
+        call_command("process_pending_ocr")
+
+        report.refresh_from_db()
+        assert report.ocr_status == OcrStatus.DONE
+        assert "Software Engineering" in report.ocr_text
+
+    @pytest.mark.django_db
+    def test_a_done_row_is_never_reprocessed(self, tmp_path):
+        from django.core.management import call_command
+
+        from .models import OcrStatus
+
+        file_path = _fixture_image(tmp_path, "Already processed text")
+        paper = PaperSubmissionFactory(file_ref=file_path, ocr_status=OcrStatus.DONE, ocr_text="Pre-existing text")
+
+        call_command("process_pending_ocr")
+
+        paper.refresh_from_db()
+        assert paper.ocr_text == "Pre-existing text"  # untouched, not silently re-run
+
+    @pytest.mark.django_db
+    def test_a_row_already_failed_three_times_is_never_retried_again(self):
+        from django.core.management import call_command
+
+        from .models import OcrStatus
+
+        paper = PaperSubmissionFactory(file_ref="", uploaded_file=None, ocr_status=OcrStatus.FAILED, ocr_attempts=3)
+
+        call_command("process_pending_ocr")
+
+        paper.refresh_from_db()
+        assert paper.ocr_attempts == 3  # untouched — MAX_OCR_ATTEMPTS already reached
 
 
 @pytest.mark.django_db

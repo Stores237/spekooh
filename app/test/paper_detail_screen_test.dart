@@ -297,6 +297,10 @@ void main() {
     );
 
     Future<void> pumpWithFile(WidgetTester tester) async {
+      // Saving offline now requires a real account (owner decision,
+      // 2026-09-06) — logged in here so these tests exercise the actual
+      // save, not the login gate; that gate has its own dedicated test.
+      AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage())..accessToken = 'fake-access-token');
       await tester.pumpWidget(l10nTestApp(
         PaperDetailScreen(paperEntry: entryWithFile, repository: _FileBackedPapersRepository(entryWithFile), adController: _FakeRewardedAdController(grantsReward: true)),
       ));
@@ -352,10 +356,30 @@ void main() {
       expect(find.textContaining('Could not save for offline'), findsOneWidget);
       expect(OfflinePapersStore.instance.isSaved(2), isFalse);
     });
+
+    testWidgets('a guest tapping "Save offline" sees the real login sheet first, saves nothing', (tester) async {
+      AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
+      OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: entryWithFile, repository: _FileBackedPapersRepository(entryWithFile), adController: _FakeRewardedAdController(grantsReward: true)),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.tap(find.text('Save offline'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AuthSheet), findsOneWidget);
+      expect(OfflinePapersStore.instance.isSaved(2), isFalse);
+    });
   });
 
   group('academic report access control', () {
     Future<void> pumpReport(WidgetTester tester, PaperEntry entry) async {
+      // Save offline (used by one test in this group) now requires a real
+      // account — logged in here so it isn't accidentally blocked by the
+      // login gate; unaffected by every other assertion in this group.
+      AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage())..accessToken = 'fake-access-token');
       OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
       await tester.pumpWidget(l10nTestApp(
         PaperDetailScreen(paperEntry: entry, repository: _FileBackedPapersRepository(entry), adController: _FakeRewardedAdController(grantsReward: true)),
