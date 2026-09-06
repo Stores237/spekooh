@@ -203,6 +203,19 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       await store.remove(paperId);
       return;
     }
+    // Owner decision (2026-09-06): saving a paper/report offline now
+    // requires a real account too — OfflinePapersStore itself has no auth
+    // concept at all (it's pure local disk), so this is the one place that
+    // has to enforce it. Same inline-AuthSheet pattern as _openChat.
+    if (!AuthSession.instance.isLoggedIn) {
+      final loggedIn = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => const AuthSheet(),
+      );
+      if (loggedIn != true || !mounted) return;
+    }
     setState(() => _savingOffline = true);
     try {
       await store.save(paperId: paperId, title: title, subtitle: subtitle, fileUrl: fileUrl);

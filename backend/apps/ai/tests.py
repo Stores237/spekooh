@@ -177,8 +177,32 @@ class TestGeneratePendingArtifactsCommand:
 
 class TestPaperSummaryView:
     @pytest.mark.django_db
-    def test_a_guest_gets_a_pending_response_for_a_fresh_free_paper(self, api_client):
+    def test_an_unauthenticated_request_is_rejected_outright(self, api_client):
+        """Owner decision (2026-09-06, supersedes this view's own original
+        AllowAny): viewing a paper's AI summary now requires the same real,
+        non-guest account as viewing the paper itself."""
         paper = _published_paper()
+        response = api_client.get(f"/api/ai/papers/{paper.pk}/summary/")
+        assert response.status_code == 401
+
+    @pytest.mark.django_db
+    def test_a_guest_account_is_rejected_too_not_just_anonymous_requests(self, api_client):
+        """A guest is a real DB row with a real JWT (User.objects
+        .create_guest), not merely "no auth" — IsAuthenticatedNotGuest has
+        to specifically exclude account_type=GUEST, not just require *some*
+        authentication."""
+        from apps.accounts.models import User
+
+        guest = User.objects.create_guest(name="Live Verify Guest")
+        api_client.force_authenticate(user=guest)
+        paper = _published_paper()
+        response = api_client.get(f"/api/ai/papers/{paper.pk}/summary/")
+        assert response.status_code == 403
+
+    @pytest.mark.django_db
+    def test_a_real_account_gets_a_pending_response_for_a_fresh_free_paper(self, api_client):
+        paper = _published_paper()
+        api_client.force_authenticate(user=UserFactory())
         response = api_client.get(f"/api/ai/papers/{paper.pk}/summary/")
         assert response.status_code == 202
         assert response.data["status"] == "pending"
@@ -191,6 +215,7 @@ class TestPaperSummaryView:
         artifact.body = "Cached summary body."
         artifact.save()
 
+        api_client.force_authenticate(user=UserFactory())
         response = api_client.get(f"/api/ai/papers/{paper.pk}/summary/")
         assert response.status_code == 200
         assert response.data["body"] == "Cached summary body."
@@ -198,6 +223,7 @@ class TestPaperSummaryView:
     @pytest.mark.django_db
     def test_an_unpublished_papers_summary_404s_for_a_stranger(self, api_client):
         paper = _published_paper(status=PaperStatus.PENDING_REVIEW)
+        api_client.force_authenticate(user=UserFactory())
         response = api_client.get(f"/api/ai/papers/{paper.pk}/summary/")
         assert response.status_code == 404
 
@@ -215,6 +241,7 @@ class TestPaperSummaryView:
         # ignoring requires_payment_to_view entirely.
         exam_type = ExamTypeFactory(system="francophone", name="PhD Thesis", requires_payment_to_view=True)
         paper = _published_paper(exam_type=exam_type, category=exam_type.category)
+        api_client.force_authenticate(user=UserFactory())
         response = api_client.get(f"/api/ai/papers/{paper.pk}/summary/")
         assert response.status_code == 402
 
@@ -229,6 +256,7 @@ class TestPaperSummaryView:
     @pytest.mark.django_db
     def test_ai_enabled_false_is_a_real_kill_switch_on_the_endpoint_too(self, api_client):
         paper = _published_paper()
+        api_client.force_authenticate(user=UserFactory())
         with override_settings(AI_ENABLED=False):
             response = api_client.get(f"/api/ai/papers/{paper.pk}/summary/")
         assert response.status_code == 503
@@ -337,6 +365,21 @@ class TestPaperChatView:
         paper = _published_paper()
         response = api_client.post(f"/api/ai/papers/{paper.pk}/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
         assert response.status_code in (401, 403)
+
+    @pytest.mark.django_db
+    def test_a_guest_account_is_rejected_too_a_real_regression_this_endpoint_used_to_have(self, api_client):
+        """Fixed 2026-09-06: this endpoint's own docstring always claimed
+        "real accounts only", but was actually built with plain
+        IsAuthenticated, which a guest JWT satisfies just as well as a real
+        one — a guest genuinely could chat (and consume the shared Groq
+        budget) before this was IsAuthenticatedNotGuest for real."""
+        from apps.accounts.models import User
+
+        guest = User.objects.create_guest(name="Live Verify Guest")
+        api_client.force_authenticate(user=guest)
+        paper = _published_paper()
+        response = api_client.post(f"/api/ai/papers/{paper.pk}/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+        assert response.status_code == 403
 
     @pytest.mark.django_db
     def test_an_unpublished_papers_chat_404s_for_a_stranger(self, api_client):

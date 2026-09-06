@@ -16,7 +16,14 @@ from .duplicate_detection import (
     TfidfDuplicateDetector,
     exact_duplicate_hash,
 )
-from .models import AdWatchEvent, PaperFlag, PaperStatus, PaperSubmission, PaperViewLog
+from .models import (
+    AdWatchEvent,
+    OcrStatus,
+    PaperFlag,
+    PaperStatus,
+    PaperSubmission,
+    PaperViewLog,
+)
 from .ocr import extract_text, extract_text_from_fieldfile
 from .watermark import watermark_bytes
 
@@ -275,10 +282,44 @@ def process_ocr_and_duplicate_check(paper_submission: PaperSubmission) -> PaperS
         paper_submission.is_duplicate = False
         paper_submission.duplicate_of = None
 
+    paper_submission.ocr_status = OcrStatus.DONE
+    paper_submission.ocr_error = ""
     paper_submission.save(
-        update_fields=["ocr_text", "duplicate_hash", "is_duplicate", "duplicate_of", "updated_at"]
+        update_fields=["ocr_text", "duplicate_hash", "is_duplicate", "duplicate_of", "ocr_status", "ocr_error", "updated_at"]
     )
     return paper_submission
+
+
+MAX_OCR_ATTEMPTS = 3
+
+
+def run_pending_ocr(paper_submission: PaperSubmission) -> None:
+    """
+    The one place that turns a PENDING/FAILED ocr_status into DONE/FAILED —
+    shared by the real management command (process_pending_ocr) and its
+    own tests, same split as apps.ai.services.run_pending_generation.
+    Raises on failure (any real OCR exception — a corrupt file, a missing
+    Tesseract/poppler dependency, the file having vanished from storage —
+    process_ocr_and_duplicate_check has no typed exception hierarchy of
+    its own) so the caller can log/count it; this function's own job is
+    just recording the attempt and, after MAX_OCR_ATTEMPTS, raising a real
+    Review Team ticket instead of failing silently forever.
+    """
+    paper_submission.ocr_attempts += 1
+    paper_submission.save(update_fields=["ocr_attempts", "updated_at"])
+    try:
+        process_ocr_and_duplicate_check(paper_submission)
+    except Exception as exc:
+        paper_submission.ocr_status = OcrStatus.FAILED
+        paper_submission.ocr_error = str(exc)[:2000]
+        paper_submission.save(update_fields=["ocr_status", "ocr_error", "updated_at"])
+        if paper_submission.ocr_attempts >= MAX_OCR_ATTEMPTS:
+            flag(
+                subject=paper_submission,
+                category=FlagCategory.OTHER,
+                reason=f"OCR failed after {paper_submission.ocr_attempts} attempts: {paper_submission.ocr_error}",
+            )
+        raise
 
 
 def mark_published(paper: PaperSubmission) -> PaperSubmission:

@@ -394,6 +394,14 @@ TRIGGERABLE_COMMANDS = {
     # deliberately doesn't run (see apps.ai.management.commands
     # .generate_pending_artifacts's own docstring for why).
     "generate-ai-artifacts": "generate_pending_artifacts",
+    # OCR (2026-09-06) — used to run only via a manual, admin-only action
+    # neither publish path ever called, so a normally-published submission
+    # (paper or report, no distinction) had permanently empty ocr_text and
+    # apps.ai's summary/chat silently never worked for it. This makes it
+    # automatic: every new submission starts eligible, this command picks
+    # it up within a few minutes. See apps/papers/management/commands
+    # /process_pending_ocr.py's own docstring.
+    "process-pending-ocr": "process_pending_ocr",
 }
 
 
@@ -413,13 +421,14 @@ def run_task(request, name):
 
 Routed at `config/urls.py`: `path('internal/tasks/<str:name>/', run_task)`.
 
-At cron-job.org (free), create four jobs POSTing to:
+At cron-job.org (free), create five jobs POSTing to:
 
 ```
 https://spekooh-staging.onrender.com/internal/tasks/process-instructor-timeouts/
 https://spekooh-staging.onrender.com/internal/tasks/process-pamphlet-expiry/
 https://spekooh-staging.onrender.com/internal/tasks/prune-stale-guest-accounts/
 https://spekooh-staging.onrender.com/internal/tasks/generate-ai-artifacts/
+https://spekooh-staging.onrender.com/internal/tasks/process-pending-ocr/
 ```
 
 each with header `X-Task-Token: <the TASK_TRIGGER_TOKEN you set in §4>`, on
@@ -432,7 +441,14 @@ Every few minutes is reasonable; it's a capped batch per run (`BATCH_SIZE
 actually generate anything (see §4) — safe to schedule before that key
 exists, it'll just no-op-fail each pending row until it's set.
 
-A fourth endpoint on the same mechanism, but on-demand rather than
+The fifth (`process-pending-ocr`, added 2026-09-06) is what makes AI
+summary/chat actually work at all for a newly-published paper or report —
+without it, `ocr_text` stays empty forever and both AI features silently
+never generate anything. Every few minutes is reasonable here too; no
+external API key needed (local Tesseract), so nothing to configure before
+scheduling it.
+
+Another endpoint on the same mechanism, but on-demand rather than
 scheduled: `.../internal/tasks/delete-test-accounts/` deletes every `User`
 row whose email ends in `@example.com` (the reserved test domain — see
 `apps/accounts/management/commands/delete_test_accounts.py`). Live-testing

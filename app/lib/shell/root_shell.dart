@@ -3,11 +3,11 @@ import '../data/auth_session.dart';
 import '../data/repository_locator.dart';
 import '../l10n/app_localizations.dart';
 import '../models/pamphlet.dart';
-import '../models/paper_entry.dart';
 import '../sheets/auth_sheet.dart';
 import '../sheets/pamphlet_sheet.dart';
 import '../sheets/paywall_sheet.dart';
 import '../theme/app_colors.dart';
+import '../widgets/account_required_view.dart';
 import '../widgets/ai_assistant_fab.dart';
 import '../widgets/bottom_nav.dart';
 import '../screens/notes/notes_screen.dart';
@@ -127,7 +127,13 @@ class RootShellState extends State<RootShell> {
     );
     if (success == true) {
       login();
-      if (context.mounted) Navigator.of(context).pop();
+      // Dismisses whatever pushed screen (Settings/Profile) this was
+      // opened from, returning to Home underneath it. Guarded by canPop()
+      // (2026-09-06 fix) — Home/Papers's own guest prompts call this
+      // straight from tab-level content, not a pushed screen, and an
+      // unconditional pop() there popped RootShell's own single root route
+      // instead, breaking navigation entirely.
+      if (context.mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
     }
   }
 
@@ -163,10 +169,6 @@ class RootShellState extends State<RootShell> {
 
   void _openPaperDetail(BuildContext context, [PaperSelection? paper]) => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => PaperDetailScreen(paper: paper, onOpenPaywall: () => _openPaywall(context))),
-      );
-
-  void _openPaperEntryDetail(BuildContext context, PaperEntry entry) => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => PaperDetailScreen(paperEntry: entry, onOpenPaywall: () => _openPaywall(context))),
       );
 
   void _openPaywall(BuildContext context) => showModalBottomSheet(
@@ -212,9 +214,7 @@ class RootShellState extends State<RootShell> {
             index: _activeTab,
             children: [
               Builder(builder: _buildHomeTab),
-              Builder(
-                builder: (context) => PapersScreen(onOpenPaper: (paper) => _openPaperDetail(context, paper)),
-              ),
+              Builder(builder: _buildPapersTab),
               SubmitScreen(),
               ForumScreen(),
               QuizzesScreen(),
@@ -235,6 +235,20 @@ class RootShellState extends State<RootShell> {
         floatingActionButton: _isLoggedIn ? const AIAssistantFab() : null,
       ),
     );
+  }
+
+  // Owner decision (2026-09-06): viewing a paper/report — the Papers tab's
+  // entire purpose — is no longer guest-accessible at all, only
+  // contributing one still is (PaperSubmissionViewSet's own permission
+  // comment on the backend). A guest never even reaches PapersScreen's own
+  // taxonomy drill-down now, rather than getting partway through it and
+  // hitting a 401 on the final papers-by-year step.
+  Widget _buildPapersTab(BuildContext context) {
+    if (!_isLoggedIn) {
+      final l10n = AppLocalizations.of(context)!;
+      return AccountRequiredView(body: l10n.papersRequireAccountBody, onLogin: () => _openAuthSheet(context));
+    }
+    return PapersScreen(onOpenPaper: (paper) => _openPaperDetail(context, paper));
   }
 
   Widget _buildHomeTab(BuildContext context) {
@@ -258,9 +272,8 @@ class RootShellState extends State<RootShell> {
       onOpenNotes: () => _openNotes(context),
       onOpenShop: () => _openShop(context),
       onOpenSubmit: () => goToTab(2),
-      onOpenPaper: (entry) => _openPaperEntryDetail(context, entry),
       onOpenPamphlet: () => _openPamphlet(context),
-      onOpenPaywall: () => _openPaywall(context),
+      onLogin: () => _openAuthSheet(context),
     );
   }
 }

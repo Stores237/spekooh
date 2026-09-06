@@ -548,59 +548,35 @@ abstract class AppLocalizations {
   /// **'Exploring: no account'**
   String get homeExploringBadge;
 
-  /// No description provided for @homeFreeViewsLabel.
+  /// No description provided for @accountRequiredTitle.
   ///
   /// In en, this message translates to:
-  /// **'FREE PAPER VIEWS'**
-  String get homeFreeViewsLabel;
+  /// **'Log in to continue'**
+  String get accountRequiredTitle;
 
-  /// No description provided for @homeFreeViewsCount.
+  /// No description provided for @papersRequireAccountBody.
   ///
   /// In en, this message translates to:
-  /// **'3 a day'**
-  String get homeFreeViewsCount;
+  /// **'Browsing and viewing real papers and reports requires a free account.'**
+  String get papersRequireAccountBody;
 
-  /// No description provided for @homeFreeViewsHint.
+  /// No description provided for @homeBrowsePapersLabel.
   ///
   /// In en, this message translates to:
-  /// **'No account needed. Sign up to track usage and unlock more.'**
-  String get homeFreeViewsHint;
+  /// **'PAPERS & REPORTS'**
+  String get homeBrowsePapersLabel;
 
-  /// No description provided for @goPro.
+  /// No description provided for @homeBrowsePapersTitle.
   ///
   /// In en, this message translates to:
-  /// **'Go Pro'**
-  String get goPro;
+  /// **'Log in to browse papers'**
+  String get homeBrowsePapersTitle;
 
-  /// No description provided for @homeNoPapersYet.
+  /// No description provided for @homeBrowsePapersHint.
   ///
   /// In en, this message translates to:
-  /// **'No papers published yet. Check back soon.'**
-  String get homeNoPapersYet;
-
-  /// No description provided for @homePaperLabelWithYear.
-  ///
-  /// In en, this message translates to:
-  /// **'{label} {year}'**
-  String homePaperLabelWithYear(String label, int year);
-
-  /// No description provided for @homeFreeToView.
-  ///
-  /// In en, this message translates to:
-  /// **'Free to view (marking guide sold separately)'**
-  String get homeFreeToView;
-
-  /// No description provided for @homeFreeToViewReport.
-  ///
-  /// In en, this message translates to:
-  /// **'Free to view and download'**
-  String get homeFreeToViewReport;
-
-  /// No description provided for @homeReportPaymentRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Payment required to view'**
-  String get homeReportPaymentRequired;
+  /// **'Viewing and downloading real past papers and reports requires a free account.'**
+  String get homeBrowsePapersHint;
 
   /// No description provided for @homeContributionTitle.
   ///
@@ -955,6 +931,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search by year...'**
   String get searchPapersInCategory;
+
+  /// No description provided for @searchReportsInCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by title or year...'**
+  String get searchReportsInCategory;
 
   /// No description provided for @paperSearchNoResultsTitle.
   ///

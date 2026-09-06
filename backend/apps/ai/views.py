@@ -1,10 +1,11 @@
 from django.conf import settings
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework import permissions, status
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import IsAuthenticatedNotGuest
 from apps.papers.models import PaperStatus, PaperSubmission
 from apps.papers.services import user_can_view_file
 from apps.payments.models import Subscription
@@ -17,27 +18,28 @@ from .services import get_or_queue_artifact, send_chat_message, validate_chat_me
 
 class PaperSummaryView(APIView):
     """
-    AllowAny at the permission-class level, same as PaperSubmissionViewSet's
-    own retrieve/list/view actions (apps.papers.views) — guest browsing is
-    real, spec'd behavior, not an oversight. The actual gate is the same
-    two real checks that endpoint already applies: is this paper even
-    visible to this caller (published, or their own), and does viewing its
-    file require a payment this caller hasn't made
+    IsAuthenticatedNotGuest at the permission-class level (2026-09-06,
+    supersedes this class's own earlier AllowAny) — mirrors
+    PaperSubmissionViewSet's own retrieve/list/view actions on the backend,
+    which now require the same real, non-guest account to even view a
+    paper at all; an AI summary of a paper you can't view otherwise would
+    be an inconsistent loophole. The actual content gate underneath that
+    is the same two real checks that endpoint already applies: is this
+    paper even visible to this caller (published, or their own), and does
+    viewing its file require a payment this caller hasn't made
     (apps.papers.services.user_can_view_file) — an AI summary of a
     paid/private paper would otherwise be a free way around the paywall
     that generates the file itself.
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAuthenticatedNotGuest]
 
     def get(self, request, pk):
         if not settings.AI_ENABLED:
             return Response({"detail": "AI features are currently unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         user = request.user
-        visible = Q(status=PaperStatus.PUBLISHED)
-        if user.is_authenticated:
-            visible |= Q(submitted_by=user)
+        visible = Q(status=PaperStatus.PUBLISHED) | Q(submitted_by=user)
         paper = get_object_or_404(PaperSubmission.objects.filter(visible), pk=pk)
 
         if not user_can_view_file(user, paper):
@@ -53,7 +55,9 @@ class PaperSummaryView(APIView):
 class PaperChatView(APIView):
     """
     Lane B — the real-time Groq student chatbot. Real accounts only
-    (IsAuthenticated, unlike PaperSummaryView's AllowAny): this endpoint
+    (IsAuthenticatedNotGuest — fixed 2026-09-06; this used to say
+    "IsAuthenticated" here and mean it, but was actually still built with
+    plain IsAuthenticated, which a guest JWT satisfies too): this endpoint
     costs real money per message and needs a stable identity to enforce a
     meaningful daily quota against (apps.ai.quota.consume_chat_quota) — a
     guest's token is minted fresh essentially per session elsewhere in this
@@ -66,7 +70,7 @@ class PaperChatView(APIView):
     own docstrings for why nothing is persisted server-side.
     """
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedNotGuest]
 
     def post(self, request, pk):
         if not settings.AI_ENABLED or not settings.AI_CHAT_ENABLED:

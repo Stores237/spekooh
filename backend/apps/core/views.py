@@ -39,6 +39,11 @@ TRIGGERABLE_COMMANDS = {
     # apps.ai.management.commands.generate_pending_artifacts's own
     # docstring). Point a cron-job.org schedule at this every few minutes.
     "generate-ai-artifacts": "generate_pending_artifacts",
+    # OCR (2026-09-06) — every new paper/report submission now needs this
+    # to run before its AI summary/chat can ever work; see
+    # apps.papers.management.commands.process_pending_ocr's own docstring
+    # for why this replaced the old manual, admin-only process_ocr action.
+    "process-pending-ocr": "process_pending_ocr",
 }
 
 

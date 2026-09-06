@@ -345,13 +345,19 @@ class _PapersScreenState extends State<PapersScreen> {
         final loading = papersSnapshot.connectionState == ConnectionState.waiting;
         final allPapers = papersSnapshot.data ?? const <PaperEntry>[];
         final isReports = subject == null;
-        // Word-matching against exactly what's shown per row (exam type,
-        // subject, year) — scoped to papers already resolved for this one
-        // category/exam-type/subject/track, not a global search.
+        // Word-matching against exactly what's shown per row. Reports have
+        // no subject taxonomy of their own (see PaperSubmission's own
+        // comment on that), so year used to be the *only* thing that told
+        // two rows apart — real institution/discipline/supervisor text
+        // (already on PaperEntry, already shown per row below for reports)
+        // is a far more practical thing to search by than a number every
+        // other intern that year shares too.
         final query = _paperQuery.trim().toLowerCase();
         final papers = query.isEmpty
             ? allPapers
-            : allPapers.where((p) => '${examType.name} ${subject?.title ?? ''} ${p.year}'.toLowerCase().contains(query)).toList();
+            : allPapers
+                .where((p) => '${examType.name} ${subject?.title ?? ''} ${p.institution} ${p.discipline} ${p.supervisorName} ${p.year}'.toLowerCase().contains(query))
+                .toList();
 
         return SingleChildScrollView(
           child: Column(
@@ -366,7 +372,11 @@ class _PapersScreenState extends State<PapersScreen> {
               ),
               if (!loading && allPapers.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.space3),
-                SearchInput(placeholder: l10n.searchPapersInCategory, controller: _searchController, onChanged: (v) => setState(() => _paperQuery = v)),
+                SearchInput(
+                  placeholder: isReports ? l10n.searchReportsInCategory : l10n.searchPapersInCategory,
+                  controller: _searchController,
+                  onChanged: (v) => setState(() => _paperQuery = v),
+                ),
               ],
               const SizedBox(height: AppSpacing.space4),
               if (loading)
@@ -401,19 +411,38 @@ class _PapersScreenState extends State<PapersScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('${examType.name} ${paper.year}', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                // Reports have no subject taxonomy (the
+                                // header above is just the exam type, e.g.
+                                // "Internship Report") and no guaranteed
+                                // unique year either — two different
+                                // students' 2023 internship reports used to
+                                // render as identical rows. discipline (or
+                                // institution, if that's blank) is the
+                                // report's own real title; falls back to
+                                // the old "{examType} {year}" label only if
+                                // a legacy submission has neither set.
+                                Text(
+                                  _rowTitle(examType: examType, paper: paper, isReports: isReports),
+                                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
+                                ),
                                 // Reports never have a marking guide (see the
                                 // Academic Reports subtitle) — that copy would
                                 // be actively wrong here, not just generic.
                                 // A published exam paper can genuinely have
                                 // no guide yet (see PaperEntry.hasMarkingGuide)
-                                // — publishing no longer waits on one.
+                                // — publishing no longer waits on one. Year
+                                // moved here (from the title above) for
+                                // reports, now that the title itself carries
+                                // the real distinguishing information.
                                 Text(
-                                  !paper.isPublished
-                                      ? l10n.paperUnderReview
-                                      : (isReports
-                                          ? l10n.publishedStatus
-                                          : (paper.hasMarkingGuide ? l10n.paperMarkingGuideAvailable : l10n.paperMarkingGuideNotYetAvailable)),
+                                  [
+                                    if (isReports) '${paper.year}',
+                                    !paper.isPublished
+                                        ? l10n.paperUnderReview
+                                        : (isReports
+                                            ? l10n.publishedStatus
+                                            : (paper.hasMarkingGuide ? l10n.paperMarkingGuideAvailable : l10n.paperMarkingGuideNotYetAvailable)),
+                                  ].join(' · '),
                                   style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary),
                                 ),
                               ],
@@ -431,6 +460,20 @@ class _PapersScreenState extends State<PapersScreen> {
         );
       },
     );
+  }
+
+  /// The report's real title (discipline, falling back to institution) in
+  /// place of the old "{examType} {year}" label, which told two different
+  /// students' reports apart by nothing but a number every submission that
+  /// year shares. Exam papers are unaffected — subject (already this
+  /// screen's own header when browsing them) plus year is a real, unique
+  /// enough label on its own; there's no separate "title" field for them.
+  String _rowTitle({required ExamType examType, required PaperEntry paper, required bool isReports}) {
+    if (isReports) {
+      final descriptor = paper.discipline.isNotEmpty ? paper.discipline : paper.institution;
+      if (descriptor.isNotEmpty) return descriptor;
+    }
+    return '${examType.name} ${paper.year}';
   }
 
   Widget _noPapersYet(AppLocalizations l10n, String bodyText, {String? title}) {

@@ -105,6 +105,12 @@ class PaperStatus(models.TextChoices):
     REJECTED = "REJECTED", "Rejected"
 
 
+class OcrStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    DONE = "DONE", "Done"
+    FAILED = "FAILED", "Failed"
+
+
 class PaperSubmission(TimeStampedModel):
     submitted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="paper_submissions"
@@ -138,6 +144,21 @@ class PaperSubmission(TimeStampedModel):
     uploaded_file = models.FileField(upload_to="paper_submissions/%Y/%m/", null=True, blank=True)
     file_ref = models.CharField(max_length=500, blank=True)
     ocr_text = models.TextField(blank=True)
+    # OCR used to run only via a manual, admin-only API action
+    # (process_ocr) that neither publish path (admin's publish_selected,
+    # nor the instructor merge_and_publish pipeline) ever called — meaning
+    # any submission published the normal way had permanently empty
+    # ocr_text, and apps.ai's summary/chat silently never worked for it.
+    # Owner decision (2026-09-06): OCR now runs automatically, cron-driven
+    # (apps.papers.management.commands.process_pending_ocr), for every new
+    # submission — exam paper or report alike, nothing here singles either
+    # out. Not run synchronously at submission time on purpose: a past,
+    # deliberate latency fix (the presigned direct-to-storage upload) kept
+    # that request fast, and synchronous page-by-page Tesseract OCR on a
+    # 50MB thesis PDF would undo it.
+    ocr_status = models.CharField(max_length=10, choices=OcrStatus.choices, default=OcrStatus.PENDING)
+    ocr_attempts = models.PositiveSmallIntegerField(default=0)
+    ocr_error = models.TextField(blank=True)
     duplicate_hash = models.CharField(max_length=64, blank=True, db_index=True)
 
     # non_mcq_section is the only part ever sent to the external instructor.

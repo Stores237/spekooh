@@ -9,6 +9,7 @@ from .models import (
     ExamCategory,
     ExamType,
     MCQAnswerKey,
+    OcrStatus,
     PaperFlag,
     PaperStatus,
     PaperSubmission,
@@ -44,6 +45,12 @@ STATUS_LABELS = {
     PaperStatus.REJECTED: "danger",
 }
 
+OCR_STATUS_LABELS = {
+    OcrStatus.PENDING: "info",
+    OcrStatus.DONE: "success",
+    OcrStatus.FAILED: "danger",
+}
+
 
 @admin.register(ExamCategory)
 class ExamCategoryAdmin(ModelAdmin):
@@ -65,19 +72,32 @@ class SubjectAdmin(ModelAdmin):
 
 @admin.register(PaperSubmission)
 class PaperSubmissionAdmin(ModelAdmin):
-    list_display = ("id", "exam_type", "subject", "year", "status_badge", "submitted_by", "created_at", "file_link")
-    list_filter = ("status", "category", "exam_type")
+    list_display = ("id", "exam_type", "subject", "year", "status_badge", "ocr_status_badge", "submitted_by", "created_at", "file_link")
+    list_filter = ("status", "category", "exam_type", "ocr_status")
     search_fields = ("id", "submitted_by__name", "duplicate_hash")
     readonly_fields = ("created_at", "updated_at")
-    actions = ["publish_selected", "reject_selected"]
+    actions = ["publish_selected", "reject_selected", "retry_ocr"]
 
     @display(description="Status", label=STATUS_LABELS, ordering="status")
     def status_badge(self, obj):
         return obj.status
 
+    @display(description="OCR", label=OCR_STATUS_LABELS, ordering="ocr_status")
+    def ocr_status_badge(self, obj):
+        return obj.ocr_status
+
     @display(description="File")
     def file_link(self, obj):
         return _uploaded_file_link(obj.uploaded_file)
+
+    @admin.action(description="Retry OCR (resets to pending, next cron run picks it up)")
+    def retry_ocr(self, request, queryset):
+        # Same reasoning as apps.ai.admin.GeneratedArtifactAdmin
+        # .retry_selected — doesn't run OCR inline from the admin request,
+        # just clears a FAILED row back to PENDING for
+        # process_pending_ocr's next scheduled run to pick up.
+        updated = queryset.exclude(ocr_status=OcrStatus.DONE).update(ocr_status=OcrStatus.PENDING, ocr_attempts=0, ocr_error="")
+        self.message_user(request, f"{updated} submission(s)' OCR reset to pending.")
 
     @admin.action(description="Publish selected (any reviewed status; awards contributor bonus)")
     def publish_selected(self, request, queryset):
@@ -144,11 +164,12 @@ class AcademicReportSubmissionAdmin(PaperSubmissionAdmin):
         "supervisor_name",
         "year",
         "status_badge",
+        "ocr_status_badge",
         "submitted_by",
         "created_at",
         "file_link",
     )
-    list_filter = ("status", "exam_type")
+    list_filter = ("status", "exam_type", "ocr_status")
     search_fields = ("id", "submitted_by__name", "institution", "discipline", "supervisor_name")
 
     def get_queryset(self, request):

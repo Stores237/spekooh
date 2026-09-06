@@ -68,23 +68,22 @@ class SubjectViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Cr
 class PaperSubmissionViewSet(
     mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
-    # Reading (browsing published papers) stays open to guests, per spec
-    # ("guest browsing allowed... account required only for streaks/XP,
-    # forum posting, ... not for reading"). Only creating/viewing/unlocking
-    # requires auth. process_ocr/mark_published set their own IsAdminUser
-    # via @action(permission_classes=...) — defer to super() there instead
-    # of hardcoding, or those per-action overrides get silently clobbered.
-    # `create` is the one exception where a guest account is welcome
-    # (see get_permissions) — everything else, including `report`, falls
-    # through to this class-level IsAuthenticatedNotGuest.
+    # Owner decision (2026-09-06, supersedes the original spec quoted
+    # below): a guest account may now ONLY contribute a paper/report —
+    # viewing one (list/retrieve/view) requires a real, non-guest account
+    # too, same as everything else on this class. The original spec's own
+    # words: "guest browsing allowed... account required only for
+    # streaks/XP, forum posting, ... not for reading" — reading is no
+    # longer the exception; `create` (see get_permissions) now is.
+    # process_ocr/mark_published set their own IsAdminUser via
+    # @action(permission_classes=...) — defer to super() there instead of
+    # hardcoding, or those per-action overrides get silently clobbered.
     permission_classes = [IsAuthenticatedNotGuest]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ["status", "category", "exam_type", "subject", "system", "track", "submitted_by"]
     ordering_fields = ["created_at", "year"]
 
     def get_permissions(self):
-        if self.action in ("list", "retrieve", "view"):
-            return [permissions.AllowAny()]
         if self.action == "create":
             return [permissions.IsAuthenticated()]
         return super().get_permissions()
@@ -98,7 +97,10 @@ class PaperSubmissionViewSet(
             # Published papers from anyone, plus your own at any status
             # (so "My submissions" on the Profile screen just works).
             return qs.filter(Q(status=PaperStatus.PUBLISHED) | Q(submitted_by=user))
-        # Guests (per spec: reading stays open to guests) see published only.
+        # An anonymous/guest request never reaches here at all in practice
+        # now — the class-level IsAuthenticatedNotGuest above rejects it
+        # before get_queryset ever runs for list/retrieve/view — but this
+        # stays a defensive fallback rather than assuming that always holds.
         return qs.filter(status=PaperStatus.PUBLISHED)
 
     def get_serializer_class(self):
@@ -145,17 +147,13 @@ class PaperSubmissionViewSet(
 
     @action(detail=True, methods=["post"])
     def view(self, request, pk=None):
+        # No guest exemption here any more (2026-09-06) — this action falls
+        # through to the class-level IsAuthenticatedNotGuest, so
+        # request.user is guaranteed a real, non-guest account by the time
+        # this runs. The old exemption existed only because reading used to
+        # be guest-open; that's no longer true (see this class's own
+        # top-of-file comment).
         paper = self.get_object()
-        if not request.user.is_authenticated:
-            # Reading stays open to guests (spec) — there's no identity to
-            # rate-limit an anonymous viewer against, so guests are simply
-            # never subject to the daily-view paywall; only signed-in
-            # accounts are. Previously this fell through to the class's
-            # default IsAuthenticated and 401'd on every guest view (the
-            # client silently swallows the failure, so guests already got
-            # unlimited views in practice — this makes that real instead of
-            # accidental, and drops the bogus error from the console).
-            return Response(status=status.HTTP_204_NO_CONTENT)
         try:
             log = record_paper_view(user=request.user, paper_submission=paper)
         except PaywallError as exc:

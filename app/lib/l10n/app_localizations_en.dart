@@ -250,34 +250,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeExploringBadge => 'Exploring: no account';
 
   @override
-  String get homeFreeViewsLabel => 'FREE PAPER VIEWS';
+  String get accountRequiredTitle => 'Log in to continue';
 
   @override
-  String get homeFreeViewsCount => '3 a day';
+  String get papersRequireAccountBody =>
+      'Browsing and viewing real papers and reports requires a free account.';
 
   @override
-  String get homeFreeViewsHint =>
-      'No account needed. Sign up to track usage and unlock more.';
+  String get homeBrowsePapersLabel => 'PAPERS & REPORTS';
 
   @override
-  String get goPro => 'Go Pro';
+  String get homeBrowsePapersTitle => 'Log in to browse papers';
 
   @override
-  String get homeNoPapersYet => 'No papers published yet. Check back soon.';
-
-  @override
-  String homePaperLabelWithYear(String label, int year) {
-    return '$label $year';
-  }
-
-  @override
-  String get homeFreeToView => 'Free to view (marking guide sold separately)';
-
-  @override
-  String get homeFreeToViewReport => 'Free to view and download';
-
-  @override
-  String get homeReportPaymentRequired => 'Payment required to view';
+  String get homeBrowsePapersHint =>
+      'Viewing and downloading real past papers and reports requires a free account.';
 
   @override
   String get homeContributionTitle => 'Contribution: earn credit';
@@ -485,6 +472,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchPapersInCategory => 'Search by year...';
+
+  @override
+  String get searchReportsInCategory => 'Search by title or year...';
 
   @override
   String get paperSearchNoResultsTitle => 'No matches';

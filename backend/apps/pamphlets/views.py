@@ -8,6 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import IsAuthenticatedNotGuest
+
 from .escrow import (
     AlreadyRedeemedError,
     EscrowError,
@@ -42,7 +44,13 @@ class PamphletViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
 
 
 class PamphletOrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    # Hardening (2026-09-06): was plain IsAuthenticated, which a guest JWT
+    # also satisfies — the app has never actually sent one here (no
+    # guestAccessToken plumbing exists for ordering), but every other
+    # paid/account-gated endpoint in this codebase (PaperUnlockViewSet,
+    # AdWatchView, notifications, ...) uses IsAuthenticatedNotGuest
+    # explicitly rather than relying on the app simply not trying.
+    permission_classes = [IsAuthenticatedNotGuest]
     serializer_class = PamphletOrderSerializer
 
     def get_queryset(self):
@@ -69,7 +77,8 @@ class PamphletOrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, vie
 
 
 class PlacePamphletOrderView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # Same hardening as PamphletOrderViewSet above.
+    permission_classes = [IsAuthenticatedNotGuest]
 
     @extend_schema(request=PlaceOrderRequestSerializer, responses=PamphletOrderSerializer)
     def post(self, request):

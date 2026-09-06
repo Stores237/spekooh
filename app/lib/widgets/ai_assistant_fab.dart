@@ -46,7 +46,11 @@ class _AIAssistantSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+      // Owner-reported (screenshot, 2026-09-06): the input's own hint text
+      // was covered by the keyboard — showModalBottomSheet doesn't resize
+      // its child for the keyboard on its own, same fix already applied to
+      // AuthSheet/AskForumPostSheet's own bottom padding.
+      padding: EdgeInsets.fromLTRB(20, 10, 20, 24 + MediaQuery.of(context).viewInsets.bottom),
       decoration: const BoxDecoration(
         color: AppColors.surfaceCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
