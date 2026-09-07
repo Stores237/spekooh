@@ -82,6 +82,37 @@ void main() {
   group('submitPaper', () {
     const file = SubmissionFile(bytes: [1, 2, 3, 4], fileName: 'gce-bio-2024.pdf', mimeType: 'application/pdf');
 
+    test('sends the report title (its own real name, distinct from discipline)', () async {
+      Map<String, dynamic>? sentFields;
+      final mockClient = MockClient((request) async {
+        if (request.url.path.endsWith('/upload_url/')) {
+          return http.Response(
+            jsonEncode({'upload_url': 'https://storage.example.com/put/some-key', 'storage_key': 'paper_submissions/2026/08/report.pdf'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (request.url.host == 'storage.example.com') {
+          return http.Response('', 200);
+        }
+        sentFields = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(jsonEncode({'id': 9, 'year': 2024, 'status': 'PENDING_REVIEW'}), 201, headers: {'content-type': 'application/json'});
+      });
+      final repo = HttpPapersRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: mockClient));
+
+      await repo.submitPaper(
+        categoryId: 1,
+        examTypeId: 2,
+        year: 2024,
+        title: 'Design of a Distributed Caching Layer for High-Traffic APIs',
+        discipline: 'Software Engineering',
+        file: file,
+      );
+
+      expect(sentFields?['title'], 'Design of a Distributed Caching Layer for High-Traffic APIs');
+      expect(sentFields?['discipline'], 'Software Engineering');
+    });
+
     test('uploads directly to storage when the server offers a presigned URL, skipping multipart', () async {
       final requests = <http.Request>[];
       final mockClient = MockClient((request) async {

@@ -1118,6 +1118,12 @@ abstract class AppLocalizations {
   /// **'Report type'**
   String get reportTypeLabel;
 
+  /// No description provided for @reportTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Document title'**
+  String get reportTitleLabel;
+
   /// No description provided for @institutionLabel.
   ///
   /// In en, this message translates to:

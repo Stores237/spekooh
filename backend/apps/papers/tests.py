@@ -240,6 +240,7 @@ def test_submit_academic_report_with_no_subject_but_real_institution_fields(auth
             "category": reports_category.id,
             "exam_type": report_type.id,
             "year": 2024,
+            "title": "Design of a Distributed Caching Layer for High-Traffic APIs",
             "institution": "Université de Douala",
             "discipline": "Computer Engineering",
             "uploaded_file": upload,
@@ -249,9 +250,68 @@ def test_submit_academic_report_with_no_subject_but_real_institution_fields(auth
     assert response.status_code == 201
     submission = PaperSubmission.objects.get(id=response.data["id"])
     assert submission.subject is None
+    assert submission.title == "Design of a Distributed Caching Layer for High-Traffic APIs"
     assert submission.institution == "Université de Douala"
     assert submission.discipline == "Computer Engineering"
     assert submission.supervisor_name == ""  # never sent, genuinely optional
+
+
+@pytest.mark.django_db
+def test_submitting_a_report_without_a_title_is_rejected():
+    """Owner feedback (2026-09-07): discipline is the report's department,
+    not its actual title — the app's paper list was conflating the two.
+    title is now a real, required-for-reports field (not something
+    auto-extracted from the OCR'd PDF — see PaperSubmission.title's own
+    doc comment for why a heuristic would be unreliable)."""
+    from apps.accounts.factories import UserFactory
+
+    user = UserFactory()
+    client = APIClient()
+    client.force_authenticate(user=user)
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_type = ExamTypeFactory(category=reports_category, system=None, name="Internship Report")
+    upload = SimpleUploadedFile("internship.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf")
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": reports_category.id,
+            "exam_type": report_type.id,
+            "year": 2024,
+            "institution": "ENSP Yaoundé",
+            "discipline": "Software Engineering",
+            "uploaded_file": upload,
+        },
+        format="multipart",
+    )
+    assert response.status_code == 400
+    assert "title" in response.data
+    assert PaperSubmission.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_submitting_an_exam_paper_needs_no_title_at_all(authed_client):
+    """title is a reports-only requirement — exam papers have never had a
+    concept of their own document title and shouldn't need one now."""
+    client, _ = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    upload = SimpleUploadedFile("gce-bio-2024.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf")
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "uploaded_file": upload,
+        },
+        format="multipart",
+    )
+    assert response.status_code == 201
 
 
 @pytest.mark.django_db
@@ -289,6 +349,7 @@ def test_submitting_a_report_watermarks_the_real_file(authed_client):
             "category": reports_category.id,
             "exam_type": report_type.id,
             "year": 2024,
+            "title": "Automating Deployment Pipelines with GitOps",
             "institution": "ENSP Yaoundé",
             "discipline": "Software Engineering",
             "uploaded_file": upload,
@@ -362,6 +423,7 @@ def test_watermarking_refreshes_file_ref_for_local_disk_storage(authed_client, t
             "category": reports_category.id,
             "exam_type": report_type.id,
             "year": 2024,
+            "title": "A Study of Remote Work Productivity Tools",
             "institution": "ENSP Yaoundé",
             "discipline": "Software Engineering",
             "uploaded_file": upload,
@@ -527,6 +589,7 @@ def test_upload_over_its_exam_types_limit_is_rejected(authed_client):
             "category": reports_category.id,
             "exam_type": internship.id,
             "year": 2024,
+            "title": "Optimizing Warehouse Logistics With IoT Sensors",
             "institution": "ENSP Yaoundé",
             "discipline": "Software Engineering",
             "uploaded_file": oversized,
@@ -554,6 +617,7 @@ def test_thesis_tier_report_accepts_upload_that_would_be_rejected_for_standard_t
             "category": reports_category.id,
             "exam_type": phd.id,
             "year": 2024,
+            "title": "Quantum Tunneling Effects in Nanoscale Semiconductors",
             "institution": "Université de Yaoundé I",
             "discipline": "Physics",
             "uploaded_file": between_20_and_50mb,

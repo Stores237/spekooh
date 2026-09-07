@@ -55,7 +55,11 @@ abstract class PapersRepository {
     String? track,
     required int year,
     String examBoard,
-    // Only meaningful for the "reports" category — see PaperEntry.
+    // Only meaningful for the "reports" category — see PaperEntry. title is
+    // required there (backend validation) — the report's own real name,
+    // e.g. "Design of a Distributed Caching Layer for High-Traffic APIs" —
+    // distinct from discipline, the department.
+    String title = '',
     String institution = '',
     String discipline = '',
     String supervisorName = '',
@@ -230,6 +234,7 @@ class MockPapersRepository implements PapersRepository {
     String? track,
     required int year,
     String examBoard = '',
+    String title = '',
     String institution = '',
     String discipline = '',
     String supervisorName = '',
@@ -244,6 +249,7 @@ class MockPapersRepository implements PapersRepository {
       status: 'PENDING_REVIEW',
       fileUrl: null,
       createdAt: DateTime.now(),
+      title: title,
       institution: institution,
       discipline: discipline,
       supervisorName: supervisorName,

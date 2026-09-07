@@ -581,6 +581,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get reportTypeLabel => 'Type de rapport';
 
   @override
+  String get reportTitleLabel => 'Titre du document';
+
+  @override
   String get institutionLabel => 'Établissement / Université';
 
   @override

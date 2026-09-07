@@ -189,6 +189,42 @@ void main() {
     expect(opened!.entry.id, 77);
   });
 
+  testWidgets('a report with a real title shows it, not its discipline (the department)', (tester) async {
+    // Owner feedback (2026-09-07): discipline is the report's department
+    // (e.g. "Software Engineering"), not its actual title — the two were
+    // being conflated here before title existed as its own field.
+    final seededReport = PaperEntry(
+      id: 88,
+      year: 2024,
+      system: null,
+      track: '',
+      status: 'PUBLISHED',
+      fileUrl: 'http://testserver/media/paper_submissions/2024/internship.pdf',
+      createdAt: DateTime(2024, 1, 1),
+      examTypeName: 'Internship Report',
+      categoryKey: 'reports',
+      title: 'Design of a Distributed Caching Layer for High-Traffic APIs',
+      discipline: 'Software Engineering',
+    );
+    await tester.pumpWidget(l10nTestApp(
+      PapersScreen(repository: MockPapersRepository(seedPublished: [seededReport])),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.ensureVisible(find.text('Academic Reports'));
+    await tester.tap(find.text('Academic Reports'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.text('Internship Report'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Design of a Distributed Caching Layer for High-Traffic APIs'), findsOneWidget);
+    expect(find.text('Software Engineering'), findsNothing);
+    expect(find.textContaining('Internship Report 2024'), findsNothing);
+  });
+
   testWidgets('Category with no system/track requirement goes straight to exam-type then subject step', (tester) async {
     await tester.pumpWidget(l10nTestApp(PapersScreen(repository: MockPapersRepository())));
     await tester.pump();

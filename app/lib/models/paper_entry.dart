@@ -13,6 +13,7 @@ class PaperEntry {
     this.examBoard = '',
     this.subjectTitle,
     this.examTypeName,
+    this.title = '',
     this.institution = '',
     this.discipline = '',
     this.supervisorName = '',
@@ -44,6 +45,15 @@ class PaperEntry {
 
   /// Only meaningful for the "reports" category (internship/mémoire/thèse) —
   /// blank for every other submission. supervisorName is genuinely optional.
+  ///
+  /// title (2026-09-07): the report's own real title (e.g. "Design of a
+  /// Distributed Caching Layer for High-Traffic APIs") — required at
+  /// submission time for reports, distinct from [discipline] (the
+  /// department, e.g. "Software Engineering"), which used to be shown in
+  /// its place before this field existed. See backend
+  /// PaperSubmission.title's own doc comment for why this is a real,
+  /// contributor-typed field rather than something extracted from the PDF.
+  final String title;
   final String institution;
   final String discipline;
   final String supervisorName;

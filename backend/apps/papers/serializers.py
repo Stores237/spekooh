@@ -171,6 +171,7 @@ class PaperSubmissionListSerializer(PaperAccessFieldsMixin, serializers.ModelSer
             "system",
             "track",
             "year",
+            "title",
             "institution",
             "discipline",
             "supervisor_name",
@@ -209,6 +210,7 @@ class PaperSubmissionDetailSerializer(PaperAccessFieldsMixin, serializers.ModelS
             "subject",
             "exam_board",
             "year",
+            "title",
             "institution",
             "discipline",
             "supervisor_name",
@@ -278,6 +280,7 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
             "subject",
             "exam_board",
             "year",
+            "title",
             "institution",
             "discipline",
             "supervisor_name",
@@ -306,6 +309,9 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
         storage_key = attrs.get("storage_key")
         if bool(uploaded_file) == bool(storage_key):
             raise serializers.ValidationError({"uploaded_file": "Provide exactly one of uploaded_file or storage_key."})
+        category = attrs.get("category")
+        if category is not None and category.key == "reports" and not attrs.get("title", "").strip():
+            raise serializers.ValidationError({"title": "A title is required for academic reports."})
         exam_type = attrs.get("exam_type")
         if exam_type is not None and uploaded_file is not None:
             max_bytes = exam_type.max_upload_mb * 1024 * 1024
