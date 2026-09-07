@@ -3,25 +3,37 @@
 # staging project, Render account, secrets) versus what's already handled
 # here as code.
 #
-# This is a monorepo (app/ + backend/) — rootDir points every build/start
-# command at the Django project.
+# This is a monorepo (app/ + backend/) — rootDir scopes which file
+# changes trigger a rebuild to the Django project; dockerfilePath/
+# dockerContext below are given explicitly since Docker builds resolve
+# those two relative to the repo root regardless of rootDir.
 services:
   - type: web
     name: spekooh-staging
-    runtime: python
+    # Docker, not Render's native Python runtime (2026-09-07, real live
+    # failure) — the native runtime blocks apt-get/OS-level package
+    # installs entirely, so it could never provide the real
+    # `tesseract`/`pdftoppm` binaries apps.papers.ocr needs (pytesseract/
+    # pdf2image are thin wrappers around those CLI tools, not something
+    # pip alone can install). See backend/Dockerfile's own docstring and
+    # RENDER_STAGING.md for the full incident. dockerfilePath/dockerContext
+    # are relative to the REPO ROOT even though rootDir below is
+    # "backend" — Render resolves those two paths independently of it.
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
     plan: free
     region: frankfurt
     branch: main
     rootDir: backend
-    buildCommand: "./build.sh"
-    # DJANGO_SETTINGS_MODULE must be prod (not the config/wsgi.py default of
-    # dev) or ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS/SECURE_SSL_REDIRECT never
-    # take effect — see config/settings/prod.py.
-    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-2}"
+    # buildCommand/startCommand are not used for runtime: docker — the
+    # Dockerfile's own RUN/CMD instructions replace both.
     healthCheckPath: /healthz/
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.13.5
+      # PYTHON_VERSION is a native-runtime-only setting (picks the
+      # buildpack's interpreter) — meaningless for runtime: docker, where
+      # the version instead comes from the Dockerfile's own `FROM
+      # python:3.13-slim`. Left unset here rather than kept as dead config.
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.prod
       - key: DJANGO_SECRET_KEY
@@ -78,8 +90,9 @@ services:
         sync: false
       # Free-tier web services have no Shell tab and no one-off Jobs (both
       # paid-only), so the usual `createsuperuser` has nowhere interactive
-      # to run — build.sh runs apps.accounts.management.commands
-      # .ensure_superuser instead, idempotently, on every deploy.
+      # to run — the Dockerfile's own CMD runs
+      # apps.accounts.management.commands.ensure_superuser instead,
+      # idempotently, on every container start.
       - key: DJANGO_SUPERUSER_EMAIL
         sync: false
       - key: DJANGO_SUPERUSER_PASSWORD

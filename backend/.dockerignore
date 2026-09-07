@@ -1,0 +1,15 @@
+# Render's build clones a fresh checkout (these paths are all
+# .gitignore'd already, so they'd never be present there anyway) — this
+# exists for anyone building the image locally, where a real .venv/.env
+# WOULD be sitting on disk and would otherwise get baked into the image.
+.venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.gstack/
+db.sqlite3
+staticfiles/
+media/
+.git/
