@@ -445,15 +445,30 @@ The fifth (`process-pending-ocr`, added 2026-09-06) is what makes AI
 summary/chat actually work at all for a newly-published paper or report —
 without it, `ocr_text` stays empty forever and both AI features silently
 never generate anything. Every few minutes is reasonable here too; no
-external API key needed (local Tesseract), so nothing to configure before
-scheduling it.
+external API *key* needed — but see the next note, it does need a real
+system dependency Render doesn't install on its own.
 
-**Real live failure (2026-09-07)**: this job's default request timeout
-timed out a batch of real submissions outright — OCR runs synchronously
-inside the one HTTP request `run_task` blocks on (unlike the lightweight
-housekeeping commands sharing this trigger mechanism), and Render's
-free-tier CPU makes per-page Tesseract genuinely slow. Fixed on both
-ends: `BATCH_SIZE` dropped to 3 (`apps/papers/management/commands
+**Real live failure (2026-09-07, part 1) — Tesseract was never actually
+installed on Render at all.** `apps.papers.ocr` shells out to the real
+`tesseract` and `pdftoppm`/`pdftocairo` (Poppler) binaries via
+`pytesseract`/`pdf2image` — neither is a Python package, so
+`pip install -r requirements.txt` never pulled them in. Every OCR attempt
+on staging failed outright with `tesseract is not installed or it's not
+in your PATH`, silently, since this had been true since OCR was first
+added — it only surfaced once OCR became automatic and someone checked
+why AI summary/chat never generated anything for a real submission.
+Fixed in `build.sh`: `sudo apt-get install -y tesseract-ocr
+poppler-utils` before the pip install (Render's native build environment
+grants the build user passwordless sudo for exactly this). Confirmed
+locally-working Tesseract (this sandbox always had it) masked the gap
+completely — see RUNNING_LOCALLY.md's own new Prerequisites row on this.
+
+**Real live failure (2026-09-07, part 2)**: this job's default request
+timeout timed out a batch of real submissions outright — OCR runs
+synchronously inside the one HTTP request `run_task` blocks on (unlike
+the lightweight housekeeping commands sharing this trigger mechanism),
+and Render's free-tier CPU makes per-page Tesseract genuinely slow. Fixed
+on both ends: `BATCH_SIZE` dropped to 3 (`apps/papers/management/commands
 /process_pending_ocr.py`) so one run reliably finishes fast regardless of
 backlog size, **and** set this specific job's request timeout to the
 maximum cron-job.org's Advanced settings allow — the default is too

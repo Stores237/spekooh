@@ -22,9 +22,18 @@ There are three progressively more real ways to run Spekooh locally:
 | Flutter | 3.44.9, stable channel | `flutter --version` |
 | Android SDK + build-tools | installed via `flutter doctor` / Android Studio | `flutter doctor -v` — look for a green checkmark under "Android toolchain" |
 | Java (for Gradle) | OpenJDK 21 | `java -version` |
+| Tesseract OCR + Poppler | any recent version | `tesseract --version`, `pdftoppm -v` |
 
 Run `flutter doctor -v` first. If "Android toolchain" isn't green, you can't build a real APK
 (step 3 below) — you can still do steps 1 and 2 without it.
+
+**Tesseract + Poppler** back `apps.papers.ocr` (via `pytesseract`/`pdf2image`) — real
+system binaries, not Python packages, so `pip install` never installs them. Missing
+entirely on staging until 2026-09-07 (see RENDER_STAGING.md's own note on this) — every
+OCR attempt failed with `tesseract is not installed or it's not in your PATH`, which
+silently meant `apps.ai`'s summary/chat features never worked for any real submission.
+Install locally with your OS's package manager, e.g. `sudo apt-get install tesseract-ocr
+poppler-utils` (Debian/Ubuntu) or `brew install tesseract poppler` (macOS).
 
 ---
 
