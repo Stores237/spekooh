@@ -32,7 +32,7 @@ each one is there rather than something else.
 
 | Piece | Role | Why this one |
 |---|---|---|
-| **Render** | Runs the Django process itself (`gunicorn`), assigns the permanent `https://spekooh-staging.onrender.com` URL, builds on every push to `main` via `build.sh`, and polls `/healthz/` to decide whether a deploy is healthy. | Free web-service tier, no card required — the actual compute + hosting. |
+| **Render** | Runs the Django process itself (`gunicorn`), assigns the permanent `https://spekooh-staging.onrender.com` URL, builds a real Docker image (`backend/Dockerfile`) on every push to `main`, and polls `/healthz/` to decide whether a deploy is healthy. | Free web-service tier, no card required — the actual compute + hosting. Docker rather than Render's native Python runtime specifically because the native runtime can't install real system binaries (Tesseract) — see §2. |
 | **Supabase** | Two separate real services, not one: (1) managed Postgres, reached through its connection **pooler** (port `6543`) since Render restarts the process on every deploy/spin-down and a pooler survives that churn better than direct connections; (2) S3-compatible **Storage**, for real uploaded files (paper scans, avatars) — private bucket, signed URLs only, MIME/size-restricted (§ below). | Already the same provider the app's local/dev setup uses — one less thing to keep in sync between environments. |
 | **gunicorn** | The actual WSGI server that runs Django's application code and answers HTTP requests inside Render's container. | `runserver` (used locally) is explicitly not for real traffic; gunicorn is Django's own recommended production server. |
 | **WhiteNoise** | Serves static files (admin CSS/JS, DRF browsable-API assets) directly from the Django process. | Render's free web-service plan has no separate static-asset host/CDN — WhiteNoise means one process does both jobs with no extra infrastructure. |
@@ -105,41 +105,76 @@ needs it and 500s outright without it.
 
 Everything in this section is already committed — nothing to create.
 
-### `backend/build.sh`
+### `backend/Dockerfile`
 
-```bash
-#!/usr/bin/env bash
-set -o errexit
+**Real live failure (2026-09-07) — this service used to be Render's native
+Python runtime with a `build.sh`, and it never actually worked for OCR.**
+`apps.papers.ocr` shells out to the real `tesseract` and
+`pdftoppm`/`pdftocairo` (Poppler) binaries via `pytesseract`/`pdf2image` —
+neither is a Python package, so `pip install` never installed them. The
+first fix attempt added `sudo apt-get install -y tesseract-ocr
+poppler-utils` to `build.sh`; it silently did nothing, because **Render's
+native Python build environment blocks apt-get/OS-level package installs
+entirely** (confirmed against Render's own community docs — there is no
+passwordless-sudo escape hatch for native runtimes the way there is for
+some other PaaS build environments). The only Render-supported way to get
+a real system binary like Tesseract is Docker, so this service now
+deploys from a real Dockerfile instead of a buildpack-style native build:
 
-pip install -r requirements.txt
-python manage.py collectstatic --no-input
-python manage.py migrate
+```dockerfile
+FROM python:3.13-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        tesseract-ocr \
+        poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+
+CMD ["sh", "-c", "python manage.py collectstatic --no-input && python manage.py migrate && python manage.py ensure_superuser && exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-2}"]
 ```
 
-Already executable (`chmod +x` + `git update-index --chmod=+x` done).
+`collectstatic`/`migrate`/`ensure_superuser` moved from *build* time
+(the old `build.sh`) to *container start* time (this `CMD`) — real
+settings (`DATABASE_URL`, `DJANGO_SECRET_KEY`, every `AWS_*`/`REDIS_URL`
+secret) only exist as env vars Render injects into the *running*
+container; `docker build` never sees them, so importing `settings.py` at
+build time would raise `ImproperlyConfigured` before `collectstatic`
+could even run. All three steps are already idempotent, so running them
+on every container start (not just fresh deploys — restarts too) is
+safe, just a few extra seconds each time. `exec` before `gunicorn` hands
+it PID 1 directly so it receives Render's real `SIGTERM` on
+deploy/restart instead of an intermediate shell swallowing it.
+
+`backend/build.sh` and its own `buildCommand`/`startCommand` in
+`render.yaml` are gone — both are ignored outright for `runtime: docker`
+services (the Dockerfile's `RUN`/`CMD` replace them).
 
 ### `render.yaml` (repo root, not `backend/`)
 
 This is a monorepo (`app/` + `backend/`) — Render's Blueprint feature looks
 for `render.yaml` at the repo root regardless of where the actual service
-lives, so it sets `rootDir: backend` and every build/start command runs
-relative to that.
+lives, so it sets `rootDir: backend`. `dockerfilePath`/`dockerContext`
+are resolved **relative to the repo root regardless of `rootDir`** —
+easy to get wrong, since every other path-like Blueprint field _is_
+relative to `rootDir` once it's set.
 
 ```yaml
 services:
   - type: web
     name: spekooh-staging
-    runtime: python
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
     plan: free
     region: frankfurt
     branch: main
     rootDir: backend
-    buildCommand: "./build.sh"
-    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-2}"
     healthCheckPath: /healthz/
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.13.5
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.prod
       - key: DJANGO_SECRET_KEY
@@ -168,7 +203,7 @@ services:
         sync: false
 ```
 
-Three real corrections from the earlier draft, all already applied above:
+Real corrections from the earlier draft, all already applied above:
 
 - **`config.wsgi:application`**, not `spekooh.wsgi` — this project's Django
   package is `config`, not `spekooh` (see `manage.py`).
@@ -178,12 +213,15 @@ Three real corrections from the earlier draft, all already applied above:
   secure cookies — in what's supposed to be the hardened settings module.
   This is the single easiest way to accidentally deploy "dev" to a public
   URL.
-- **`--bind 0.0.0.0:$PORT`** on the start command — Render's native
-  (non-Docker) Python runtime requires the process to listen on the port it
-  assigns via `$PORT`; omitting `--bind` leaves gunicorn on its own default
-  and the health check never connects. `--workers ${WEB_CONCURRENCY:-2}`
-  also actually *uses* the `WEB_CONCURRENCY` env var — the earlier draft
-  defined it but the start command never read it.
+- **`--bind 0.0.0.0:$PORT`** in the Dockerfile's own `CMD` — Render
+  requires the process to listen on the port it assigns via `$PORT`;
+  omitting `--bind` leaves gunicorn on its own default and the health
+  check never connects. `--workers ${WEB_CONCURRENCY:-2}` also actually
+  *uses* the `WEB_CONCURRENCY` env var below.
+- **No `PYTHON_VERSION` env var** — that's a native-runtime-only setting
+  (picks the buildpack's interpreter); meaningless for `runtime: docker`,
+  where the version comes from the Dockerfile's own `FROM
+  python:3.13-slim` instead.
 
 Secrets (`sync: false`) are deliberately absent from git — see §4 for where
 each one actually comes from.
@@ -277,6 +315,16 @@ Render mark the deploy unhealthy and roll it back.
 First build takes 3–5 minutes. You get a URL like
 `https://spekooh-staging.onrender.com` that doesn't change.
 
+**Migrating an already-running service from native to Docker (2026-09-07,
+real incident)**: switching `runtime: python` → `runtime: docker` in
+`render.yaml` for a service that already exists (not a fresh Blueprint
+create) is genuinely supported in place — push the change and Render's
+own Blueprint sync picks it up (confirmed via Render's official
+changelog; dashboard-only runtime changes are the one thing *not*
+supported — it has to go through git + Blueprint sync, or the API). No
+need to delete and recreate the service — the same URL, env vars, and
+health check all carry over.
+
 ### Environment variables (Render dashboard → Environment)
 
 | Key | Value |
@@ -322,8 +370,9 @@ Instead, set two more env vars in the dashboard:
 | `DJANGO_SUPERUSER_EMAIL` | your real admin email |
 | `DJANGO_SUPERUSER_PASSWORD` | a real, strong password |
 
-`build.sh` runs `python manage.py ensure_superuser` on every deploy — a
-small idempotent command (`apps/accounts/management/commands/ensure_superuser.py`)
+The Dockerfile's own `CMD` runs `python manage.py ensure_superuser` on
+every container start — a small idempotent command
+(`apps/accounts/management/commands/ensure_superuser.py`)
 that creates exactly one superuser from those two env vars the first time,
 then silently no-ops on every deploy after (it never resets the password if
 you've since changed it via `/admin/`, and never errors out the way
@@ -457,11 +506,17 @@ on staging failed outright with `tesseract is not installed or it's not
 in your PATH`, silently, since this had been true since OCR was first
 added — it only surfaced once OCR became automatic and someone checked
 why AI summary/chat never generated anything for a real submission.
-Fixed in `build.sh`: `sudo apt-get install -y tesseract-ocr
-poppler-utils` before the pip install (Render's native build environment
-grants the build user passwordless sudo for exactly this). Confirmed
-locally-working Tesseract (this sandbox always had it) masked the gap
-completely — see RUNNING_LOCALLY.md's own new Prerequisites row on this.
+**First fix attempt failed**: adding `sudo apt-get install -y
+tesseract-ocr poppler-utils` to `build.sh` looked right (the build
+"succeeded", no error at all) but did nothing — Render's native Python
+build environment blocks apt-get/OS-level installs entirely, with no
+passwordless-sudo escape hatch, confirmed only after a second live
+failure with the exact same error post-"fix". **Real fix**: this service
+now deploys via a real Dockerfile instead (see §2's own `backend
+/Dockerfile` section) — the only Render-supported way to get an actual
+system binary onto a service. Confirmed locally-working Tesseract (this
+sandbox always had it) masked the entire gap during every previous test
+run — see RUNNING_LOCALLY.md's own new Prerequisites row on this.
 
 **Real live failure (2026-09-07, part 2)**: this job's default request
 timeout timed out a batch of real submissions outright — OCR runs
@@ -610,7 +665,7 @@ the endpoint at all.
 
 - [x] Separate staging Supabase project created — confirmed live (real seeded taxonomy loads)
 - [x] Pooler connection string (port 6543) — `CONN_MAX_AGE = 0` already set in code
-- [x] `backend/build.sh` — already committed and executable
+- [x] `backend/Dockerfile` — already committed (Docker deploy, not a native-runtime `build.sh` — see §2)
 - [x] `render.yaml` — already committed at repo root
 - [x] `RENDER_EXTERNAL_HOSTNAME` / `DJANGO_SETTINGS_MODULE=config.settings.prod` — confirmed live (HTTPS redirect + plain prod 404 page prove it, not the dev fallback)
 - [x] `/healthz/` — confirmed responding (200)
