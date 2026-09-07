@@ -33,4 +33,15 @@ COPY . .
 # exists — skipping."). `exec` hands gunicorn PID 1 directly so it
 # receives SIGTERM straight from Render on deploy/restart, rather than
 # an intermediate shell swallowing it.
-CMD ["sh", "-c", "python manage.py collectstatic --no-input && python manage.py migrate && python manage.py ensure_superuser && exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-2}"]
+#
+# --timeout 150 (real live failure, 2026-09-07): gunicorn's own default
+# worker timeout is 30 seconds — process_pending_ocr runs real,
+# synchronous, page-by-page Tesseract OCR inside the request/response
+# cycle (apps.core.views.run_task), which can genuinely take longer than
+# that on Render's free-tier CPU even with BATCH_SIZE trimmed to 3. Once
+# a worker misses gunicorn's own deadline, gunicorn kills it outright —
+# Render's proxy sees the dead connection and reports a 502, independent
+# of whatever timeout the calling cron service is configured with. This
+# is the actual explanation for every "timeout" seen triggering this
+# endpoint, cron-job.org's own settings included.
+CMD ["sh", "-c", "python manage.py collectstatic --no-input && python manage.py migrate && python manage.py ensure_superuser && exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-2} --timeout 150"]
