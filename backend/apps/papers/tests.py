@@ -961,6 +961,28 @@ class TestRunPendingOcr:
 
 class TestProcessPendingOcrCommand:
     @pytest.mark.django_db
+    def test_a_single_run_never_processes_more_than_the_batch_cap(self, tmp_path):
+        """Real live failure (2026-09-07): a run of 20 real submissions
+        timed out the triggering cron-job.org request outright — OCR runs
+        synchronously inside that one HTTP request, unlike the other
+        lightweight commands sharing this trigger mechanism. Batch stays
+        small so one run reliably finishes fast regardless of backlog
+        size; a real regression test for that incident, not just a
+        behavioral check."""
+        from django.core.management import call_command
+
+        from .management.commands.process_pending_ocr import BATCH_SIZE
+        from .models import OcrStatus
+
+        for i in range(BATCH_SIZE + 2):
+            PaperSubmissionFactory(file_ref=_fixture_image(tmp_path, f"Report number {i}", f"r{i}.png"))
+
+        call_command("process_pending_ocr")
+
+        assert PaperSubmission.objects.filter(ocr_status=OcrStatus.DONE).count() == BATCH_SIZE
+        assert PaperSubmission.objects.filter(ocr_status=OcrStatus.PENDING).count() == 2
+
+    @pytest.mark.django_db
     def test_processes_a_real_pending_submission_end_to_end(self, tmp_path):
         from django.core.management import call_command
 

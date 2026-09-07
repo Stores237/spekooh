@@ -448,6 +448,18 @@ never generate anything. Every few minutes is reasonable here too; no
 external API key needed (local Tesseract), so nothing to configure before
 scheduling it.
 
+**Real live failure (2026-09-07)**: this job's default request timeout
+timed out a batch of real submissions outright — OCR runs synchronously
+inside the one HTTP request `run_task` blocks on (unlike the lightweight
+housekeeping commands sharing this trigger mechanism), and Render's
+free-tier CPU makes per-page Tesseract genuinely slow. Fixed on both
+ends: `BATCH_SIZE` dropped to 3 (`apps/papers/management/commands
+/process_pending_ocr.py`) so one run reliably finishes fast regardless of
+backlog size, **and** set this specific job's request timeout to the
+maximum cron-job.org's Advanced settings allow — the default is too
+short for this one job even with the smaller batch, if Render also
+happens to be cold-starting at the same time.
+
 Another endpoint on the same mechanism, but on-demand rather than
 scheduled: `.../internal/tasks/delete-test-accounts/` deletes every `User`
 row whose email ends in `@example.com` (the reserved test domain — see
