@@ -3,10 +3,15 @@
 # staging project, Render account, secrets) versus what's already handled
 # here as code.
 #
-# This is a monorepo (app/ + backend/) — rootDir scopes which file
-# changes trigger a rebuild to the Django project; dockerfilePath/
-# dockerContext below are given explicitly since Docker builds resolve
-# those two relative to the repo root regardless of rootDir.
+# This is a monorepo (app/ + backend/) — rootDir relocates the effective
+# root Render builds from to backend/, and dockerfilePath/dockerContext
+# below are resolved relative to *that* (rootDir), not the repo root —
+# confirmed by a real failed deploy (2026-09-07): setting both to
+# "backend/..." on top of rootDir: backend produced the literal path
+# .../src/backend/backend (rootDir + dockerContext, compounded), which
+# doesn't exist. Render's own Blueprint docs say the opposite (relative
+# to the repo root, unaffected by rootDir) — that's simply wrong, or at
+# least not what actually happens; trust this live error over the page.
 services:
   - type: web
     name: spekooh-staging
@@ -16,12 +21,10 @@ services:
     # `tesseract`/`pdftoppm` binaries apps.papers.ocr needs (pytesseract/
     # pdf2image are thin wrappers around those CLI tools, not something
     # pip alone can install). See backend/Dockerfile's own docstring and
-    # RENDER_STAGING.md for the full incident. dockerfilePath/dockerContext
-    # are relative to the REPO ROOT even though rootDir below is
-    # "backend" — Render resolves those two paths independently of it.
+    # RENDER_STAGING.md for the full incident.
     runtime: docker
-    dockerfilePath: backend/Dockerfile
-    dockerContext: backend
+    dockerfilePath: Dockerfile
+    dockerContext: .
     plan: free
     region: frankfurt
     branch: main
