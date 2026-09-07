@@ -66,6 +66,12 @@ class _SubmitScreenState extends State<SubmitScreen> {
   ExamType? _reportType;
   int? _reportYear;
   SubmissionFile? _reportFile;
+  // The report's own real title (e.g. "Design of a Distributed Caching
+  // Layer for High-Traffic APIs") — required, distinct from discipline
+  // (the department) below. See PaperEntry.title's own doc comment for
+  // why this is a real form field rather than something extracted from
+  // the uploaded PDF.
+  final _titleController = TextEditingController();
   final _institutionController = TextEditingController();
   final _disciplineController = TextEditingController();
   final _supervisorController = TextEditingController();
@@ -87,6 +93,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
   @override
   void dispose() {
     _examBoardController.dispose();
+    _titleController.dispose();
     _institutionController.dispose();
     _disciplineController.dispose();
     _supervisorController.dispose();
@@ -109,6 +116,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
       !_submittingReport &&
       (!_isGuest || _contributorNameController.text.trim().isNotEmpty) &&
       _reportType != null &&
+      _titleController.text.trim().isNotEmpty &&
       _institutionController.text.trim().isNotEmpty &&
       _disciplineController.text.trim().isNotEmpty &&
       _reportYear != null &&
@@ -422,6 +430,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
         categoryId: reportsCategory.id,
         examTypeId: _reportType!.id,
         year: _reportYear!,
+        title: _titleController.text.trim(),
         institution: _institutionController.text.trim(),
         discipline: _disciplineController.text.trim(),
         supervisorName: _supervisorController.text.trim(),
@@ -486,6 +495,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
       _reportType = null;
       _reportYear = null;
       _reportFile = null;
+      _titleController.clear();
       _institutionController.clear();
       _disciplineController.clear();
       _supervisorController.clear();
@@ -575,6 +585,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
       ),
       const SizedBox(height: AppSpacing.space5),
       _fieldRow(l10n, l10n.reportTypeLabel, _reportType?.name, _pickReportType),
+      _textFieldRow(controller: _titleController, label: l10n.reportTitleLabel),
       _textFieldRow(controller: _institutionController, label: l10n.institutionLabel),
       _textFieldRow(controller: _disciplineController, label: l10n.disciplineLabel),
       _textFieldRow(controller: _supervisorController, label: l10n.supervisorOptionalLabel),

@@ -128,6 +128,20 @@ class PaperSubmission(TimeStampedModel):
     # PFE) — blank for every other submission. Reports have no Subject
     # taxonomy of their own (see the comment above), so discipline is free
     # text rather than a Subject FK.
+    #
+    # title (2026-09-07, owner feedback): discipline is the report's
+    # *department* (e.g. "Software Engineering"), not its actual title
+    # (e.g. "Design and Implementation of a Web-Based Inventory Management
+    # System") — the two were being conflated in the app's paper list,
+    # which showed discipline as if it were the document's own name.
+    # Deliberately a real, required-for-reports form field
+    # (PaperSubmissionCreateSerializer.validate) rather than something
+    # auto-extracted from the uploaded PDF/OCR text: a title page's layout
+    # varies too much (logo, student name, supervisor, date can all come
+    # before or after the actual title) for a heuristic to be trustworthy
+    # — the contributor already knows their own report's real title, no
+    # guessing needed.
+    title = models.CharField(max_length=300, blank=True)
     institution = models.CharField(max_length=200, blank=True)
     discipline = models.CharField(max_length=150, blank=True)
     supervisor_name = models.CharField(max_length=150, blank=True)

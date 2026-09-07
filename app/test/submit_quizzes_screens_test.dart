@@ -133,6 +133,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Internship Report'), findsOneWidget);
 
+    await tester.enterText(find.widgetWithText(TextField, 'Document title'), 'Design of a Distributed Caching Layer');
     await tester.enterText(find.widgetWithText(TextField, 'Institution / University'), 'Université de Douala');
     await tester.enterText(find.widgetWithText(TextField, 'Discipline / Department'), 'Computer Engineering');
     await tester.pump();
@@ -146,7 +147,8 @@ void main() {
 
     // Supervisor is genuinely optional and no file has been picked (same
     // file_picker platform-channel limitation as the exam-paper flow), so
-    // the submit button stays disabled even with every other real field set.
+    // the submit button stays disabled even with title and every other
+    // real field set.
     final submitButton = tester.widget<SpekoohButton>(find.widgetWithText(SpekoohButton, 'Submit report'));
     expect(submitButton.disabled, isTrue);
   });

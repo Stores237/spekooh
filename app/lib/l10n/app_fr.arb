@@ -180,6 +180,7 @@
   "contributionBonusBanner": "Les nouvelles soumissions vérifiées rapportent un bonus de crédit, utilisable pour débloquer des corrigés.",
   "submitPaperButton": "Soumettre l'épreuve",
   "reportTypeLabel": "Type de rapport",
+  "reportTitleLabel": "Titre du document",
   "institutionLabel": "Établissement / Université",
   "disciplineLabel": "Discipline / Département",
   "supervisorOptionalLabel": "Encadreur (facultatif)",

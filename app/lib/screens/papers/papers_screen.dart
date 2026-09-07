@@ -356,7 +356,7 @@ class _PapersScreenState extends State<PapersScreen> {
         final papers = query.isEmpty
             ? allPapers
             : allPapers
-                .where((p) => '${examType.name} ${subject?.title ?? ''} ${p.institution} ${p.discipline} ${p.supervisorName} ${p.year}'.toLowerCase().contains(query))
+                .where((p) => '${examType.name} ${subject?.title ?? ''} ${p.title} ${p.institution} ${p.discipline} ${p.supervisorName} ${p.year}'.toLowerCase().contains(query))
                 .toList();
 
         return SingleChildScrollView(
@@ -462,15 +462,20 @@ class _PapersScreenState extends State<PapersScreen> {
     );
   }
 
-  /// The report's real title (discipline, falling back to institution) in
-  /// place of the old "{examType} {year}" label, which told two different
-  /// students' reports apart by nothing but a number every submission that
-  /// year shares. Exam papers are unaffected — subject (already this
+  /// The report's real title in place of the old "{examType} {year}"
+  /// label, which told two different students' reports apart by nothing
+  /// but a number every submission that year shares. title is the
+  /// report's own real name (required at submission — see PaperEntry
+  /// .title's own doc comment); discipline is just its department, a
+  /// fallback for a legacy row submitted before title existed, not a
+  /// stand-in for it. Exam papers are unaffected — subject (already this
   /// screen's own header when browsing them) plus year is a real, unique
   /// enough label on its own; there's no separate "title" field for them.
   String _rowTitle({required ExamType examType, required PaperEntry paper, required bool isReports}) {
     if (isReports) {
-      final descriptor = paper.discipline.isNotEmpty ? paper.discipline : paper.institution;
+      final descriptor = paper.title.isNotEmpty
+          ? paper.title
+          : (paper.discipline.isNotEmpty ? paper.discipline : paper.institution);
       if (descriptor.isNotEmpty) return descriptor;
     }
     return '${examType.name} ${paper.year}';

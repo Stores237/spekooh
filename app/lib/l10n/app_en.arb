@@ -220,6 +220,7 @@
   "contributionBonusBanner": "New, verified submissions earn bonus credit, redeemable toward marking-guide unlocks.",
   "submitPaperButton": "Submit paper",
   "reportTypeLabel": "Report type",
+  "reportTitleLabel": "Document title",
   "institutionLabel": "Institution / University",
   "disciplineLabel": "Discipline / Department",
   "supervisorOptionalLabel": "Supervisor (optional)",
