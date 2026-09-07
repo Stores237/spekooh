@@ -536,6 +536,21 @@ maximum cron-job.org's Advanced settings allow — the default is too
 short for this one job even with the smaller batch, if Render also
 happens to be cold-starting at the same time.
 
+**Real live failure (2026-09-07, part 3) — the actual bottleneck was
+gunicorn's own worker timeout, not cron-job.org's.** After parts 1 and 2
+above, a direct manual trigger (bypassing cron-job.org's client
+entirely) still failed — with a real `502` this time, confirmed via
+`curl -w "%{http_code}"`. Gunicorn's own default worker timeout is 30
+seconds; once a worker misses that deadline gunicorn kills it outright,
+and Render's proxy reports the dead connection as a 502 to whoever's
+waiting — independent of `BATCH_SIZE` and independent of the calling
+service's own timeout setting entirely. Fixed by giving gunicorn's own
+`CMD` in `backend/Dockerfile` a real `--timeout 150`. **This means
+cron-job.org's job timeout should be set to something comfortably above
+150s too** (e.g. 170–180s, or the max the plan allows) — a shorter
+client-side timeout will still report "failed" even once the server
+itself genuinely completes the work within its new 150s budget.
+
 Another endpoint on the same mechanism, but on-demand rather than
 scheduled: `.../internal/tasks/delete-test-accounts/` deletes every `User`
 row whose email ends in `@example.com` (the reserved test domain — see
