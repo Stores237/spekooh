@@ -157,18 +157,24 @@ services (the Dockerfile's `RUN`/`CMD` replace them).
 
 This is a monorepo (`app/` + `backend/`) — Render's Blueprint feature looks
 for `render.yaml` at the repo root regardless of where the actual service
-lives, so it sets `rootDir: backend`. `dockerfilePath`/`dockerContext`
-are resolved **relative to the repo root regardless of `rootDir`** —
-easy to get wrong, since every other path-like Blueprint field _is_
-relative to `rootDir` once it's set.
+lives, so it sets `rootDir: backend`, which relocates the effective root
+Render builds from. **`dockerfilePath`/`dockerContext` are then resolved
+relative to `rootDir`, not the repo root** — Render's own Blueprint docs
+say the opposite (relative to the repo root, unaffected by `rootDir`);
+that's simply not what happens. Confirmed by a real failed deploy
+(2026-09-07): setting both to `backend/...` on top of `rootDir: backend`
+produced the literal path `.../src/backend/backend` (the two compounded)
+and failed with `lstat ...: no such file or directory`. Since `rootDir`
+already points at `backend/`, both fields just need to be relative to
+*that*: `Dockerfile` and `.`, not `backend/Dockerfile` and `backend`.
 
 ```yaml
 services:
   - type: web
     name: spekooh-staging
     runtime: docker
-    dockerfilePath: backend/Dockerfile
-    dockerContext: backend
+    dockerfilePath: Dockerfile
+    dockerContext: .
     plan: free
     region: frankfurt
     branch: main
