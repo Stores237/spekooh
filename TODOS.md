@@ -781,6 +781,25 @@ infra items and `SECURITY.md`/this session's own record for the guest-access aud
   existing gunicorn sync-worker stack rather than a Channels/ASGI/WebSocket migration —
   worker-occupancy is unchanged from the buffered call, zero new infrastructure, and chat has
   no bidirectional-push need a WebSocket would actually justify.
+- **Django 6.1.1 upgrade** (#102, resolving a Dependabot PR #97 that would have broken
+  production if merged as-is): #97 only bumped Django, and its own CI run had already failed —
+  `djangorestframework` 3.17.2 imports a private Django symbol (`cc_delim_re`) that Django 6
+  removed, crashing the entire URL conf on import. Fixed by bundling the two companion bumps
+  Django 6 actually needs: `djangorestframework` → 3.18.1 (has the real fix — verified against
+  the released wheel, not just changelog text) and `django-unfold` → 0.105.0 (the admin theming
+  package, most Django-internals-dependent piece of this stack; first version declaring real
+  Django 6.1 support). 356/356 tests passed (14 deselected at the time for an unrelated,
+  since-resolved S3 flake — see the next entry).
+- **Two CI/test-reliability fixes** (#103): (1) tests now save every uploaded file to a
+  hermetic local temp directory instead of the real Supabase Storage bucket — this dev
+  sandbox's `.env` has real credentials (per `RUNNING_LOCALLY.md`'s own advice for testing real
+  uploads), so a transient live S3 blip had briefly failed 14 unrelated tests and looked like a
+  Django-6 regression; it wasn't. (2) a new CI step actually installs and checks the exact
+  `requirements.txt` Docker deploys — every other CI step only validated
+  `requirements/dev.txt`'s looser constraints, which is exactly how #97's real breakage could
+  have slipped past every check if it had touched `requirements.txt` alone. Confirmed live:
+  reproducing #97's exact diff against this new step reproduces the identical `cc_delim_re`
+  crash from its CI log.
 
 ---
 
