@@ -390,6 +390,37 @@ I can write unilaterally. Grouped by what each one unblocks.
   Flutter widget tests (code included when given, omitted — not sent empty — when not), plus
   the existing Profile smoke test updated for the second real "Share" action now on the page.
 
+### 13. French AI prompts (Lane A summaries + Lane B chat)
+- **Idea:** both `apps.ai.prompts.summarise.SYSTEM` (paper summaries, Gemini) and
+  `apps.ai.prompts.chat.SYSTEM_CHAT` (real-time chat, Groq) only have an `"en"` key today, by
+  explicit design — each module's own docstring flags `"fr"` as a real, separate piece of
+  work, deliberately deferred, not a mechanical translation job. A francophone student gets an
+  English AI summary/reply regardless of their own locale, even though the rest of the app's UI
+  is already fully bilingual (see item 1 above, done).
+- **Backend:** not built — `PaperSummaryView`/`PaperChatView` don't accept or derive a language
+  at all; both always format the `"en"` prompt template.
+- **Scope note:** same register decision already made for the app's own French UI copy —
+  standard/formal French, not Camfranglais, matching how real local apps in this space (Orange
+  Money) present. Needs the same care as that UI translation pass, not a drop-in
+  machine-translated string; a wrong pedagogical register here (a tutor prompt, not a button
+  label) is more likely to read as awkward or as "an AI wrote this."
+
+### 14. Pre-warming AI summaries at publish time
+- **Idea:** `apps.ai.services.get_or_queue_artifact` only ever queues a `PENDING` summary
+  artifact the first time *anyone* asks for it (`PaperSummaryView`'s own `GET`), and
+  `generate_pending_artifacts`'s cron picks it up within a few minutes after that — so the
+  first student to open a freshly-published paper always sees "generating…" instead of an
+  instant summary, purely because nobody happened to ask for it sooner.
+- **Backend:** not built — no automatic trigger queues a summary artifact at publish time (or
+  once OCR finishes, since a summary needs `ocr_text` first). Contrast with OCR itself
+  (`apps.papers.services.run_pending_ocr`, 2026-09-06/07), which *was* made automatic on
+  submission for exactly this class of reason — this item is the same fix, one layer further
+  along the same pipeline, not yet applied to Lane A.
+- **Scope note:** straightforward to build on the existing cron-driven pattern (queue a
+  `PENDING` `ArtifactKind.SUMMARY` row right after a submission's OCR completes successfully,
+  same place `process_ocr_and_duplicate_check` already flips `ocr_status` to `DONE`) — no new
+  infrastructure, just one more automatic queue-on-success hook alongside OCR's own.
+
 ---
 
 ## P2 — Explicitly future/speculative in spec, or invented UI with no spec backing at all
@@ -423,19 +454,24 @@ I can write unilaterally. Grouped by what each one unblocks.
 
 ### 12. Auto-extract paper metadata and auto-file submissions (2026-08-26, owner idea)
 - **Idea:** when a contributor submits a scanned paper (`SubmitScreen` → `POST
-  /api/papers/submissions/`), run OCR/document-understanding on the upload to recognize the
+  /api/papers/submissions/`), use OCR/document-understanding on the upload to recognize the
   essential fields — subject, exam board, year, level/grade, paper number — and auto-fill the
   submission's category/tags instead of relying entirely on what the contributor typed in by hand.
   Goal: less manual tagging work for contributors, more consistent categorization for review.
-- **Backend:** not built — `PaperSubmission` today is filed purely by the fields the contributor
-  submits (`apps/papers/models.py`); there is no OCR/extraction step anywhere in the upload
-  pipeline, and no third-party OCR provider is wired in (`uploads/README.md` §2 lists
-  "OCR/duplicate detection" as a confirmed but not-yet-implemented stack choice — this idea is the
-  concrete feature that would consume it).
-- **Scope note:** real OCR needs a provider decision (e.g. a hosted OCR/document-AI API vs.
-  self-hosted) plus a review step, since auto-filed fields should stay contributor/reviewer-
-  correctable rather than silently overriding what a human typed. Not started — needs its own
-  design pass before implementation, not a drop-in addition.
+- **Update (2026-09-06/07):** the OCR half of this changed since this item was written —
+  `apps.papers.ocr` (self-hosted Tesseract + Poppler, real live infra, see "Recently shipped"
+  below) now runs automatically on every submission and populates `PaperSubmission.ocr_text`.
+  What's still **not built** is everything downstream of that text: no code parses it to
+  recognize subject/exam board/year/level, and no auto-fill of the submission's own
+  category/tags happens from it — `PaperSubmission` is still filed purely by what the
+  contributor typed by hand. This item is now specifically that remaining
+  extraction-and-auto-fill step, not "get OCR running" (already done, for a different
+  reason — AI summaries/chat needed real text to work on, see the AI Integration entry below).
+- **Scope note:** a review step is still the right call regardless — auto-filed fields should
+  stay contributor/reviewer-correctable rather than silently overriding what a human typed.
+  Not started — needs its own design pass (what fields, what confidence threshold triggers a
+  review flag) before implementation, not a drop-in addition on top of the OCR text that
+  already exists now.
 
 ---
 
@@ -689,6 +725,62 @@ tested, merged change (not a mock) — PR numbers are on `main`'s history for ex
   verification code), ran the cleanup, confirmed the freed email could re-register. The real
   Android build (`app-release.apk`) now points at this URL permanently — see `RENDER_STAGING.md`'s
   "What each piece does" section for the full architecture.
+
+---
+
+## Recently shipped (2026-09-01 – 2026-09-08)
+
+The AI Integration feature arc, plus the real-account/guest-access hardening and live
+production incident it surfaced along the way. All real, merged, tested changes on `main` —
+PR numbers are its exact history; see `RENDER_STAGING.md` for the full incident writeup on the
+infra items and `SECURITY.md`/this session's own record for the guest-access audit.
+
+- **AI Integration — Lane A (Gemini paper summaries) + Lane B (Groq real-time chat)** (#85, #86):
+  `PaperSummaryView` generates a one-paragraph summary per paper (cron-driven, queued on first
+  request — see item 14 above for the still-open pre-warming gap); `PaperChatView` is a
+  real-time tutor chatbot grounded in one paper's own OCR text, stateless server-side (the
+  client resends its running conversation each call). Gating model (owner decision, resolved
+  via AskUserQuestion): free for everyone with a daily per-user quota
+  (`AI_CHAT_DAILY_LIMIT`/quota.py), then a Kawlo Plus upsell; a Pro subscriber skips the cap
+  entirely, same reasoning as ad-free + unlimited paper views. A hard provider-wide daily
+  budget (`GROQ_DAILY_BUDGET`/`GEMINI_DAILY_BUDGET`) caps real spend regardless of per-user
+  quotas, defense in depth against a runaway bug or abuse.
+- **A real, required title field for academic reports** (#88): reports were showing the
+  department name (`discipline`) where a document title belongs, making related-document
+  search meaningless — owner-reported from a live app review. Added a real, contributor-typed
+  `PaperSubmission.title` field (deliberately not OCR-extracted — title-page layouts vary too
+  much for that to be reliable); required for reports, not for exam papers.
+  `PapersScreen`/search now prefer it over `discipline`.
+- **Guest-access hardening + automatic OCR** (#87), from a second live app-review finding: a
+  guest account could view/save papers and use AI chat, when only paper/report *contribution*
+  should be guest-accessible — everything else needs a real account. Backend:
+  `IsAuthenticatedNotGuest` now gates `PaperSubmissionViewSet` (list/retrieve/view),
+  `PaperSummaryView` (was `AllowAny`), and `PaperChatView` (a real, separate bug — it claimed
+  "real accounts only" in its own docstring but was still built with plain `IsAuthenticated`,
+  which a guest JWT satisfies too). Flutter: the Papers tab and Home's featured-paper card are
+  now gated behind a real "log in to continue" prompt for guests. Also made OCR automatic —
+  every new submission starts `ocr_status=PENDING` and a new cron command
+  (`process_pending_ocr`) picks it up within a few minutes of submission, instead of only ever
+  running via a manual, admin-only action nothing actually called — meaning AI summary/chat had
+  silently never worked for a normally-published paper before this.
+- **Live OCR infrastructure incident, four parts** (#89–#93, #99) — a real production outage
+  chased through its actual layers, each fix necessary but insufficient alone: `BATCH_SIZE`
+  too large (one HTTP request/response has to complete the whole batch) → Tesseract/Poppler
+  never installed on Render's native Python runtime (which blocks `apt-get` entirely) →
+  migrated to a Docker deploy → a real Docker path-resolution bug (`dockerfilePath`/
+  `dockerContext` are relative to `rootDir`, not the repo root, contrary to Render's own docs)
+  → gunicorn's own 30s worker timeout killing genuinely-slow OCR requests → that raised timeout
+  (150s) still 3 seconds short of a live-measured 153s run → `BATCH_SIZE` dropped to 1 and the
+  timeout raised to 300s. A Dependabot version-mismatch (`psycopg`/`psycopg-binary`, caught
+  during this last fix's own pre-ship re-verification) was bundled into #99 since it would have
+  broken the *next* deploy's fresh install. Full measurement-by-measurement writeup in
+  `RENDER_STAGING.md`.
+- **Real streaming for the chat feature** (#100): the reply now arrives token-by-token instead
+  of one buffered block. Content negotiation on the same endpoint (`Accept:
+  text/event-stream`), not a second URL — reuses every existing gate. Deliberately SSE over the
+  existing gunicorn sync-worker stack rather than a Channels/ASGI/WebSocket migration —
+  worker-occupancy is unchanged from the buffered call, zero new infrastructure, and chat has
+  no bidirectional-push need a WebSocket would actually justify.
 
 ---
 
