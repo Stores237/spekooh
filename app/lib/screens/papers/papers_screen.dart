@@ -62,6 +62,13 @@ class _PapersScreenState extends State<PapersScreen> {
   final _searchController = TextEditingController();
   String _paperQuery = '';
 
+  /// Narrows the paper list to one year — a separate control from the text
+  /// search above (owner request, 2026-09-08) rather than folding into it:
+  /// the search placeholder already told students to "Search by year..."
+  /// before this existed, so a dedicated year filter is the more discoverable
+  /// version of what they were already trying to do by typing a year in.
+  int? _yearFilter;
+
   /// Cached so typing in the search box (a setState on this same screen)
   /// doesn't recreate the request and flash the whole list back to a
   /// loading spinner — only cleared when [_select] actually moves to a new
@@ -76,12 +83,65 @@ class _PapersScreenState extends State<PapersScreen> {
 
   void _select(PaperBrowseSelection Function() next) => setState(() {
         _selection = next();
-        // A search left over from a previous subject/category shouldn't
-        // silently filter out everything in the next one.
+        // A search (or year filter) left over from a previous subject/
+        // category shouldn't silently filter out everything in the next one.
         _paperQuery = '';
         _searchController.clear();
+        _yearFilter = null;
         _papersFuture = null;
       });
+
+  /// Real exam years are always positive 4-digit numbers, so this can never
+  /// collide with one — used to tell "explicitly chose All years" (clear the
+  /// filter) apart from "dismissed the sheet without picking anything"
+  /// (backdrop tap / back button), which pop the same showModalBottomSheet
+  /// future with a null result either way and must leave _yearFilter alone.
+  static const _allYearsSentinel = -1;
+
+  Future<void> _pickYearFilter(AppLocalizations l10n, List<int> years) async {
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.65),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(l10n.filterByYearTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
+                ),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    ListTile(
+                      title: Text(l10n.filterAllYears, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 14, color: AppColors.textPrimary)),
+                      trailing: _yearFilter == null ? const Icon(LucideIcons.check, size: 18, color: AppColors.gold500) : null,
+                      onTap: () => Navigator.of(context).pop(_allYearsSentinel),
+                    ),
+                    for (final year in years)
+                      ListTile(
+                        title: Text('$year', style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 14, color: AppColors.textPrimary)),
+                        trailing: _yearFilter == year ? const Icon(LucideIcons.check, size: 18, color: AppColors.gold500) : null,
+                        onTap: () => Navigator.of(context).pop(year),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space2),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || picked == null) return; // dismissed without picking — leave the current filter alone
+    setState(() => _yearFilter = picked == _allYearsSentinel ? null : picked);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -353,11 +413,16 @@ class _PapersScreenState extends State<PapersScreen> {
         // is a far more practical thing to search by than a number every
         // other intern that year shares too.
         final query = _paperQuery.trim().toLowerCase();
-        final papers = query.isEmpty
+        final textFiltered = query.isEmpty
             ? allPapers
             : allPapers
                 .where((p) => '${examType.name} ${subject?.title ?? ''} ${p.title} ${p.institution} ${p.discipline} ${p.supervisorName} ${p.year}'.toLowerCase().contains(query))
                 .toList();
+        final yearFilter = _yearFilter;
+        final papers = yearFilter == null ? textFiltered : textFiltered.where((p) => p.year == yearFilter).toList();
+        // Offered years always come from the full unfiltered list — narrowing
+        // by year shouldn't also shrink the very picker used to change it.
+        final availableYears = allPapers.map((p) => p.year).toSet().toList()..sort((a, b) => b.compareTo(a));
 
         return SingleChildScrollView(
           child: Column(
@@ -372,10 +437,32 @@ class _PapersScreenState extends State<PapersScreen> {
               ),
               if (!loading && allPapers.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.space3),
-                SearchInput(
-                  placeholder: isReports ? l10n.searchReportsInCategory : l10n.searchPapersInCategory,
-                  controller: _searchController,
-                  onChanged: (v) => setState(() => _paperQuery = v),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SearchInput(
+                        placeholder: isReports ? l10n.searchReportsInCategory : l10n.searchPapersInCategory,
+                        controller: _searchController,
+                        onChanged: (v) => setState(() => _paperQuery = v),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      key: const Key('paperYearFilterButton'),
+                      onTap: () => _pickYearFilter(l10n, availableYears),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: yearFilter != null ? AppColors.gold500 : AppColors.surfaceCard,
+                          border: yearFilter != null ? null : Border.all(color: AppColors.borderSubtle),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(LucideIcons.slidersHorizontal, size: 18, color: yearFilter != null ? AppColors.white : AppColors.textTertiary),
+                      ),
+                    ),
+                  ],
                 ),
               ],
               const SizedBox(height: AppSpacing.space4),

@@ -142,6 +142,75 @@ void main() {
     expect(find.text('No papers here match your search.'), findsOneWidget);
   });
 
+  testWidgets('the year filter beside search narrows the list, independent of the text search', (tester) async {
+    final paper2025 = PaperEntry(
+      id: 42,
+      year: 2025,
+      system: 'anglophone',
+      track: 'Science',
+      status: 'PUBLISHED',
+      fileUrl: 'http://testserver/media/paper_submissions/2025/physics.pdf',
+      createdAt: DateTime(2025, 1, 1),
+    );
+    final paper2026 = PaperEntry(
+      id: 43,
+      year: 2026,
+      system: 'anglophone',
+      track: 'Science',
+      status: 'PUBLISHED',
+      fileUrl: 'http://testserver/media/paper_submissions/2026/physics.pdf',
+      createdAt: DateTime(2026, 1, 1),
+    );
+    await tester.pumpWidget(l10nTestApp(
+      PapersScreen(repository: MockPapersRepository(seedPublished: [paper2025, paper2026])),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.tap(find.text('Secondary'));
+    await tester.pump();
+    await tester.tap(find.text('Anglophone'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.text('A Level'));
+    await tester.pump();
+    await tester.tap(find.text('Science'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.ensureVisible(find.text('Physics'));
+    await tester.pump();
+    await tester.tap(find.text('Physics'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.textContaining('A Level 2025'), findsWidgets);
+    expect(find.textContaining('A Level 2026'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('paperYearFilterButton')));
+    await tester.pumpAndSettle();
+
+    // Both real years are offered, most recent first.
+    expect(find.text('All years'), findsOneWidget);
+    expect(find.text('2026'), findsOneWidget);
+    expect(find.text('2025'), findsOneWidget);
+
+    await tester.tap(find.text('2026'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('A Level 2026'), findsWidgets);
+    expect(find.textContaining('A Level 2025'), findsNothing);
+
+    // Clearing it via "All years" brings both back.
+    await tester.tap(find.byKey(const Key('paperYearFilterButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All years'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('A Level 2025'), findsWidgets);
+    expect(find.textContaining('A Level 2026'), findsWidgets);
+  });
+
   testWidgets('Academic Reports skips the subject step entirely — reports have no Subject taxonomy', (tester) async {
     // Regression: this drill-down used to force a subject pick that then
     // filtered the paper list against a subject no report submission

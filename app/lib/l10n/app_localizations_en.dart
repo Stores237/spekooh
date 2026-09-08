@@ -483,6 +483,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paperSearchNoResultsBody => 'No papers here match your search.';
 
   @override
+  String get filterByYearTitle => 'Filter by year';
+
+  @override
+  String get filterAllYears => 'All years';
+
+  @override
   String get contributionTitle => 'Contribution';
 
   @override
@@ -1111,7 +1117,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiSummaryDisclaimer =>
-      'AI-generated — always check the original paper for the exact wording.';
+      'AI-generated. Always check the original paper for the exact wording.';
 
   @override
   String get chatEntryButtonLabel => 'Ask AI about this paper';
@@ -1121,7 +1127,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatEmptyStateHint =>
-      'Ask me anything about this paper — I can explain concepts and how to approach each question.';
+      'Ask me anything about this paper. I can explain concepts and how to approach each question.';
 
   @override
   String get chatInputHint => 'Type your question…';

@@ -188,6 +188,8 @@
   "searchReportsInCategory": "Search by title or year...",
   "paperSearchNoResultsTitle": "No matches",
   "paperSearchNoResultsBody": "No papers here match your search.",
+  "filterByYearTitle": "Filter by year",
+  "filterAllYears": "All years",
 
   "contributionTitle": "Contribution",
   "contributionSubtitle": "Share a past paper or an academic report. Every contribution helps another student.",
@@ -456,10 +458,10 @@
   "aiSummaryGenerating": "Generating a summary of this paper…",
   "aiSummaryFailed": "A summary isn't available for this paper yet.",
   "aiSummaryCheckAgain": "Check again",
-  "aiSummaryDisclaimer": "AI-generated — always check the original paper for the exact wording.",
+  "aiSummaryDisclaimer": "AI-generated. Always check the original paper for the exact wording.",
   "chatEntryButtonLabel": "Ask AI about this paper",
   "chatScreenTitle": "Ask AI",
-  "chatEmptyStateHint": "Ask me anything about this paper — I can explain concepts and how to approach each question.",
+  "chatEmptyStateHint": "Ask me anything about this paper. I can explain concepts and how to approach each question.",
   "chatInputHint": "Type your question…",
   "chatQuotaRemaining": "{count} free left today",
   "@chatQuotaRemaining": {

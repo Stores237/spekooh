@@ -489,6 +489,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucune épreuve ici ne correspond à votre recherche.';
 
   @override
+  String get filterByYearTitle => 'Filtrer par année';
+
+  @override
+  String get filterAllYears => 'Toutes les années';
+
+  @override
   String get contributionTitle => 'Contribution';
 
   @override
@@ -1128,7 +1134,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get aiSummaryDisclaimer =>
-      'Généré par IA — vérifiez toujours l\'épreuve originale pour la formulation exacte.';
+      'Généré par IA. Vérifiez toujours l\'épreuve originale pour la formulation exacte.';
 
   @override
   String get chatEntryButtonLabel =>
@@ -1139,7 +1145,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chatEmptyStateHint =>
-      'Posez-moi n\'importe quelle question sur cette épreuve — je peux expliquer les concepts et comment aborder chaque question.';
+      'Posez-moi n\'importe quelle question sur cette épreuve. Je peux expliquer les concepts et comment aborder chaque question.';
 
   @override
   String get chatInputHint => 'Tapez votre question…';

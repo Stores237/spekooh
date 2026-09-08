@@ -27,7 +27,7 @@ from .services import (
 
 # Shared between PaperChatView's non-streaming and streaming paths so a
 # safety-filter refusal reads identically either way.
-CHAT_REFUSAL_MESSAGE = "I can't help with that — let's stick to this paper."
+CHAT_REFUSAL_MESSAGE = "I can't help with that. Let's stick to this paper."
 
 
 class ServerSentEventRenderer(BaseRenderer):
@@ -67,7 +67,7 @@ def _sse_chat_stream(deltas, quota_remaining):
     except AIRefused:
         yield f"data: {json.dumps({'delta': CHAT_REFUSAL_MESSAGE})}\n\n"
     except AIRateLimited:
-        yield f"data: {json.dumps({'error': True, 'code': 'rate_limited', 'detail': 'AI chat is busy right now — try again in a moment.'})}\n\n"
+        yield f"data: {json.dumps({'error': True, 'code': 'rate_limited', 'detail': 'AI chat is busy right now. Try again in a moment.'})}\n\n"
         return
     except AIError:
         yield f"data: {json.dumps({'error': True, 'code': 'unavailable', 'detail': 'AI chat is currently unavailable.'})}\n\n"
@@ -170,7 +170,7 @@ class PaperChatView(APIView):
         # against a runaway bug or abuse, same reasoning as
         # GEMINI_DAILY_BUDGET for Lane A.
         if not consume_provider_budget("groq", settings.GROQ_DAILY_BUDGET):
-            return Response({"detail": "AI chat is temporarily unavailable — try again shortly."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return Response({"detail": "AI chat is temporarily unavailable. Try again shortly."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         # Content negotiation, not a separate endpoint (2026-09-08, real
         # streaming for Lane B) — reuses every gate above (permissions,
@@ -189,7 +189,7 @@ class PaperChatView(APIView):
             try:
                 deltas = stream_chat_message(paper=paper, messages=request.data["messages"])
             except AIRateLimited:
-                return Response({"detail": "AI chat is busy right now — try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+                return Response({"detail": "AI chat is busy right now. Try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
             except AIError:
                 return Response({"detail": "AI chat is currently unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
@@ -200,7 +200,7 @@ class PaperChatView(APIView):
         except AIRefused:
             return Response({"role": "assistant", "content": CHAT_REFUSAL_MESSAGE, "quota_remaining": quota_remaining})
         except AIRateLimited:
-            return Response({"detail": "AI chat is busy right now — try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return Response({"detail": "AI chat is busy right now. Try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except AIError:
             return Response({"detail": "AI chat is currently unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 

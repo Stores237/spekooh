@@ -958,6 +958,36 @@ class TestRunPendingOcr:
         assert ticket.object_id == str(paper.pk)
         assert "3 attempts" in ticket.reason
 
+    @pytest.mark.django_db
+    def test_a_row_stuck_pending_at_the_attempt_cap_is_flagged_instead_of_retried_forever(self):
+        """Real live gap (2026-09-08): ocr_attempts is saved BEFORE OCR
+        itself runs, so a row can reach MAX_OCR_ATTEMPTS while still sitting
+        at ocr_status=PENDING — confirmed live, caused by Render's free-tier
+        auto-sleep waking mid-cron-hit and the container going down before
+        the row's own except block ever got a chance to run. Without this
+        guard, process_pending_ocr's own query (any PENDING row, no
+        attempts bound) would keep retrying a row like this forever with
+        zero admin visibility. This must NOT attempt real OCR again (no
+        exception raised, no further attempt) — just a clean transition to
+        FAILED + a real ticket."""
+        from apps.admin_queue.models import AdminFlagQueue, FlagCategory
+
+        from .models import OcrStatus
+        from .services import MAX_OCR_ATTEMPTS, run_pending_ocr
+
+        paper = PaperSubmissionFactory(file_ref="", uploaded_file=None, ocr_status=OcrStatus.PENDING, ocr_attempts=MAX_OCR_ATTEMPTS)
+
+        run_pending_ocr(paper)  # must not raise — no real OCR attempt happens
+
+        paper.refresh_from_db()
+        assert paper.ocr_status == OcrStatus.FAILED
+        assert paper.ocr_attempts == MAX_OCR_ATTEMPTS  # unchanged — no further attempt was made
+        assert paper.ocr_error != ""
+        ticket = AdminFlagQueue.objects.get()
+        assert ticket.category == FlagCategory.OTHER
+        assert ticket.object_id == str(paper.pk)
+        assert "3 attempts" in ticket.reason
+
 
 class TestProcessPendingOcrCommand:
     @pytest.mark.django_db
