@@ -66,6 +66,27 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements/dev.txt
+    - name: Verify the locked requirements.txt (what Docker/production actually deploys)
+      # Every other step in this job installs from requirements/dev.txt —
+      # loose constraints, resolved fresh every run — but the real Docker
+      # image (backend/Dockerfile) installs from this flat, fully-pinned
+      # requirements.txt instead, and nothing here ever actually installed
+      # or imported it. That gap is exactly how #97 (a Dependabot PR
+      # bumping only Django's line in requirements.txt) could have merged
+      # clean by every other check while still being one djangorestframework
+      # version behind what Django 6 needs — caught by hand that time, not
+      # by CI. A separate venv keeps this from disturbing the dev.txt
+      # environment the later steps depend on; it reuses this job's own
+      # already-running postgres/redis services via the same env vars
+      # above, so manage.py check exercises the real settings module
+      # end-to-end, not just a bare import.
+      working-directory: backend
+      run: |
+        python -m venv /tmp/lockcheck-venv
+        /tmp/lockcheck-venv/bin/pip install --upgrade pip -q
+        /tmp/lockcheck-venv/bin/pip install -r requirements.txt -q
+        /tmp/lockcheck-venv/bin/pip check
+        /tmp/lockcheck-venv/bin/python manage.py check
     - name: Check for missing migrations
       # Catches model changes committed without their migration — the exact
       # gap that let two live endpoints 500 in dev after a field was added
