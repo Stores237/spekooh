@@ -950,6 +950,18 @@ abstract class AppLocalizations {
   /// **'No papers here match your search.'**
   String get paperSearchNoResultsBody;
 
+  /// No description provided for @filterByYearTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by year'**
+  String get filterByYearTitle;
+
+  /// No description provided for @filterAllYears.
+  ///
+  /// In en, this message translates to:
+  /// **'All years'**
+  String get filterAllYears;
+
   /// No description provided for @contributionTitle.
   ///
   /// In en, this message translates to:
@@ -2051,7 +2063,7 @@ abstract class AppLocalizations {
   /// No description provided for @aiSummaryDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'AI-generated — always check the original paper for the exact wording.'**
+  /// **'AI-generated. Always check the original paper for the exact wording.'**
   String get aiSummaryDisclaimer;
 
   /// No description provided for @chatEntryButtonLabel.
@@ -2069,7 +2081,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatEmptyStateHint.
   ///
   /// In en, this message translates to:
-  /// **'Ask me anything about this paper — I can explain concepts and how to approach each question.'**
+  /// **'Ask me anything about this paper. I can explain concepts and how to approach each question.'**
   String get chatEmptyStateHint;
 
   /// No description provided for @chatInputHint.

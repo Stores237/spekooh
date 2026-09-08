@@ -304,7 +304,36 @@ def run_pending_ocr(paper_submission: PaperSubmission) -> None:
     its own) so the caller can log/count it; this function's own job is
     just recording the attempt and, after MAX_OCR_ATTEMPTS, raising a real
     Review Team ticket instead of failing silently forever.
+
+    Guard at the top (2026-09-08, real live gap found in production): a row
+    can reach ocr_attempts >= MAX_OCR_ATTEMPTS while still sitting at
+    ocr_status=PENDING, not FAILED — the attempt counter below is saved
+    BEFORE process_ocr_and_duplicate_check ever runs, so an attempt
+    interrupted by something outside Python entirely (the container going
+    down mid-request — confirmed live: Render's free-tier auto-sleep waking
+    on a cron hit spaced further apart than its own 15-minute idle window,
+    cold-starting into a request that dies before OCR itself even begins)
+    never reaches the except block below that would normally set FAILED and
+    flag it. Without this guard, process_pending_ocr's own query (any
+    ocr_status=PENDING row, no attempts bound) would keep retrying a row
+    like this forever with zero admin visibility, one wasted attempt per
+    cron cycle, indefinitely.
     """
+    if paper_submission.ocr_attempts >= MAX_OCR_ATTEMPTS:
+        paper_submission.ocr_status = OcrStatus.FAILED
+        if not paper_submission.ocr_error:
+            paper_submission.ocr_error = (
+                f"Exceeded {MAX_OCR_ATTEMPTS} attempts without a clean success or failure each time — "
+                "likely interrupted mid-run (e.g. a container restart), not a real OCR error. "
+                "Retry via the admin's retry_ocr action once the underlying cause is understood."
+            )
+        paper_submission.save(update_fields=["ocr_status", "ocr_error", "updated_at"])
+        flag(
+            subject=paper_submission,
+            category=FlagCategory.OTHER,
+            reason=f"OCR stuck at {paper_submission.ocr_attempts} attempts without ever completing cleanly: {paper_submission.ocr_error}",
+        )
+        return
     paper_submission.ocr_attempts += 1
     paper_submission.save(update_fields=["ocr_attempts", "updated_at"])
     try:

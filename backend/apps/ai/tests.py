@@ -640,7 +640,7 @@ class TestPaperChatViewStreaming:
             )
         assert _sse_events(response) == [
             {"delta": "Partial answer, "},
-            {"error": True, "code": "rate_limited", "detail": "AI chat is busy right now — try again in a moment."},
+            {"error": True, "code": "rate_limited", "detail": "AI chat is busy right now. Try again in a moment."},
         ]
 
     @pytest.mark.django_db

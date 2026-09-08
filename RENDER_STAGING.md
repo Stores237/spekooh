@@ -582,6 +582,42 @@ Fixed by bumping `psycopg-binary` to `3.3.5` to match, bundled into
 this same PR since it was found while re-verifying this exact fix
 against a newer `main`.
 
+**Real live failure (2026-09-08, part 5) — the actual root cause turned
+out to be free-tier auto-sleep, not compute time.** A real submission
+sat at `ocr_status=PENDING`, `ocr_attempts=1`, with an *empty*
+`ocr_error` — meaning the attempt counter (saved before OCR itself
+runs) incremented, but the row's own `except` block never ran, so
+nothing was ever recorded as a failure. A live-measured manual trigger
+came back `HTTP_STATUS:502` at `TIME:90.233306s` — well under the
+300s gunicorn timeout, and Render's own logs showed no
+`WORKER TIMEOUT`/`SIGKILL` message either, ruling out both gunicorn's
+timeout and an OOM kill. What the logs *did* show: repeated, silent
+container restarts (the full `collectstatic`/`migrate`/
+`ensure_superuser`/gunicorn-boot sequence, over and over) with long,
+otherwise-empty gaps in between and zero request-level trace of the
+actual `process-pending-ocr` call. Root cause, confirmed against
+Render's own documented behavior: **the `process-pending-ocr` cron job
+was scheduled every 30 minutes — twice Render free tier's own 15-minute
+idle-sleep window** — so nearly every single cron hit was waking a
+sleeping container from cold, and the combined cold-start + OCR time
+was enough to fail before completing cleanly. Fixed operationally by
+shortening the cron-job.org schedule to every 10 minutes, comfortably
+under the sleep threshold, so the service should stay warm between
+runs going forward.
+
+**Code-side safety net added regardless** (`apps.papers.services
+.run_pending_ocr`): a row reaching `ocr_attempts >= MAX_OCR_ATTEMPTS`
+while still `ocr_status=PENDING` (exactly this failure shape — an
+attempt interrupted before its own `except` block could run) used to
+keep being picked up by `process_pending_ocr`'s own query forever, with
+zero admin visibility, one wasted attempt every cron cycle,
+indefinitely. Now guarded at the top of `run_pending_ocr`: a row already
+at the cap short-circuits straight to `FAILED` plus a real
+`AdminFlagQueue` ticket instead of attempting OCR yet again — same
+"stop silently forever, raise a real ticket" reasoning the existing
+post-failure path already had, just closing the one gap where a status
+of `PENDING` (not `FAILED`) let a stuck row slip past it.
+
 Another endpoint on the same mechanism, but on-demand rather than
 scheduled: `.../internal/tasks/delete-test-accounts/` deletes every `User`
 row whose email ends in `@example.com` (the reserved test domain — see

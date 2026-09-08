@@ -88,7 +88,7 @@ void main() {
   testWidgets('a mid-stream error frame keeps the partial reply on screen and shows a SnackBar', (tester) async {
     final repo = MockPapersRepository()
       ..mockChatStreamDeltas = ['Here is a partial answer, ']
-      ..mockChatStreamErrorDetail = 'AI chat is busy right now — try again in a moment.';
+      ..mockChatStreamErrorDetail = 'AI chat is busy right now. Try again in a moment.';
     await tester.pumpWidget(l10nTestApp(ChatScreen(paperId: 1, paperTitle: 'Bio 2024', repository: repo)));
 
     await tester.enterText(find.byType(TextField), 'hi');
