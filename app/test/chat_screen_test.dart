@@ -67,4 +67,39 @@ void main() {
     expect(find.textContaining("Couldn't send that"), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('a real multi-chunk stream builds the same bubble in place, not several bubbles', (tester) async {
+    final repo = MockPapersRepository()
+      ..mockChatStreamDeltas = ['Photo', 'synthesis ', 'makes food ', 'from light.']
+      ..mockChatReply = const ChatReply(content: 'unused — mockChatStreamDeltas wins', quotaRemaining: 9);
+    await tester.pumpWidget(l10nTestApp(ChatScreen(paperId: 1, paperTitle: 'Bio 2024', repository: repo)));
+
+    await tester.enterText(find.byType(TextField), 'Explain question 1');
+    await tester.tap(find.byKey(const Key('chatSendButton')));
+    await tester.pumpAndSettle();
+
+    // One assembled assistant bubble, not one per delta — the whole point
+    // of rebuilding _messages.last in place rather than appending each
+    // chunk as its own ChatMessage.
+    expect(find.text('Photosynthesis makes food from light.'), findsOneWidget);
+    expect(find.text('9 free left today'), findsOneWidget);
+  });
+
+  testWidgets('a mid-stream error frame keeps the partial reply on screen and shows a SnackBar', (tester) async {
+    final repo = MockPapersRepository()
+      ..mockChatStreamDeltas = ['Here is a partial answer, ']
+      ..mockChatStreamErrorDetail = 'AI chat is busy right now — try again in a moment.';
+    await tester.pumpWidget(l10nTestApp(ChatScreen(paperId: 1, paperTitle: 'Bio 2024', repository: repo)));
+
+    await tester.enterText(find.byType(TextField), 'hi');
+    await tester.tap(find.byKey(const Key('chatSendButton')));
+    await tester.pumpAndSettle();
+
+    // The text that already streamed in stays — a mid-stream failure
+    // isn't a dropped connection, it's an honest "here's what I had, then
+    // it broke", same reasoning as the backend's own in-band error frame.
+    expect(find.text('Here is a partial answer, '), findsOneWidget);
+    expect(find.textContaining('busy right now'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

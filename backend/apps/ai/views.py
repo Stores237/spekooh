@@ -1,8 +1,13 @@
+import json
+
 from django.conf import settings
 from django.db.models import Q
+from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsAuthenticatedNotGuest
@@ -13,7 +18,61 @@ from apps.payments.models import Subscription
 from .models import ArtifactKind
 from .providers.base import AIError, AIRateLimited, AIRefused
 from .quota import consume_chat_quota, consume_provider_budget
-from .services import get_or_queue_artifact, send_chat_message, validate_chat_messages
+from .services import (
+    get_or_queue_artifact,
+    send_chat_message,
+    stream_chat_message,
+    validate_chat_messages,
+)
+
+# Shared between PaperChatView's non-streaming and streaming paths so a
+# safety-filter refusal reads identically either way.
+CHAT_REFUSAL_MESSAGE = "I can't help with that — let's stick to this paper."
+
+
+class ServerSentEventRenderer(BaseRenderer):
+    """Exists purely so DRF's own content negotiation (APIView.initial()
+    calls this before post() ever runs) accepts `Accept: text/event-stream`
+    instead of rejecting it with a 406 — found live while writing this
+    view's own tests, not something the docs warn you about. render() is
+    never actually called: PaperChatView's streaming branch returns a raw
+    StreamingHttpResponse, which bypasses DRF's render step entirely
+    (APIView.finalize_response only renders real rest_framework.Response
+    instances). Registered as an extra renderer_class below, alongside the
+    project's normal defaults, so the non-streaming JSON path is untouched."""
+
+    media_type = "text/event-stream"
+    format = "sse"
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return data
+
+
+def _sse_chat_stream(deltas, quota_remaining):
+    """Wraps a GroqProvider.iter_stream_deltas() generator as Server-Sent
+    Events. Real edge case this exists for (2026-09-08, see the streaming
+    architecture decision): once PaperChatView has returned this generator
+    inside a StreamingHttpResponse, the HTTP status code is already
+    committed at 200 — a failure from here on (Groq's content filter
+    tripping mid-reply, a dropped connection, a rare post-handshake error)
+    can no longer become an HTTP error response, so it has to become an
+    in-band frame the client checks for instead. Each event is one JSON
+    object: {"delta": str} while text is arriving, then exactly one final
+    {"done": true, "quota_remaining": int|null} on success, or
+    {"error": true, "code": str, "detail": str} in place of that final
+    frame on failure."""
+    try:
+        for delta in deltas:
+            yield f"data: {json.dumps({'delta': delta})}\n\n"
+    except AIRefused:
+        yield f"data: {json.dumps({'delta': CHAT_REFUSAL_MESSAGE})}\n\n"
+    except AIRateLimited:
+        yield f"data: {json.dumps({'error': True, 'code': 'rate_limited', 'detail': 'AI chat is busy right now — try again in a moment.'})}\n\n"
+        return
+    except AIError:
+        yield f"data: {json.dumps({'error': True, 'code': 'unavailable', 'detail': 'AI chat is currently unavailable.'})}\n\n"
+        return
+    yield f"data: {json.dumps({'done': True, 'quota_remaining': quota_remaining})}\n\n"
 
 
 class PaperSummaryView(APIView):
@@ -71,6 +130,7 @@ class PaperChatView(APIView):
     """
 
     permission_classes = [IsAuthenticatedNotGuest]
+    renderer_classes = [*api_settings.DEFAULT_RENDERER_CLASSES, ServerSentEventRenderer]
 
     def post(self, request, pk):
         if not settings.AI_ENABLED or not settings.AI_CHAT_ENABLED:
@@ -112,10 +172,33 @@ class PaperChatView(APIView):
         if not consume_provider_budget("groq", settings.GROQ_DAILY_BUDGET):
             return Response({"detail": "AI chat is temporarily unavailable — try again shortly."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
+        # Content negotiation, not a separate endpoint (2026-09-08, real
+        # streaming for Lane B) — reuses every gate above (permissions,
+        # paywall, OCR-readiness, quota, provider budget) instead of
+        # duplicating them behind a second URL. `Accept: text/event-stream`
+        # opts into progressive delta frames (see _sse_chat_stream's own
+        # docstring); anything else keeps today's exact buffered response,
+        # unchanged, for callers that haven't adopted streaming yet.
+        if request.META.get("HTTP_ACCEPT") == "text/event-stream":
+            # AIRefused deliberately isn't caught here — GroqProvider
+            # .iter_stream_deltas() only ever raises it lazily, once
+            # something actually iterates the generator this returns
+            # (content-filter detection happens per-chunk, not on the
+            # initial handshake) — so it always surfaces inside
+            # _sse_chat_stream's own try/except below, never here.
+            try:
+                deltas = stream_chat_message(paper=paper, messages=request.data["messages"])
+            except AIRateLimited:
+                return Response({"detail": "AI chat is busy right now — try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            except AIError:
+                return Response({"detail": "AI chat is currently unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+            return StreamingHttpResponse(_sse_chat_stream(deltas, quota_remaining), content_type="text/event-stream")
+
         try:
             result = send_chat_message(paper=paper, messages=request.data["messages"])
         except AIRefused:
-            return Response({"role": "assistant", "content": "I can't help with that — let's stick to this paper.", "quota_remaining": quota_remaining})
+            return Response({"role": "assistant", "content": CHAT_REFUSAL_MESSAGE, "quota_remaining": quota_remaining})
         except AIRateLimited:
             return Response({"detail": "AI chat is busy right now — try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except AIError:

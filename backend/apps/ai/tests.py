@@ -1,3 +1,4 @@
+import json
 import uuid
 from unittest import mock
 
@@ -320,6 +321,64 @@ class TestGroqProvider:
                 GroqProvider().chat(system="s", messages=[{"role": "user", "content": "hi"}])
 
 
+def _fake_groq_sse(*chunks: dict, done: bool = True) -> mock.Mock:
+    """A Mock standing in for the real requests.Response chat_stream()
+    returns — status 200 already validated, .iter_lines() replaying
+    Groq's own OpenAI-compatible SSE framing (data: {...}\\n\\n, [DONE])."""
+    lines = [f"data: {json.dumps(chunk)}" for chunk in chunks]
+    if done:
+        lines.append("data: [DONE]")
+    response = mock.Mock(status_code=200)
+    response.iter_lines.return_value = iter(lines)
+    return response
+
+
+def _delta_chunk(text: str) -> dict:
+    return {"choices": [{"delta": {"content": text}, "finish_reason": None}]}
+
+
+def _sse_events(response) -> list[dict]:
+    """A StreamingHttpResponse has no `.content` (that's the non-streaming
+    HttpResponse's own attribute) — its body only exists by actually
+    draining `.streaming_content`, same as a real WSGI server would."""
+    body = b"".join(response.streaming_content).decode()
+    return [json.loads(line[len("data: "):]) for line in body.strip().split("\n\n") if line]
+
+
+class TestGroqProviderStreaming:
+    def test_chat_stream_validates_status_before_returning_the_open_response(self):
+        with mock.patch("apps.ai.providers.groq.requests.post") as mocked_post, override_settings(GROQ_API_KEY="test-key"):
+            mocked_post.return_value = mock.Mock(status_code=429, text="rate limited")
+            with pytest.raises(AIRateLimited):
+                GroqProvider().chat_stream(system="s", messages=[{"role": "user", "content": "hi"}])
+            # A real request body flag, not just a comment — this is what
+            # actually asks Groq for progressive chunks.
+            assert mocked_post.call_args.kwargs["json"]["stream"] is True
+
+    def test_no_api_key_never_makes_a_real_request(self):
+        with mock.patch("apps.ai.providers.groq.requests.post") as mocked_post, override_settings(GROQ_API_KEY=None):
+            with pytest.raises(AIUnavailable):
+                GroqProvider().chat_stream(system="s", messages=[{"role": "user", "content": "hi"}])
+            mocked_post.assert_not_called()
+
+    def test_iter_stream_deltas_yields_text_in_order_and_closes_the_response(self):
+        response = _fake_groq_sse(_delta_chunk("The "), _delta_chunk("force "), _delta_chunk("is strong."))
+        deltas = list(GroqProvider.iter_stream_deltas(response))
+        assert deltas == ["The ", "force ", "is strong."]
+        response.close.assert_called_once()
+
+    def test_a_mid_stream_content_filter_raises_ai_refused_from_the_generator(self):
+        chunks = [
+            _delta_chunk("Sure, "),
+            {"choices": [{"delta": {}, "finish_reason": "content_filter"}]},
+        ]
+        response = _fake_groq_sse(*chunks, done=False)
+        deltas = GroqProvider.iter_stream_deltas(response)
+        assert next(deltas) == "Sure, "
+        with pytest.raises(AIRefused):
+            next(deltas)
+
+
 class TestValidateChatMessages:
     @pytest.mark.parametrize(
         "messages",
@@ -496,3 +555,120 @@ class TestPaperChatView:
         with override_settings(AI_ENABLED=True, AI_CHAT_ENABLED=False):
             response = api_client.post(f"/api/ai/papers/{paper.pk}/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
         assert response.status_code == 503
+
+
+class TestPaperChatViewStreaming:
+    """Accept: text/event-stream is content negotiation on the SAME
+    endpoint/gates as TestPaperChatView above (2026-09-08) — this class
+    only covers what's actually different about the streaming path
+    itself, not re-testing every gate (permissions/paywall/OCR/quota) a
+    second time; those are identical code before the branch."""
+
+    @pytest.mark.django_db
+    def test_a_real_stream_sends_progressive_deltas_then_a_done_frame_with_quota(self, api_client):
+        user = UserFactory()
+        paper = _published_paper()
+        api_client.force_authenticate(user=user)
+        with override_settings(AI_CHAT_DAILY_LIMIT=5), mock.patch(
+            "apps.ai.services.GroqProvider.chat_stream", return_value=_fake_groq_sse(_delta_chunk("Hello"), _delta_chunk(" there."))
+        ):
+            response = api_client.post(
+                f"/api/ai/papers/{paper.pk}/chat/",
+                {"messages": [{"role": "user", "content": "hi"}]},
+                format="json",
+                HTTP_ACCEPT="text/event-stream",
+            )
+        assert response.status_code == 200
+        assert response["Content-Type"] == "text/event-stream"
+        assert _sse_events(response) == [
+            {"delta": "Hello"},
+            {"delta": " there."},
+            {"done": True, "quota_remaining": 4},
+        ]
+
+    @pytest.mark.django_db
+    def test_a_mid_stream_content_filter_becomes_the_canned_message_in_band_not_a_dropped_connection(self, api_client):
+        user = UserFactory()
+        paper = _published_paper()
+        api_client.force_authenticate(user=user)
+        chunks = [_delta_chunk("Sure, "), {"choices": [{"delta": {}, "finish_reason": "content_filter"}]}]
+        with mock.patch("apps.ai.services.GroqProvider.chat_stream", return_value=_fake_groq_sse(*chunks, done=False)):
+            response = api_client.post(
+                f"/api/ai/papers/{paper.pk}/chat/",
+                {"messages": [{"role": "user", "content": "hi"}]},
+                format="json",
+                HTTP_ACCEPT="text/event-stream",
+            )
+        events = _sse_events(response)
+        assert events[0] == {"delta": "Sure, "}
+        assert "can't help" in events[1]["delta"]
+        assert events[2]["done"] is True
+
+    @pytest.mark.django_db
+    def test_a_pre_stream_429_is_still_a_normal_503_not_an_sse_body(self, api_client):
+        """The handshake fails before any byte reaches the client — this
+        must stay a real HTTP error response, exactly like the
+        non-streaming path, not degrade into an SSE error frame."""
+        user = UserFactory()
+        paper = _published_paper()
+        api_client.force_authenticate(user=user)
+        with mock.patch("apps.ai.services.GroqProvider.chat_stream", side_effect=AIRateLimited("groq 429")):
+            response = api_client.post(
+                f"/api/ai/papers/{paper.pk}/chat/",
+                {"messages": [{"role": "user", "content": "hi"}]},
+                format="json",
+                HTTP_ACCEPT="text/event-stream",
+            )
+        assert response.status_code == 503
+        assert response["Content-Type"] != "text/event-stream"
+
+    @pytest.mark.django_db
+    def test_a_rate_limit_mid_stream_is_an_in_band_error_frame_with_no_trailing_done(self, api_client):
+        def _raising_deltas():
+            yield "Partial answer, "
+            raise AIRateLimited("groq 429 mid-stream")
+
+        user = UserFactory()
+        paper = _published_paper()
+        api_client.force_authenticate(user=user)
+        with mock.patch("apps.ai.views.stream_chat_message", return_value=_raising_deltas()):
+            response = api_client.post(
+                f"/api/ai/papers/{paper.pk}/chat/",
+                {"messages": [{"role": "user", "content": "hi"}]},
+                format="json",
+                HTTP_ACCEPT="text/event-stream",
+            )
+        assert _sse_events(response) == [
+            {"delta": "Partial answer, "},
+            {"error": True, "code": "rate_limited", "detail": "AI chat is busy right now — try again in a moment."},
+        ]
+
+    @pytest.mark.django_db
+    def test_streaming_still_enforces_and_decrements_the_same_daily_quota(self, api_client):
+        user = UserFactory()
+        paper = _published_paper()
+        api_client.force_authenticate(user=user)
+        with override_settings(AI_CHAT_DAILY_LIMIT=1), mock.patch(
+            "apps.ai.services.GroqProvider.chat_stream", return_value=_fake_groq_sse(_delta_chunk("hi"))
+        ):
+            first = api_client.post(
+                f"/api/ai/papers/{paper.pk}/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json", HTTP_ACCEPT="text/event-stream"
+            )
+            second = api_client.post(
+                f"/api/ai/papers/{paper.pk}/chat/", {"messages": [{"role": "user", "content": "hi again"}]}, format="json", HTTP_ACCEPT="text/event-stream"
+            )
+        assert first.status_code == 200
+        assert second.status_code == 429
+        assert second.data["upgrade_required"] is True
+
+    @pytest.mark.django_db
+    def test_streaming_requires_the_same_real_account_as_non_streaming(self, api_client):
+        from apps.accounts.models import User
+
+        guest = User.objects.create_guest(name="Stream Guest")
+        api_client.force_authenticate(user=guest)
+        paper = _published_paper()
+        response = api_client.post(
+            f"/api/ai/papers/{paper.pk}/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json", HTTP_ACCEPT="text/event-stream"
+        )
+        assert response.status_code == 403
