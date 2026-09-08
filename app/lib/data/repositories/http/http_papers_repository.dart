@@ -327,4 +327,32 @@ class HttpPapersRepository implements PapersRepository {
       rethrow;
     }
   }
+
+  @override
+  Stream<ChatStreamEvent> streamChatMessage(int paperId, List<ChatMessage> messages) async* {
+    final frames = _client.postStream('/ai/papers/$paperId/chat/', body: {
+      'messages': messages.map((m) => {'role': m.role, 'content': m.content}).toList(),
+    });
+    try {
+      await for (final frame in frames) {
+        if (frame['error'] == true) {
+          yield ChatStreamEvent.error(frame['detail'] as String? ?? 'AI chat is currently unavailable.');
+          return;
+        }
+        if (frame['done'] == true) {
+          yield ChatStreamEvent.done(frame['quota_remaining'] as int?);
+          return;
+        }
+        final delta = frame['delta'] as String?;
+        if (delta != null) yield ChatStreamEvent.delta(delta);
+      }
+    } on ApiException catch (e) {
+      // Same 429 the non-streaming path can hit — this always happens
+      // before any delta arrives (the daily-quota check runs before Groq
+      // is ever called), so it's still a clean thrown exception here, not
+      // an in-band error frame.
+      if (e.statusCode == 429) throw const ChatQuotaExceededException();
+      rethrow;
+    }
+  }
 }

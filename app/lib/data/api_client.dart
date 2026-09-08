@@ -93,6 +93,63 @@ class ApiClient {
 
   Future<dynamic> delete(String path) => _send('DELETE', _uri(path));
 
+  /// Streams Server-Sent Events for a POST — used only by the real-time AI
+  /// chat (PapersRepository.streamChatMessage). `Accept: text/event-stream`
+  /// is content negotiation on the SAME endpoint the non-streaming [post]
+  /// call above uses (see apps.ai.views.PaperChatView's own note on why),
+  /// not a second URL. Yields each already-parsed `data: {...}` SSE
+  /// payload as a decoded JSON map — callers never see the raw framing.
+  /// Same one-shot 401-refresh-retry as [_send], checked from the
+  /// response's status before any body is read, so a stream never starts
+  /// twice. No overall timeout on the body itself, unlike every other
+  /// method here — [_requestTimeout] below only bounds how long headers
+  /// can take to arrive; a real reply can legitimately keep sending bytes
+  /// well past that, same reasoning as the OCR/gunicorn timeout tuning on
+  /// the backend side (see RENDER_STAGING.md) — a fixed client-side body
+  /// timeout would just be a second, un-coordinated version of that same
+  /// mistake.
+  Stream<Map<String, dynamic>> postStream(String path, {Object? body, bool isRetry = false}) async* {
+    final headers = <String, String>{'Content-Type': 'application/json', 'Accept': 'text/event-stream'};
+    final access = authSession.accessToken;
+    if (access != null) headers['Authorization'] = 'Bearer $access';
+
+    final request = http.Request('POST', _uri(path))
+      ..headers.addAll(headers)
+      ..body = body == null ? '' : jsonEncode(body);
+    final streamed = await _client.send(request).timeout(_requestTimeout);
+
+    if (streamed.statusCode == 401 && !isRetry && authSession.refreshToken != null) {
+      final refreshed = await authSession.refreshAccessToken();
+      if (refreshed) {
+        yield* postStream(path, body: body, isRetry: true);
+        return;
+      }
+    }
+
+    if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
+      final errorBody = await streamed.stream.bytesToString();
+      throw ApiException(streamed.statusCode, errorBody);
+    }
+
+    // SSE frames are separated by a blank line; a frame can itself split
+    // across multiple network chunks, hence the buffer rather than
+    // assuming one chunk == one event.
+    var buffer = '';
+    await for (final piece in streamed.stream.transform(utf8.decoder)) {
+      buffer += piece;
+      while (true) {
+        final separator = buffer.indexOf('\n\n');
+        if (separator == -1) break;
+        final rawEvent = buffer.substring(0, separator);
+        buffer = buffer.substring(separator + 2);
+        for (final line in rawEvent.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          yield jsonDecode(line.substring(6)) as Map<String, dynamic>;
+        }
+      }
+    }
+  }
+
   /// Multipart POST for real file uploads (e.g. paper submission scans).
   /// [fields] are form fields sent alongside the file as plain strings.
   /// [method] is POST by default; pass 'PATCH' for an update-in-place

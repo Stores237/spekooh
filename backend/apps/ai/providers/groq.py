@@ -11,6 +11,8 @@ Groq's own OpenAI-compatible REST endpoint, same raw-`requests` convention
 as GeminiProvider (see that module's own docstring for why).
 """
 
+import json
+
 import requests
 from django.conf import settings
 
@@ -64,6 +66,86 @@ class GroqProvider(BaseProvider):
         if response.status_code >= 400:
             raise AIError(f"groq {response.status_code}: {response.text[:500]}")
         return self._extract(response.json())
+
+    def chat_stream(self, *, system: str, messages: list[dict], max_tokens: int = 600, temperature: float = 0.4) -> requests.Response:
+        """Streaming counterpart to chat() (2026-09-08 — real streaming for
+        Lane B, see apps.ai.views.PaperChatView's own note on why). Deliberately
+        split from iter_stream_deltas() below: this method does the actual
+        POST with stream=True and validates the initial response synchronously
+        — same status-code checks as chat(), raising the same exceptions —
+        so a 429/5xx/network failure surfaces to the caller (services
+        .stream_chat_message) BEFORE the view has written a single byte to
+        its own client and can still just return a normal HTTP error
+        response, exactly like the non-streaming path does. Only a failure
+        that happens once Groq's stream is already flowing (rare — the
+        handshake already succeeded) is the view's problem to fold into an
+        in-band SSE frame instead, via iter_stream_deltas() raising mid-loop.
+        """
+        if not self.key:
+            raise AIUnavailable("GROQ_API_KEY is not configured")
+        body = {
+            "model": self.model,
+            "messages": [{"role": "system", "content": system}, *messages],
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "stream": True,
+        }
+        try:
+            response = requests.post(
+                BASE_URL,
+                headers={"Authorization": f"Bearer {self.key}", "Content-Type": "application/json"},
+                json=body,
+                stream=True,
+                timeout=30,
+            )
+        except requests.RequestException as exc:
+            raise AIUnavailable(str(exc)) from exc
+        if response.status_code == 429:
+            response.close()
+            raise AIRateLimited("groq 429")
+        if response.status_code >= 500:
+            response.close()
+            raise AIUnavailable(f"groq {response.status_code}")
+        if response.status_code >= 400:
+            detail = response.text[:500]
+            response.close()
+            raise AIError(f"groq {response.status_code}: {detail}")
+        return response
+
+    @staticmethod
+    def iter_stream_deltas(response: requests.Response):
+        """Yields text deltas parsed from an already-validated streaming
+        Groq response (see chat_stream() above) — Groq's own
+        OpenAI-compatible SSE framing (`data: {...}\\n\\n`, terminated by a
+        literal `data: [DONE]`). Raises AIRefused if Groq's own
+        finish_reason says its content filter tripped mid-stream (chat()'s
+        non-streaming twin only ever sees this in the one final message, so
+        it can check it once; here it can show up on any chunk). Any
+        exception raised here happens DURING iteration, after the view has
+        already started writing SSE bytes to its own client — the caller
+        (apps.ai.views.PaperChatView) is responsible for folding it into an
+        in-band error frame rather than an HTTP status code."""
+        try:
+            for line in response.iter_lines(decode_unicode=True):
+                if not line or not line.startswith("data: "):
+                    continue
+                payload = line[len("data: "):]
+                if payload == "[DONE]":
+                    return
+                chunk = json.loads(payload)
+                choices = chunk.get("choices") or []
+                if not choices:
+                    continue
+                choice = choices[0]
+                if choice.get("finish_reason") == "content_filter":
+                    raise AIRefused("content filter")
+                delta = (choice.get("delta") or {}).get("content")
+                if delta:
+                    yield delta
+        except requests.RequestException as exc:
+            raise AIUnavailable(str(exc)) from exc
+        finally:
+            response.close()
 
     @staticmethod
     def _extract(data: dict) -> AIResult:

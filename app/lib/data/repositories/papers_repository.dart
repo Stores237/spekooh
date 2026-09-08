@@ -132,6 +132,18 @@ abstract class PapersRepository {
   /// once today's free quota is used — see [ChatReply.quotaRemaining] to
   /// show a running count before then.
   Future<ChatReply> sendChatMessage(int paperId, List<ChatMessage> messages);
+
+  /// Streaming counterpart to [sendChatMessage] (2026-09-08) — same gates,
+  /// same quota, same [ChatQuotaExceededException] on a 429; the only
+  /// difference is the reply arrives as progressive [ChatStreamEvent.delta]
+  /// events instead of one buffered [ChatReply] at the end, terminated by
+  /// exactly one [ChatStreamEvent.done] (carrying the same
+  /// [ChatReply.quotaRemaining] value) or one [ChatStreamEvent.error] in
+  /// its place. See ApiClient.postStream's own doc comment for the wire
+  /// format, and apps.ai.views.PaperChatView's for why a failure can show
+  /// up as an in-band error event instead of a thrown exception once
+  /// deltas have already started arriving.
+  Stream<ChatStreamEvent> streamChatMessage(int paperId, List<ChatMessage> messages);
 }
 
 class ChatMessage {
@@ -153,6 +165,23 @@ class ChatReply {
 /// catch site (see ChatScreen), same reasoning as PaywallException.
 class ChatQuotaExceededException implements Exception {
   const ChatQuotaExceededException();
+}
+
+/// One frame of [PapersRepository.streamChatMessage]'s progressive reply —
+/// exactly one of [delta] (more text arrived), [isDone] (the reply is
+/// complete; [quotaRemaining] mirrors [ChatReply.quotaRemaining]), or
+/// [errorDetail] (something failed after streaming had already started,
+/// so it couldn't become a thrown exception — see
+/// apps.ai.views.PaperChatView's own note on why) is set.
+class ChatStreamEvent {
+  const ChatStreamEvent.delta(String text) : delta = text, isDone = false, quotaRemaining = null, errorDetail = null;
+  const ChatStreamEvent.done(this.quotaRemaining) : delta = null, isDone = true, errorDetail = null;
+  const ChatStreamEvent.error(this.errorDetail) : delta = null, isDone = false, quotaRemaining = null;
+
+  final String? delta;
+  final bool isDone;
+  final int? quotaRemaining;
+  final String? errorDetail;
 }
 
 /// Mirrors apps.ai.models.ArtifactStatus — [ready] is the only one with a
@@ -306,5 +335,32 @@ class MockPapersRepository implements PapersRepository {
     final error = mockChatError;
     if (error != null) throw error;
     return mockChatReply;
+  }
+
+  /// Set to exercise a real multi-chunk stream (each string becomes one
+  /// [ChatStreamEvent.delta]) instead of [streamChatMessage]'s default of
+  /// delivering [mockChatReply]'s whole content as a single delta.
+  List<String>? mockChatStreamDeltas;
+
+  /// Set to make [streamChatMessage] emit a real
+  /// [ChatStreamEvent.errorDetail] frame (a failure arriving after
+  /// streaming has already started) instead of [mockChatError]'s thrown
+  /// exception (a failure that happens before anything streams).
+  String? mockChatStreamErrorDetail;
+
+  @override
+  Stream<ChatStreamEvent> streamChatMessage(int paperId, List<ChatMessage> messages) async* {
+    chatCalls.add(messages);
+    final error = mockChatError;
+    if (error != null) throw error;
+    for (final delta in mockChatStreamDeltas ?? [mockChatReply.content]) {
+      yield ChatStreamEvent.delta(delta);
+    }
+    final streamError = mockChatStreamErrorDetail;
+    if (streamError != null) {
+      yield ChatStreamEvent.error(streamError);
+      return;
+    }
+    yield ChatStreamEvent.done(mockChatReply.quotaRemaining);
   }
 }

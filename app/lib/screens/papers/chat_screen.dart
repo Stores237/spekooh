@@ -53,6 +53,15 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  /// Streaming (2026-09-08 — see apps.ai.views.PaperChatView's own note on
+  /// the wire format): the assistant's bubble is added empty the moment
+  /// the first delta arrives, then rebuilt in place as more text streams
+  /// in, rather than waiting for one buffered reply like this used to.
+  /// [ChatQuotaExceededException] can still only be thrown before any
+  /// delta arrives (the daily-quota check runs before Groq is ever
+  /// called) — a failure that happens once text is already streaming
+  /// surfaces as [ChatStreamEvent.errorDetail] instead, handled inline so
+  /// whatever text already arrived stays on screen rather than vanishing.
   Future<void> _send() async {
     final text = _inputController.text.trim();
     if (text.isEmpty || _sending) return;
@@ -65,14 +74,33 @@ class _ChatScreenState extends State<ChatScreen> {
     });
     _scrollToBottom();
 
+    final history = List<ChatMessage>.unmodifiable(_messages);
+    final buffer = StringBuffer();
+    var assistantBubbleAdded = false;
+
     try {
-      final reply = await widget.repository.sendChatMessage(widget.paperId, List.unmodifiable(_messages));
-      if (!mounted) return;
-      setState(() {
-        _messages.add(ChatMessage(role: 'assistant', content: reply.content));
-        _quotaRemaining = reply.quotaRemaining;
-      });
-      _scrollToBottom();
+      await for (final event in widget.repository.streamChatMessage(widget.paperId, history)) {
+        if (event.delta != null) {
+          buffer.write(event.delta);
+          if (!mounted) return;
+          setState(() {
+            final bubble = ChatMessage(role: 'assistant', content: buffer.toString());
+            if (assistantBubbleAdded) {
+              _messages[_messages.length - 1] = bubble;
+            } else {
+              _messages.add(bubble);
+              assistantBubbleAdded = true;
+            }
+          });
+          _scrollToBottom();
+        } else if (event.isDone) {
+          if (mounted) setState(() => _quotaRemaining = event.quotaRemaining);
+        } else if (event.errorDetail != null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.chatSendError(event.errorDetail!))));
+          }
+        }
+      }
     } on ChatQuotaExceededException {
       if (mounted) setState(() => _quotaExceeded = true);
     } catch (e) {

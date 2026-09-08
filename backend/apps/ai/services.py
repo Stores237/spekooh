@@ -138,3 +138,18 @@ def send_chat_message(*, paper, messages: list[dict]) -> AIResult:
     text = paper.ocr_text[:60_000]  # same generous, pathological-OCR-dump guard as generate_paper_summary
     system = chat_prompts.SYSTEM_CHAT["en"].format(ocr_text=text)
     return GroqProvider().chat(system=system, messages=messages)
+
+
+def stream_chat_message(*, paper, messages: list[dict]):
+    """Streaming counterpart to send_chat_message (2026-09-08). Returns a
+    generator of text deltas — NOT an AIResult, there's no one final text
+    to hand back until the stream is fully drained. Raises the same
+    AIError subclasses as send_chat_message, and does so synchronously
+    (before returning anything), because GroqProvider.chat_stream's own
+    initial status-code check already ran by the time this function
+    returns — see that method's own docstring for why that split matters."""
+    text = paper.ocr_text[:60_000]
+    system = chat_prompts.SYSTEM_CHAT["en"].format(ocr_text=text)
+    provider = GroqProvider()
+    response = provider.chat_stream(system=system, messages=messages)
+    return provider.iter_stream_deltas(response)
