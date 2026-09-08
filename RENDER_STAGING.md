@@ -544,12 +544,43 @@ entirely) still failed — with a real `502` this time, confirmed via
 seconds; once a worker misses that deadline gunicorn kills it outright,
 and Render's proxy reports the dead connection as a 502 to whoever's
 waiting — independent of `BATCH_SIZE` and independent of the calling
-service's own timeout setting entirely. Fixed by giving gunicorn's own
-`CMD` in `backend/Dockerfile` a real `--timeout 150`. **This means
-cron-job.org's job timeout should be set to something comfortably above
-150s too** (e.g. 170–180s, or the max the plan allows) — a shorter
-client-side timeout will still report "failed" even once the server
-itself genuinely completes the work within its new 150s budget.
+service's own timeout setting entirely.
+
+**Real live failure (2026-09-07, part 4) — 150s still wasn't enough,
+confirmed with an actual measurement.** First raised gunicorn's timeout
+to 150s. A real, live-measured trigger afterward
+(`curl -w "\nHTTP_STATUS:%{http_code}\nTIME:%{time_total}s\n"`) came back
+`HTTP_STATUS:502` at `TIME:153.123225s` — genuinely just over the new
+150s ceiling, and Render's own proxy tolerated the full 153s without
+cutting the request off first, confirming this really is OCR compute
+time (page rasterization + Tesseract on free-tier CPU), not some other
+quick failure. Fixed properly this time: gunicorn's `--timeout` raised
+further to **300s**, *and* `BATCH_SIZE` dropped to **1**
+(`apps/papers/management/commands/process_pending_ocr.py`) so a single
+run's duration depends only on one submission's own worst case, not
+however many happen to be waiting. **cron-job.org's own job timeout
+needs to be set to comfortably above 300s** (the max the plan allows,
+if that's less than 300s+margin) — a shorter client-side timeout will
+still report "failed" even once the server itself genuinely finishes.
+
+**Unrelated bug caught during this fix's own pre-ship verification
+(2026-09-08):** three Dependabot PRs landed on `main` in between —
+one of them (#98) bumped `psycopg` from `3.2.13` to `3.3.5` in
+`backend/requirements.txt` but left `psycopg-binary` pinned at the old
+`3.2.13`. The two packages must match exactly; the mismatch breaks
+Django's DB backend import entirely (`ImproperlyConfigured: Error
+loading psycopg2 or psycopg module`, with `ImportError: cannot import
+name Deque` underneath, inside the compiled `psycopg_binary._psycopg`
+module) — confirmed reproducible from a completely clean install of
+the two exact versions `requirements.txt` pinned, not an artifact of
+a stale local venv. The live Render deployment itself was NOT
+affected (verified: `/healthz/` and a real DB-touching endpoint both
+returned normally) — its current running image predates PR #98,
+so this would only have surfaced on the *next* deploy's fresh
+`pip install`, at which point it would have taken the site down.
+Fixed by bumping `psycopg-binary` to `3.3.5` to match, bundled into
+this same PR since it was found while re-verifying this exact fix
+against a newer `main`.
 
 Another endpoint on the same mechanism, but on-demand rather than
 scheduled: `.../internal/tasks/delete-test-accounts/` deletes every `User`
