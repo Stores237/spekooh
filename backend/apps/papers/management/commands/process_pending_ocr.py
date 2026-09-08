@@ -20,17 +20,23 @@ apps.papers.views.PaperSubmissionViewSet.upload_url) kept that request
 fast; synchronous, page-by-page Tesseract OCR over a 50MB thesis PDF in
 the same request would undo it.
 
-BATCH_SIZE (2026-09-07, real live failure): this whole run still executes
-inside ONE HTTP request/response (apps.core.views.run_task calls
+BATCH_SIZE (2026-09-07, real live failure, revised): this whole run still
+executes inside ONE HTTP request/response (apps.core.views.run_task calls
 call_command() and blocks until it returns) — unlike the lightweight
 housekeeping commands sharing this same trigger mechanism
 (process_instructor_timeouts, process_pamphlet_expiry), OCR is genuinely
 slow per item (pdf2image page rasterization + Tesseract, per page, on
 Render's free-tier CPU). A batch of 20 real submissions timed out the
-triggering cron-job.org request outright. Kept small so a single run
-comfortably finishes inside a typical external timeout regardless of how
-many submissions are actually waiting — it still clears any real backlog
-fine since this runs every few minutes anyway.
+triggering cron-job.org request outright; even after dropping this to 3
+and raising gunicorn's own worker timeout to 150s (backend/Dockerfile), a
+real run of just 2 waiting submissions still took slightly over 150s and
+got killed (a live-measured 153s, confirmed via `curl -w "%{time_total}"`
+against a genuine 502). Dropped to 1 — the smallest possible unit of
+work per run — so a single item's own worst-case OCR time is the only
+thing this request's duration depends on, not however many rows happen
+to be waiting; still clears any real backlog fine since this runs every
+few minutes anyway, and it's paired with a further-raised gunicorn
+timeout (see that Dockerfile comment) for real headroom on top.
 """
 
 from django.core.management.base import BaseCommand
@@ -39,7 +45,7 @@ from django.db.models import Q
 from apps.papers.models import OcrStatus, PaperSubmission
 from apps.papers.services import MAX_OCR_ATTEMPTS, run_pending_ocr
 
-BATCH_SIZE = 3
+BATCH_SIZE = 1
 
 
 class Command(BaseCommand):
