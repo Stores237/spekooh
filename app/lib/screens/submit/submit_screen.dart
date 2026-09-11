@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -17,6 +14,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../sheets/scan_pages_sheet.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/spekooh_banner.dart';
 import '../../widgets/spekooh_button.dart';
@@ -308,33 +306,10 @@ class _SubmitScreenState extends State<SubmitScreen> {
         setState(() => _file = SubmissionFile(bytes: picked!.bytes!, fileName: picked.name, mimeType: _mimeFor(picked.extension)));
       }
     } else if (choice == 'camera') {
-      final scanned = await _captureViaScanner();
-      if (scanned != null) setState(() => _file = scanned);
+      if (!mounted) return;
+      final scanned = await showScanPagesSheet(context);
+      if (scanned != null && mounted) setState(() => _file = scanned);
     }
-  }
-
-  /// Owner-requested (2026-09-01): a submitted paper is a photo of a real
-  /// physical document — this finds its real edges/corners and auto-crops
-  /// to just the page (ML Kit on Android, VisionKit on iOS), the same way
-  /// a real scanner app does, instead of submitting whatever's in frame
-  /// around it. One page per submission, matching this screen's existing
-  /// one-file-per-submission model — not the multi-page/PDF-assembly mode
-  /// the package also supports. `null` covers both a user-cancelled scan
-  /// and a real scanner error (CunningDocumentScannerException) — this
-  /// screen already treats "no file picked" as a plain no-op everywhere
-  /// else, so a failed scan surfaces the same way instead of a distinct
-  /// error state for a case the contributor can just retry.
-  Future<SubmissionFile?> _captureViaScanner() async {
-    List<String>? paths;
-    try {
-      paths = await CunningDocumentScanner.getPictures(noOfPages: 1);
-    } catch (_) {
-      return null;
-    }
-    final path = paths?.firstOrNull;
-    if (path == null) return null;
-    final bytes = await File(path).readAsBytes();
-    return SubmissionFile(bytes: bytes, fileName: path.split('/').last, mimeType: 'image/jpeg');
   }
 
   String? _mimeFor(String? extension) {
@@ -402,8 +377,9 @@ class _SubmitScreenState extends State<SubmitScreen> {
         setState(() => _reportFile = SubmissionFile(bytes: picked!.bytes!, fileName: picked.name, mimeType: _mimeFor(picked.extension)));
       }
     } else if (choice == 'camera') {
-      final scanned = await _captureViaScanner();
-      if (scanned != null) setState(() => _reportFile = scanned);
+      if (!mounted) return;
+      final scanned = await showScanPagesSheet(context);
+      if (scanned != null && mounted) setState(() => _reportFile = scanned);
     }
   }
 

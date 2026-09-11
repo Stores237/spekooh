@@ -21,6 +21,7 @@ from .serializers import (
     PaperSubmissionDetailSerializer,
     PaperSubmissionListSerializer,
     PaperViewLogSerializer,
+    PublishedGuideSerializer,
     SubjectSerializer,
 )
 from .services import (
@@ -32,6 +33,7 @@ from .services import (
     record_ad_watch,
     record_paper_view,
     report_paper,
+    user_can_view_guide,
     watermark_report_submission,
 )
 
@@ -159,6 +161,25 @@ class PaperSubmissionViewSet(
         except PaywallError as exc:
             return Response({"detail": exc.detail}, status=status.HTTP_402_PAYMENT_REQUIRED)
         return Response(PaperViewLogSerializer(log).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"])
+    def guide(self, request, pk=None):
+        """The actual guide content — has_marking_guide (on the list/detail
+        serializers) only ever told the client whether one exists at all.
+        Same "no such thing yet" vs "you haven't paid for it" distinction
+        user_can_download_paper_file's callers already make elsewhere."""
+        paper = self.get_object()
+        published_guide = getattr(paper, "published_guide", None)
+        if published_guide is None:
+            return Response(
+                {"detail": "No marking guide has been published for this paper yet."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if not user_can_view_guide(request.user, paper):
+            return Response(
+                {"detail": "Unlock this paper's marking guide to view it."}, status=status.HTTP_402_PAYMENT_REQUIRED
+            )
+        return Response(PublishedGuideSerializer(published_guide).data)
 
     @action(detail=True, methods=["post"])
     def report(self, request, pk=None):

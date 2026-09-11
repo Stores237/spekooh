@@ -123,6 +123,9 @@
   },
   "trialFeatures": "Unlimited paper views · AI assistant",
   "trialKeepAccess": "Keep my access",
+  "trialEndedLabel": "YOUR TRIAL HAS ENDED",
+  "trialEndedBody": "Subscribe to keep unlimited paper views and AI assistant access.",
+  "trialEndedCta": "Subscribe now",
   "quickActionContribute": "Contribute",
   "readyOfflineTitle": "Ready offline",
   "offlineDownloadsCount": "Downloads · {count}",
@@ -247,6 +250,15 @@
   "choosePdfOrImage": "Choose PDF or image",
   "takePhoto": "Take a photo",
   "chooseFromGallery": "Choose from gallery",
+  "scanPagesTitle": "Scan pages",
+  "scanPagesHint": "Scanned pages are combined into one document, in order.",
+  "scanAddPage": "Add page",
+  "scanUsePageSingular": "Use 1 page",
+  "scanUsePagesPlural": "Use {count} pages",
+  "@scanUsePagesPlural": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "scanCombiningPages": "Combining pages…",
   "avatarUploadError": "Could not update your photo. Check your connection and try again.",
 
   "filterAll": "All",
@@ -317,6 +329,12 @@
   "startQuizButton": "Start quiz",
   "submittingLabel": "Submitting…",
   "doneLabel": "Done",
+  "quizComingSoonLabel": "Coming soon",
+  "quizSubtitleComingSoon": "{subtitle} (coming soon)",
+  "@quizSubtitleComingSoon": {
+    "placeholders": {"subtitle": {"type": "String"}}
+  },
+  "quizNotYetWrittenBody": "This quiz hasn't been written yet. Check back soon.",
 
   "profileTitle": "Profile",
   "submissionsCountBadge": "{count} submissions",
@@ -423,6 +441,34 @@
   "openScannedPaper": "Open scanned paper",
   "saveOffline": "Save offline",
   "offlineSaved": "Saved offline",
+  "offlineSlotsFullPapersError": "Keep {max} papers offline at a time. Remove one to save another.",
+  "@offlineSlotsFullPapersError": {
+    "placeholders": {"max": {"type": "int"}}
+  },
+  "offlineSlotsFullGuidesError": "Keep {max} corrections offline at a time. Remove one to save another.",
+  "@offlineSlotsFullGuidesError": {
+    "placeholders": {"max": {"type": "int"}}
+  },
+  "myDownloadsTitle": "My Downloads",
+  "myDownloadsSubtitle": "{count} saved on this phone",
+  "@myDownloadsSubtitle": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "downloadsPapersTabLabel": "Papers",
+  "downloadsCorrectionsTabLabel": "Corrections",
+  "downloadSlotsTitle": "Download slots",
+  "downloadSlotsUsed": "{used} OF {max} USED",
+  "@downloadSlotsUsed": {
+    "placeholders": {"used": {"type": "int"}, "max": {"type": "int"}}
+  },
+  "noDownloadsYetPapers": "No downloads yet. Open a paper and tap Save to read it offline.",
+  "noDownloadsYetGuides": "No downloads yet. Open a paper's marking guide and tap Save to read it offline.",
+  "getMoreSlotsTitle": "GET MORE SLOTS",
+  "xpRedeemSlotTitle": "+1 slot for 3 days",
+  "xpRedeemComingSoonSubtitle": "Redeem with XP (coming soon)",
+  "kawloPlusUnlimitedTitle": "Kawlo Plus: unlimited downloads",
+  "kawloPlusUnlimitedSubtitle": "Plus unlimited AI & no banner ads",
+  "kawloPlusPriceLabel": "500 FCFA/mo",
   "offlineSaveError": "Could not save for offline: {error}",
   "@offlineSaveError": {
     "placeholders": {"error": {"type": "String"}}
@@ -435,6 +481,10 @@
   "markingGuideTitle": "Marking guide",
   "markingGuideSubtitle": "Instructor-authored + in-house MCQ key",
   "markingGuideNotYetAvailable": "The paper is here, but its marking guide isn't ready yet. Check back soon.",
+  "markingGuideViewButton": "View guide",
+  "markingGuideMcqSectionTitle": "Multiple choice answers",
+  "markingGuideWrittenSectionTitle": "Written answers",
+  "markingGuideLockedError": "Unlock this paper's marking guide to view it.",
   "reportDownloadTitle": "Download access",
   "reportDownloadSubtitle": "Viewing in the app is free. Unlock once to save a copy for offline reading",
   "unlockedForAmount": "Unlocked for {amount} FCFA.",

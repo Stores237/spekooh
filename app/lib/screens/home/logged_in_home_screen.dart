@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../data/auth_session.dart';
 import '../../data/locale_controller.dart';
+import '../../data/offline_guides_store.dart';
 import '../../data/offline_papers_store.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repositories/quizzes_repository.dart';
@@ -20,6 +21,7 @@ import '../../theme/responsive.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/user_avatar.dart';
+import '../downloads/my_downloads_screen.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:open_filex/open_filex.dart';
 
@@ -213,47 +215,17 @@ class LoggedInHomeScreen extends StatelessWidget {
                         future: profileRepository.getUser(),
                         builder: (context, snapshot) {
                           final user = snapshot.data;
-                          if (user == null || user.trialDaysRemaining <= 0) return const SizedBox.shrink();
-                          return Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(l10n.trialLabel, style: TextStyle(color: AppColors.gold700, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-                                const SizedBox(height: 4),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      width: 22,
-                                      height: 22,
-                                      margin: const EdgeInsets.only(top: 2),
-                                      decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold50),
-                                      alignment: Alignment.center,
-                                      child: const Icon(LucideIcons.check, size: 12, color: AppColors.gold700),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        user.firstUnlockFreeEligible ? l10n.trialFirstUnlockFree : l10n.trialUnlimitedViews,
-                                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(color: AppColors.surfaceSunken, borderRadius: BorderRadius.circular(999)),
-                                      child: Text(l10n.trialDaysLeft(user.trialDaysRemaining), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(l10n.trialFeatures, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                                const SizedBox(height: 10),
-                                SizedBox(width: double.infinity, child: SpekoohButton(onPressed: onOpenPaywall, child: Text(l10n.trialKeepAccess))),
-                              ],
-                            ),
-                          );
+                          if (user == null) return const SizedBox.shrink();
+                          // A Plus subscriber never sees either state — they
+                          // already have exactly what both banners are
+                          // upselling, trial-active or not.
+                          if (user.isPlusSubscriber) return const SizedBox.shrink();
+                          if (user.trialDaysRemaining > 0) return _activeTrialBanner(l10n, user, onOpenPaywall);
+                          // Trial ended (owner request, 2026-09-11): home
+                          // used to just go silent forever once
+                          // trialDaysRemaining hit 0 — this keeps the same
+                          // upsell moment alive instead of dropping it.
+                          return _trialEndedBanner(l10n, onOpenPaywall);
                         },
                       ),
                     ),
@@ -407,6 +379,56 @@ class LoggedInHomeScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    // My Downloads entry point (owner request, 2026-09-11):
+                    // shown only once something real has actually been
+                    // saved — a free tour of an empty slots/upsell screen
+                    // isn't worth a permanent spot on home. Kept separate
+                    // from the "Ready offline" list right below (which
+                    // stays exactly as it was) rather than folding the two
+                    // together — that section is papers-only and already
+                    // has its own passing tests; this is the one place a
+                    // saved correction (marking guide) becomes visible from
+                    // home at all.
+                    ListenableBuilder(
+                      listenable: Listenable.merge([OfflinePapersStore.instance, OfflineGuidesStore.instance]),
+                      builder: (context, _) {
+                        final total = OfflinePapersStore.instance.papers.length + OfflineGuidesStore.instance.guides.length;
+                        if (total == 0) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.space2),
+                          child: InkWell(
+                            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => MyDownloadsScreen(onOpenPaywall: onOpenPaywall))),
+                            borderRadius: BorderRadius.circular(18),
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(color: AppColors.gold50, borderRadius: BorderRadius.circular(12)),
+                                    alignment: Alignment.center,
+                                    child: const Icon(LucideIcons.folderDown, size: 18, color: AppColors.gold700),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(l10n.myDownloadsTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                        Text(l10n.myDownloadsSubtitle(total), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                     // Empty when nothing's been saved offline yet (or on
                     // web, where OfflinePapersStore never bootstraps —
                     // path_provider has no meaningful web implementation
@@ -502,6 +524,91 @@ class LoggedInHomeScreen extends StatelessWidget {
     if (AuthSession.instance.isLoggedIn) {
       unawaited(profileRepository.setLanguagePreference(code).catchError((_) {}));
     }
+  }
+
+  Widget _activeTrialBanner(AppLocalizations l10n, SpekoohUser user, VoidCallback? onOpenPaywall) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.trialLabel, style: TextStyle(color: AppColors.gold700, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                margin: const EdgeInsets.only(top: 2),
+                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold50),
+                alignment: Alignment.center,
+                child: const Icon(LucideIcons.check, size: 12, color: AppColors.gold700),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  user.firstUnlockFreeEligible ? l10n.trialFirstUnlockFree : l10n.trialUnlimitedViews,
+                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: AppColors.surfaceSunken, borderRadius: BorderRadius.circular(999)),
+                child: Text(l10n.trialDaysLeft(user.trialDaysRemaining), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(l10n.trialFeatures, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+          const SizedBox(height: 10),
+          SizedBox(width: double.infinity, child: SpekoohButton(onPressed: onOpenPaywall, child: Text(l10n.trialKeepAccess))),
+        ],
+      ),
+    );
+  }
+
+  /// Owner request (2026-09-11): home used to just go silent forever once
+  /// a free user's trial ended (trialDaysRemaining reaches 0 for every
+  /// account eventually — see apps.payments.services.trial_days_remaining,
+  /// a pure function of account age) — this keeps the same upsell moment
+  /// alive instead of dropping it. Never shown to a Plus subscriber (see
+  /// the caller) or during an active trial (the banner above covers that).
+  Widget _trialEndedBanner(AppLocalizations l10n, VoidCallback? onOpenPaywall) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.trialEndedLabel, style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                margin: const EdgeInsets.only(top: 2),
+                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.surfaceSunken),
+                alignment: Alignment.center,
+                child: const Icon(LucideIcons.lock, size: 12, color: AppColors.textTertiary),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  l10n.trialEndedBody,
+                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(width: double.infinity, child: SpekoohButton(onPressed: onOpenPaywall, child: Text(l10n.trialEndedCta))),
+        ],
+      ),
+    );
   }
 
   Widget _langPill(String label, String code) {

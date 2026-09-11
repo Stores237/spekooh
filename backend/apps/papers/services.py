@@ -81,6 +81,22 @@ def user_can_view_file(user, paper_submission: PaperSubmission) -> bool:
     return PaperUnlock.objects.has_unlocked(user, paper_submission)
 
 
+def user_can_view_guide(user, paper_submission: PaperSubmission) -> bool:
+    """
+    Unlike user_can_view_file above, there's no free tier here — a marking
+    guide is always a real purchase for anyone but the submitter/staff (see
+    PaperUnlock's own docstring: "Always required, even for Pro
+    subscribers"). Callers must still check a PublishedGuide actually
+    exists first (see PaperSubmissionViewSet.guide) — this only answers
+    "may they see it", not "is there one to see".
+    """
+    if not user.is_authenticated:
+        return False
+    if user.is_staff or paper_submission.submitted_by_id == user.id:
+        return True
+    return PaperUnlock.objects.has_unlocked(user, paper_submission)
+
+
 def report_download_is_free(paper_submission: PaperSubmission) -> bool:
     """
     Owner decision: Internship/Bachelor's/HND-tier reports are free to

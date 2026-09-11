@@ -1,6 +1,7 @@
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../models/exam_taxonomy.dart';
+import '../../models/marking_guide.dart';
 import '../../models/paper_entry.dart';
 import '../../models/subject.dart';
 import '../../widgets/icon_chip.dart';
@@ -108,6 +109,14 @@ abstract class PapersRepository {
   /// this user already reported this paper — one flag per user per paper.
   Future<void> reportPaper(int paperId, {required String reason, String details});
 
+  /// The actual marking-guide content — [PaperEntry.hasMarkingGuide] only
+  /// ever said whether one exists at all. Throws [GuideNotPublishedException]
+  /// if none has been published yet, or [GuideLockedException] if this user
+  /// hasn't unlocked it (see [unlockPaper]) — the submitter and staff are
+  /// always exempt (apps.papers.services.user_can_view_guide on the
+  /// backend), same pattern as everywhere else access is gated in this app.
+  Future<MarkingGuide> getMarkingGuide(int paperId);
+
   /// AI-generated summary of a paper's own extracted text (apps.ai on the
   /// backend — Gemini, cron-generated, cached per paper). Never throws:
   /// AI_ENABLED being off, the paper not being visible/viewable to this
@@ -204,6 +213,20 @@ class PaywallException implements Exception {
 /// Carries no message — see PaywallException.
 class AlreadyReportedException implements Exception {
   const AlreadyReportedException();
+}
+
+/// [PapersRepository.getMarkingGuide] — no PublishedGuide exists for this
+/// paper yet (a real, honest state: an exam paper can be published well
+/// before its guide is ready — see PaperEntry.hasMarkingGuide's own
+/// comment). Carries no message — see PaywallException.
+class GuideNotPublishedException implements Exception {
+  const GuideNotPublishedException();
+}
+
+/// [PapersRepository.getMarkingGuide] — a guide exists but this user hasn't
+/// unlocked it. Carries no message — see PaywallException.
+class GuideLockedException implements Exception {
+  const GuideLockedException();
 }
 
 /// Mirrors apps.papers.models.PaperFlagReason on the backend — sent to the
@@ -308,6 +331,22 @@ class MockPapersRepository implements PapersRepository {
 
   @override
   Future<int> unlockPaperDownload(int paperId) async => 75;
+
+  /// Null by default — real usage starts with no guide published yet
+  /// (throws [GuideNotPublishedException], the honest default). Set
+  /// [mockGuide] to exercise a real guide, or [mockGuideError] to exercise
+  /// [GuideLockedException].
+  MarkingGuide? mockGuide;
+  Object? mockGuideError;
+
+  @override
+  Future<MarkingGuide> getMarkingGuide(int paperId) async {
+    final error = mockGuideError;
+    if (error != null) throw error;
+    final guide = mockGuide;
+    if (guide == null) throw const GuideNotPublishedException();
+    return guide;
+  }
 
   @override
   Future<void> reportPaper(int paperId, {required String reason, String details = ''}) async {

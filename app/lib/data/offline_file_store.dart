@@ -23,11 +23,18 @@ abstract class OfflineFileStore {
 /// (mobile-only — `path_provider` has no meaningful web implementation,
 /// see spec §6 "no web app in v1").
 class LocalOfflineFileStore implements OfflineFileStore {
-  const LocalOfflineFileStore();
+  /// [subdirectory] keeps different offline stores (papers, marking
+  /// guides) from colliding on the same index.json/files — each caller
+  /// gets its own real directory under the app's documents dir. Defaults
+  /// to the original directory name so existing OfflinePapersStore data
+  /// on a real device isn't orphaned by this becoming configurable.
+  const LocalOfflineFileStore({this.subdirectory = 'offline_papers'});
+
+  final String subdirectory;
 
   Future<Directory> _dir() async {
     final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory('${docs.path}/offline_papers');
+    final dir = Directory('${docs.path}/$subdirectory');
     if (!await dir.exists()) await dir.create(recursive: true);
     return dir;
   }

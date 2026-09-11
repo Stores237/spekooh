@@ -14,18 +14,28 @@ abstract class QuizzesRepository {
 }
 
 class MockQuizzesRepository implements QuizzesRepository {
+  /// Both default to the shared mock constants — only tests exercising a
+  /// specific quiz shape (e.g. a real questionCount: 0 "not written yet"
+  /// quiz) need to override either.
+  MockQuizzesRepository({Quiz? dailyChallenge, List<Quiz>? quizzes})
+      : _dailyChallenge = dailyChallenge ?? mockDailyChallenge,
+        _quizzes = quizzes ?? mockQuizzes;
+
+  final Quiz _dailyChallenge;
+  final List<Quiz> _quizzes;
+
   @override
-  Future<Quiz> getDailyChallenge() => Future.value(mockDailyChallenge);
+  Future<Quiz> getDailyChallenge() => Future.value(_dailyChallenge);
 
   @override
   Future<({int currentStreak, bool playedToday})> getStreak() async => (currentStreak: 0, playedToday: false);
 
   @override
-  Future<List<Quiz>> getQuizzes() => Future.value(mockQuizzes);
+  Future<List<Quiz>> getQuizzes() => Future.value(_quizzes);
 
   @override
   Future<Quiz> getQuizDetail(int quizId) async {
-    final all = [mockDailyChallenge, ...mockQuizzes, mockQuizDetail];
+    final all = [_dailyChallenge, ..._quizzes, mockQuizDetail];
     return all.firstWhere((q) => q.id == quizId, orElse: () => mockQuizDetail);
   }
 

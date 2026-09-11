@@ -25,6 +25,7 @@ from .factories import (
     ExamCategoryFactory,
     ExamTypeFactory,
     PaperSubmissionFactory,
+    PublishedGuideFactory,
     SubjectFactory,
 )
 from .models import (
@@ -45,6 +46,7 @@ from .services import (
     record_ad_watch,
     record_paper_view,
     user_can_view_file,
+    user_can_view_guide,
 )
 
 
@@ -1232,6 +1234,54 @@ def test_has_marking_guide_is_true_once_a_real_guide_is_published():
 
     serializer = PaperSubmissionDetailSerializer(paper, context={"request": None})
     assert serializer.data["has_marking_guide"] is True
+
+
+@pytest.mark.django_db
+def test_guide_endpoint_404s_when_no_guide_has_been_published_yet():
+    paper = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+    client = APIClient()
+    client.force_authenticate(user=paper.submitted_by)
+
+    response = client.get(f"/api/papers/submissions/{paper.id}/guide/")
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_guide_endpoint_requires_a_real_unlock_for_anyone_but_the_submitter_or_staff():
+    paper = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+    guide = PublishedGuideFactory(paper_submission=paper)
+    other_user = UserFactory()
+
+    assert user_can_view_guide(other_user, paper) is False
+
+    unpaid_client = APIClient()
+    unpaid_client.force_authenticate(user=other_user)
+    response = unpaid_client.get(f"/api/papers/submissions/{paper.id}/guide/")
+    assert response.status_code == 402
+
+    PaperUnlock.objects.create(user=other_user, paper_submission=paper, amount_paid=500)
+    assert user_can_view_guide(other_user, paper) is True
+    response = unpaid_client.get(f"/api/papers/submissions/{paper.id}/guide/")
+    assert response.status_code == 200
+    assert response.data["content"] == guide.content
+
+
+@pytest.mark.django_db
+def test_guide_endpoint_never_requires_the_submitter_or_staff_to_pay():
+    paper = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)
+    guide = PublishedGuideFactory(paper_submission=paper)
+
+    submitter_client = APIClient()
+    submitter_client.force_authenticate(user=paper.submitted_by)
+    response = submitter_client.get(f"/api/papers/submissions/{paper.id}/guide/")
+    assert response.status_code == 200
+    assert response.data["content"] == guide.content
+
+    staff = UserFactory(is_staff=True)
+    staff_client = APIClient()
+    staff_client.force_authenticate(user=staff)
+    assert staff_client.get(f"/api/papers/submissions/{paper.id}/guide/").status_code == 200
 
 
 @pytest.mark.django_db

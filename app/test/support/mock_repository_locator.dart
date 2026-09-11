@@ -13,8 +13,10 @@ import 'fake_auth_session.dart';
 /// A [RepositoryLocator] fully backed by Mock*Repository implementations —
 /// for widget tests, which have no backend to talk to. Also installs the
 /// same fake session as [AuthSession.instance] so login and repository
-/// mocking stay consistent without two separate setup calls.
-RepositoryLocator buildMockRepositoryLocator() {
+/// mocking stay consistent without two separate setup calls. [profile]
+/// lets a test override just the user shape (e.g. isPlusSubscriber) without
+/// having to reconstruct every other repository by hand.
+RepositoryLocator buildMockRepositoryLocator({ProfileRepository? profile}) {
   final fakeSession = buildFakeAuthSession();
   AuthSession.debugSetInstance(fakeSession);
   return RepositoryLocator(
@@ -25,6 +27,6 @@ RepositoryLocator buildMockRepositoryLocator() {
     quizzes: MockQuizzesRepository(),
     notifications: MockNotificationsRepository(),
     shop: MockShopRepository(),
-    profile: MockProfileRepository(),
+    profile: profile ?? MockProfileRepository(),
   );
 }

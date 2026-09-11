@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spekooh/data/offline_file_store.dart';
+import 'package:spekooh/data/offline_guides_store.dart';
 import 'package:spekooh/data/offline_papers_store.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
+import 'package:spekooh/models/marking_guide.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
 import 'package:spekooh/data/repositories/quizzes_repository.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
@@ -10,6 +12,7 @@ import 'package:spekooh/data/repository_locator.dart';
 import 'package:spekooh/models/spekooh_user.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/token_storage.dart';
+import 'package:spekooh/screens/downloads/my_downloads_screen.dart';
 import 'package:spekooh/screens/home/home_screen.dart';
 import 'package:spekooh/screens/home/logged_in_home_screen.dart';
 import 'package:spekooh/main.dart';
@@ -23,6 +26,7 @@ import 'support/mock_repository_locator.dart';
 void main() {
   tearDown(() {
     OfflinePapersStore.debugSetInstance(OfflinePapersStore());
+    OfflineGuidesStore.debugSetInstance(OfflineGuidesStore());
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
   });
 
@@ -120,6 +124,72 @@ void main() {
     },
   );
 
+  testWidgets('LoggedInHomeScreen shows the active-trial banner while trialDaysRemaining is still positive', (tester) async {
+    const user = SpekoohUser(
+      name: 'Lucien',
+      joinDate: 'Joined Aug 2026',
+      submissionsCount: 0,
+      quizzesCount: 0,
+      creditBalance: 0,
+      redeemCode: '',
+      redeemCodeSubtitle: '',
+      trialDaysRemaining: 2,
+    );
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(profileRepository: MockProfileRepository(user: user), quizzesRepository: MockQuizzesRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('YOUR FREE TRIAL'), findsOneWidget);
+    expect(find.text('2 days left'), findsOneWidget);
+    expect(find.text('YOUR TRIAL HAS ENDED'), findsNothing);
+  });
+
+  testWidgets('LoggedInHomeScreen shows a post-trial upsell banner instead of going silent once the trial has ended', (tester) async {
+    const user = SpekoohUser(
+      name: 'Lucien',
+      joinDate: 'Joined Aug 2026',
+      submissionsCount: 0,
+      quizzesCount: 0,
+      creditBalance: 0,
+      redeemCode: '',
+      redeemCodeSubtitle: '',
+      trialDaysRemaining: 0,
+    );
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(profileRepository: MockProfileRepository(user: user), quizzesRepository: MockQuizzesRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('YOUR TRIAL HAS ENDED'), findsOneWidget);
+    expect(find.text('Subscribe now'), findsOneWidget);
+    expect(find.text('YOUR FREE TRIAL'), findsNothing);
+  });
+
+  testWidgets('LoggedInHomeScreen shows no trial banner at all for an already-paying Plus subscriber', (tester) async {
+    const user = SpekoohUser(
+      name: 'Lucien',
+      joinDate: 'Joined Aug 2026',
+      submissionsCount: 0,
+      quizzesCount: 0,
+      creditBalance: 0,
+      redeemCode: '',
+      redeemCodeSubtitle: '',
+      trialDaysRemaining: 0,
+      isPlusSubscriber: true,
+    );
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(profileRepository: MockProfileRepository(user: user), quizzesRepository: MockQuizzesRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('YOUR TRIAL HAS ENDED'), findsNothing);
+    expect(find.text('YOUR FREE TRIAL'), findsNothing);
+  });
+
   testWidgets('LoggedInHomeScreen EN/FR pill actually switches the locale, not just decorative', (tester) async {
     await tester.pumpWidget(l10nTestApp(
       LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
@@ -154,6 +224,57 @@ void main() {
     expect(find.text('Downloads · 1'), findsOneWidget);
     expect(find.text('Biology O-Level'), findsOneWidget);
     expect(find.text('OFFLINE READY'), findsOneWidget);
+  });
+
+  testWidgets('LoggedInHomeScreen has no My Downloads entry point when nothing has been saved yet', (tester) async {
+    OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore()));
+    OfflineGuidesStore.debugSetInstance(OfflineGuidesStore(fileStore: InMemoryOfflineFileStore()));
+
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('My Downloads'), findsNothing);
+  });
+
+  testWidgets('LoggedInHomeScreen shows a My Downloads entry point once a paper or a correction is saved, opening the real screen', (tester) async {
+    final papers = OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]);
+    await papers.bootstrap();
+    await papers.save(paperId: 5, title: 'Biology O-Level', subtitle: 'GCE · 2024', fileUrl: 'https://cdn.example.com/paper5.pdf');
+    OfflinePapersStore.debugSetInstance(papers);
+
+    final guides = OfflineGuidesStore(fileStore: InMemoryOfflineFileStore());
+    await guides.bootstrap();
+    await guides.save(
+      paperId: 9,
+      title: 'Chemistry corrigé',
+      guide: MarkingGuide(mcqAnswers: const {'1': 'B'}, nonMcqQuestions: const [], publishedAt: DateTime(2026, 9, 1)),
+    );
+    OfflineGuidesStore.debugSetInstance(guides);
+
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('My Downloads'), findsOneWidget);
+    expect(find.text('2 saved on this phone'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('My Downloads'));
+    await tester.pump();
+    await tester.tap(find.text('My Downloads'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // The real MyDownloadsScreen, Papers tab first — "Biology O-Level" now
+    // matches twice (home's own "Ready offline" list is still underneath
+    // in the Navigator stack), so assert on markers unique to this screen.
+    expect(find.byType(MyDownloadsScreen), findsOneWidget);
+    expect(find.text('Download slots'), findsOneWidget);
+    expect(find.text('Corrections · 1'), findsOneWidget);
   });
 
   testWidgets('Full login flow: Settings -> Log in -> LoggedInHomeScreen on Home tab', (tester) async {

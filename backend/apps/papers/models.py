@@ -281,6 +281,14 @@ class PublishedGuide(TimeStampedModel):
     """The merge of the in-house MCQ answer key + the instructor-authored non-MCQ guide."""
 
     paper_submission = models.OneToOneField(PaperSubmission, on_delete=models.CASCADE, related_name="published_guide")
+    # Shape set by the one real writer, apps.instructors.services
+    # .merge_and_publish: {"mcq": <MCQAnswerKey.content, a {question_number:
+    # answer} dict, or null if the paper has no MCQ section>, "non_mcq":
+    # <InstructorMarkingGuide.content, a list of {question_type, text,
+    # answer} — validated by apps.instructors.serializers
+    # .MarkingGuideQuestionSerializer>}. See
+    # apps.papers.serializers.PublishedGuideSerializer and the Flutter
+    # MarkingGuideScreen, which both render this same real shape.
     content = models.JSONField()
     published_at = models.DateTimeField()
 

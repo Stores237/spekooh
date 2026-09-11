@@ -6,6 +6,7 @@ import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/offline_file_store.dart';
 import 'package:spekooh/data/offline_papers_store.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
+import 'package:spekooh/data/repositories/profile_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/models/paper_entry.dart';
 import 'package:spekooh/screens/papers/chat_screen.dart';
@@ -302,7 +303,12 @@ void main() {
       // save, not the login gate; that gate has its own dedicated test.
       AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage())..accessToken = 'fake-access-token');
       await tester.pumpWidget(l10nTestApp(
-        PaperDetailScreen(paperEntry: entryWithFile, repository: _FileBackedPapersRepository(entryWithFile), adController: _FakeRewardedAdController(grantsReward: true)),
+        PaperDetailScreen(
+          paperEntry: entryWithFile,
+          repository: _FileBackedPapersRepository(entryWithFile),
+          adController: _FakeRewardedAdController(grantsReward: true),
+          profileRepository: MockProfileRepository(),
+        ),
       ));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
@@ -361,7 +367,12 @@ void main() {
       AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
       OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
       await tester.pumpWidget(l10nTestApp(
-        PaperDetailScreen(paperEntry: entryWithFile, repository: _FileBackedPapersRepository(entryWithFile), adController: _FakeRewardedAdController(grantsReward: true)),
+        PaperDetailScreen(
+          paperEntry: entryWithFile,
+          repository: _FileBackedPapersRepository(entryWithFile),
+          adController: _FakeRewardedAdController(grantsReward: true),
+          profileRepository: MockProfileRepository(),
+        ),
       ));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
@@ -382,7 +393,12 @@ void main() {
       AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage())..accessToken = 'fake-access-token');
       OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
       await tester.pumpWidget(l10nTestApp(
-        PaperDetailScreen(paperEntry: entry, repository: _FileBackedPapersRepository(entry), adController: _FakeRewardedAdController(grantsReward: true)),
+        PaperDetailScreen(
+          paperEntry: entry,
+          repository: _FileBackedPapersRepository(entry),
+          adController: _FakeRewardedAdController(grantsReward: true),
+          profileRepository: MockProfileRepository(),
+        ),
       ));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));

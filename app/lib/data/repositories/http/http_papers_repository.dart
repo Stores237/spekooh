@@ -1,4 +1,5 @@
 import '../../../models/exam_taxonomy.dart';
+import '../../../models/marking_guide.dart';
 import '../../../models/paper_entry.dart';
 import '../../../models/subject.dart';
 import '../../../widgets/icon_chip.dart';
@@ -283,6 +284,31 @@ class HttpPapersRepository implements PapersRepository {
       'phone_number': '000000000',
     });
     return row['amount_paid'] as int;
+  }
+
+  @override
+  Future<MarkingGuide> getMarkingGuide(int paperId) async {
+    try {
+      final row = await _client.get('/papers/submissions/$paperId/guide/') as Map<String, dynamic>;
+      final content = row['content'] as Map<String, dynamic>;
+      final mcq = content['mcq'] as Map<String, dynamic>?;
+      final nonMcq = content['non_mcq'] as List?;
+      return MarkingGuide(
+        mcqAnswers: mcq?.map((k, v) => MapEntry(k, '$v')) ?? const {},
+        nonMcqQuestions: (nonMcq ?? const [])
+            .map((q) => MarkingGuideQuestion(
+                  questionType: q['question_type'] as String? ?? '',
+                  text: q['text'] as String? ?? '',
+                  answer: q['answer'] as String? ?? '',
+                ))
+            .toList(),
+        publishedAt: DateTime.parse(row['published_at'] as String),
+      );
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) throw const GuideNotPublishedException();
+      if (e.statusCode == 402) throw const GuideLockedException();
+      rethrow;
+    }
   }
 
   @override

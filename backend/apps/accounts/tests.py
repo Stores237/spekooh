@@ -257,6 +257,26 @@ def test_me_returns_authenticated_user_profile(api_client):
 
 
 @pytest.mark.django_db
+def test_me_reports_is_plus_subscriber_honestly():
+    """A brand new account isn't a subscriber; a real active Subscription
+    row flips it — this is what LoggedInHomeScreen's post-trial banner
+    gates on to avoid nagging a user who's already paying."""
+    from apps.payments.factories import SubscriptionFactory
+
+    user = UserFactory(email="plus@example.com", password="correcthorse123")
+    api_client = APIClient()
+    login = api_client.post("/api/auth/login/", {"email": "plus@example.com", "password": "correcthorse123"}, format="json")
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+    response = api_client.get("/api/auth/me/")
+    assert response.data["is_plus_subscriber"] is False
+
+    SubscriptionFactory(user=user)
+    response = api_client.get("/api/auth/me/")
+    assert response.data["is_plus_subscriber"] is True
+
+
+@pytest.mark.django_db
 def test_registered_user_requires_email_at_db_level():
     with pytest.raises(IntegrityError):
         User.objects.create(account_type=AccountType.REGISTERED, email=None)
