@@ -9,6 +9,7 @@ class SpekoohUser {
     required this.redeemCodeSubtitle,
     this.trialDaysRemaining = 0,
     this.firstUnlockFreeEligible = false,
+    this.isPlusSubscriber = false,
     this.referralCode = '',
     this.avatarUrl,
     this.email = '',
@@ -30,6 +31,11 @@ class SpekoohUser {
   final String redeemCodeSubtitle;
   final int trialDaysRemaining;
   final bool firstUnlockFreeEligible;
+
+  /// Real Subscription.objects.has_active(user) — lets the home screen tell
+  /// "trial ended, never subscribed" apart from "trial ended, already
+  /// paying" so the post-trial upsell banner never nags a paying user.
+  final bool isPlusSubscriber;
 
   /// Null means genuinely no photo set — the profile screen falls back to
   /// an initial-letter avatar, never a fabricated placeholder image.

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'data/locale_controller.dart';
+import 'data/offline_guides_store.dart';
 import 'data/offline_papers_store.dart';
 import 'l10n/app_localizations.dart';
 import 'theme/app_theme.dart';
@@ -22,6 +23,7 @@ void main() async {
   if (!kIsWeb) {
     await MobileAds.instance.initialize();
     await OfflinePapersStore.instance.bootstrap();
+    await OfflineGuidesStore.instance.bootstrap();
   }
   await LocaleController.instance.bootstrap();
   runApp(const SpekoohApp());

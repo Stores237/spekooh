@@ -6,7 +6,9 @@ import '../../ads/rewarded_ad_controller.dart';
 import '../../data/api_client.dart';
 import '../../data/auth_session.dart';
 import '../../data/offline_papers_store.dart';
+import '../../data/offline_slots_policy.dart';
 import '../../data/repositories/papers_repository.dart';
+import '../../data/repositories/profile_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/exam_taxonomy.dart';
@@ -24,6 +26,7 @@ import '../../widgets/spekooh_banner.dart';
 import '../../widgets/spekooh_loader.dart';
 import 'chat_screen.dart';
 import 'papers_screen.dart';
+import 'marking_guide_screen.dart';
 import 'report_viewer_screen.dart';
 
 /// Reports have no Subject taxonomy (subjectTitle is null/absent), so
@@ -43,8 +46,10 @@ class PaperDetailScreen extends StatefulWidget {
     this.paperEntry,
     this.onOpenPaywall,
     PapersRepository? repository,
+    ProfileRepository? profileRepository,
     RewardedAdController? adController,
   })  : repository = repository ?? RepositoryLocator.instance.papers,
+        profileRepository = profileRepository ?? RepositoryLocator.instance.profile,
         adController = adController ?? RewardedAdController.instance;
 
   /// Set when opened from Papers' full taxonomy drill-down — carries the
@@ -62,6 +67,12 @@ class PaperDetailScreen extends StatefulWidget {
   final VoidCallback? onOpenPaywall;
 
   final PapersRepository repository;
+
+  /// Used only to check isPlusSubscriber for the offline-download slots
+  /// cap (see confirmOfflineSlotAvailable) — kept as its own injectable
+  /// param, separate from [repository], rather than reaching into
+  /// RepositoryLocator.instance directly at save-time.
+  final ProfileRepository profileRepository;
 
   /// Drives the "Watch ad for +1 view" button shown once the daily free
   /// view limit blocks this paper (see [_viewError]). Injectable so widget
@@ -216,6 +227,13 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       );
       if (loggedIn != true || !mounted) return;
     }
+    final canSave = await confirmOfflineSlotAvailable(
+      context,
+      currentCount: store.papers.length,
+      profileRepository: widget.profileRepository,
+      errorMessage: (l10n) => l10n.offlineSlotsFullPapersError(kMaxOfflineSlots),
+    );
+    if (!canSave || !mounted) return;
     setState(() => _savingOffline = true);
     try {
       await store.save(paperId: paperId, title: title, subtitle: subtitle, fileUrl: fileUrl);
@@ -588,11 +606,32 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              if (_unlockedAmount != null)
-                                Text(l10n.unlockedForAmount(_unlockedAmount!), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600))
-                              else if (downloadUnlocked)
-                                Text(l10n.alreadyUnlocked, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600))
-                              else ...[
+                              if (_unlockedAmount != null || downloadUnlocked) ...[
+                                Text(
+                                  _unlockedAmount != null ? l10n.unlockedForAmount(_unlockedAmount!) : l10n.alreadyUnlocked,
+                                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.green600, fontWeight: FontWeight.w600),
+                                ),
+                                // Reports have no marking-guide concept at
+                                // all (see PaperEntry.hasMarkingGuide's own
+                                // comment) — "unlocked" there just means
+                                // the report's own file (handled elsewhere
+                                // on this screen) is now downloadable.
+                                if (!isReport) ...[
+                                  const SizedBox(height: 10),
+                                  SpekoohButton(
+                                    size: SpekoohButtonSize.sm,
+                                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                                      builder: (context) => MarkingGuideScreen(
+                                        paperId: entry.id,
+                                        paperTitle: title,
+                                        repository: widget.repository,
+                                        profileRepository: widget.profileRepository,
+                                      ),
+                                    )),
+                                    child: Text(l10n.markingGuideViewButton),
+                                  ),
+                                ],
+                              ] else ...[
                                 Row(
                                   children: [
                                     SpekoohButton(

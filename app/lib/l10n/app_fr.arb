@@ -113,6 +113,9 @@
   "trialDaysLeft": "{days} jours restants",
   "trialFeatures": "Consultations illimitées · Assistant IA",
   "trialKeepAccess": "Garder mon accès",
+  "trialEndedLabel": "VOTRE ESSAI A EXPIRÉ",
+  "trialEndedBody": "Abonnez-vous pour garder les consultations illimitées et l'assistant IA.",
+  "trialEndedCta": "S'abonner maintenant",
   "quickActionContribute": "Contribuer",
   "readyOfflineTitle": "Disponible hors ligne",
   "offlineDownloadsCount": "Téléchargements · {count}",
@@ -201,6 +204,15 @@
   "choosePdfOrImage": "Choisir un PDF ou une image",
   "takePhoto": "Prendre une photo",
   "chooseFromGallery": "Choisir dans la galerie",
+  "scanPagesTitle": "Scanner des pages",
+  "scanPagesHint": "Les pages scannées sont combinées en un seul document, dans l'ordre.",
+  "scanAddPage": "Ajouter une page",
+  "scanUsePageSingular": "Utiliser 1 page",
+  "scanUsePagesPlural": "Utiliser {count} pages",
+  "@scanUsePagesPlural": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "scanCombiningPages": "Fusion des pages…",
   "avatarUploadError": "Impossible de mettre à jour votre photo. Vérifiez votre connexion et réessayez.",
 
   "filterAll": "Toutes",
@@ -253,6 +265,12 @@
   "startQuizButton": "Commencer le quiz",
   "submittingLabel": "Envoi en cours…",
   "doneLabel": "Terminé",
+  "quizComingSoonLabel": "Bientôt disponible",
+  "quizSubtitleComingSoon": "{subtitle} (bientôt disponible)",
+  "@quizSubtitleComingSoon": {
+    "placeholders": {"subtitle": {"type": "String"}}
+  },
+  "quizNotYetWrittenBody": "Ce quiz n'a pas encore été rédigé. Revenez bientôt.",
 
   "profileTitle": "Profil",
   "submissionsCountBadge": "{count} soumissions",
@@ -320,6 +338,34 @@
   "openScannedPaper": "Ouvrir l'épreuve scannée",
   "saveOffline": "Enregistrer hors ligne",
   "offlineSaved": "Enregistré hors ligne",
+  "offlineSlotsFullPapersError": "Gardez {max} épreuves hors ligne à la fois. Supprimez-en une pour en enregistrer une autre.",
+  "@offlineSlotsFullPapersError": {
+    "placeholders": {"max": {"type": "int"}}
+  },
+  "offlineSlotsFullGuidesError": "Gardez {max} corrigés hors ligne à la fois. Supprimez-en un pour en enregistrer un autre.",
+  "@offlineSlotsFullGuidesError": {
+    "placeholders": {"max": {"type": "int"}}
+  },
+  "myDownloadsTitle": "Mes téléchargements",
+  "myDownloadsSubtitle": "{count} enregistré(s) sur ce téléphone",
+  "@myDownloadsSubtitle": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "downloadsPapersTabLabel": "Épreuves",
+  "downloadsCorrectionsTabLabel": "Corrigés",
+  "downloadSlotsTitle": "Emplacements de téléchargement",
+  "downloadSlotsUsed": "{used} SUR {max} UTILISÉS",
+  "@downloadSlotsUsed": {
+    "placeholders": {"used": {"type": "int"}, "max": {"type": "int"}}
+  },
+  "noDownloadsYetPapers": "Aucun téléchargement pour l'instant. Ouvrez une épreuve et appuyez sur Enregistrer pour la lire hors ligne.",
+  "noDownloadsYetGuides": "Aucun téléchargement pour l'instant. Ouvrez le corrigé d'une épreuve et appuyez sur Enregistrer pour le lire hors ligne.",
+  "getMoreSlotsTitle": "OBTENIR PLUS D'EMPLACEMENTS",
+  "xpRedeemSlotTitle": "+1 emplacement pour 3 jours",
+  "xpRedeemComingSoonSubtitle": "À échanger avec des XP (bientôt disponible)",
+  "kawloPlusUnlimitedTitle": "Kawlo Plus : téléchargements illimités",
+  "kawloPlusUnlimitedSubtitle": "Plus l'IA illimitée et sans bannières publicitaires",
+  "kawloPlusPriceLabel": "500 FCFA/mois",
   "offlineSaveError": "Impossible d'enregistrer hors ligne : {error}",
   "@offlineSaveError": {
     "placeholders": {"error": {"type": "String"}}
@@ -329,6 +375,10 @@
   "markingGuideTitle": "Corrigé",
   "markingGuideSubtitle": "Rédigé par l'instructeur + clé QCM interne",
   "markingGuideNotYetAvailable": "L'épreuve est là, mais son corrigé n'est pas encore prêt. Revenez bientôt.",
+  "markingGuideViewButton": "Voir le corrigé",
+  "markingGuideMcqSectionTitle": "Réponses à choix multiples",
+  "markingGuideWrittenSectionTitle": "Réponses rédigées",
+  "markingGuideLockedError": "Débloquez le corrigé de cette épreuve pour le consulter.",
   "reportDownloadTitle": "Accès au téléchargement",
   "reportDownloadSubtitle": "La consultation dans l'application est gratuite. Débloquez une fois pour enregistrer une copie hors ligne",
   "unlockedForAmount": "Débloqué pour {amount} FCFA.",

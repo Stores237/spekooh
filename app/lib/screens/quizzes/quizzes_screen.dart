@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../data/auth_session.dart';
 import '../../data/mock/mock_quizzes.dart';
@@ -25,6 +27,14 @@ class QuizzesScreen extends StatefulWidget {
 
   final QuizzesRepository repository;
 
+  /// Same seam as OfflinePapersStore.debugSetInstance — the "Resets in"
+  /// countdown is a pure function of the current time (see _resetsInLabel),
+  /// which makes it otherwise untestable: real wall-clock time barely
+  /// moves during a test run no matter how far tester.pump(duration) fast-
+  /// forwards the fake timer clock. Tests must reset this in tearDown.
+  @visibleForTesting
+  static DateTime Function() debugNow = DateTime.now;
+
   @override
   State<QuizzesScreen> createState() => _QuizzesScreenState();
 }
@@ -44,7 +54,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
   /// Real countdown to local midnight — no backend field exists for this,
   /// but it doesn't need one: it's a pure function of the current time.
   String _resetsInLabel(AppLocalizations l10n) {
-    final now = DateTime.now();
+    final now = QuizzesScreen.debugNow();
     final midnight = DateTime(now.year, now.month, now.day + 1);
     final remaining = midnight.difference(now);
     return l10n.resetsInLabel(remaining.inHours, remaining.inMinutes.remainder(60));
@@ -63,11 +73,34 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
     'Computer science': (LucideIcons.cpu, IconChipTint.blue),
   };
 
+  /// Ticks the "Resets in Xh Ym" label down live while this screen is on
+  /// screen — _resetsInLabel's own math was always correct, but with
+  /// nothing forcing a rebuild it only ever updated on some unrelated
+  /// setState (owner report, 2026-09-08: "shouldn't be static"). A minute
+  /// is plenty of granularity for a label that only shows hours/minutes.
+  Timer? _clockTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _clockTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   @override
   void dispose() {
+    _clockTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
+
+  /// A quiz is only really playable once real questions have been written
+  /// for it — question_count is a real DB count either way (unlike
+  /// `quiz.questions`, which the list/daily-challenge endpoints never
+  /// populate at all), so it's the one honest signal to gate on everywhere
+  /// a quiz can be tapped into.
+  static bool _isPlayable(Quiz quiz) => quiz.questionCount > 0;
 
   Future<void> _openQuizById(int id) async {
     final detail = await widget.repository.getQuizDetail(id);
@@ -140,7 +173,19 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                     ],
                   ),
                 ),
-                if (quiz.questions.isNotEmpty) ...[
+                if (quiz.questionCount == 0) ...[
+                  const SizedBox(height: AppSpacing.space5),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: AppColors.surfaceSunken, borderRadius: BorderRadius.circular(14)),
+                    child: Text(
+                      l10n.quizNotYetWrittenBody,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                  ),
+                ] else if (quiz.questions.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.space5),
                   for (var qi = 0; qi < quiz.questions.length; qi++) ...[
                     Text(quiz.questions[qi].text, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
@@ -187,10 +232,15 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 15),
-                    decoration: BoxDecoration(color: AppColors.gold500, borderRadius: BorderRadius.circular(999)),
+                    decoration: BoxDecoration(
+                      color: quiz.questionCount == 0 ? AppColors.textTertiary : AppColors.gold500,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
                     alignment: Alignment.center,
                     child: Text(
-                      score != null ? l10n.doneLabel : (isSubmitting ? l10n.submittingLabel : l10n.startQuizButton),
+                      quiz.questionCount == 0
+                          ? l10n.quizComingSoonLabel
+                          : (score != null ? l10n.doneLabel : (isSubmitting ? l10n.submittingLabel : l10n.startQuizButton)),
                       style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 15),
                     ),
                   ),
@@ -235,7 +285,11 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                 future: _dailyFuture,
                 builder: (context, snapshot) {
                   final daily = snapshot.data ?? mockDailyChallenge;
+                  final playable = _isPlayable(daily);
                   return GestureDetector(
+                    // Still tappable even when not yet playable: the detail
+                    // view itself gives the honest "not written yet" answer,
+                    // which is more informative than just refusing the tap.
                     onTap: () => _openQuizById(daily.id),
                     child: Container(
                       padding: const EdgeInsets.all(16),
@@ -276,9 +330,20 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 13),
-                            decoration: BoxDecoration(color: AppColors.gold500, borderRadius: BorderRadius.circular(999)),
+                            decoration: BoxDecoration(
+                              color: playable ? AppColors.gold500 : AppColors.white.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
                             alignment: Alignment.center,
-                            child: Text(l10n.playDailyChallenge, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.ink900, fontWeight: FontWeight.w800, fontSize: 14)),
+                            child: Text(
+                              playable ? l10n.playDailyChallenge : l10n.quizComingSoonLabel,
+                              style: TextStyle(
+                                fontFamily: plusJakartaSansFamily,
+                                color: playable ? AppColors.ink900 : AppColors.textOnDarkMuted,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -382,29 +447,35 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                   return Column(
                     children: [
                       for (final quiz in quizzes) ...[
-                        GestureDetector(
-                          onTap: () => _openQuizById(quiz.id),
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                            child: Row(
-                              children: [
-                                IconChip(
-                                  icon: _iconByTitle[quiz.title]?.$1 ?? quiz.icon,
-                                  tint: _iconByTitle[quiz.title]?.$2 ?? IconChipTint.blue,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(quiz.title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                      Text(quiz.subtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                                    ],
+                        Opacity(
+                          opacity: _isPlayable(quiz) ? 1 : 0.55,
+                          child: GestureDetector(
+                            onTap: () => _openQuizById(quiz.id), // still tappable — see the daily-challenge card's own comment on why
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                              child: Row(
+                                children: [
+                                  IconChip(
+                                    icon: _iconByTitle[quiz.title]?.$1 ?? quiz.icon,
+                                    tint: _iconByTitle[quiz.title]?.$2 ?? IconChipTint.blue,
                                   ),
-                                ),
-                                const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
-                              ],
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(quiz.title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                        Text(
+                                          _isPlayable(quiz) ? quiz.subtitle : l10n.quizSubtitleComingSoon(quiz.subtitle),
+                                          style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
+                                ],
+                              ),
                             ),
                           ),
                         ),

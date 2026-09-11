@@ -359,6 +359,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trialKeepAccess => 'Keep my access';
 
   @override
+  String get trialEndedLabel => 'YOUR TRIAL HAS ENDED';
+
+  @override
+  String get trialEndedBody =>
+      'Subscribe to keep unlimited paper views and AI assistant access.';
+
+  @override
+  String get trialEndedCta => 'Subscribe now';
+
+  @override
   String get quickActionContribute => 'Contribute';
 
   @override
@@ -643,6 +653,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseFromGallery => 'Choose from gallery';
 
   @override
+  String get scanPagesTitle => 'Scan pages';
+
+  @override
+  String get scanPagesHint =>
+      'Scanned pages are combined into one document, in order.';
+
+  @override
+  String get scanAddPage => 'Add page';
+
+  @override
+  String get scanUsePageSingular => 'Use 1 page';
+
+  @override
+  String scanUsePagesPlural(int count) {
+    return 'Use $count pages';
+  }
+
+  @override
+  String get scanCombiningPages => 'Combining pages…';
+
+  @override
   String get avatarUploadError =>
       'Could not update your photo. Check your connection and try again.';
 
@@ -807,6 +838,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get doneLabel => 'Done';
+
+  @override
+  String get quizComingSoonLabel => 'Coming soon';
+
+  @override
+  String quizSubtitleComingSoon(String subtitle) {
+    return '$subtitle (coming soon)';
+  }
+
+  @override
+  String get quizNotYetWrittenBody =>
+      'This quiz hasn\'t been written yet. Check back soon.';
 
   @override
   String get profileTitle => 'Profile';
@@ -1033,6 +1076,64 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineSaved => 'Saved offline';
 
   @override
+  String offlineSlotsFullPapersError(int max) {
+    return 'Keep $max papers offline at a time. Remove one to save another.';
+  }
+
+  @override
+  String offlineSlotsFullGuidesError(int max) {
+    return 'Keep $max corrections offline at a time. Remove one to save another.';
+  }
+
+  @override
+  String get myDownloadsTitle => 'My Downloads';
+
+  @override
+  String myDownloadsSubtitle(int count) {
+    return '$count saved on this phone';
+  }
+
+  @override
+  String get downloadsPapersTabLabel => 'Papers';
+
+  @override
+  String get downloadsCorrectionsTabLabel => 'Corrections';
+
+  @override
+  String get downloadSlotsTitle => 'Download slots';
+
+  @override
+  String downloadSlotsUsed(int used, int max) {
+    return '$used OF $max USED';
+  }
+
+  @override
+  String get noDownloadsYetPapers =>
+      'No downloads yet. Open a paper and tap Save to read it offline.';
+
+  @override
+  String get noDownloadsYetGuides =>
+      'No downloads yet. Open a paper\'s marking guide and tap Save to read it offline.';
+
+  @override
+  String get getMoreSlotsTitle => 'GET MORE SLOTS';
+
+  @override
+  String get xpRedeemSlotTitle => '+1 slot for 3 days';
+
+  @override
+  String get xpRedeemComingSoonSubtitle => 'Redeem with XP (coming soon)';
+
+  @override
+  String get kawloPlusUnlimitedTitle => 'Kawlo Plus: unlimited downloads';
+
+  @override
+  String get kawloPlusUnlimitedSubtitle => 'Plus unlimited AI & no banner ads';
+
+  @override
+  String get kawloPlusPriceLabel => '500 FCFA/mo';
+
+  @override
   String offlineSaveError(String error) {
     return 'Could not save for offline: $error';
   }
@@ -1054,6 +1155,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get markingGuideNotYetAvailable =>
       'The paper is here, but its marking guide isn\'t ready yet. Check back soon.';
+
+  @override
+  String get markingGuideViewButton => 'View guide';
+
+  @override
+  String get markingGuideMcqSectionTitle => 'Multiple choice answers';
+
+  @override
+  String get markingGuideWrittenSectionTitle => 'Written answers';
+
+  @override
+  String get markingGuideLockedError =>
+      'Unlock this paper\'s marking guide to view it.';
 
   @override
   String get reportDownloadTitle => 'Download access';

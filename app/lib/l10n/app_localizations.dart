@@ -746,6 +746,24 @@ abstract class AppLocalizations {
   /// **'Keep my access'**
   String get trialKeepAccess;
 
+  /// No description provided for @trialEndedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR TRIAL HAS ENDED'**
+  String get trialEndedLabel;
+
+  /// No description provided for @trialEndedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to keep unlimited paper views and AI assistant access.'**
+  String get trialEndedBody;
+
+  /// No description provided for @trialEndedCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe now'**
+  String get trialEndedCta;
+
   /// No description provided for @quickActionContribute.
   ///
   /// In en, this message translates to:
@@ -1244,6 +1262,42 @@ abstract class AppLocalizations {
   /// **'Choose from gallery'**
   String get chooseFromGallery;
 
+  /// No description provided for @scanPagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan pages'**
+  String get scanPagesTitle;
+
+  /// No description provided for @scanPagesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned pages are combined into one document, in order.'**
+  String get scanPagesHint;
+
+  /// No description provided for @scanAddPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add page'**
+  String get scanAddPage;
+
+  /// No description provided for @scanUsePageSingular.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 1 page'**
+  String get scanUsePageSingular;
+
+  /// No description provided for @scanUsePagesPlural.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {count} pages'**
+  String scanUsePagesPlural(int count);
+
+  /// No description provided for @scanCombiningPages.
+  ///
+  /// In en, this message translates to:
+  /// **'Combining pages…'**
+  String get scanCombiningPages;
+
   /// No description provided for @avatarUploadError.
   ///
   /// In en, this message translates to:
@@ -1543,6 +1597,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done'**
   String get doneLabel;
+
+  /// No description provided for @quizComingSoonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get quizComingSoonLabel;
+
+  /// No description provided for @quizSubtitleComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'{subtitle} (coming soon)'**
+  String quizSubtitleComingSoon(String subtitle);
+
+  /// No description provided for @quizNotYetWrittenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This quiz hasn\'t been written yet. Check back soon.'**
+  String get quizNotYetWrittenBody;
 
   /// No description provided for @profileTitle.
   ///
@@ -1922,6 +1994,102 @@ abstract class AppLocalizations {
   /// **'Saved offline'**
   String get offlineSaved;
 
+  /// No description provided for @offlineSlotsFullPapersError.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep {max} papers offline at a time. Remove one to save another.'**
+  String offlineSlotsFullPapersError(int max);
+
+  /// No description provided for @offlineSlotsFullGuidesError.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep {max} corrections offline at a time. Remove one to save another.'**
+  String offlineSlotsFullGuidesError(int max);
+
+  /// No description provided for @myDownloadsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Downloads'**
+  String get myDownloadsTitle;
+
+  /// No description provided for @myDownloadsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} saved on this phone'**
+  String myDownloadsSubtitle(int count);
+
+  /// No description provided for @downloadsPapersTabLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Papers'**
+  String get downloadsPapersTabLabel;
+
+  /// No description provided for @downloadsCorrectionsTabLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Corrections'**
+  String get downloadsCorrectionsTabLabel;
+
+  /// No description provided for @downloadSlotsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download slots'**
+  String get downloadSlotsTitle;
+
+  /// No description provided for @downloadSlotsUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} OF {max} USED'**
+  String downloadSlotsUsed(int used, int max);
+
+  /// No description provided for @noDownloadsYetPapers.
+  ///
+  /// In en, this message translates to:
+  /// **'No downloads yet. Open a paper and tap Save to read it offline.'**
+  String get noDownloadsYetPapers;
+
+  /// No description provided for @noDownloadsYetGuides.
+  ///
+  /// In en, this message translates to:
+  /// **'No downloads yet. Open a paper\'s marking guide and tap Save to read it offline.'**
+  String get noDownloadsYetGuides;
+
+  /// No description provided for @getMoreSlotsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'GET MORE SLOTS'**
+  String get getMoreSlotsTitle;
+
+  /// No description provided for @xpRedeemSlotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'+1 slot for 3 days'**
+  String get xpRedeemSlotTitle;
+
+  /// No description provided for @xpRedeemComingSoonSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem with XP (coming soon)'**
+  String get xpRedeemComingSoonSubtitle;
+
+  /// No description provided for @kawloPlusUnlimitedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Kawlo Plus: unlimited downloads'**
+  String get kawloPlusUnlimitedTitle;
+
+  /// No description provided for @kawloPlusUnlimitedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plus unlimited AI & no banner ads'**
+  String get kawloPlusUnlimitedSubtitle;
+
+  /// No description provided for @kawloPlusPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'500 FCFA/mo'**
+  String get kawloPlusPriceLabel;
+
   /// No description provided for @offlineSaveError.
   ///
   /// In en, this message translates to:
@@ -1957,6 +2125,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The paper is here, but its marking guide isn\'t ready yet. Check back soon.'**
   String get markingGuideNotYetAvailable;
+
+  /// No description provided for @markingGuideViewButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View guide'**
+  String get markingGuideViewButton;
+
+  /// No description provided for @markingGuideMcqSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple choice answers'**
+  String get markingGuideMcqSectionTitle;
+
+  /// No description provided for @markingGuideWrittenSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Written answers'**
+  String get markingGuideWrittenSectionTitle;
+
+  /// No description provided for @markingGuideLockedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock this paper\'s marking guide to view it.'**
+  String get markingGuideLockedError;
 
   /// No description provided for @reportDownloadTitle.
   ///

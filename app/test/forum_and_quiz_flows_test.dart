@@ -4,6 +4,7 @@ import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repositories/forum_repository.dart';
 import 'package:spekooh/data/repositories/quizzes_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
+import 'package:spekooh/models/quiz.dart';
 import 'package:spekooh/screens/forum/forum_screen.dart';
 import 'package:spekooh/screens/quizzes/quizzes_screen.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -13,6 +14,7 @@ import 'support/l10n_test_app.dart';
 void main() {
   tearDown(() {
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    QuizzesScreen.debugNow = DateTime.now;
   });
 
   testWidgets('Forum: Ask button posts a new question that appears in the list', (tester) async {
@@ -142,6 +144,64 @@ void main() {
 
     expect(find.textContaining('Resets in'), findsOneWidget);
     expect(find.text('Resets in 7h 23m'), findsNothing); // the old hardcoded literal
+  });
+
+  testWidgets('Quizzes: the reset countdown actually ticks down live, not just correct-once-per-build', (tester) async {
+    var fakeNow = DateTime(2026, 9, 8, 10);
+    QuizzesScreen.debugNow = () => fakeNow;
+    final repo = MockQuizzesRepository();
+    await tester.pumpWidget(l10nTestApp(QuizzesScreen(repository: repo)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    String currentLabel() => (find.textContaining('Resets in').evaluate().single.widget as Text).data!;
+
+    expect(currentLabel(), 'Resets in 14h 0m');
+
+    // Nothing else on screen triggers a rebuild here — only the screen's own
+    // periodic timer should move this label, and only once the clock itself
+    // (not just fake-timer time) has actually advanced.
+    fakeNow = fakeNow.add(const Duration(minutes: 3));
+    await tester.pump(const Duration(minutes: 3));
+    expect(currentLabel(), 'Resets in 13h 57m');
+  });
+
+  testWidgets('Quizzes: a quiz with no real questions yet is shown honestly as not-yet-written, not silently broken', (tester) async {
+    const unwritten = Quiz(
+      id: 42,
+      title: 'Group VII the Halogens Quiz',
+      subtitle: 'Daily challenge',
+      icon: LucideIcons.flaskConical,
+      questionCount: 0,
+      suggestedTime: '8 min',
+      playedCount: 1308,
+      // The real daily_challenge/list endpoints never populate this even for
+      // a quiz that does have real questions — question_count is the one
+      // reliable signal, so this must stay empty to match production shape.
+      questions: [],
+    );
+    final repo = MockQuizzesRepository(dailyChallenge: unwritten, quizzes: const [unwritten]);
+    await tester.pumpWidget(l10nTestApp(QuizzesScreen(repository: repo)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // The daily-challenge card and the list row are both honest about it
+    // up front — the card's own button text, and the row's subtitle suffix.
+    expect(find.text('Play daily challenge'), findsNothing);
+    expect(find.text('Coming soon'), findsOneWidget); // the card's button
+    expect(find.text('Daily challenge (coming soon)'), findsOneWidget); // the list row's subtitle
+
+    // Tapping through still works (it's real quiz metadata, not fake) and
+    // shows the honest empty state rather than a blank question list or a
+    // functional-looking Start quiz button.
+    await tester.tap(find.text('Group VII the Halogens Quiz').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.textContaining("hasn't been written yet"), findsOneWidget);
+    expect(find.text('Start quiz'), findsNothing);
+    final button = tester.widget<GestureDetector>(find.ancestor(of: find.text('Coming soon'), matching: find.byType(GestureDetector)).first);
+    expect(button.onTap, isNull); // can't submit an empty quiz
   });
 
   testWidgets('ForumScreen renders in French once that locale is active', (tester) async {

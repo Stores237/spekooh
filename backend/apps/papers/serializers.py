@@ -10,6 +10,7 @@ from .models import (
     PaperFlag,
     PaperSubmission,
     PaperViewLog,
+    PublishedGuide,
     Subject,
     SubjectLanguage,
 )
@@ -146,6 +147,16 @@ class PaperAccessFieldsMixin:
             return None
         url = obj.uploaded_file.url
         return request.build_absolute_uri(url) if request else url
+
+
+class PublishedGuideSerializer(serializers.ModelSerializer):
+    """content's shape: see PublishedGuide.content's own field comment —
+    {"mcq": {...} | null, "non_mcq": [{question_type, text, answer}]}.
+    Access-gated by the view (PaperSubmissionViewSet.guide), not here."""
+
+    class Meta:
+        model = PublishedGuide
+        fields = ["content", "published_at"]
 
 
 class PaperSubmissionListSerializer(PaperAccessFieldsMixin, serializers.ModelSerializer):

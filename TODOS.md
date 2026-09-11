@@ -801,6 +801,61 @@ infra items and `SECURITY.md`/this session's own record for the guest-access aud
   reproducing #97's exact diff against this new step reproduces the identical `cc_delim_re`
   crash from its CI log.
 
+## Recently shipped (2026-09-11)
+
+Four owner-requested items from live screenshots, one batch. Two turned out to be much bigger
+than they first looked once the actual code was checked against the mockups — both surfaced
+real, material gaps this list didn't previously know about.
+
+- **A real marking-guide viewer, built from scratch** (part of the My Downloads work below): the
+  paper-detail screen only ever handled *unlocking* a guide — there was no screen anywhere that
+  actually rendered one, and `PublishedGuide.content` had never had a defined shape (only ever
+  hand-entered in Django admin, nothing in application code populated it outside
+  `apps.instructors.services.merge_and_publish`). Traced the real shape from that function +
+  `MarkingGuideQuestionSerializer` (`{"mcq": {question_number: answer} | null, "non_mcq":
+  [{question_type, text, answer}]}`) rather than inventing a new one. New backend: `GET
+  /papers/submissions/{id}/guide/` (`user_can_view_guide` — same submitter/staff exemption
+  pattern as `user_can_view_file`, everyone else needs a real `PaperUnlock`), a
+  `PublishedGuideSerializer`, a `PublishedGuideFactory` for tests. New Flutter: `MarkingGuideScreen`
+  renders both sections for real; the paper-detail screen's dead-end "Already unlocked" text is
+  now a real "View guide" button (exam papers only — reports have no marking-guide concept).
+- **My Downloads screen — the full mockup, not just a shortcut** (owner decision after being
+  shown the real gap: no slots/XP/corrections system existed at all, only a simple unbounded
+  offline-papers list): a real `MyDownloadsScreen` with Papers/Corrections tabs, a 3-item
+  download-slots cap per tab enforced by a shared `confirmOfflineSlotAvailable` policy (unlimited
+  for a Kawlo Plus subscriber — added a real `is_plus_subscriber` field to the profile API,
+  backed by `Subscription.objects.has_active`, since nothing exposed that to the client before),
+  a new `OfflineGuidesStore` (mirrors `OfflinePapersStore` but for a guide's real JSON content,
+  no binary file involved) so a correction can be saved for offline reading, and a Kawlo Plus
+  upsell banner. The "+1 slot for 3 days" XP redemption card is shown honestly as coming soon —
+  no XP/gamification economy exists anywhere in this codebase (no earning mechanism, no ledger),
+  and inventing one wasn't part of this ask. A new home-page entry point (separate from the
+  existing papers-only "Ready offline" list, which is untouched) appears only once a paper or a
+  correction has actually been saved.
+- **A post-trial upsell banner** (owner-reported "add back this notification" — the real cause
+  was a screenshot from Sept 6 showing "2 days left"; by Sept 11 that trial had simply and
+  correctly expired, matching `apps.payments.services.trial_days_remaining`'s existing gating.
+  Not a bug — but home going completely silent once a free account's trial ends, forever, was a
+  real gap). `LoggedInHomeScreen` now shows a second banner variant once `trialDaysRemaining`
+  reaches 0, gated on the same new `is_plus_subscriber` field so a paying subscriber never sees
+  either banner.
+- **A real, ticking quiz countdown + honest "coming soon" for unwritten quizzes**: the "Resets in
+  Xh Ym" label's math was already correct (a pure function of the current time), but nothing
+  forced a rebuild while the screen sat open, so it only ever visibly changed on an unrelated
+  `setState` — now a `Timer.periodic` actually ticks it. Separately: most of the real seeded
+  quiz catalog (`Group VII the Halogens Quiz`, `Chemistry quizzes`, `Geography quizzes`,
+  `Computer science` — only `Biology quiz` has real questions) has `question_count: 0`, and used
+  to render a confusing blank space plus a functional-looking but silently-inert Submit button.
+  Now shown honestly as coming soon everywhere a quiz can be tapped into — the daily-challenge
+  card, the by-subject list, and the detail view itself — same "coming soon, not fake content"
+  philosophy this list already used for Past-paper practice/Friday Arena.
+- **Multi-page document scanning** for paper/report submission: a new `ScanPagesSheet` lets a
+  contributor scan several pages in sequence (a "+" tile, each scan still auto-cropped via
+  CunningDocumentScanner same as before) and combines them into one real multi-page PDF
+  (`package:pdf`) before upload — the one-file-per-submission model everywhere else on the
+  Submit screen is unchanged, this is a client-side assembly step ahead of it, not a new backend
+  concept.
+
 ---
 
 ## Not in the spec at all, and correctly left alone

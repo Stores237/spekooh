@@ -364,6 +364,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get trialKeepAccess => 'Garder mon accès';
 
   @override
+  String get trialEndedLabel => 'VOTRE ESSAI A EXPIRÉ';
+
+  @override
+  String get trialEndedBody =>
+      'Abonnez-vous pour garder les consultations illimitées et l\'assistant IA.';
+
+  @override
+  String get trialEndedCta => 'S\'abonner maintenant';
+
+  @override
   String get quickActionContribute => 'Contribuer';
 
   @override
@@ -651,6 +661,27 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chooseFromGallery => 'Choisir dans la galerie';
 
   @override
+  String get scanPagesTitle => 'Scanner des pages';
+
+  @override
+  String get scanPagesHint =>
+      'Les pages scannées sont combinées en un seul document, dans l\'ordre.';
+
+  @override
+  String get scanAddPage => 'Ajouter une page';
+
+  @override
+  String get scanUsePageSingular => 'Utiliser 1 page';
+
+  @override
+  String scanUsePagesPlural(int count) {
+    return 'Utiliser $count pages';
+  }
+
+  @override
+  String get scanCombiningPages => 'Fusion des pages…';
+
+  @override
   String get avatarUploadError =>
       'Impossible de mettre à jour votre photo. Vérifiez votre connexion et réessayez.';
 
@@ -819,6 +850,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get doneLabel => 'Terminé';
+
+  @override
+  String get quizComingSoonLabel => 'Bientôt disponible';
+
+  @override
+  String quizSubtitleComingSoon(String subtitle) {
+    return '$subtitle (bientôt disponible)';
+  }
+
+  @override
+  String get quizNotYetWrittenBody =>
+      'Ce quiz n\'a pas encore été rédigé. Revenez bientôt.';
 
   @override
   String get profileTitle => 'Profil';
@@ -1049,6 +1092,67 @@ class AppLocalizationsFr extends AppLocalizations {
   String get offlineSaved => 'Enregistré hors ligne';
 
   @override
+  String offlineSlotsFullPapersError(int max) {
+    return 'Gardez $max épreuves hors ligne à la fois. Supprimez-en une pour en enregistrer une autre.';
+  }
+
+  @override
+  String offlineSlotsFullGuidesError(int max) {
+    return 'Gardez $max corrigés hors ligne à la fois. Supprimez-en un pour en enregistrer un autre.';
+  }
+
+  @override
+  String get myDownloadsTitle => 'Mes téléchargements';
+
+  @override
+  String myDownloadsSubtitle(int count) {
+    return '$count enregistré(s) sur ce téléphone';
+  }
+
+  @override
+  String get downloadsPapersTabLabel => 'Épreuves';
+
+  @override
+  String get downloadsCorrectionsTabLabel => 'Corrigés';
+
+  @override
+  String get downloadSlotsTitle => 'Emplacements de téléchargement';
+
+  @override
+  String downloadSlotsUsed(int used, int max) {
+    return '$used SUR $max UTILISÉS';
+  }
+
+  @override
+  String get noDownloadsYetPapers =>
+      'Aucun téléchargement pour l\'instant. Ouvrez une épreuve et appuyez sur Enregistrer pour la lire hors ligne.';
+
+  @override
+  String get noDownloadsYetGuides =>
+      'Aucun téléchargement pour l\'instant. Ouvrez le corrigé d\'une épreuve et appuyez sur Enregistrer pour le lire hors ligne.';
+
+  @override
+  String get getMoreSlotsTitle => 'OBTENIR PLUS D\'EMPLACEMENTS';
+
+  @override
+  String get xpRedeemSlotTitle => '+1 emplacement pour 3 jours';
+
+  @override
+  String get xpRedeemComingSoonSubtitle =>
+      'À échanger avec des XP (bientôt disponible)';
+
+  @override
+  String get kawloPlusUnlimitedTitle =>
+      'Kawlo Plus : téléchargements illimités';
+
+  @override
+  String get kawloPlusUnlimitedSubtitle =>
+      'Plus l\'IA illimitée et sans bannières publicitaires';
+
+  @override
+  String get kawloPlusPriceLabel => '500 FCFA/mois';
+
+  @override
   String offlineSaveError(String error) {
     return 'Impossible d\'enregistrer hors ligne : $error';
   }
@@ -1071,6 +1175,19 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get markingGuideNotYetAvailable =>
       'L\'épreuve est là, mais son corrigé n\'est pas encore prêt. Revenez bientôt.';
+
+  @override
+  String get markingGuideViewButton => 'Voir le corrigé';
+
+  @override
+  String get markingGuideMcqSectionTitle => 'Réponses à choix multiples';
+
+  @override
+  String get markingGuideWrittenSectionTitle => 'Réponses rédigées';
+
+  @override
+  String get markingGuideLockedError =>
+      'Débloquez le corrigé de cette épreuve pour le consulter.';
 
   @override
   String get reportDownloadTitle => 'Accès au téléchargement';

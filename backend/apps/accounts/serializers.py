@@ -7,6 +7,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.payments.models import Subscription
 from apps.payments.services import first_unlock_free_eligible, trial_days_remaining
 
 from . import services
@@ -16,6 +17,10 @@ from .models import AccountType, EmailVerificationCode, PasswordResetCode, User
 class UserSerializer(serializers.ModelSerializer):
     trial_days_remaining = serializers.SerializerMethodField()
     first_unlock_free_eligible = serializers.SerializerMethodField()
+    # Distinguishes "trial ended, never subscribed" from "trial ended, but
+    # already paying" — the client needs this to decide whether a post-trial
+    # upsell banner is honest to show at all (see LoggedInHomeScreen).
+    is_plus_subscriber = serializers.SerializerMethodField()
     email_verified = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
     # Write-only upload target — PATCH /me/ with multipart form data,
@@ -38,6 +43,7 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
             "trial_days_remaining",
             "first_unlock_free_eligible",
+            "is_plus_subscriber",
             "referral_code",
             "email_verified",
             "avatar",
@@ -49,6 +55,7 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
             "trial_days_remaining",
             "first_unlock_free_eligible",
+            "is_plus_subscriber",
             "referral_code",
             "email_verified",
             "avatar_url",
@@ -59,6 +66,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_first_unlock_free_eligible(self, obj) -> bool:
         return first_unlock_free_eligible(obj)
+
+    def get_is_plus_subscriber(self, obj) -> bool:
+        return Subscription.objects.has_active(obj)
 
     def get_email_verified(self, obj) -> bool:
         return obj.email_verified_at is not None
