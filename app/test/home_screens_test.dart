@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spekooh/data/house_ad_visibility.dart';
 import 'package:spekooh/data/offline_file_store.dart';
 import 'package:spekooh/data/offline_guides_store.dart';
 import 'package:spekooh/data/offline_papers_store.dart';
@@ -30,6 +31,7 @@ void main() {
     OfflinePapersStore.debugSetInstance(OfflinePapersStore());
     OfflineGuidesStore.debugSetInstance(OfflineGuidesStore());
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+    HouseAdVisibility.debugSetInstance(HouseAdVisibility(storage: InMemoryTokenStorage()));
   });
 
   testWidgets('HomeScreen (guest) shows an honest empty state when nothing is published yet', (tester) async {

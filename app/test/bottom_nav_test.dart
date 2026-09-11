@@ -52,4 +52,24 @@ void main() {
 
     expect(tapped, [0, 1, 2, 3, 4]);
   });
+
+  testWidgets('a center item cuts a real notch into the bar (owner reference, 2026-09-11)', (tester) async {
+    await tester.pumpWidget(navWith(items: asymmetricItems, active: 0, onChanged: (_) {}));
+    await tester.pump();
+
+    expect(find.byType(CustomPaint), findsWidgets); // the notch painter, among Flutter's own internal ones
+    expect(tester.takeException(), isNull); // the notch geometry itself doesn't blow up for real bar dimensions
+  });
+
+  testWidgets('no center item means no notch at all — the plain flat bar this always was', (tester) async {
+    final noCenterItems = [
+      const SpekoohNavItem(icon: Icon(Icons.home), label: 'Home'),
+      const SpekoohNavItem(icon: Icon(Icons.forum), label: 'Forum'),
+    ];
+    await tester.pumpWidget(navWith(items: noCenterItems, active: 0, onChanged: (_) {}));
+    await tester.pump();
+
+    expect(find.byWidgetPredicate((w) => w is Container && w.decoration is BoxDecoration), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -468,6 +468,11 @@
   "kawloPlusUnlimitedTitle": "Kawlo Plus: unlimited downloads",
   "kawloPlusUnlimitedSubtitle": "Plus unlimited AI & no banner ads",
   "kawloPlusPriceLabel": "500 FCFA/mo",
+  "houseAdSponsoredLabel": "SPONSORED",
+  "houseAdTitle": "Advertise your business on Kawlo",
+  "houseAdSubtitle": "Reach thousands of students across Cameroon.",
+  "houseAdWhyThisAd": "Why this ad?",
+  "houseAdExplanation": "This is a message from Kawlo, not a targeted ad. We're always open to featuring real businesses to our student audience, not just schools.",
   "offlineSaveError": "Could not save for offline: {error}",
   "@offlineSaveError": {
     "placeholders": {"error": {"type": "String"}}

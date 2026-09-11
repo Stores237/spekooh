@@ -8,6 +8,7 @@ import '../theme/app_gradients.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
+import '../widgets/phone_number_field.dart';
 import '../widgets/spekooh_button.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -165,33 +166,7 @@ class _PaywallSheetState extends State<PaywallSheet> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space4),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(l10n.momoOrangeLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.4)),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(color: AppColors.white, border: Border.all(color: AppColors.borderSubtle), borderRadius: BorderRadius.circular(12)),
-                child: Row(
-                  children: [
-                    Text('+237', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(hintText: '670 12 34 56', border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
-                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 14),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: AppSpacing.space2),
-                Text(_error!, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.red500)),
-              ],
+              PhoneNumberField(controller: _phoneController, error: _error),
               const SizedBox(height: AppSpacing.space4),
               SizedBox(
                 width: double.infinity,

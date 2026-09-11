@@ -20,6 +20,7 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/house_ad_card.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/user_avatar.dart';
@@ -461,6 +462,10 @@ class LoggedInHomeScreen extends StatelessWidget {
                           ),
                         );
                       },
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(top: AppSpacing.space2),
+                      child: HouseAdCard(),
                     ),
                     const SizedBox(height: AppSpacing.space6),
                   ],

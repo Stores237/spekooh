@@ -20,6 +20,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/report_covers.dart';
 import '../../widgets/paper_summary_card.dart';
+import '../../widgets/phone_number_field.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/spekooh_banner.dart';
@@ -222,41 +223,6 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     } finally {
       if (mounted) setState(() => _unlockingDownload = false);
     }
-  }
-
-  /// Same "+237" + real placeholder digits style as PaywallSheet/
-  /// PamphletSheet's own phone field — real users type their real MTN MoMo
-  /// or Orange Money number here, not a fixed sample.
-  Widget _phoneField(AppLocalizations l10n, TextEditingController controller, String? error) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(l10n.momoOrangeLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.4)),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(color: AppColors.white, border: Border.all(color: AppColors.borderSubtle), borderRadius: BorderRadius.circular(12)),
-          child: Row(
-            children: [
-              Text('+237', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(hintText: '670 12 34 56', border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
-                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 14),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (error != null) ...[
-          const SizedBox(height: 6),
-          Text(error, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.red500)),
-        ],
-      ],
-    );
   }
 
   /// Both reports and exam papers render in-app here (ReportViewerScreen —
@@ -530,7 +496,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                       Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          _phoneField(l10n, _downloadPhoneController, _downloadPhoneError),
+                                          PhoneNumberField(controller: _downloadPhoneController, error: _downloadPhoneError),
                                           const SizedBox(height: AppSpacing.space2),
                                           SpekoohButton(
                                             size: SpekoohButtonSize.sm,
@@ -704,7 +670,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                   ),
                                 ],
                               ] else ...[
-                                _phoneField(l10n, _guidePhoneController, _guidePhoneError),
+                                PhoneNumberField(controller: _guidePhoneController, error: _guidePhoneError),
                                 const SizedBox(height: 10),
                                 Row(
                                   children: [
