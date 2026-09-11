@@ -770,24 +770,6 @@ abstract class AppLocalizations {
   /// **'Contribute'**
   String get quickActionContribute;
 
-  /// No description provided for @readyOfflineTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Ready offline'**
-  String get readyOfflineTitle;
-
-  /// No description provided for @offlineDownloadsCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Downloads · {count}'**
-  String offlineDownloadsCount(int count);
-
-  /// No description provided for @offlineReadyTag.
-  ///
-  /// In en, this message translates to:
-  /// **'OFFLINE READY'**
-  String get offlineReadyTag;
-
   /// No description provided for @dailyChallengeLabel.
   ///
   /// In en, this message translates to:

@@ -117,12 +117,6 @@
   "trialEndedBody": "Abonnez-vous pour garder les consultations illimitées et l'assistant IA.",
   "trialEndedCta": "S'abonner maintenant",
   "quickActionContribute": "Contribuer",
-  "readyOfflineTitle": "Disponible hors ligne",
-  "offlineDownloadsCount": "Téléchargements · {count}",
-  "@offlineDownloadsCount": {
-    "placeholders": {"count": {"type": "int"}}
-  },
-  "offlineReadyTag": "PRÊT HORS LIGNE",
   "dailyChallengeLabel": "Défi du jour",
   "dailyChallengeLoading": "Chargement…",
   "dailyChallengeInfo": "{title} · {count} questions",

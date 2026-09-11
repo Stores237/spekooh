@@ -268,20 +268,20 @@ class HttpPapersRepository implements PapersRepository {
   }
 
   @override
-  Future<int> unlockPaper(int paperId, {String? redeemCode}) async {
+  Future<int> unlockPaper(int paperId, {required String phoneNumber, String? redeemCode}) async {
     final row = await _client.post('/payments/unlock/', body: {
       'paper_submission': paperId,
-      'phone_number': '000000000',
+      'phone_number': phoneNumber,
       if (redeemCode != null && redeemCode.isNotEmpty) 'redeem_code': redeemCode,
     });
     return row['amount_paid'] as int;
   }
 
   @override
-  Future<int> unlockPaperDownload(int paperId) async {
+  Future<int> unlockPaperDownload(int paperId, {required String phoneNumber}) async {
     final row = await _client.post('/payments/unlock-download/', body: {
       'paper_submission': paperId,
-      'phone_number': '000000000',
+      'phone_number': phoneNumber,
     });
     return row['amount_paid'] as int;
   }

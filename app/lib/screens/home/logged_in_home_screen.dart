@@ -2,14 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../data/auth_session.dart';
+import '../../data/icon_lookup.dart';
 import '../../data/locale_controller.dart';
 import '../../data/offline_guides_store.dart';
 import '../../data/offline_papers_store.dart';
 import '../../data/repositories/profile_repository.dart';
+import '../../data/repositories/promotions_repository.dart';
 import '../../data/repositories/quizzes_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/offline_paper.dart';
+import '../../models/promotion.dart';
 import '../../models/quiz.dart';
 import '../../models/spekooh_user.dart';
 import '../../theme/app_colors.dart';
@@ -23,7 +25,7 @@ import '../../widgets/spekooh_button.dart';
 import '../../widgets/user_avatar.dart';
 import '../downloads/my_downloads_screen.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:open_filex/open_filex.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Ported from ui_kits/spekooh-app/LoggedInHomeScreen.jsx.
 class LoggedInHomeScreen extends StatelessWidget {
@@ -41,8 +43,10 @@ class LoggedInHomeScreen extends StatelessWidget {
     this.onOpenPaywall,
     ProfileRepository? profileRepository,
     QuizzesRepository? quizzesRepository,
+    PromotionsRepository? promotionsRepository,
   })  : profileRepository = profileRepository ?? RepositoryLocator.instance.profile,
-        quizzesRepository = quizzesRepository ?? RepositoryLocator.instance.quizzes;
+        quizzesRepository = quizzesRepository ?? RepositoryLocator.instance.quizzes,
+        promotionsRepository = promotionsRepository ?? RepositoryLocator.instance.promotions;
 
   final VoidCallback? onOpenSettings;
   final VoidCallback? onOpenPapers;
@@ -56,6 +60,7 @@ class LoggedInHomeScreen extends StatelessWidget {
   final VoidCallback? onOpenPaywall;
   final ProfileRepository profileRepository;
   final QuizzesRepository quizzesRepository;
+  final PromotionsRepository promotionsRepository;
 
   String _greeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
@@ -429,62 +434,27 @@ class LoggedInHomeScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    // Empty when nothing's been saved offline yet (or on
-                    // web, where OfflinePapersStore never bootstraps —
-                    // path_provider has no meaningful web implementation
-                    // and this isn't the ship target, spec §6) — no
-                    // section at all rather than an empty-state card, since
-                    // this is a bonus surface for something saved
-                    // elsewhere (PaperDetailScreen), not a primary flow.
-                    ListenableBuilder(
-                      listenable: OfflinePapersStore.instance,
-                      builder: (context, _) {
-                        final saved = OfflinePapersStore.instance.papers;
-                        if (saved.isEmpty) return const SizedBox.shrink();
+                    // Sponsor/promotion slots (owner request, 2026-09-11) —
+                    // replaces the old inline "Ready offline" list, since
+                    // My Downloads' own home entry point (above) now covers
+                    // that need. Deliberately not visible yet: the backend
+                    // queryset (apps.promotions.views.ActivePromotionsView)
+                    // is empty until a real sponsor deal exists and someone
+                    // flips is_active on in admin — no section at all
+                    // rather than a fake one, same pattern as everywhere
+                    // else "not built yet" is handled in this app.
+                    FutureBuilder<List<Promotion>>(
+                      future: promotionsRepository.getActivePromotions(),
+                      builder: (context, snapshot) {
+                        final promotions = snapshot.data ?? const [];
+                        if (promotions.isEmpty) return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(top: AppSpacing.space2),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(l10n.readyOfflineTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
-                                  Text(l10n.offlineDownloadsCount(saved.length), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.gold700)),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.space2),
-                              for (final paper in saved) ...[
-                                InkWell(
-                                  onTap: () => _openOfflinePaper(context, paper),
-                                  borderRadius: BorderRadius.circular(18),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(14),
-                                    decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 40,
-                                          height: 40,
-                                          decoration: BoxDecoration(color: AppColors.green100, borderRadius: BorderRadius.circular(12)),
-                                          alignment: Alignment.center,
-                                          child: const Icon(LucideIcons.download, size: 18, color: AppColors.green600),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(paper.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
-                                              Text(l10n.offlineReadyTag, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.green600, fontWeight: FontWeight.w700)),
-                                            ],
-                                          ),
-                                        ),
-                                        const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                              for (final promo in promotions) ...[
+                                _promotionCard(context, promo),
                                 const SizedBox(height: AppSpacing.space2),
                               ],
                             ],
@@ -503,14 +473,41 @@ class LoggedInHomeScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _openOfflinePaper(BuildContext context, OfflinePaper paper) async {
+  Widget _promotionCard(BuildContext context, Promotion promo) {
     final l10n = AppLocalizations.of(context)!;
-    final path = await OfflinePapersStore.instance.absolutePathFor(paper.paperId);
-    if (path == null) return;
-    final result = await OpenFilex.open(path);
-    if (result.type != ResultType.done && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotOpenFile)));
-    }
+    final hasCta = promo.ctaLabel.isNotEmpty && promo.ctaUrl.isNotEmpty;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+      child: Row(
+        children: [
+          IconChip(icon: iconByName[promo.iconName] ?? LucideIcons.megaphone, tint: IconChipTint.amber, size: 40),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(promo.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
+                if (promo.subtitle.isNotEmpty)
+                  Text(promo.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                if (promo.sponsorName.isNotEmpty)
+                  Text(promo.sponsorName, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textTertiary)),
+              ],
+            ),
+          ),
+          if (hasCta)
+            GestureDetector(
+              onTap: () async {
+                final ok = await launchUrl(Uri.parse(promo.ctaUrl), mode: LaunchMode.externalApplication);
+                if (!ok && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotOpenLink)));
+                }
+              },
+              child: Text(promo.ctaLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.gold700)),
+            ),
+        ],
+      ),
+    );
   }
 
   /// Same switch as Settings' language row (SettingsScreen._changeLanguage)

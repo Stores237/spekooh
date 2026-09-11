@@ -372,17 +372,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quickActionContribute => 'Contribute';
 
   @override
-  String get readyOfflineTitle => 'Ready offline';
-
-  @override
-  String offlineDownloadsCount(int count) {
-    return 'Downloads · $count';
-  }
-
-  @override
-  String get offlineReadyTag => 'OFFLINE READY';
-
-  @override
   String get dailyChallengeLabel => 'Daily challenge';
 
   @override

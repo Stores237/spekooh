@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "apps.quizzes",
     "apps.notifications",
     "apps.ai",
+    "apps.promotions",
 ]
 
 MIDDLEWARE = [

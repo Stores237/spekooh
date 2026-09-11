@@ -4,6 +4,7 @@ import 'package:spekooh/data/repositories/notes_repository.dart';
 import 'package:spekooh/data/repositories/notifications_repository.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
+import 'package:spekooh/data/repositories/promotions_repository.dart';
 import 'package:spekooh/data/repositories/quizzes_repository.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
 import 'package:spekooh/data/repository_locator.dart';
@@ -28,5 +29,6 @@ RepositoryLocator buildMockRepositoryLocator({ProfileRepository? profile}) {
     notifications: MockNotificationsRepository(),
     shop: MockShopRepository(),
     profile: profile ?? MockProfileRepository(),
+    promotions: MockPromotionsRepository(),
   );
 }

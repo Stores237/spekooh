@@ -94,6 +94,17 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   bool _savingOffline = false;
   bool _unlockingDownload = false;
 
+  // Real, owner-reported fix (2026-09-11): these two unlock actions were
+  // silently sending a fake '000000000' phone_number to the real MoMo/
+  // Orange Money charge attempt — no field ever asked the contributor for
+  // their real number. Separate controllers/errors since the two actions
+  // (marking-guide unlock, exam-paper download unlock) are independent
+  // purchases that can both be visible on the same exam paper at once.
+  final _guidePhoneController = TextEditingController();
+  final _downloadPhoneController = TextEditingController();
+  String? _guidePhoneError;
+  String? _downloadPhoneError;
+
   int? get _entryId => widget.paper?.entry.id ?? widget.paperEntry?.id;
 
   @override
@@ -113,6 +124,8 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   @override
   void dispose() {
     _redeemController.dispose();
+    _guidePhoneController.dispose();
+    _downloadPhoneController.dispose();
     super.dispose();
   }
 
@@ -147,10 +160,19 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
 
   Future<void> _unlock(int paperId) async {
     final l10n = AppLocalizations.of(context)!;
-    setState(() => _unlocking = true);
+    final phone = _guidePhoneController.text.trim();
+    if (phone.isEmpty) {
+      setState(() => _guidePhoneError = l10n.paywallEnterPhoneError);
+      return;
+    }
+    setState(() {
+      _unlocking = true;
+      _guidePhoneError = null;
+    });
     try {
       final amount = await widget.repository.unlockPaper(
         paperId,
+        phoneNumber: phone,
         redeemCode: _redeemController.text.trim().isEmpty ? null : _redeemController.text.trim(),
       );
       if (mounted) {
@@ -177,9 +199,17 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   /// way). See PaperEntry.paperDownloadUnlocked's docstring.
   Future<void> _unlockDownload(int paperId) async {
     final l10n = AppLocalizations.of(context)!;
-    setState(() => _unlockingDownload = true);
+    final phone = _downloadPhoneController.text.trim();
+    if (phone.isEmpty) {
+      setState(() => _downloadPhoneError = l10n.paywallEnterPhoneError);
+      return;
+    }
+    setState(() {
+      _unlockingDownload = true;
+      _downloadPhoneError = null;
+    });
     try {
-      await widget.repository.unlockPaperDownload(paperId);
+      await widget.repository.unlockPaperDownload(paperId, phoneNumber: phone);
       if (mounted) {
         // Refetch so paperDownloadUnlocked reflects the payment that just
         // succeeded — same reasoning as _unlock's refetch above.
@@ -192,6 +222,41 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     } finally {
       if (mounted) setState(() => _unlockingDownload = false);
     }
+  }
+
+  /// Same "+237" + real placeholder digits style as PaywallSheet/
+  /// PamphletSheet's own phone field — real users type their real MTN MoMo
+  /// or Orange Money number here, not a fixed sample.
+  Widget _phoneField(AppLocalizations l10n, TextEditingController controller, String? error) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.momoOrangeLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.4)),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(color: AppColors.white, border: Border.all(color: AppColors.borderSubtle), borderRadius: BorderRadius.circular(12)),
+          child: Row(
+            children: [
+              Text('+237', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(hintText: '670 12 34 56', border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
+                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 6),
+          Text(error, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.red500)),
+        ],
+      ],
+    );
   }
 
   /// Both reports and exam papers render in-app here (ReportViewerScreen —
@@ -462,12 +527,19 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                       // "download" card below (that one's
                                       // the marking guide) — the unlock
                                       // action lives right here instead.
-                                      SpekoohButton(
-                                        size: SpekoohButtonSize.sm,
-                                        onPressed: _unlockingDownload ? null : () => _unlockDownload(entry.id),
-                                        child: _unlockingDownload
-                                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                                            : Text(l10n.unlockDownloadButton(paperDownloadPrice)),
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _phoneField(l10n, _downloadPhoneController, _downloadPhoneError),
+                                          const SizedBox(height: AppSpacing.space2),
+                                          SpekoohButton(
+                                            size: SpekoohButtonSize.sm,
+                                            onPressed: _unlockingDownload ? null : () => _unlockDownload(entry.id),
+                                            child: _unlockingDownload
+                                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                                                : Text(l10n.unlockDownloadButton(paperDownloadPrice)),
+                                          ),
+                                        ],
                                       )
                                     else
                                       ListenableBuilder(
@@ -632,6 +704,8 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                   ),
                                 ],
                               ] else ...[
+                                _phoneField(l10n, _guidePhoneController, _guidePhoneError),
+                                const SizedBox(height: 10),
                                 Row(
                                   children: [
                                     SpekoohButton(

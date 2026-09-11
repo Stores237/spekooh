@@ -94,15 +94,17 @@ abstract class PapersRepository {
   Future<void> recordAdWatch();
 
   /// Unlocks a marking guide for real money (via the backend's
-  /// MockPaymentProvider). Returns the amount actually charged (after any
-  /// redeem code discount).
-  Future<int> unlockPaper(int paperId, {String? redeemCode});
+  /// MockPaymentProvider) — [phoneNumber] is the real MTN MoMo/Orange Money
+  /// number the charge attempt is made against, not a placeholder. Returns
+  /// the amount actually charged (after any redeem code discount).
+  Future<int> unlockPaper(int paperId, {required String phoneNumber, String? redeemCode});
 
   /// Exam papers only — a separate, smaller purchase from [unlockPaper]
   /// above: unlocks downloading/saving the paper's actual scanned file
-  /// (viewing in-app is always free). Returns the amount actually charged,
-  /// priced by exam level (see PaperEntry.paperDownloadPriceFcfa).
-  Future<int> unlockPaperDownload(int paperId);
+  /// (viewing in-app is always free). [phoneNumber] — see [unlockPaper]'s
+  /// own comment. Returns the amount actually charged, priced by exam
+  /// level (see PaperEntry.paperDownloadPriceFcfa).
+  Future<int> unlockPaperDownload(int paperId, {required String phoneNumber});
 
   /// Flags a paper for Review Team attention (spec §3.2). [reason] must be
   /// one of [paperFlagReasonKeys]. Throws [AlreadyReportedException] if
@@ -327,10 +329,10 @@ class MockPapersRepository implements PapersRepository {
   Future<void> recordAdWatch() async {}
 
   @override
-  Future<int> unlockPaper(int paperId, {String? redeemCode}) async => 500;
+  Future<int> unlockPaper(int paperId, {required String phoneNumber, String? redeemCode}) async => 500;
 
   @override
-  Future<int> unlockPaperDownload(int paperId) async => 75;
+  Future<int> unlockPaperDownload(int paperId, {required String phoneNumber}) async => 75;
 
   /// Null by default — real usage starts with no guide published yet
   /// (throws [GuideNotPublishedException], the honest default). Set

@@ -9,6 +9,7 @@ import 'repositories/http/http_notifications_repository.dart';
 import 'repositories/http/http_papers_repository.dart';
 import 'repositories/http/http_payments_repository.dart';
 import 'repositories/http/http_profile_repository.dart';
+import 'repositories/http/http_promotions_repository.dart';
 import 'repositories/http/http_quizzes_repository.dart';
 import 'repositories/http/http_shop_repository.dart';
 import 'repositories/notes_repository.dart';
@@ -16,6 +17,7 @@ import 'repositories/notifications_repository.dart';
 import 'repositories/papers_repository.dart';
 import 'repositories/payments_repository.dart';
 import 'repositories/profile_repository.dart';
+import 'repositories/promotions_repository.dart';
 import 'repositories/quizzes_repository.dart';
 import 'repositories/shop_repository.dart';
 
@@ -38,6 +40,7 @@ class RepositoryLocator {
     ShopRepository? shop,
     ProfileRepository? profile,
     PaymentsRepository? payments,
+    PromotionsRepository? promotions,
   })  : authSession = authSession ?? AuthSession.instance,
         apiClient = apiClient ?? ApiClient(authSession: authSession ?? AuthSession.instance) {
     this.papers = papers ?? HttpPapersRepository(this.apiClient);
@@ -48,6 +51,7 @@ class RepositoryLocator {
     this.shop = shop ?? HttpShopRepository(this.apiClient);
     this.profile = profile ?? HttpProfileRepository(this.apiClient);
     this.payments = payments ?? HttpPaymentsRepository(this.apiClient);
+    this.promotions = promotions ?? HttpPromotionsRepository(this.apiClient);
   }
 
   static RepositoryLocator instance = RepositoryLocator();
@@ -66,4 +70,5 @@ class RepositoryLocator {
   late final ShopRepository shop;
   late final ProfileRepository profile;
   late final PaymentsRepository payments;
+  late final PromotionsRepository promotions;
 }
