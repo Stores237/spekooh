@@ -60,12 +60,12 @@ void main() {
     expect(find.text('Log in to continue'), findsNothing);
   });
 
-  testWidgets('the body extends behind the bottom nav so its notch shows real content, not just a flat fill (owner, 2026-09-11)', (tester) async {
+  testWidgets('the body does NOT extend behind the bottom nav (owner, 2026-09-11: extendBody caused a real dead-space regression, reverted)', (tester) async {
     RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
     await tester.pumpWidget(const SpekoohApp());
     await tester.pump(const Duration(milliseconds: 1300));
 
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
-    expect(scaffold.extendBody, isTrue);
+    expect(scaffold.extendBody, isFalse);
   });
 }

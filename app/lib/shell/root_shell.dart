@@ -208,30 +208,17 @@ class RootShellState extends State<RootShell> {
       },
       child: Scaffold(
         backgroundColor: AppColors.surfaceBg,
-        // Owner (2026-09-11): "it has to be transparent, that is we could
-        // see what is behind" — the notch's cut-out gap was only free of a
-        // shadow tint, still backed by this Scaffold's own flat
-        // backgroundColor rather than an actual hole through to real page
-        // content. extendBody makes the body paint all the way to the
-        // screen's bottom edge, behind bottomNavigationBar, so the
-        // transparent notch genuinely reveals whatever's there — the
-        // matching bottom padding below puts the *visible* (non-bar-
-        // covered) content back exactly where it always was.
-        extendBody: true,
         body: SafeArea(
           bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: kBottomNavHeight),
-            child: IndexedStack(
-              index: _activeTab,
-              children: [
-                Builder(builder: _buildHomeTab),
-                Builder(builder: _buildPapersTab),
-                SubmitScreen(),
-                ForumScreen(),
-                QuizzesScreen(),
-              ],
-            ),
+          child: IndexedStack(
+            index: _activeTab,
+            children: [
+              Builder(builder: _buildHomeTab),
+              Builder(builder: _buildPapersTab),
+              SubmitScreen(),
+              ForumScreen(),
+              QuizzesScreen(),
+            ],
           ),
         ),
         bottomNavigationBar: BottomNav(
