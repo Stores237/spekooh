@@ -60,12 +60,59 @@ void main() {
     expect(find.text('Log in to continue'), findsNothing);
   });
 
-  testWidgets('the body does NOT extend behind the bottom nav (owner, 2026-09-11: extendBody caused a real dead-space regression, reverted)', (tester) async {
-    RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
-    await tester.pumpWidget(const SpekoohApp());
-    await tester.pump(const Duration(milliseconds: 1300));
+  testWidgets(
+    'the real Scaffold is extendBody: true (so the notch shows real content behind the bar)',
+    (tester) async {
+      RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
+      await tester.pumpWidget(const SpekoohApp());
+      await tester.pump(const Duration(milliseconds: 1300));
 
-    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
-    expect(scaffold.extendBody, isFalse);
-  });
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
+      expect(scaffold.extendBody, isTrue);
+    },
+  );
+
+  testWidgets(
+    'extendBody + each tab\'s own bare SafeArea() is enough on its own — no manual bottom padding needed '
+    'on top (owner, 2026-09-11 second pass: the first extendBody attempt in #111 ALSO added its own '
+    'Padding, double-counting on top of the automatic inset extendBody already feeds every tab\'s own '
+    'SafeArea() via MediaQuery — that stacked into a real ~150px dead-space gap above the bar. This '
+    'reproduces just that layering with a plain tab, not real screens, since real Home content hits '
+    'pre-existing, unrelated font-metric overflows at test-only viewport sizes.)',
+    (tester) async {
+      const barHeight = 76.0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            extendBody: true,
+            body: SafeArea(
+              bottom: false,
+              // A tab screen shaped like the app's real ones: its own
+              // nested Scaffold + bare SafeArea() (default bottom: true).
+              child: Scaffold(
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      Expanded(child: Container(color: Colors.blue)),
+                      Container(key: const Key('lastContent'), height: 20, color: Colors.red),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            bottomNavigationBar: Container(height: barHeight, color: Colors.white),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final barTopY = tester.getTopLeft(find.byType(Container).last).dy;
+      final lastContentBottomY = tester.getBottomLeft(find.byKey(const Key('lastContent'))).dy;
+
+      // Flush against the bar (Expanded fills exactly down to it via the
+      // inner SafeArea's own automatic inset) — not stranded ~76px above
+      // it from a second, manually-added compensation.
+      expect((barTopY - lastContentBottomY).abs(), lessThan(1));
+    },
+  );
 }

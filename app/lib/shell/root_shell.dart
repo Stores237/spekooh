@@ -208,6 +208,20 @@ class RootShellState extends State<RootShell> {
       },
       child: Scaffold(
         backgroundColor: AppColors.surfaceBg,
+        // Owner (2026-09-11, second pass): only the thin crescent directly
+        // around the center button — between its own circle and the
+        // notch's cut curve — needs to be a real hole, not this Scaffold's
+        // flat backgroundColor. extendBody makes body paint behind the bar
+        // so that crescent can show it. The first attempt at this (#111)
+        // ALSO added a manual Padding(bottom: kBottomNavHeight) here,
+        // double-counting: every tab screen already has its own nested
+        // Scaffold + bare SafeArea() (bottom defaults to true), which
+        // extendBody feeds the bar's real height into via MediaQuery
+        // automatically — that's what caused the big dead-space gap on
+        // Home (owner screenshot: content ending ~150px above the bar
+        // instead of flush against it). No manual padding needed at all;
+        // each tab's own SafeArea now does this correctly by itself.
+        extendBody: true,
         body: SafeArea(
           bottom: false,
           child: IndexedStack(
