@@ -2084,6 +2084,36 @@ abstract class AppLocalizations {
   /// **'500 FCFA/mo'**
   String get kawloPlusPriceLabel;
 
+  /// No description provided for @houseAdSponsoredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SPONSORED'**
+  String get houseAdSponsoredLabel;
+
+  /// No description provided for @houseAdTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Advertise your business on Kawlo'**
+  String get houseAdTitle;
+
+  /// No description provided for @houseAdSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach thousands of students across Cameroon.'**
+  String get houseAdSubtitle;
+
+  /// No description provided for @houseAdWhyThisAd.
+  ///
+  /// In en, this message translates to:
+  /// **'Why this ad?'**
+  String get houseAdWhyThisAd;
+
+  /// No description provided for @houseAdExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a message from Kawlo, not a targeted ad. We\'re always open to featuring real businesses to our student audience, not just schools.'**
+  String get houseAdExplanation;
+
   /// No description provided for @offlineSaveError.
   ///
   /// In en, this message translates to:

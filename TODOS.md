@@ -904,6 +904,41 @@ path) seeds the real S@Learn promotion with `is_active=True` — the first row t
 ever actually returned. `LoggedInHomeScreen`'s promotion card now shows the real logo image when
 one exists, falling back to a generic icon (never a broken-image icon) if it fails to load.
 
+Same day, a further round of functional-mismatch fixes from more live screenshots:
+
+- **A real country-code selector + an honest `XXX XX XX XX` placeholder** on every real phone
+  number field in the app (`PaywallSheet`, `PamphletSheet`, both of `PaperDetailScreen`'s unlock
+  cards) — previously a fixed "+237" `Text` and a real-looking sample number (`670 12 34 56`).
+  Extracted into one shared `PhoneNumberField` widget (these four call sites had each duplicated
+  the same inline `Container`+`Row`+`TextField` before this) with a real, tappable country
+  picker — one real entry today (Cameroon, the only country MTN MoMo/Orange Money actually
+  charges against), architecturally ready for more without overpromising support that isn't real.
+- **The S@Learn promotion's logo was replaced with the owner's real, cleaner version** (a new
+  self-contained migration, `0004_update_slearn_logo`, same embedded-bytes-in-the-migration
+  approach as the original seed). Found and fixed a real bug while writing it: `old_logo =
+  promo.logo` doesn't snapshot the old filename — `FieldFile.save()` mutates that same object in
+  place, so a naive "save new, then delete the old reference" pattern ends up deleting the file
+  it just uploaded whenever the storage backend overwrites in place by name (confirmed live: this
+  bucket does). The fix is simpler than the bug: no separate delete step needed at all.
+- **A dismissible Kawlo house ad on Home**, recruiting new advertisers — distinct from the
+  sponsor/promotion section elsewhere on Home, which shows OTHER businesses' ads TO users; this
+  one is Kawlo's own pitch TO businesses. Real, persisted dismiss (`HouseAdVisibility`, reusing
+  `TokenStorage` rather than a new dependency for one boolean flag) — once closed, it stays
+  closed. Copy is deliberately generic ("your business"), not "your school" — the owner's own
+  point, and true on its own evidence: S@Learn, the first real sponsor, is a tutor-matching
+  platform, not a school. A real WhatsApp contact link on tap (the same number Settings' own
+  support row already uses), not a dead end.
+- **The bottom-nav center button now sits in a real notch**, not just floating in front of a
+  flat bar — Flutter's own `CircularNotchedRectangle` (the same shape `BottomAppBar`/
+  `FloatingActionButton` normally rely on), painted via a `CustomPainter` sized to match the
+  button's real position. A real, live-found bug on the way there: pushing the button further up
+  to sit exactly on the bar's edge (matching the notch algorithm's most common usage) moved it
+  far enough outside Scaffold's own hit-test bounds for its slot that taps silently stopped
+  registering, even though it kept painting fine, unclipped, the whole time — fixed by feeding
+  the notch algorithm the button's real, already-correct position instead of moving the button to
+  match an idealized assumption. This one hasn't been visually confirmed on a real device yet —
+  the actual curve shape is this session's best-effort geometric read of a hand-drawn reference.
+
 ---
 
 ## Not in the spec at all, and correctly left alone

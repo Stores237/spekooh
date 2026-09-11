@@ -365,6 +365,11 @@
   "kawloPlusUnlimitedTitle": "Kawlo Plus : téléchargements illimités",
   "kawloPlusUnlimitedSubtitle": "Plus l'IA illimitée et sans bannières publicitaires",
   "kawloPlusPriceLabel": "500 FCFA/mois",
+  "houseAdSponsoredLabel": "SPONSORISÉ",
+  "houseAdTitle": "Faites de la publicité pour votre entreprise sur Kawlo",
+  "houseAdSubtitle": "Touchez des milliers d'étudiants à travers le Cameroun.",
+  "houseAdWhyThisAd": "Pourquoi cette pub ?",
+  "houseAdExplanation": "Ceci est un message de Kawlo, pas une publicité ciblée. Nous sommes toujours ouverts à présenter de vraies entreprises à notre audience d'étudiants, pas seulement des écoles.",
   "offlineSaveError": "Impossible d'enregistrer hors ligne : {error}",
   "@offlineSaveError": {
     "placeholders": {"error": {"type": "String"}}

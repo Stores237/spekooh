@@ -16,6 +16,12 @@ class SpekoohNavItem {
   final bool center;
 }
 
+/// Real notch radius around the center button (owner-provided reference,
+/// 2026-09-11 — "the semi circle spacing"): noticeably larger than the
+/// button's own 26px radius so a visible gap shows between the button and
+/// the bar's own cut edge, not a snug/touching fit.
+const _notchRadius = 38.0;
+
 /// Bottom tab bar — 4 flat icon+label tabs plus one elevated center item.
 /// Ported from components/navigation/BottomNav.jsx.
 class BottomNav extends StatelessWidget {
@@ -49,12 +55,8 @@ class BottomNav extends StatelessWidget {
           onTap: () => onChanged(i),
         );
 
-    return Container(
+    final content = Padding(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 14),
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        border: Border(top: BorderSide(color: AppColors.borderSubtle)),
-      ),
       child: Row(
         children: [
           Expanded(
@@ -73,7 +75,66 @@ class BottomNav extends StatelessWidget {
         ],
       ),
     );
+
+    if (centerIndex == -1) {
+      // Nothing to cut a notch around — the plain flat bar this always was.
+      return Container(
+        decoration: const BoxDecoration(color: AppColors.white, border: Border(top: BorderSide(color: AppColors.borderSubtle))),
+        child: content,
+      );
+    }
+
+    // The center button paints on top, unclipped (see _NavButton) — only
+    // the bar's own background+border are cut into a notch here, via a
+    // CustomPainter rather than a plain BoxDecoration border, since a
+    // curved edge can't be expressed as a Border side. Real Flutter Material
+    // shape (CircularNotchedRectangle), the same one BottomAppBar/
+    // FloatingActionButton normally rely on — not a hand-rolled curve.
+    //
+    // CustomPaint(painter:, child:) rather than a Stack: sized by `content`
+    // (its child) with no ambiguity, and hit-testing naturally reaches
+    // `content`'s own buttons — a Stack here (Positioned.fill background +
+    // a plain-sized `content` sibling) was found live to silently swallow
+    // the center button's taps, likely from the two children resolving
+    // their bounds independently in a way real content stopped receiving
+    // pointer events at its own visual position.
+    return CustomPaint(
+      painter: _NotchedBarPainter(),
+      child: content,
+    );
   }
+}
+
+class _NotchedBarPainter extends CustomPainter {
+  const _NotchedBarPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final host = Rect.fromLTWH(0, 0, size.width, size.height);
+    // dy: 12 — matches the real button's own resting center (10px content
+    // padding + 26px half-height, translated up 24px by _NavButton: see
+    // its own comment). CircularNotchedRectangle's algorithm takes an
+    // arbitrary guest.center, not just one sitting exactly on host.top, so
+    // this can match the button's real, hit-test-safe position rather
+    // than moving the button to match an idealized notch-centered-on-the-
+    // edge assumption (found live: pushing the button further up to sit
+    // exactly on that edge moved it far enough outside Scaffold's own
+    // bottomNavigationBar hit-test bounds that taps stopped registering,
+    // even though it kept painting fine, unclipped, the whole time).
+    final guest = Rect.fromCircle(center: Offset(size.width / 2, 12), radius: _notchRadius);
+    final path = const CircularNotchedRectangle().getOuterPath(host, guest);
+    canvas.drawPath(path, Paint()..color = AppColors.white);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = AppColors.borderSubtle
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _NotchedBarPainter oldDelegate) => false;
 }
 
 class _NavButton extends StatelessWidget {

@@ -1131,6 +1131,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kawloPlusPriceLabel => '500 FCFA/mo';
 
   @override
+  String get houseAdSponsoredLabel => 'SPONSORED';
+
+  @override
+  String get houseAdTitle => 'Advertise your business on Kawlo';
+
+  @override
+  String get houseAdSubtitle => 'Reach thousands of students across Cameroon.';
+
+  @override
+  String get houseAdWhyThisAd => 'Why this ad?';
+
+  @override
+  String get houseAdExplanation =>
+      'This is a message from Kawlo, not a targeted ad. We\'re always open to featuring real businesses to our student audience, not just schools.';
+
+  @override
   String offlineSaveError(String error) {
     return 'Could not save for offline: $error';
   }

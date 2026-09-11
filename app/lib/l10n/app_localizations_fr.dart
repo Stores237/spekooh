@@ -1149,6 +1149,24 @@ class AppLocalizationsFr extends AppLocalizations {
   String get kawloPlusPriceLabel => '500 FCFA/mois';
 
   @override
+  String get houseAdSponsoredLabel => 'SPONSORISÉ';
+
+  @override
+  String get houseAdTitle =>
+      'Faites de la publicité pour votre entreprise sur Kawlo';
+
+  @override
+  String get houseAdSubtitle =>
+      'Touchez des milliers d\'étudiants à travers le Cameroun.';
+
+  @override
+  String get houseAdWhyThisAd => 'Pourquoi cette pub ?';
+
+  @override
+  String get houseAdExplanation =>
+      'Ceci est un message de Kawlo, pas une publicité ciblée. Nous sommes toujours ouverts à présenter de vraies entreprises à notre audience d\'étudiants, pas seulement des écoles.';
+
+  @override
   String offlineSaveError(String error) {
     return 'Impossible d\'enregistrer hors ligne : $error';
   }
