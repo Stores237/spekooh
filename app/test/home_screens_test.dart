@@ -236,6 +236,23 @@ void main() {
     expect(find.text('Sample promotion'), findsOneWidget);
     expect(find.text('Example Sponsor'), findsOneWidget);
     expect(find.text('Learn more'), findsOneWidget);
+    // No real logo on this one — falls back to a generic icon chip.
+    expect(find.byType(Image), findsNothing);
+  });
+
+  testWidgets('LoggedInHomeScreen renders a real sponsor logo image when the promotion actually has one', (tester) async {
+    final promo = Promotion(id: 1, title: 'S@Learn', sponsorName: 'S@Learn', logoUrl: 'https://example.com/slearn_logo.png');
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(
+        profileRepository: MockProfileRepository(),
+        quizzesRepository: MockQuizzesRepository(),
+        promotionsRepository: MockPromotionsRepository(seed: [promo]),
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byType(Image), findsOneWidget);
   });
 
   testWidgets('LoggedInHomeScreen has no My Downloads entry point when nothing has been saved yet', (tester) async {

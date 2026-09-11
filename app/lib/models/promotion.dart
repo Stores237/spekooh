@@ -10,6 +10,7 @@ class Promotion {
     this.subtitle = '',
     this.sponsorName = '',
     this.iconName = '',
+    this.logoUrl,
     this.ctaLabel = '',
     this.ctaUrl = '',
   });
@@ -19,6 +20,10 @@ class Promotion {
   final String subtitle;
   final String sponsorName;
   final String iconName;
+
+  /// Null means no real sponsor logo uploaded — the card falls back to
+  /// [iconName] (or a generic icon) rather than a fabricated image.
+  final String? logoUrl;
   final String ctaLabel;
   final String ctaUrl;
 }

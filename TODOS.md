@@ -894,11 +894,15 @@ balance, a real Redeem button (disabled below 250, a real 402 surfaces the real 
 otherwise), and the slots cap itself is now `effectiveMaxOfflineSlots` (+1 while a bonus is
 active), refetched immediately after a real redemption rather than requiring a screen reopen.
 
-**The sponsor/promotion scaffold from earlier today is still real infrastructure, not yet
-populated** — deliberately not marked done here, since "real" in the sense asked for (an actual
-promotion a real user would see) needs real sponsor content (a name, an offer, a link) that isn't
-this session's to invent; the mechanism itself (`GET /promotions/active/`, Django admin) already
-works exactly as designed and is one admin-created row away from going live.
+**The sponsor/promotion scaffold now carries its first real content**, closing the loop from
+earlier today: the owner provided the actual real sponsor to run (title, sponsor name, CTA
+label/link, and a real logo image), rather than this session inventing one. Added a real `logo`
+`ImageField` to `Promotion` (same storage backend as avatars/paper scans) and a `logo_url` on
+`PromotionSerializer`; a new self-contained data migration (`0003_seed_slearn_promotion`, the
+real logo bytes embedded directly so it's reproducible in any environment without a local file
+path) seeds the real S@Learn promotion with `is_active=True` — the first row this endpoint has
+ever actually returned. `LoggedInHomeScreen`'s promotion card now shows the real logo image when
+one exists, falling back to a generic icon (never a broken-image icon) if it fails to load.
 
 ---
 

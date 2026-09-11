@@ -20,9 +20,11 @@ class Promotion(TimeStampedModel):
     subtitle = models.CharField(max_length=200, blank=True)
     sponsor_name = models.CharField(max_length=100, blank=True)
     # A named icon from the app's existing icon set (see IconLookup on the
-    # Flutter side) rather than an uploaded image — keeps this scaffold
-    # dependency-free until a real sponsor deal decides it needs artwork.
+    # Flutter side) — the fallback when a sponsor has no real logo of its
+    # own. Same storage backend as avatars/paper scans (see User.avatar's
+    # own comment) once one does.
     icon_name = models.CharField(max_length=60, blank=True)
+    logo = models.ImageField(upload_to="promotions/%Y/%m/", null=True, blank=True)
     cta_label = models.CharField(max_length=60, blank=True)
     cta_url = models.URLField(blank=True)
     is_active = models.BooleanField(default=False)
