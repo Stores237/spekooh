@@ -2048,11 +2048,23 @@ abstract class AppLocalizations {
   /// **'+1 slot for 3 days'**
   String get xpRedeemSlotTitle;
 
-  /// No description provided for @xpRedeemComingSoonSubtitle.
+  /// No description provided for @xpYouHaveLabel.
   ///
   /// In en, this message translates to:
-  /// **'Redeem with XP (coming soon)'**
-  String get xpRedeemComingSoonSubtitle;
+  /// **'You have {xp} XP'**
+  String xpYouHaveLabel(int xp);
+
+  /// No description provided for @xpRedeemButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem'**
+  String get xpRedeemButton;
+
+  /// No description provided for @xpSlotBonusActiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus slot active'**
+  String get xpSlotBonusActiveLabel;
 
   /// No description provided for @kawloPlusUnlimitedTitle.
   ///

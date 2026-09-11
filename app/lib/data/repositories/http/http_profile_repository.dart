@@ -70,6 +70,8 @@ class HttpProfileRepository implements ProfileRepository {
       trialDaysRemaining: me['trial_days_remaining'] as int? ?? 0,
       firstUnlockFreeEligible: me['first_unlock_free_eligible'] as bool? ?? false,
       isPlusSubscriber: me['is_plus_subscriber'] as bool? ?? false,
+      xpBalance: me['xp_balance'] as int? ?? 0,
+      hasActiveSlotBonus: me['has_active_slot_bonus'] as bool? ?? false,
       referralCode: me['referral_code'] as String? ?? '',
       avatarUrl: me['avatar_url'] as String?,
       email: me['email'] as String? ?? '',

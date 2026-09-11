@@ -10,6 +10,14 @@ import 'repositories/profile_repository.dart';
 /// has no cap at all ("unlimited downloads").
 const kMaxOfflineSlots = 3;
 
+/// The real cap for one store, accounting for a redeemed XP slot bonus
+/// (see apps.xp.services.redeem_slot_bonus on the backend) — +1 on top of
+/// the free-tier cap while [hasActiveSlotBonus] is true. Meaningless for a
+/// Plus subscriber, who has no cap at all regardless. Takes the bool
+/// directly rather than a whole SpekoohUser so callers with only a
+/// still-loading (nullable) user can pass `user?.hasActiveSlotBonus ?? false`.
+int effectiveMaxOfflineSlots(bool hasActiveSlotBonus) => kMaxOfflineSlots + (hasActiveSlotBonus ? 1 : 0);
+
 /// Shared by both the paper-save flow (paper_detail_screen) and the
 /// marking-guide-save flow (marking_guide_screen) so the two never drift.
 /// Returns true if the caller may proceed with save(); false means this
@@ -26,8 +34,8 @@ Future<bool> confirmOfflineSlotAvailable(
   required ProfileRepository profileRepository,
   required String Function(AppLocalizations l10n) errorMessage,
 }) async {
-  final isPlus = (await profileRepository.getUser()).isPlusSubscriber;
-  if (isPlus || currentCount < kMaxOfflineSlots) return true;
+  final user = await profileRepository.getUser();
+  if (user.isPlusSubscriber || currentCount < effectiveMaxOfflineSlots(user.hasActiveSlotBonus)) return true;
   if (!context.mounted) return false;
   final l10n = AppLocalizations.of(context)!;
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(l10n))));

@@ -4,6 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.core.exceptions import SafeMessageError
+from apps.xp.services import award_quiz_attempt_xp
 
 from .models import Quiz, QuizAttempt
 
@@ -24,8 +25,13 @@ def submit_attempt(*, quiz: Quiz, user, answers: list[int]) -> QuizAttempt:
         if chosen == question.correct_choice_index
     )
 
+    # Real XP economy (owner request, 2026-09-11) — every completed
+    # attempt earns some, the daily challenge more (see
+    # apps.xp.services.award_quiz_attempt_xp's own comment on why).
+    xp_awarded = award_quiz_attempt_xp(user=user, quiz=quiz)
+
     attempt = QuizAttempt.objects.create(
-        quiz=quiz, user=user, answers=answers, score=score, completed_at=timezone.now()
+        quiz=quiz, user=user, answers=answers, score=score, completed_at=timezone.now(), xp_awarded=xp_awarded
     )
     Quiz.objects.filter(id=quiz.id).update(played_count=quiz.played_count + 1)
     return attempt

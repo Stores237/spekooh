@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../data/offline_guides_store.dart';
 import '../../data/offline_papers_store.dart';
 import '../../data/offline_slots_policy.dart';
+import '../../data/repositories/payments_repository.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
@@ -17,16 +18,18 @@ import '../../theme/app_theme.dart';
 
 /// My Downloads (owner-provided mockup, 2026-09-11): saved papers and
 /// saved corrections (marking guides) shown as two tabs, each capped at
-/// [kMaxOfflineSlots] for a free account, unlimited for Kawlo Plus. Only
-/// ever reached from a home-page entry point shown once something has
+/// [effectiveMaxOfflineSlots] for a free account, unlimited for Kawlo Plus.
+/// Only ever reached from a home-page entry point shown once something has
 /// actually been saved (see LoggedInHomeScreen) — this screen itself just
 /// renders whatever OfflinePapersStore/OfflineGuidesStore already hold, it
 /// doesn't gate its own visibility.
 class MyDownloadsScreen extends StatefulWidget {
-  MyDownloadsScreen({super.key, ProfileRepository? profileRepository, this.onOpenPaywall})
-      : profileRepository = profileRepository ?? RepositoryLocator.instance.profile;
+  MyDownloadsScreen({super.key, ProfileRepository? profileRepository, PaymentsRepository? paymentsRepository, this.onOpenPaywall})
+      : profileRepository = profileRepository ?? RepositoryLocator.instance.profile,
+        paymentsRepository = paymentsRepository ?? RepositoryLocator.instance.payments;
 
   final ProfileRepository profileRepository;
+  final PaymentsRepository paymentsRepository;
   final VoidCallback? onOpenPaywall;
 
   @override
@@ -34,8 +37,24 @@ class MyDownloadsScreen extends StatefulWidget {
 }
 
 class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
-  late final Future<SpekoohUser> _userFuture = widget.profileRepository.getUser();
+  late Future<SpekoohUser> _userFuture = widget.profileRepository.getUser();
   int _tab = 0;
+  bool _redeeming = false;
+
+  /// Re-fetches after a real redemption so xpBalance/hasActiveSlotBonus —
+  /// and therefore the slots card's own effective cap — reflect it
+  /// immediately, without leaving the screen and coming back.
+  Future<void> _redeemSlotBonus(AppLocalizations l10n) async {
+    setState(() => _redeeming = true);
+    try {
+      await widget.paymentsRepository.redeemSlotBonus();
+      if (mounted) setState(() { _userFuture = widget.profileRepository.getUser(); });
+    } on InsufficientXPError catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() => _redeeming = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +70,8 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
             return FutureBuilder<SpekoohUser>(
               future: _userFuture,
               builder: (context, snapshot) {
-                final isPlus = snapshot.data?.isPlusSubscriber ?? false;
+                final user = snapshot.data;
+                final isPlus = user?.isPlusSubscriber ?? false;
                 final currentCount = _tab == 0 ? papers.length : guides.length;
                 return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPad),
@@ -84,14 +104,14 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
                       ),
                       const SizedBox(height: AppSpacing.space4),
                       if (!isPlus) ...[
-                        _slotsCard(l10n, currentCount),
+                        _slotsCard(l10n, currentCount, user),
                         const SizedBox(height: AppSpacing.space5),
                       ],
                       if (_tab == 0) _papersList(l10n, papers) else _guidesList(l10n, guides),
                       const SizedBox(height: AppSpacing.space6),
                       Text(l10n.getMoreSlotsTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 0.6)),
                       const SizedBox(height: AppSpacing.space3),
-                      _xpRedeemCard(l10n),
+                      _xpRedeemCard(l10n, user),
                       if (!isPlus) ...[
                         const SizedBox(height: AppSpacing.space3),
                         _kawloPlusBanner(l10n),
@@ -120,8 +140,9 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
     );
   }
 
-  Widget _slotsCard(AppLocalizations l10n, int used) {
-    final clamped = used > kMaxOfflineSlots ? kMaxOfflineSlots : used;
+  Widget _slotsCard(AppLocalizations l10n, int used, SpekoohUser? user) {
+    final max = effectiveMaxOfflineSlots(user?.hasActiveSlotBonus ?? false);
+    final clamped = used > max ? max : used;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
@@ -135,14 +156,14 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(color: AppColors.surfaceSunken, borderRadius: BorderRadius.circular(999)),
-                child: Text(l10n.downloadSlotsUsed(clamped, kMaxOfflineSlots), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                child: Text(l10n.downloadSlotsUsed(clamped, max), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
               ),
             ],
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              for (var i = 0; i < kMaxOfflineSlots; i++) ...[
+              for (var i = 0; i < max; i++) ...[
                 if (i > 0) const SizedBox(width: 6),
                 Expanded(
                   child: Container(
@@ -155,7 +176,7 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            _tab == 0 ? l10n.offlineSlotsFullPapersError(kMaxOfflineSlots) : l10n.offlineSlotsFullGuidesError(kMaxOfflineSlots),
+            _tab == 0 ? l10n.offlineSlotsFullPapersError(max) : l10n.offlineSlotsFullGuidesError(max),
             style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
           ),
         ],
@@ -221,37 +242,53 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
     );
   }
 
-  /// No real XP economy exists anywhere in this app yet (no earning
-  /// mechanism, no ledger) — shown honestly as upcoming rather than wired
-  /// to a fabricated balance, same philosophy as quizzes_screen's
-  /// _comingSoonRow for Past-paper practice/Friday Arena.
-  Widget _xpRedeemCard(AppLocalizations l10n) {
-    return Opacity(
-      opacity: 0.55,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(16), boxShadow: AppShadows.card),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(color: AppColors.surfaceSunken, borderRadius: BorderRadius.circular(12)),
-              alignment: Alignment.center,
-              child: const Icon(LucideIcons.sparkles, size: 18, color: AppColors.textSecondary),
+  /// Real XP economy (owner request, 2026-09-11 — see backend
+  /// apps.xp.services): earned from real QuizAttempts, spent here for a
+  /// real +1 offline slot. [user] null means still loading — shown as a
+  /// disabled button rather than a fabricated balance in that instant.
+  Widget _xpRedeemCard(AppLocalizations l10n, SpekoohUser? user) {
+    final active = user?.hasActiveSlotBonus ?? false;
+    final canRedeem = !active && !_redeeming && (user?.xpBalance ?? 0) >= 250;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(16), boxShadow: AppShadows.card),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: AppColors.gold50, borderRadius: BorderRadius.circular(12)),
+            alignment: Alignment.center,
+            child: const Icon(LucideIcons.sparkles, size: 18, color: AppColors.gold700),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.xpRedeemSlotTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
+                Text(
+                  active ? l10n.xpSlotBonusActiveLabel : l10n.xpYouHaveLabel(user?.xpBalance ?? 0),
+                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: active ? AppColors.green600 : AppColors.textSecondary, fontWeight: active ? FontWeight.w700 : FontWeight.w400),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l10n.xpRedeemSlotTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
-                  Text(l10n.xpRedeemComingSoonSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                ],
+          ),
+          if (!active)
+            GestureDetector(
+              onTap: canRedeem ? () => _redeemSlotBonus(l10n) : null,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(color: canRedeem ? AppColors.gold500 : AppColors.surfaceSunken, borderRadius: BorderRadius.circular(999)),
+                child: _redeeming
+                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text(
+                        l10n.xpRedeemButton,
+                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 12, color: canRedeem ? AppColors.ink900 : AppColors.textTertiary),
+                      ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

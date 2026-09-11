@@ -877,6 +877,29 @@ A same-day follow-up batch of functional-mismatch fixes, found from further live
   every other icon chip in this app uses — a small, deliberate one-off per a provided reference
   image (`AppRadii.radiusPill` instead of `radiusLg`, no other visual change).
 
+**A real XP economy** (owner request, same day, after seeing the "+1 slot for 250 XP" card still
+dimmed as coming soon): the first real definition of XP anywhere in this app. New `apps.xp`
+Django app — `XPLedgerEntry` (a real, auditable, append-only ledger, same shape as
+`apps.credits.CreditLedgerEntry` but a genuinely distinct economy), `xp_balance()` a real sum of
+it, never a separately-tracked counter. Earned from the one real, already-tracked event that
+exists to hook into: every completed `QuizAttempt` (`apps.quizzes.services.submit_attempt`) earns
+10 XP, 25 for the daily challenge specifically (the app's own centerpiece gamification loop) —
+`QuizAttempt.xp_awarded` and the `/submit/` response both carry the real amount. Spent via a new
+`POST /api/xp/redeem-slot-bonus/` (`apps.xp.services.redeem_slot_bonus`, `IsAuthenticatedNotGuest`)
+that checks the real balance, deducts 250 XP, and sets a real `User.bonus_offline_slot_until`
+(fresh 3-day window from the moment of redemption, same "renew fresh, don't stack" shape
+`apps.payments.services.subscribe` already used). `UserSerializer` gained `xp_balance` and
+`has_active_slot_bonus`; `MyDownloadsScreen`'s XP card is no longer dimmed — shows the real
+balance, a real Redeem button (disabled below 250, a real 402 surfaces the real backend message
+otherwise), and the slots cap itself is now `effectiveMaxOfflineSlots` (+1 while a bonus is
+active), refetched immediately after a real redemption rather than requiring a screen reopen.
+
+**The sponsor/promotion scaffold from earlier today is still real infrastructure, not yet
+populated** — deliberately not marked done here, since "real" in the sense asked for (an actual
+promotion a real user would see) needs real sponsor content (a name, an offer, a link) that isn't
+this session's to invent; the mechanism itself (`GET /promotions/active/`, Django admin) already
+works exactly as designed and is one admin-created row away from going live.
+
 ---
 
 ## Not in the spec at all, and correctly left alone

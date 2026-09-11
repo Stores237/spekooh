@@ -130,6 +130,13 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     # the idempotency guard so the bonus can't fire twice.
     referral_bonus_awarded_at = models.DateTimeField(null=True, blank=True)
 
+    # Real XP-redeemable perk (owner request, 2026-09-11 — see
+    # apps.xp.services.redeem_slot_bonus): +1 offline download slot on top
+    # of the free-tier cap, active while this is in the future. Null means
+    # no bonus ever redeemed, or a past one that's since expired — the
+    # client only needs "is this after now", never the raw history.
+    bonus_offline_slot_until = models.DateTimeField(null=True, blank=True)
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"
