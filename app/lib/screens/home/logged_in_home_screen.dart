@@ -481,7 +481,22 @@ class LoggedInHomeScreen extends StatelessWidget {
       decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
       child: Row(
         children: [
-          IconChip(icon: iconByName[promo.iconName] ?? LucideIcons.megaphone, tint: IconChipTint.amber, size: 40),
+          if (promo.logoUrl != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                promo.logoUrl!,
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+                // A real sponsor logo failing to load falls back to the
+                // same generic chip as no logo at all — never a broken-
+                // image icon on a live promo.
+                errorBuilder: (context, error, stackTrace) => IconChip(icon: iconByName[promo.iconName] ?? LucideIcons.megaphone, tint: IconChipTint.amber, size: 40),
+              ),
+            )
+          else
+            IconChip(icon: iconByName[promo.iconName] ?? LucideIcons.megaphone, tint: IconChipTint.amber, size: 40),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

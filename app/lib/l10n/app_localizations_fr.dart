@@ -1127,8 +1127,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get xpRedeemSlotTitle => '+1 emplacement pour 3 jours';
 
   @override
-  String get xpRedeemComingSoonSubtitle =>
-      'À échanger avec des XP (bientôt disponible)';
+  String xpYouHaveLabel(int xp) {
+    return 'Vous avez $xp XP';
+  }
+
+  @override
+  String get xpRedeemButton => 'Échanger';
+
+  @override
+  String get xpSlotBonusActiveLabel => 'Emplacement bonus actif';
 
   @override
   String get kawloPlusUnlimitedTitle =>

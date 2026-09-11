@@ -43,7 +43,7 @@ class SubmitAttemptRequestSerializer(serializers.Serializer):
 class QuizAttemptSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuizAttempt
-        fields = ["id", "quiz", "score", "completed_at"]
+        fields = ["id", "quiz", "score", "completed_at", "xp_awarded"]
         read_only_fields = fields
 
 

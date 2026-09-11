@@ -51,6 +51,12 @@ class QuizAttempt(TimeStampedModel):
     answers = models.JSONField(help_text="List of chosen choice indices, in question order.")
     score = models.PositiveIntegerField()
     completed_at = models.DateTimeField()
+    # Denormalized copy of what apps.xp.services.award_quiz_attempt_xp
+    # actually granted (the real XPLedgerEntry is the source of truth) —
+    # kept here too so QuizAttemptSerializer can surface "+N XP" without a
+    # second query, and so the amount an attempt earned is never lost if
+    # XP_PER_QUIZ_ATTEMPT/XP_PER_DAILY_CHALLENGE_ATTEMPT change later.
+    xp_awarded = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["-completed_at"]

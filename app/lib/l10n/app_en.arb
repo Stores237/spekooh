@@ -459,7 +459,12 @@
   "noDownloadsYetGuides": "No downloads yet. Open a paper's marking guide and tap Save to read it offline.",
   "getMoreSlotsTitle": "GET MORE SLOTS",
   "xpRedeemSlotTitle": "+1 slot for 3 days",
-  "xpRedeemComingSoonSubtitle": "Redeem with XP (coming soon)",
+  "xpYouHaveLabel": "You have {xp} XP",
+  "@xpYouHaveLabel": {
+    "placeholders": {"xp": {"type": "int"}}
+  },
+  "xpRedeemButton": "Redeem",
+  "xpSlotBonusActiveLabel": "Bonus slot active",
   "kawloPlusUnlimitedTitle": "Kawlo Plus: unlimited downloads",
   "kawloPlusUnlimitedSubtitle": "Plus unlimited AI & no banner ads",
   "kawloPlusPriceLabel": "500 FCFA/mo",

@@ -356,7 +356,12 @@
   "noDownloadsYetGuides": "Aucun téléchargement pour l'instant. Ouvrez le corrigé d'une épreuve et appuyez sur Enregistrer pour le lire hors ligne.",
   "getMoreSlotsTitle": "OBTENIR PLUS D'EMPLACEMENTS",
   "xpRedeemSlotTitle": "+1 emplacement pour 3 jours",
-  "xpRedeemComingSoonSubtitle": "À échanger avec des XP (bientôt disponible)",
+  "xpYouHaveLabel": "Vous avez {xp} XP",
+  "@xpYouHaveLabel": {
+    "placeholders": {"xp": {"type": "int"}}
+  },
+  "xpRedeemButton": "Échanger",
+  "xpSlotBonusActiveLabel": "Emplacement bonus actif",
   "kawloPlusUnlimitedTitle": "Kawlo Plus : téléchargements illimités",
   "kawloPlusUnlimitedSubtitle": "Plus l'IA illimitée et sans bannières publicitaires",
   "kawloPlusPriceLabel": "500 FCFA/mois",

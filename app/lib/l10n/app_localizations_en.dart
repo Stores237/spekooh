@@ -1111,7 +1111,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get xpRedeemSlotTitle => '+1 slot for 3 days';
 
   @override
-  String get xpRedeemComingSoonSubtitle => 'Redeem with XP (coming soon)';
+  String xpYouHaveLabel(int xp) {
+    return 'You have $xp XP';
+  }
+
+  @override
+  String get xpRedeemButton => 'Redeem';
+
+  @override
+  String get xpSlotBonusActiveLabel => 'Bonus slot active';
 
   @override
   String get kawloPlusUnlimitedTitle => 'Kawlo Plus: unlimited downloads';

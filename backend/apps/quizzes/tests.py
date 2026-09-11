@@ -65,6 +65,30 @@ def test_submit_scores_correctly():
 
 
 @pytest.mark.django_db
+def test_submit_awards_real_xp_more_for_the_daily_challenge():
+    """Real XP economy (owner request, 2026-09-11) — every completed
+    attempt earns real, auditable XP (see apps.xp), not just a score."""
+    from apps.xp.services import (
+        XP_PER_DAILY_CHALLENGE_ATTEMPT,
+        XP_PER_QUIZ_ATTEMPT,
+        xp_balance,
+    )
+
+    user = UserFactory()
+    ordinary = QuizFactory(is_daily_challenge=False)
+    QuizQuestionFactory(quiz=ordinary, correct_choice_index=1)
+    daily = QuizFactory(is_daily_challenge=True)
+    QuizQuestionFactory(quiz=daily, correct_choice_index=1)
+
+    ordinary_attempt = submit_attempt(quiz=ordinary, user=user, answers=[1])
+    daily_attempt = submit_attempt(quiz=daily, user=user, answers=[1])
+
+    assert ordinary_attempt.xp_awarded == XP_PER_QUIZ_ATTEMPT
+    assert daily_attempt.xp_awarded == XP_PER_DAILY_CHALLENGE_ATTEMPT
+    assert xp_balance(user) == XP_PER_QUIZ_ATTEMPT + XP_PER_DAILY_CHALLENGE_ATTEMPT
+
+
+@pytest.mark.django_db
 def test_submit_rejects_quiz_with_no_questions():
     quiz = QuizFactory()
     with pytest.raises(QuizError):
@@ -88,6 +112,7 @@ def test_submit_endpoint_end_to_end(api_client):
     response = api_client.post(f"/api/quizzes/{quiz.id}/submit/", {"answers": [1]}, format="json")
     assert response.status_code == 201
     assert response.data["score"] == 1
+    assert response.data["xp_awarded"] == 10
     assert QuizAttempt.objects.filter(quiz=quiz, user=user).exists()
 
 

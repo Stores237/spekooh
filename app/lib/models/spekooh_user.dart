@@ -10,6 +10,8 @@ class SpekoohUser {
     this.trialDaysRemaining = 0,
     this.firstUnlockFreeEligible = false,
     this.isPlusSubscriber = false,
+    this.xpBalance = 0,
+    this.hasActiveSlotBonus = false,
     this.referralCode = '',
     this.avatarUrl,
     this.email = '',
@@ -36,6 +38,13 @@ class SpekoohUser {
   /// "trial ended, never subscribed" apart from "trial ended, already
   /// paying" so the post-trial upsell banner never nags a paying user.
   final bool isPlusSubscriber;
+
+  /// Real XP economy (owner request, 2026-09-11) — see backend
+  /// apps.xp.services. xpBalance is a real sum of this account's own
+  /// ledger, never a fabricated number; hasActiveSlotBonus reflects a real
+  /// redeemed +1 offline-download-slot perk still within its 3-day window.
+  final int xpBalance;
+  final bool hasActiveSlotBonus;
 
   /// Null means genuinely no photo set — the profile screen falls back to
   /// an initial-letter avatar, never a fabricated placeholder image.

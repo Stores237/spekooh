@@ -16,6 +16,7 @@ class HttpPromotionsRepository implements PromotionsRepository {
               subtitle: row['subtitle'] as String? ?? '',
               sponsorName: row['sponsor_name'] as String? ?? '',
               iconName: row['icon_name'] as String? ?? '',
+              logoUrl: row['logo_url'] as String?,
               ctaLabel: row['cta_label'] as String? ?? '',
               ctaUrl: row['cta_url'] as String? ?? '',
             ))
