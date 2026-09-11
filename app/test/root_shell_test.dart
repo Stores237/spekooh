@@ -59,4 +59,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Log in to continue'), findsNothing);
   });
+
+  testWidgets('the body extends behind the bottom nav so its notch shows real content, not just a flat fill (owner, 2026-09-11)', (tester) async {
+    RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
+    await tester.pumpWidget(const SpekoohApp());
+    await tester.pump(const Duration(milliseconds: 1300));
+
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
+    expect(scaffold.extendBody, isTrue);
+  });
 }

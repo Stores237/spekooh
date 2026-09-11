@@ -21,6 +21,18 @@ class SpekoohNavItem {
 /// the bar's own cut edge, not a snug/touching fit.
 const _notchRadius = 38.0;
 
+/// The bar's real total height (10px top padding + 52px content row + 14px
+/// bottom padding — measured live via a widget test, not eyeballed).
+/// Scaffold normally reserves exactly this much space above
+/// bottomNavigationBar automatically; RootShell instead sets extendBody so
+/// real page content can show through the notch's transparent cut-out
+/// (owner, 2026-09-11: "it has to be transparent, that is we could see
+/// what is behind" — not just free of a shadow tint, but an actual hole
+/// through to the screen behind it), which means it has to add this same
+/// amount back itself so that content isn't hidden under the bar's own
+/// opaque parts.
+const kBottomNavHeight = 76.0;
+
 /// Bottom tab bar — 4 flat icon+label tabs plus one elevated center item.
 /// Ported from components/navigation/BottomNav.jsx.
 class BottomNav extends StatelessWidget {
