@@ -72,4 +72,18 @@ void main() {
     expect(find.byWidgetPredicate((w) => w is Container && w.decoration is BoxDecoration), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('the notch gap around the center button stays fully transparent — no shadow tint painted into it (owner screenshot, 2026-09-11)', (tester) async {
+    await tester.pumpWidget(navWith(items: asymmetricItems, active: 0, onChanged: (_) {}));
+    await tester.pump();
+
+    final centerButtonContainer = tester.widget<Container>(
+      find.ancestor(of: find.byIcon(Icons.upload), matching: find.byType(Container)).first,
+    );
+    final decoration = centerButtonContainer.decoration as BoxDecoration;
+    // A boxShadow here painted a visible blue halo (AppShadows.button's
+    // leftover navy-blue tint) into the notch's cut-out gap, which is
+    // supposed to be pure transparency showing whatever sits behind the bar.
+    expect(decoration.boxShadow, anyOf(isNull, isEmpty));
+  });
 }

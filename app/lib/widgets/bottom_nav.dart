@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
 import '../theme/app_radii.dart';
-import '../theme/app_shadows.dart';
 import '../theme/app_theme.dart';
 
 class SpekoohNavItem {
@@ -161,7 +160,11 @@ class _NavButton extends StatelessWidget {
               // this is the one deliberately different shape, matching a
               // provided reference image.
               borderRadius: AppRadii.radiusPill,
-              boxShadow: AppShadows.button,
+              // No boxShadow here (unlike every other AppShadows.button use):
+              // the notch's cut-out gap around this button is meant to be
+              // fully transparent — AppShadows.button's leftover navy-blue
+              // tint (see app_shadows.dart) painted a visible blue halo into
+              // that gap instead (owner screenshot, 2026-09-11).
             ),
             alignment: Alignment.center,
             child: IconTheme.merge(
