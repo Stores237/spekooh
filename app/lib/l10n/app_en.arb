@@ -127,12 +127,6 @@
   "trialEndedBody": "Subscribe to keep unlimited paper views and AI assistant access.",
   "trialEndedCta": "Subscribe now",
   "quickActionContribute": "Contribute",
-  "readyOfflineTitle": "Ready offline",
-  "offlineDownloadsCount": "Downloads · {count}",
-  "@offlineDownloadsCount": {
-    "placeholders": {"count": {"type": "int"}}
-  },
-  "offlineReadyTag": "OFFLINE READY",
   "dailyChallengeLabel": "Daily challenge",
   "dailyChallengeLoading": "Loading…",
   "dailyChallengeInfo": "{title} · {count} questions",

@@ -6,9 +6,11 @@ import 'package:spekooh/data/offline_papers_store.dart';
 import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/models/marking_guide.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
+import 'package:spekooh/data/repositories/promotions_repository.dart';
 import 'package:spekooh/data/repositories/quizzes_repository.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
 import 'package:spekooh/data/repository_locator.dart';
+import 'package:spekooh/models/promotion.dart';
 import 'package:spekooh/models/spekooh_user.dart';
 import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/token_storage.dart';
@@ -85,7 +87,6 @@ void main() {
     expect(find.text('Group VII the Halogens Quiz'), findsOneWidget); // real quiz.title, own line now
     expect(find.text('8 min'), findsOneWidget); // real quiz.suggestedTime, not a fabricated duration
     expect(find.text('START A STREAK'), findsOneWidget); // MockQuizzesRepository starts at zero — honest, not fabricated
-    expect(find.text('Ready offline'), findsNothing); // nothing saved yet — section shouldn't fabricate itself
     // Quick-actions grid: single line (icon + label), a distinct tint each —
     // still every real label, just restyled.
     for (final label in ['Papers', 'Notes', 'Contribute', 'Shop', 'Forum', 'Quizzes']) {
@@ -208,22 +209,33 @@ void main() {
     expect(find.text('DÉFI DU JOUR'), findsOneWidget); // same section, now in French
   });
 
-  testWidgets('LoggedInHomeScreen shows a real "Ready offline" section once a paper is actually saved', (tester) async {
-    final store = OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]);
-    await store.bootstrap();
-    await store.save(paperId: 5, title: 'Biology O-Level', subtitle: 'GCE · 2024', fileUrl: 'https://cdn.example.com/paper5.pdf');
-    OfflinePapersStore.debugSetInstance(store);
-
+  testWidgets('LoggedInHomeScreen shows no promotion section at all while nothing is active (real default, not a fabricated placeholder)', (tester) async {
     await tester.pumpWidget(l10nTestApp(
       LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
     ));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Ready offline'), findsOneWidget);
-    expect(find.text('Downloads · 1'), findsOneWidget);
-    expect(find.text('Biology O-Level'), findsOneWidget);
-    expect(find.text('OFFLINE READY'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    expect(find.byIcon(LucideIcons.megaphone), findsNothing); // the section's own fallback icon — never shown with nothing to promote
+  });
+
+  testWidgets('LoggedInHomeScreen shows a real promotion once one is actually active, and its CTA is real', (tester) async {
+    final promo = Promotion(id: 1, title: 'Sample sponsor', subtitle: 'Sample promotion', sponsorName: 'Example Sponsor', ctaLabel: 'Learn more', ctaUrl: 'https://example.com');
+    await tester.pumpWidget(l10nTestApp(
+      LoggedInHomeScreen(
+        profileRepository: MockProfileRepository(),
+        quizzesRepository: MockQuizzesRepository(),
+        promotionsRepository: MockPromotionsRepository(seed: [promo]),
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Sample sponsor'), findsOneWidget);
+    expect(find.text('Sample promotion'), findsOneWidget);
+    expect(find.text('Example Sponsor'), findsOneWidget);
+    expect(find.text('Learn more'), findsOneWidget);
   });
 
   testWidgets('LoggedInHomeScreen has no My Downloads entry point when nothing has been saved yet', (tester) async {
@@ -269,9 +281,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    // The real MyDownloadsScreen, Papers tab first — "Biology O-Level" now
-    // matches twice (home's own "Ready offline" list is still underneath
-    // in the Navigator stack), so assert on markers unique to this screen.
+    // The real MyDownloadsScreen, Papers tab first — assert on markers
+    // unique to this screen rather than shared paper titles, which could
+    // in principle also appear on whatever's still underneath in the
+    // Navigator stack.
     expect(find.byType(MyDownloadsScreen), findsOneWidget);
     expect(find.text('Download slots'), findsOneWidget);
     expect(find.text('Corrections · 1'), findsOneWidget);
@@ -334,25 +347,5 @@ void main() {
     expect(find.text('DÉFI DU JOUR'), findsOneWidget);
     expect(find.text('COMMENCER UNE SÉRIE'), findsOneWidget);
     expect(find.text('DAILY CHALLENGE'), findsNothing);
-  });
-
-  testWidgets('the "Ready offline" section renders in French once that locale is active', (tester) async {
-    final store = OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]);
-    await store.bootstrap();
-    await store.save(paperId: 5, title: 'Biologie O-Level', subtitle: 'GCE · 2024', fileUrl: 'https://cdn.example.com/paper5.pdf');
-    OfflinePapersStore.debugSetInstance(store);
-
-    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
-    await LocaleController.instance.setLocale('fr');
-    await tester.pumpWidget(l10nTestApp(
-      LoggedInHomeScreen(profileRepository: MockProfileRepository(), quizzesRepository: MockQuizzesRepository()),
-    ));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-
-    expect(find.text('Disponible hors ligne'), findsOneWidget);
-    expect(find.text('Téléchargements · 1'), findsOneWidget);
-    expect(find.text('PRÊT HORS LIGNE'), findsOneWidget);
-    expect(find.text('Ready offline'), findsNothing);
   });
 }

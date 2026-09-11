@@ -856,6 +856,27 @@ real, material gaps this list didn't previously know about.
   Submit screen is unchanged, this is a client-side assembly step ahead of it, not a new backend
   concept.
 
+A same-day follow-up batch of functional-mismatch fixes, found from further live screenshots:
+
+- **Real phone-number collection on the marking-guide/exam-paper-download unlock flows**
+  (owner-reported): `unlockPaper`/`unlockPaperDownload` were silently sending a fake
+  `'000000000'` to the real MTN MoMo/Orange Money charge attempt — no field on
+  `PaperDetailScreen` ever asked for a real number, unlike `PaywallSheet`/`PamphletSheet`, which
+  already did this correctly. Added the same `+237` + real-placeholder-digits field to both
+  unlock cards (independent controllers — an exam paper can show both at once), required before
+  either action fires; `phoneNumber` is now a real parameter on both repository methods instead
+  of a hardcoded fallback.
+- **"Ready offline" home section replaced by a hidden sponsor/promotion scaffold** (owner
+  decision: My Downloads' own home entry point now covers what that inline list was for). New
+  `apps.promotions` Django app (`Promotion` model, `GET /promotions/active/`, admin) — `is_active`
+  defaults to `False` and the endpoint filters on it, so the real, live scaffold shows nothing
+  until a real sponsor deal exists and someone flips it on in admin, same "no section rather
+  than a fake one" pattern used everywhere else in this app for something genuinely not built
+  yet. `LoggedInHomeScreen` renders it in the exact slot "Ready offline" used to occupy.
+- **The bottom-nav center "contribute" button is now fully circular**, not the rounded square
+  every other icon chip in this app uses — a small, deliberate one-off per a provided reference
+  image (`AppRadii.radiusPill` instead of `radiusLg`, no other visual change).
+
 ---
 
 ## Not in the spec at all, and correctly left alone

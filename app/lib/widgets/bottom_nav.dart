@@ -95,7 +95,11 @@ class _NavButton extends StatelessWidget {
             height: 52,
             decoration: BoxDecoration(
               gradient: AppGradients.bot,
-              borderRadius: AppRadii.radiusLg,
+              // Owner-requested (2026-09-11): fully circular, not the
+              // rounded square every other icon chip in this app uses —
+              // this is the one deliberately different shape, matching a
+              // provided reference image.
+              borderRadius: AppRadii.radiusPill,
               boxShadow: AppShadows.button,
             ),
             alignment: Alignment.center,

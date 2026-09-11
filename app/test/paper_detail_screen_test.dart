@@ -100,7 +100,7 @@ class _UnlockableReportRepository implements PapersRepository {
   Future<void> recordView(int paperId) async {}
 
   @override
-  Future<int> unlockPaper(int paperId, {String? redeemCode}) async {
+  Future<int> unlockPaper(int paperId, {required String phoneNumber, String? redeemCode}) async {
     unlockCalls++;
     paid = true;
     return 500;
@@ -545,6 +545,10 @@ void main() {
       expect(find.text('This report requires unlocking'), findsOneWidget);
       expect(find.text('View'), findsNothing);
 
+      // A real MTN MoMo/Orange Money number is required before Unlock will
+      // actually charge anything (owner-reported, 2026-09-11 — this used
+      // to send a fake '000000000' with no field asking for a real one).
+      await tester.enterText(find.byType(TextField).first, '670123456');
       await tester.tap(find.text('Unlock: 500 FCFA'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
@@ -552,6 +556,35 @@ void main() {
       expect(repository.unlockCalls, 1);
       expect(find.text('This report requires unlocking'), findsNothing);
       expect(find.text('View'), findsOneWidget);
+    });
+
+    testWidgets('tapping Unlock with no phone number entered shows a real error instead of charging a fake one', (tester) async {
+      final gated = PaperEntry(
+        id: 6,
+        year: 2024,
+        system: null,
+        track: '',
+        status: 'PUBLISHED',
+        fileUrl: null,
+        createdAt: DateTime(2024, 1, 1),
+        examTypeName: 'PhD Thesis (Thèse)',
+        categoryKey: 'reports',
+        requiresUnlock: true,
+      );
+      final repository = _UnlockableReportRepository(gated: gated, unlocked: gated);
+      OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: gated, repository: repository, adController: _FakeRewardedAdController(grantsReward: true)),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.tap(find.text('Unlock: 500 FCFA'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(repository.unlockCalls, 0);
+      expect(find.text('Enter your MTN MoMo or Orange Money number.'), findsOneWidget);
     });
   });
 
@@ -693,6 +726,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('Unlock download: 75 FCFA'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).first, '670123456');
       await tester.tap(find.text('Unlock download: 75 FCFA'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
@@ -700,6 +734,23 @@ void main() {
       expect(repository.unlockCalls, 1);
       expect(find.text('Unlock download: 75 FCFA'), findsNothing);
       expect(find.text('Save offline'), findsOneWidget);
+    });
+
+    testWidgets('tapping Unlock download with no phone number entered shows a real error instead of charging a fake one', (tester) async {
+      final repository = _UnlockableDownloadRepository(gated: notYetUnlocked, unlocked: notYetUnlocked);
+      OfflinePapersStore.debugSetInstance(OfflinePapersStore(fileStore: InMemoryOfflineFileStore(), download: (url) async => [1, 2, 3]));
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: notYetUnlocked, repository: repository, adController: _FakeRewardedAdController(grantsReward: false)),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.tap(find.text('Unlock download: 75 FCFA'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(repository.unlockCalls, 0);
+      expect(find.text('Enter your MTN MoMo or Orange Money number.'), findsOneWidget);
     });
   });
 }
@@ -722,7 +773,7 @@ class _UnlockableDownloadRepository implements PapersRepository {
   Future<void> recordView(int paperId) async {}
 
   @override
-  Future<int> unlockPaperDownload(int paperId) async {
+  Future<int> unlockPaperDownload(int paperId, {required String phoneNumber}) async {
     unlockCalls++;
     paid = true;
     return 75;

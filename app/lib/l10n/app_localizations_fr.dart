@@ -377,17 +377,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get quickActionContribute => 'Contribuer';
 
   @override
-  String get readyOfflineTitle => 'Disponible hors ligne';
-
-  @override
-  String offlineDownloadsCount(int count) {
-    return 'Téléchargements · $count';
-  }
-
-  @override
-  String get offlineReadyTag => 'PRÊT HORS LIGNE';
-
-  @override
   String get dailyChallengeLabel => 'Défi du jour';
 
   @override
