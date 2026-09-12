@@ -38,6 +38,35 @@ I can write unilaterally. Grouped by what each one unblocks.
   report-viewer work earlier this session was already tested against. `STORAGES` in
   `config/settings/base.py` falls back to local disk only when `AWS_STORAGE_BUCKET_NAME` is
   unset, so a fresh clone without these credentials still works out of the box.
+- **`GEMINI_API_KEY` / `GROQ_API_KEY` on the live Render staging service, and confirming the
+  `generate-ai-artifacts` cron-job.org job is actually created** (2026-09-12, owner-reported "AI
+  summary still don't work" — live-verified, not assumed): registered a real throwaway account
+  against `https://spekooh-staging.onrender.com` and drove both AI endpoints directly.
+  `POST .../ai/papers/4/chat/` (paper 4 has real `ocr_text`, confirmed by getting *past* the
+  "no extracted text yet" 409 the other test papers hit) returned `503 {"detail":"AI chat is
+  currently unavailable."}` — the exact, only message `apps/ai/providers/groq.py` raises when
+  `self.key` (`settings.GROQ_API_KEY`) is empty, i.e. real, direct evidence this key is unset on
+  staging right now, not a code bug. `GET .../ai/papers/{4,5}/summary/` correctly queued a real
+  `PENDING` artifact (`202`, as designed — `get_or_queue_artifact`) but was **still** `PENDING`
+  after a re-checked ~13-minute wait (fresh token, re-verified, not a stale read) — since a cron
+  run that actually picked up the row and hit a missing `GEMINI_API_KEY` would flip it to
+  `FAILED` (`run_pending_generation` catches `AIError` and saves that), staying `PENDING` this
+  long means the row was never picked up at all in that window: either
+  `generate-ai-artifacts` was never actually created as a cron-job.org job (see
+  `RENDER_STAGING.md` §6 — this is a manual dashboard step outside this repo, easy to have
+  skipped or lost track of), or its schedule is long enough that this wait didn't catch a tick.
+  Both keys are genuinely optional envs (a fresh clone/deploy works with neither set — see
+  `RENDER_STAGING.md`'s own `GEMINI_API_KEY`/`GROQ_API_KEY` rows), which is exactly why this can
+  ship silently broken instead of crashing: nothing anywhere flags "these were never set." All
+  the actual product code for both AI lanes is real and already covered by tests (see items 13/
+  14 below and "Already fully real") — this is a pure ops/credentials gap, not an engineering
+  one. **Action:** get a real key from
+  [Google AI Studio](https://aistudio.google.com/apikey) (Gemini) and
+  [console.groq.com](https://console.groq.com/keys) (Groq), set both as Render env vars, and
+  confirm a `generate-ai-artifacts` job exists at cron-job.org pointed at
+  `.../internal/tasks/generate-ai-artifacts/` (same `X-Task-Token` header as the other four jobs
+  already documented in `RENDER_STAGING.md` §6) — then re-request a summary for a paper with
+  real OCR text and confirm it actually flips to `"status": "ready"` within a few minutes.
 - **Firebase project** — only if real push notifications are wanted (current notifications are
   in-app only, which may be enough for v1 per spec).
 - **App store accounts** — Apple Developer + Google Play Console, once a build is ready to ship.
@@ -244,6 +273,94 @@ I can write unilaterally. Grouped by what each one unblocks.
 - Tests: 4 new backend tests (auth required, creates flag+ticket, duplicate conflicts,
   different users both succeed), 3 new Flutter widget tests (submit, cancel,
   already-reported message).
+
+### 15. "Spekooh Assistant" FAB doesn't work at all — because nothing wires it to anything
+- **Owner-reported (2026-09-12): "the spekooh Assistant don't work at all" — confirmed by
+  reading the actual widget, not assumed.** `app/lib/widgets/ai_assistant_fab.dart`'s
+  `_AIAssistantSheet` (the bottom sheet the gold sparkle FAB opens on every logged-in screen) has
+  exactly **one** `onTap` in the whole file — the FAB itself, opening the sheet. Inside it: the
+  three "suggested prompt" rows are plain `Container`+`Text`, not buttons — no `GestureDetector`/
+  `InkWell`, nothing happens on tap. The `TextField` has no `controller` at all, so whatever's
+  typed isn't even held anywhere. The send `Icon` next to it has no tap handler either. Nothing
+  in this file imports a repository, calls an API, or references `PaperChatView`/
+  `PaperSummaryView` in any way — it is a static, non-interactive mockup that only *looks* like
+  a chat composer.
+- **This is a different, unrelated feature from the real, working AI chat** — `ChatScreen`
+  (`app/lib/screens/papers/chat_screen.dart`, reached from `PaperDetailScreen`'s own "Ask AI"
+  entry point) is fully real: a real `TextEditingController`, `onSubmitted`/a real send button,
+  and it genuinely calls `widget.repository.streamChatMessage(...)` against
+  `PaperChatView`/Groq. That one is scoped to one specific paper's own extracted text — a
+  student picks a paper, then asks about *that paper*. The FAB is a **separate, general-purpose
+  "ask anything" assistant** (per its own prompts — "Explain this physics concept," "Help with
+  maths questions," "Summarize this study guide" — none of which name a specific paper) that was
+  apparently designed but never actually connected to anything real; no backend endpoint in
+  `apps/ai/` is even shaped for a paper-less, general Q&A conversation today (`PaperChatView`
+  requires a paper `pk` and that paper's own `ocr_text` to ground the system prompt against —
+  there's nothing to send a completely general question to).
+- **Real choice to make, not an engineering slam-dunk:** either (a) build a real backend for a
+  general-purpose assistant (a new view/prompt not grounded in any one paper's text — a
+  materially different, ungrounded system prompt with its own abuse/cost surface, since there's
+  no per-paper text to keep it on-topic the way Lane B's chat prompt does today), or (b) point
+  this FAB at the *existing* real chat feature instead (e.g. only show it where a paper's already
+  in context, or have it ask the student to pick one first) rather than building a second AI
+  surface from scratch. Whichever direction, the current state — a fully dead mockup shown to
+  every logged-in user on every tab — should not ship as-is.
+
+### 16. AI summary: real code, real tests, but never confirmed actually working end-to-end on staging
+- **Owner-reported (2026-09-12): "the AI summary still don't work."** Live-verified against the
+  real deployed `spekooh-staging.onrender.com` (not assumed) — see the new "Accounts &
+  credentials" item above for the full evidence: `GROQ_API_KEY` is confirmed unset on staging
+  right now (a live chat request against a paper with real OCR text got the exact error
+  `apps/ai/providers/groq.py` raises only when that key is empty), and a freshly-queued AI
+  summary sat `PENDING` for a re-checked ~13 real minutes without flipping to `READY` or
+  `FAILED` — meaning `generate_pending_artifacts` never actually ran against it in that window,
+  pointing at either a missing/misconfigured `generate-ai-artifacts` cron-job.org job or too
+  long a schedule, not a code bug (the actual generation code, `apps.ai.services
+  .generate_paper_summary`, is real and has real test coverage — see "Already fully real"
+  below). This is the same class of gap as item 14 below (pre-warming) and the French-prompts
+  item 13 — the AI *pipeline* has always been real, but nothing here confirms it has ever
+  actually completed a real summary against the live staging deploy end-to-end, credentials and
+  cron included, rather than just locally/in tests with mocked providers.
+- **Not the same bug as item 15 above** — that's the *client-side* general assistant FAB being
+  entirely unwired; this is the *server-side* per-paper summary pipeline (real client wiring
+  already exists — `PaperDetailScreen`'s summary card genuinely calls `PaperSummaryView`) most
+  likely blocked purely on the missing credentials/cron-job setup, an ops step, not new code.
+
+### 17. Visual polish pass — the app should feel more "alive," without redesigning what's already validated
+- **Owner (2026-09-12): "it's actually sad with unique colors add like a S on the page background
+  and rounded shape but try to make it more and living"** — then, scoping it down in a follow-up
+  the same message thread: **"no need to over saturate the actual design it has already been
+  validated just make it more living for a better user experience... visually attractive without
+  saturating the actual design."** Read together: this is not a request to redesign or introduce
+  a new color scheme — the existing look is explicitly called already-approved — it's a request
+  for tasteful *motion and life* layered onto it, plus a subtle decorative touch (a background
+  "S" mark), stopping well short of visual noise.
+- **The real constraint worth designing against, not guessed:** `app/lib/theme/app_colors.dart`
+  is a genuinely single-hue palette by design — one real interactive color (the gold ramp,
+  `gold50`–`gold700`), a cream `surfaceBg`/white `surfaceCard`, and legacy `blue`/`amber` names
+  that are literal aliases *of* gold, not real distinct colors (`static const blue600 = gold500`,
+  etc., per that file's own top comment: "Spekooh has one primary interactive color (gold), not a
+  separate blue"). Only a handful of true semantic accents exist at all (`green600` success,
+  `red500` error/danger, `purple600` used sparingly) — this is almost certainly what read as
+  "sad"/monochrome, and it's an intentional, already-shipped decision, not an oversight — any fix
+  needs to work *with* that constraint (e.g. leaning on the existing green/purple/red accents for
+  more surfaces than today, rather than inventing new hues) rather than override it.
+- **Not built at all yet, nothing to contradict:** no background "S" watermark/motif exists
+  anywhere in the app today (checked `app/lib/theme/` and the screen backgrounds directly) — a
+  real, from-scratch addition, not a fix. The motion layer is real but thin — a repo-wide check
+  found exactly two implicit-animation usages in the whole app (`AnimatedContainer` inside
+  `SpekoohToggle` and `SpekoohButton`'s own press state), no `Hero`, no `AnimatedSwitcher`/
+  `AnimatedCrossFade` actually in use anywhere else; almost every other screen is built from
+  static `Container`/`Card` widgets. "Living" most likely means extending that same real-but-rare
+  motion pattern much further (card entrances, list items, loading states with real personality
+  instead of a bare spinner) more than a color change, given the palette was just called out as
+  intentionally singular above.
+- **Deliberately not scoped further here** — a change this owner-sensitive (they explicitly
+  distinguish "validated, don't touch" from "needs life") is a real design decision, not
+  something to freelance a specific implementation for sight-unseen; the next step is a concrete
+  design pass (mockup or a small reference set of screens) reviewed with the owner before writing
+  any of it, the same pattern already used for the bottom-nav notch and the contribute-button
+  shape earlier this session (a provided reference image, not an invented interpretation).
 
 ---
 
