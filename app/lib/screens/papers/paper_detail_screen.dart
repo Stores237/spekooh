@@ -417,6 +417,16 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                   // through the same PaperUnlock the marking-guide flow uses.
                   final isReport = detail?.categoryKey == 'reports' || selection?.category.key == ExamCategoryKey.reports;
                   final locked = isReport && (detail?.requiresUnlock ?? false);
+                  // Real bug found live (2026-09-12, alongside the report
+                  // daily-limit fix): _viewBlocked already drove the
+                  // warning banner + "Watch ad" button further down this
+                  // screen, but the "Open scanned paper" button below was
+                  // rendered completely independent of it — a student past
+                  // their daily limit could still open the full file
+                  // anyway. Reports are never subject to this limit at all
+                  // (backend: apps.papers.services.record_paper_view), so
+                  // this only ever applies to real exam papers.
+                  final viewLimitLocked = _viewBlocked && !isReport;
                   final downloadUnlocked = detail?.isUnlocked ?? false;
                   // Exam papers only (owner decision, 2026-08-28): a
                   // separate, smaller purchase from the marking guide —
@@ -463,6 +473,22 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                               )
                             : fileUrl == null
                             ? Text(l10n.noScannedFileYet, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textTertiary))
+                            : viewLimitLocked
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(LucideIcons.lock, size: 28, color: AppColors.textSecondary),
+                                  const SizedBox(height: AppSpacing.space2),
+                                  Text(l10n.paperViewLimitLockedTitle, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                                  const SizedBox(height: 4),
+                                  // The full explanation + the real "Watch
+                                  // ad"/upgrade action live in the banner
+                                  // further down this screen — this is
+                                  // deliberately just the locked state,
+                                  // not a second copy of that CTA.
+                                  Text(l10n.paywallBlockedMessage, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                ],
+                              )
                             : Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [

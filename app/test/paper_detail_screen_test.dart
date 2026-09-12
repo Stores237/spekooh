@@ -64,6 +64,35 @@ class _PaywalledPapersRepository implements PapersRepository {
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by PaperDetailScreen tests');
 }
 
+/// Same paywalled-view shape as [_PaywalledPapersRepository] above, but
+/// with a real fileUrl on the resolved detail — needed to reach the "Open
+/// scanned paper" button's own gating at all ([_entry] above has none, so
+/// exercises a "no file yet" state instead).
+class _PaywalledWithFileRepository implements PapersRepository {
+  _PaywalledWithFileRepository({this.categoryKey});
+  final String? categoryKey;
+
+  @override
+  Future<PaperEntry> getPaperDetail(int paperId) async => PaperEntry(
+        id: paperId,
+        year: 2025,
+        system: null,
+        track: '',
+        status: 'PUBLISHED',
+        fileUrl: 'https://cdn.example.com/blocked-paper.pdf',
+        createdAt: DateTime(2025, 1, 1),
+        subjectTitle: 'Mathematics',
+        examTypeName: 'GCE O Level',
+        categoryKey: categoryKey,
+      );
+
+  @override
+  Future<void> recordView(int paperId) async => throw const PaywallException();
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName} not used by view-limit-lock tests');
+}
+
 /// Returns whichever [PaperEntry] it's given from getPaperDetail — the
 /// save-offline UI reads `fileUrl` off the resolved detail, not the
 /// synchronous paperEntry the screen opens with, so tests exercising it
@@ -182,6 +211,43 @@ void main() {
     expect(repository.adWatchCalls, 0);
     expect(find.textContaining('Daily free view limit reached'), findsOneWidget);
     expect(find.text('Ad not completed. No view granted.'), findsOneWidget);
+  });
+
+  group('the daily view limit actually blocks opening the file, not just a banner', () {
+    // Owner-reported (2026-09-12): the restrict-viewing function had to be
+    // "clearly applied" once the limit is reached — found live that the
+    // "Open scanned paper" button rendered completely independent of
+    // _viewBlocked, so a student past their daily limit could still open
+    // the full file anyway; only a banner further down the screen (not
+    // gating anything) told them they'd hit it.
+    testWidgets('a blocked exam paper shows the locked state instead of a working Open button', (tester) async {
+      final repository = _PaywalledWithFileRepository();
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: _entry, repository: repository, adController: _FakeRewardedAdController(grantsReward: true)),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Open scanned paper'), findsNothing);
+      expect(find.text('Daily view limit reached'), findsOneWidget);
+      // The real unblock action still lives in the banner further down —
+      // this locked card isn't a dead end.
+      expect(find.text('Watch ad for +1 view'), findsOneWidget);
+    });
+
+    testWidgets('a blocked report is never shown the exam-paper locked state — reports aren\'t subject to this limit at all', (tester) async {
+      final repository = _PaywalledWithFileRepository(categoryKey: 'reports');
+      await tester.pumpWidget(l10nTestApp(
+        PaperDetailScreen(paperEntry: _entry, repository: repository, adController: _FakeRewardedAdController(grantsReward: true)),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // The real button still renders — a report's own view isn't gated
+      // by _viewBlocked, per apps.papers.services.record_paper_view.
+      expect(find.text('View'), findsOneWidget);
+      expect(find.text('Daily view limit reached'), findsNothing);
+    });
   });
 
   testWidgets('reporting a paper picks a reason and submits it for real', (tester) async {

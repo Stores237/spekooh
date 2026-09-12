@@ -38,35 +38,18 @@ I can write unilaterally. Grouped by what each one unblocks.
   report-viewer work earlier this session was already tested against. `STORAGES` in
   `config/settings/base.py` falls back to local disk only when `AWS_STORAGE_BUCKET_NAME` is
   unset, so a fresh clone without these credentials still works out of the box.
-- **`GEMINI_API_KEY` / `GROQ_API_KEY` on the live Render staging service, and confirming the
-  `generate-ai-artifacts` cron-job.org job is actually created** (2026-09-12, owner-reported "AI
-  summary still don't work" — live-verified, not assumed): registered a real throwaway account
-  against `https://spekooh-staging.onrender.com` and drove both AI endpoints directly.
-  `POST .../ai/papers/4/chat/` (paper 4 has real `ocr_text`, confirmed by getting *past* the
-  "no extracted text yet" 409 the other test papers hit) returned `503 {"detail":"AI chat is
-  currently unavailable."}` — the exact, only message `apps/ai/providers/groq.py` raises when
-  `self.key` (`settings.GROQ_API_KEY`) is empty, i.e. real, direct evidence this key is unset on
-  staging right now, not a code bug. `GET .../ai/papers/{4,5}/summary/` correctly queued a real
-  `PENDING` artifact (`202`, as designed — `get_or_queue_artifact`) but was **still** `PENDING`
-  after a re-checked ~13-minute wait (fresh token, re-verified, not a stale read) — since a cron
-  run that actually picked up the row and hit a missing `GEMINI_API_KEY` would flip it to
-  `FAILED` (`run_pending_generation` catches `AIError` and saves that), staying `PENDING` this
-  long means the row was never picked up at all in that window: either
-  `generate-ai-artifacts` was never actually created as a cron-job.org job (see
-  `RENDER_STAGING.md` §6 — this is a manual dashboard step outside this repo, easy to have
-  skipped or lost track of), or its schedule is long enough that this wait didn't catch a tick.
-  Both keys are genuinely optional envs (a fresh clone/deploy works with neither set — see
-  `RENDER_STAGING.md`'s own `GEMINI_API_KEY`/`GROQ_API_KEY` rows), which is exactly why this can
-  ship silently broken instead of crashing: nothing anywhere flags "these were never set." All
-  the actual product code for both AI lanes is real and already covered by tests (see items 13/
-  14 below and "Already fully real") — this is a pure ops/credentials gap, not an engineering
-  one. **Action:** get a real key from
-  [Google AI Studio](https://aistudio.google.com/apikey) (Gemini) and
-  [console.groq.com](https://console.groq.com/keys) (Groq), set both as Render env vars, and
-  confirm a `generate-ai-artifacts` job exists at cron-job.org pointed at
-  `.../internal/tasks/generate-ai-artifacts/` (same `X-Task-Token` header as the other four jobs
-  already documented in `RENDER_STAGING.md` §6) — then re-request a summary for a paper with
-  real OCR text and confirm it actually flips to `"status": "ready"` within a few minutes.
+- ~~**`GEMINI_API_KEY` / `GROQ_API_KEY` on the live Render staging service**~~ — resolved
+  (2026-09-12). Both were initially saved on Render under the wrong env var names (owner action);
+  renamed to the exact names `django-environ` reads. The `generate-ai-artifacts` cron-job.org job
+  was confirmed reachable via a manual "run now" (real 200) — it had simply never ticked yet, not
+  a token/URL problem. Once actually reachable, `generate_pending_artifacts`'s own existing
+  failure logging surfaced a real, live Gemini model deprecation (`gemini-2.5-flash` → use
+  `gemini-3.6-flash`, fixed in #115) — summaries for a paper with real OCR text now generate for
+  real. `GROQ_API_KEY` still 503s on chat as of this writing; #115 also added the server-side
+  logging (`logger.warning`) that was missing for every `AIError` branch, specifically so the
+  *next* chat attempt reveals Groq's own real error (bad key, a similarly deprecated model,
+  whatever it is) instead of staying an unexplained generic "unavailable" — that's the immediate
+  next thing to check once #115 is deployed and a chat request is retried.
 - **Firebase project** — only if real push notifications are wanted (current notifications are
   in-app only, which may be enough for v1 per spec).
 - **App store accounts** — Apple Developer + Google Play Console, once a build is ready to ship.
@@ -274,57 +257,47 @@ I can write unilaterally. Grouped by what each one unblocks.
   different users both succeed), 3 new Flutter widget tests (submit, cancel,
   already-reported message).
 
-### 15. "Spekooh Assistant" FAB doesn't work at all — because nothing wires it to anything
+### 15. ~~"Spekooh Assistant" FAB doesn't work at all~~ — done
 - **Owner-reported (2026-09-12): "the spekooh Assistant don't work at all" — confirmed by
   reading the actual widget, not assumed.** `app/lib/widgets/ai_assistant_fab.dart`'s
-  `_AIAssistantSheet` (the bottom sheet the gold sparkle FAB opens on every logged-in screen) has
+  `_AIAssistantSheet` (the bottom sheet the gold sparkle FAB opened on every logged-in screen) had
   exactly **one** `onTap` in the whole file — the FAB itself, opening the sheet. Inside it: the
-  three "suggested prompt" rows are plain `Container`+`Text`, not buttons — no `GestureDetector`/
-  `InkWell`, nothing happens on tap. The `TextField` has no `controller` at all, so whatever's
-  typed isn't even held anywhere. The send `Icon` next to it has no tap handler either. Nothing
-  in this file imports a repository, calls an API, or references `PaperChatView`/
-  `PaperSummaryView` in any way — it is a static, non-interactive mockup that only *looks* like
-  a chat composer.
-- **This is a different, unrelated feature from the real, working AI chat** — `ChatScreen`
-  (`app/lib/screens/papers/chat_screen.dart`, reached from `PaperDetailScreen`'s own "Ask AI"
-  entry point) is fully real: a real `TextEditingController`, `onSubmitted`/a real send button,
-  and it genuinely calls `widget.repository.streamChatMessage(...)` against
-  `PaperChatView`/Groq. That one is scoped to one specific paper's own extracted text — a
-  student picks a paper, then asks about *that paper*. The FAB is a **separate, general-purpose
-  "ask anything" assistant** (per its own prompts — "Explain this physics concept," "Help with
-  maths questions," "Summarize this study guide" — none of which name a specific paper) that was
-  apparently designed but never actually connected to anything real; no backend endpoint in
-  `apps/ai/` is even shaped for a paper-less, general Q&A conversation today (`PaperChatView`
-  requires a paper `pk` and that paper's own `ocr_text` to ground the system prompt against —
-  there's nothing to send a completely general question to).
-- **Real choice to make, not an engineering slam-dunk:** either (a) build a real backend for a
-  general-purpose assistant (a new view/prompt not grounded in any one paper's text — a
-  materially different, ungrounded system prompt with its own abuse/cost surface, since there's
-  no per-paper text to keep it on-topic the way Lane B's chat prompt does today), or (b) point
-  this FAB at the *existing* real chat feature instead (e.g. only show it where a paper's already
-  in context, or have it ask the student to pick one first) rather than building a second AI
-  surface from scratch. Whichever direction, the current state — a fully dead mockup shown to
-  every logged-in user on every tab — should not ship as-is.
+  three "suggested prompt" rows were plain `Container`+`Text`, not buttons; the `TextField` had no
+  `controller` at all; the send `Icon` had no tap handler either. Nothing in the file imported a
+  repository or called an API — a static, non-interactive mockup that only *looked* like a chat
+  composer.
+- **Owner decision, same day, after this was found and root-caused:** build a real general-purpose
+  backend (not redirect to the existing per-paper chat) — "concentrate only on the Chat assistant
+  mainly," and downgrade AI summary to P1 in the meantime (see item 16 under P1).
+- **Backend:** new `AssistantChatView` (`POST /api/ai/assistant/chat/`, `apps/ai/views.py`) —
+  same real-accounts-only gate, streaming/non-streaming content negotiation, and Groq plumbing as
+  `PaperChatView`, but genuinely ungrounded: no paper lookup, no OCR-readiness check, no paywall
+  check. New `apps.ai.prompts.assistant.SYSTEM_ASSISTANT` (a Kawlo study-assistant persona, not
+  tied to any one document) and `send_assistant_message`/`stream_assistant_message` in
+  `apps/ai/services.py`. Deliberately shares the exact same per-user daily quota bucket as the
+  per-paper chat (`apps.ai.quota.consume_chat_quota` keys only on the user's own pk, not the
+  endpoint) — one "Lane B chat" allowance across both surfaces, not a second pool to juggle or
+  double the effective free quota.
+- **Client:** the FAB now pushes a real, full-screen `AssistantChatScreen`
+  (`app/lib/screens/assistant/assistant_chat_screen.dart`) — a full screen, not the old cramped
+  sheet, since a real growing conversation needs room the same way `ChatScreen` already gets one.
+  Real streaming, real quota display/upgrade banner, tappable suggested prompts that actually send
+  (not dead text) via a new `AssistantRepository`/`HttpAssistantRepository`
+  (`app/lib/data/repositories/assistant_repository.dart` + `http/http_assistant_repository.dart`),
+  registered in `RepositoryLocator`. One suggested prompt ("Summarize this paper's marking guide")
+  was replaced ("Help me plan a study schedule") — it referenced "this paper," which makes no
+  sense for a conversation with no paper in it at all.
+- Tests: 14 new backend tests (`TestAssistantChatView`/`TestAssistantChatViewStreaming`) covering
+  the same gates as `PaperChatView`'s own suite plus an explicit shared-quota-bucket regression
+  test, and 10 new/rewritten Flutter tests (`assistant_chat_screen_test.dart`,
+  `ai_assistant_fab_test.dart`) proving the FAB now opens a real, working screen that genuinely
+  streams a reply — not just that static text renders.
 
-### 16. AI summary: real code, real tests, but never confirmed actually working end-to-end on staging
-- **Owner-reported (2026-09-12): "the AI summary still don't work."** Live-verified against the
-  real deployed `spekooh-staging.onrender.com` (not assumed) — see the new "Accounts &
-  credentials" item above for the full evidence: `GROQ_API_KEY` is confirmed unset on staging
-  right now (a live chat request against a paper with real OCR text got the exact error
-  `apps/ai/providers/groq.py` raises only when that key is empty), and a freshly-queued AI
-  summary sat `PENDING` for a re-checked ~13 real minutes without flipping to `READY` or
-  `FAILED` — meaning `generate_pending_artifacts` never actually ran against it in that window,
-  pointing at either a missing/misconfigured `generate-ai-artifacts` cron-job.org job or too
-  long a schedule, not a code bug (the actual generation code, `apps.ai.services
-  .generate_paper_summary`, is real and has real test coverage — see "Already fully real"
-  below). This is the same class of gap as item 14 below (pre-warming) and the French-prompts
-  item 13 — the AI *pipeline* has always been real, but nothing here confirms it has ever
-  actually completed a real summary against the live staging deploy end-to-end, credentials and
-  cron included, rather than just locally/in tests with mocked providers.
-- **Not the same bug as item 15 above** — that's the *client-side* general assistant FAB being
-  entirely unwired; this is the *server-side* per-paper summary pipeline (real client wiring
-  already exists — `PaperDetailScreen`'s summary card genuinely calls `PaperSummaryView`) most
-  likely blocked purely on the missing credentials/cron-job setup, an ops step, not new code.
+### 16. ~~AI summary~~ — **owner decision (2026-09-12): downgraded to P1, out of MVP scope for now**
+- See item 16 under P1 below for the live status (real root cause found and fixed — a deprecated
+  Gemini model name — mid-diagnosis of this exact item). Owner: focus only on the chat assistant
+  for now, not summary. Kept fixed (no reason to leave a known bug in place), just no longer a
+  release blocker on its own.
 
 ### 17. Visual polish pass — the app should feel more "alive," without redesigning what's already validated
 - **Owner (2026-09-12): "it's actually sad with unique colors add like a S on the page background
@@ -355,12 +328,22 @@ I can write unilaterally. Grouped by what each one unblocks.
   motion pattern much further (card entrances, list items, loading states with real personality
   instead of a bare spinner) more than a color change, given the palette was just called out as
   intentionally singular above.
-- **Deliberately not scoped further here** — a change this owner-sensitive (they explicitly
-  distinguish "validated, don't touch" from "needs life") is a real design decision, not
-  something to freelance a specific implementation for sight-unseen; the next step is a concrete
-  design pass (mockup or a small reference set of screens) reviewed with the owner before writing
-  any of it, the same pattern already used for the bottom-nav notch and the contribute-button
-  shape earlier this session (a provided reference image, not an invented interpretation).
+- **First real step taken, same day, once a concrete reference arrived** — owner provided two
+  images: a real West African textile border pattern (interlocking rope rows, alternating
+  triangles/diamonds, a dotted row, in its own red/cream/gold palette), and a mockup of a
+  simplified version applied to this app's own splash screen. Explicit scoping alongside it:
+  "less presence... just a representation of the african [heritage]... don't make it be like a
+  parasite on the app... modern life moderate and with very less presence not aggressive." Built
+  `HeritagePatternStrip` (`app/lib/widgets/heritage_pattern_strip.dart`) — deliberately **not** a
+  literal reproduction of the busy four-row reference: one simplified motif (a small diamond with
+  a center dot, the quietest of the four rows), rendered in this app's own existing gold tones
+  (not the reference's own reds/creams, which would clash rather than belong), at 16% opacity by
+  default. Wired into `SplashScreen` only, as a thin strip near the bottom — matching the
+  reference mockup's own placement, not rolled out to other screens yet. Not yet visually
+  confirmed on a real device (same caveat as the bottom-nav notch) — this is a first, deliberately
+  restrained pass for the owner to react to, not a final placement/scale decision.
+- **Still open:** the motion/"living" half of the original ask (see the motion-layer note above)
+  — this pass only addressed the decorative-pattern half.
 
 ---
 
@@ -506,6 +489,22 @@ I can write unilaterally. Grouped by what each one unblocks.
   tests (code returned on register, valid code sets `referred_by`, invalid code 400s), 2 new
   Flutter widget tests (code included when given, omitted — not sent empty — when not), plus
   the existing Profile smoke test updated for the second real "Share" action now on the page.
+
+### 16. AI summary: real code, real bug found and fixed, deprioritized out of MVP by the owner
+- **Owner-reported (2026-09-12): "the AI summary still don't work."** Live-verified end-to-end
+  against the real deployed `spekooh-staging.onrender.com` (not assumed): `GEMINI_API_KEY`/
+  `GROQ_API_KEY` were initially set under the wrong env var names on Render (fixed same day —
+  see "Accounts & credentials" above), and once the `generate-ai-artifacts` cron was confirmed
+  reachable (a manual cron-job.org test run returned 200), its own existing per-artifact failure
+  logging surfaced the real cause: `gemini 404: "This model models/gemini-2.5-flash is no longer
+  available to new users... use models/gemini-3.6-flash"`. `AI_MODELS['gemini_primary']`'s
+  default was a live external model name Google deprecated after this default was set — fixed,
+  bumped to `gemini-3.6-flash`.
+- **Owner decision, same day, after the fix landed:** "advance that to put the AI summary at the
+  P1 not the MVP for now... we have to concentrate only on the Chat assistant mainly." Real bug,
+  found and fixed regardless (see the Gemini fix above and PR #115) — just no longer a P0
+  release blocker on its own. The chat assistant (item 15 above) is the sole active AI priority
+  now.
 
 ### 13. French AI prompts (Lane A summaries + Lane B chat)
 - **Idea:** both `apps.ai.prompts.summarise.SYSTEM` (paper summaries, Gemini) and
@@ -1055,6 +1054,50 @@ Same day, a further round of functional-mismatch fixes from more live screenshot
   the notch algorithm the button's real, already-correct position instead of moving the button to
   match an idealized assumption. This one hasn't been visually confirmed on a real device yet —
   the actual curve shape is this session's best-effort geometric read of a hand-drawn reference.
+
+---
+
+## Recently shipped (2026-09-12)
+
+- **Bottom-nav notch: shadow removed, then real transparency, then a real dead-space regression
+  fixed** (#110–#113): the notch's cut-out gap around the contribute button first lost a leftover
+  navy-blue `boxShadow` tint (#110). A first attempt at "we could see what is behind" used
+  `Scaffold(extendBody: true)` plus a manual compensating `Padding` (#111) — that manual padding
+  double-counted against the automatic inset `extendBody` already feeds every tab's own bare
+  `SafeArea()` via `MediaQuery`, producing a real ~150px dead-space gap above the bar on Home
+  (owner screenshot: "it's horrible"). Reverted (#112), then reshipped correctly (#113):
+  `extendBody: true` alone, no manual padding — verified with a widget test measuring the exact
+  pixel gap between scrolled-to-bottom content and the bar (0.0px), and by deliberately
+  reintroducing the old double-padding in the test first to confirm it would have been caught.
+- **Gemini model deprecation, found live via the AI summary pipeline** (#115): once
+  `GEMINI_API_KEY`/`GROQ_API_KEY` were corrected to their real env var names on Render (owner
+  action), `generate_pending_artifacts`'s own existing failure logging surfaced Google's real
+  error — `gemini-2.5-flash` had been deprecated in favor of `gemini-3.6-flash`. Fixed the
+  default model; also found and fixed a related gap — every `AIError` in `PaperChatView`
+  (and `_sse_chat_stream`) only ever became a clean client response with nothing logged
+  server-side, making a real failure indistinguishable from any other cause without shell/DB
+  access the free Render tier doesn't have. Added `logger.warning` at each site.
+- **A real "Spekooh Assistant"** — see item 15 above (now marked done) for the full build:
+  a new, genuinely ungrounded `AssistantChatView`/`AssistantChatScreen`, sharing the per-paper
+  chat's exact same daily quota bucket, replacing a fully static, non-functional mockup.
+- **Daily free-view paywall was wrongly gating Academic Reports, including free-tier ones like
+  HND** (owner-reported live: "present on the HND report view which i think shouldn't be"):
+  `apps.papers.services.record_paper_view` enforces spec §5.3's "3 free question papers per day,
+  then watch an ad or upgrade" — written before Academic Reports existed as a category, and never
+  updated to exclude them once they were added. A report already has its own, entirely separate
+  payment gate (`user_can_view_file`/`report_download_is_free`); this ad-monetized, exam-paper-
+  specific counter was never meant to apply to it at all. Fixed: reports (`category.key ==
+  "reports"`) now skip this limit entirely, at any tier. Also found and fixed a real client-side
+  enforcement gap while investigating (owner: "the function to restrict viewing...should be
+  clearly applied with a notification"): `PaperDetailScreen`'s "Open scanned paper" button
+  rendered completely independent of `_viewBlocked` — a student past their daily limit could
+  still open the full file, with the "you're blocked" banner sitting uselessly below a fully
+  working button. The button is now replaced by a real locked state (icon + "Daily view limit
+  reached") whenever `_viewBlocked` is true for an actual exam paper; the existing banner +
+  "Watch ad" button remain as the one real way through. Tests: 2 new backend (service-level +
+  full HTTP `view` action, confirming an HND report is never blocked regardless of view count),
+  2 new Flutter (the locked state replaces the button for a blocked exam paper; a report is never
+  shown it at all, even if `_viewBlocked` were somehow true).
 
 ---
 

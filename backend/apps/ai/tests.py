@@ -672,3 +672,206 @@ class TestPaperChatViewStreaming:
             f"/api/ai/papers/{paper.pk}/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json", HTTP_ACCEPT="text/event-stream"
         )
         assert response.status_code == 403
+
+
+class TestAssistantChatView:
+    """The "Spekooh Assistant" general-purpose endpoint (2026-09-12) —
+    same real-accounts-only gate and quota/budget machinery as
+    TestPaperChatView above, but with no paper at all: no paywall check,
+    no OCR-readiness check, no per-paper 404. Only what's actually
+    different from PaperChatView is covered here in depth; the shared
+    quota-bucket claim gets its own explicit test."""
+
+    @pytest.mark.django_db
+    def test_an_unauthenticated_request_is_rejected(self, api_client):
+        response = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+        assert response.status_code in (401, 403)
+
+    @pytest.mark.django_db
+    def test_a_guest_account_is_rejected_too(self, api_client):
+        from apps.accounts.models import User
+
+        guest = User.objects.create_guest(name="Assistant Guest")
+        api_client.force_authenticate(user=guest)
+        response = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+        assert response.status_code == 403
+
+    @pytest.mark.django_db
+    def test_malformed_messages_are_a_400_before_ever_touching_groq(self, api_client):
+        user = UserFactory()
+        api_client.force_authenticate(user=user)
+        with mock.patch("apps.ai.services.GroqProvider.chat") as mocked_chat:
+            response = api_client.post("/api/ai/assistant/chat/", {"messages": []}, format="json")
+        assert response.status_code == 400
+        mocked_chat.assert_not_called()
+
+    @pytest.mark.django_db
+    def test_a_free_user_gets_a_real_reply_and_a_shrinking_quota(self, api_client):
+        user = UserFactory()
+        api_client.force_authenticate(user=user)
+        with override_settings(AI_CHAT_DAILY_LIMIT=2), mock.patch(
+            "apps.ai.services.GroqProvider.chat", return_value=AIResult(text="A real reply.", model="llama-3.3-70b-versatile")
+        ):
+            first = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+            second = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi again"}]}, format="json")
+            third = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "one more"}]}, format="json")
+
+        assert first.status_code == 200
+        assert first.data["content"] == "A real reply."
+        assert first.data["quota_remaining"] == 1
+        assert second.status_code == 200
+        assert second.data["quota_remaining"] == 0
+        assert third.status_code == 429
+        assert third.data["upgrade_required"] is True
+
+    @pytest.mark.django_db
+    def test_shares_the_same_daily_quota_bucket_as_the_per_paper_chat_not_a_separate_pool(self, api_client):
+        """apps.ai.quota.consume_chat_quota keys purely off the user's own
+        pk, not which endpoint called it — one "Lane B chat" allowance
+        across PaperChatView and AssistantChatView, by design (see
+        AssistantChatView's own docstring)."""
+        user = UserFactory()
+        paper = _published_paper()
+        api_client.force_authenticate(user=user)
+        with override_settings(AI_CHAT_DAILY_LIMIT=2), mock.patch(
+            "apps.ai.services.GroqProvider.chat", return_value=AIResult(text="A real reply.", model="llama-3.3-70b-versatile")
+        ):
+            first = api_client.post(f"/api/ai/papers/{paper.pk}/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+            second = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+            third = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+
+        assert first.status_code == 200
+        assert first.data["quota_remaining"] == 1
+        assert second.status_code == 200
+        assert second.data["quota_remaining"] == 0
+        assert third.status_code == 429
+
+    @pytest.mark.django_db
+    def test_a_pro_subscriber_is_never_quota_blocked(self, api_client):
+        user = UserFactory()
+        SubscriptionFactory(user=user)
+        api_client.force_authenticate(user=user)
+        with override_settings(AI_CHAT_DAILY_LIMIT=1), mock.patch(
+            "apps.ai.services.GroqProvider.chat", return_value=AIResult(text="A real reply.", model="llama-3.3-70b-versatile")
+        ):
+            responses = [
+                api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": f"question {i}"}]}, format="json")
+                for i in range(3)
+            ]
+
+        assert all(r.status_code == 200 for r in responses)
+        assert all(r.data["quota_remaining"] is None for r in responses)
+
+    @pytest.mark.django_db
+    def test_an_exhausted_provider_budget_is_a_503_not_a_charge_against_the_users_own_quota(self, api_client):
+        user = UserFactory()
+        api_client.force_authenticate(user=user)
+        with mock.patch("apps.ai.views.consume_provider_budget", return_value=False), mock.patch("apps.ai.services.GroqProvider.chat") as mocked_chat:
+            response = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+        assert response.status_code == 503
+        mocked_chat.assert_not_called()
+
+    @pytest.mark.django_db
+    def test_a_provider_refusal_is_a_real_200_with_an_honest_canned_reply_about_schoolwork_not_a_paper(self, api_client):
+        user = UserFactory()
+        api_client.force_authenticate(user=user)
+        with mock.patch("apps.ai.services.GroqProvider.chat", side_effect=AIRefused("safety block")):
+            response = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+        assert response.status_code == 200
+        assert "can't help" in response.data["content"]
+        assert "schoolwork" in response.data["content"]  # not "this paper" — there's no paper here
+
+    @pytest.mark.django_db
+    def test_a_provider_rate_limit_is_a_503_not_a_500(self, api_client):
+        user = UserFactory()
+        api_client.force_authenticate(user=user)
+        with mock.patch("apps.ai.services.GroqProvider.chat", side_effect=AIRateLimited("groq 429")):
+            response = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+        assert response.status_code == 503
+
+    @pytest.mark.django_db
+    def test_ai_chat_enabled_false_is_a_real_kill_switch(self, api_client):
+        user = UserFactory()
+        api_client.force_authenticate(user=user)
+        with override_settings(AI_ENABLED=True, AI_CHAT_ENABLED=False):
+            response = api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+        assert response.status_code == 503
+
+    @pytest.mark.django_db
+    def test_the_real_call_never_receives_a_paper_specific_system_prompt(self, api_client):
+        """Regression guard: AssistantChatView must not accidentally reuse
+        chat_prompts.SYSTEM_CHAT (which literally says "one specific past
+        examination paper") — that would leak paper-chat framing into a
+        conversation that has no paper at all."""
+        user = UserFactory()
+        api_client.force_authenticate(user=user)
+        with mock.patch("apps.ai.services.GroqProvider.chat", return_value=AIResult(text="ok", model="m")) as mocked_chat:
+            api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
+        system_prompt = mocked_chat.call_args.kwargs["system"]
+        assert "past examination paper" not in system_prompt
+        assert "Kawlo" in system_prompt
+
+
+class TestAssistantChatViewStreaming:
+    @pytest.mark.django_db
+    def test_a_real_stream_sends_progressive_deltas_then_a_done_frame_with_quota(self, api_client):
+        user = UserFactory()
+        api_client.force_authenticate(user=user)
+        with override_settings(AI_CHAT_DAILY_LIMIT=5), mock.patch(
+            "apps.ai.services.GroqProvider.chat_stream", return_value=_fake_groq_sse(_delta_chunk("Hello"), _delta_chunk(" there."))
+        ):
+            response = api_client.post(
+                "/api/ai/assistant/chat/",
+                {"messages": [{"role": "user", "content": "hi"}]},
+                format="json",
+                HTTP_ACCEPT="text/event-stream",
+            )
+        assert response.status_code == 200
+        assert response["Content-Type"] == "text/event-stream"
+        assert _sse_events(response) == [
+            {"delta": "Hello"},
+            {"delta": " there."},
+            {"done": True, "quota_remaining": 4},
+        ]
+
+    @pytest.mark.django_db
+    def test_a_mid_stream_content_filter_uses_the_assistants_own_refusal_message(self, api_client):
+        user = UserFactory()
+        api_client.force_authenticate(user=user)
+        chunks = [_delta_chunk("Sure, "), {"choices": [{"delta": {}, "finish_reason": "content_filter"}]}]
+        with mock.patch("apps.ai.services.GroqProvider.chat_stream", return_value=_fake_groq_sse(*chunks, done=False)):
+            response = api_client.post(
+                "/api/ai/assistant/chat/",
+                {"messages": [{"role": "user", "content": "hi"}]},
+                format="json",
+                HTTP_ACCEPT="text/event-stream",
+            )
+        events = _sse_events(response)
+        assert events[0] == {"delta": "Sure, "}
+        assert "schoolwork" in events[1]["delta"]
+        assert events[2]["done"] is True
+
+    @pytest.mark.django_db
+    def test_a_pre_stream_429_is_still_a_normal_503_not_an_sse_body(self, api_client):
+        user = UserFactory()
+        api_client.force_authenticate(user=user)
+        with mock.patch("apps.ai.services.GroqProvider.chat_stream", side_effect=AIRateLimited("groq 429")):
+            response = api_client.post(
+                "/api/ai/assistant/chat/",
+                {"messages": [{"role": "user", "content": "hi"}]},
+                format="json",
+                HTTP_ACCEPT="text/event-stream",
+            )
+        assert response.status_code == 503
+        assert response["Content-Type"] != "text/event-stream"
+
+    @pytest.mark.django_db
+    def test_streaming_requires_the_same_real_account_as_non_streaming(self, api_client):
+        from apps.accounts.models import User
+
+        guest = User.objects.create_guest(name="Assistant Stream Guest")
+        api_client.force_authenticate(user=guest)
+        response = api_client.post(
+            "/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json", HTTP_ACCEPT="text/event-stream"
+        )
+        assert response.status_code == 403

@@ -5,6 +5,7 @@ from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
 
 from .models import ArtifactKind, ArtifactStatus, GeneratedArtifact
+from .prompts import assistant as assistant_prompts
 from .prompts import chat as chat_prompts
 from .prompts import summarise
 from .providers.base import AIError, AIResult, AIUnavailable
@@ -152,4 +153,30 @@ def stream_chat_message(*, paper, messages: list[dict]):
     system = chat_prompts.SYSTEM_CHAT["en"].format(ocr_text=text)
     provider = GroqProvider()
     response = provider.chat_stream(system=system, messages=messages)
+    return provider.iter_stream_deltas(response)
+
+
+# --- The "Spekooh Assistant" general-purpose counterpart to the two
+# functions above (2026-09-12) — same Lane B, same GroqProvider, but not
+# grounded in any one paper's text (see prompts/assistant.py's own note,
+# and apps.ai.views.AssistantChatView vs PaperChatView for the split).
+# Real bug this replaces: the "Spekooh Assistant" FAB shown throughout the
+# app (app/lib/widgets/ai_assistant_fab.dart) was a fully static mockup —
+# owner-reported "the spekooh Assistant don't work at all," confirmed by
+# reading the widget itself before this existed (TODOS.md #15).
+
+
+def send_assistant_message(*, messages: list[dict]) -> AIResult:
+    """The assistant's one Groq call — send_chat_message's ungrounded
+    twin. No `paper` parameter at all; there is nothing to truncate/format
+    into the system prompt here."""
+    return GroqProvider().chat(system=assistant_prompts.SYSTEM_ASSISTANT["en"], messages=messages)
+
+
+def stream_assistant_message(*, messages: list[dict]):
+    """Streaming counterpart to send_assistant_message — stream_chat_message's
+    ungrounded twin, same reasoning as that function's own docstring for
+    why this returns a generator rather than one final AIResult."""
+    provider = GroqProvider()
+    response = provider.chat_stream(system=assistant_prompts.SYSTEM_ASSISTANT["en"], messages=messages)
     return provider.iter_stream_deltas(response)

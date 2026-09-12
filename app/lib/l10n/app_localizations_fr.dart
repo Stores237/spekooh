@@ -1232,6 +1232,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Les thèses de Master et de Doctorat nécessitent un paiement pour être consultées. Débloquez ci-dessous pour la lire.';
 
   @override
+  String get paperViewLimitLockedTitle =>
+      'Limite de consultation quotidienne atteinte';
+
+  @override
   String get unlockToDownloadHint =>
       'Débloquez ci-dessous pour enregistrer une copie hors ligne.';
 
@@ -1458,11 +1462,15 @@ class AppLocalizationsFr extends AppLocalizations {
       'Donne-moi 5 questions d\'entraînement en Maths';
 
   @override
-  String get aiPromptSummarizeGuide => 'Résume le corrigé de cette épreuve';
+  String get aiPromptStudyPlan => 'Aide-moi à planifier mes révisions';
 
   @override
   String get aiAssistantInputHint =>
       'Posez une question sur un sujet ou une épreuve...';
+
+  @override
+  String get aiAssistantEmptyStateHint =>
+      'Posez-moi n\'importe quelle question sur vos études. Je peux expliquer une notion, vous aider à vous entraîner, ou vous indiquer quoi réviser ensuite.';
 
   @override
   String get submissionRejectedTitle => 'Soumission non acceptée';

@@ -755,6 +755,43 @@ def test_pro_subscriber_has_unlimited_views():
 
 
 @pytest.mark.django_db
+def test_academic_reports_are_never_subject_to_the_daily_view_limit():
+    """Real bug, owner-reported live (2026-09-12): "present on the HND
+    report view which i think shouldn't be". Spec §5.3's daily 3-free-
+    views/ad-gate mechanic is scoped to question papers ("non-subscribed
+    users can view 3 question papers per day") — reports didn't exist yet
+    when this was specced, have their own entirely separate payment gate
+    (user_can_view_file/report_download_is_free), and were never meant to
+    be swept into this exam-paper-specific, ad-monetized limit."""
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_exam_type = ExamTypeFactory(category=reports_category, system="", name="HND Report", requires_payment_to_view=False)
+    user = UserFactory()
+    report = PaperSubmissionFactory(category=reports_category, exam_type=report_exam_type)
+
+    # Well past DAILY_FREE_VIEWS and with no ad watch at all — a real
+    # exam paper would be blocked by now (see the sibling test above).
+    for _ in range(DAILY_FREE_VIEWS + 5):
+        record_paper_view(user=user, paper_submission=report)
+
+    assert PaperViewLog.objects.filter(user=user).count() == DAILY_FREE_VIEWS + 5
+
+
+@pytest.mark.django_db
+def test_view_endpoint_never_blocks_an_hnd_report_end_to_end(api_client):
+    """Same fix as the test above, exercised through the real HTTP view
+    action rather than the service function directly."""
+    reports_category = ExamCategoryFactory(key="reports", requires_system=False)
+    report_exam_type = ExamTypeFactory(category=reports_category, system="", name="HND Report", requires_payment_to_view=False)
+    user = UserFactory()
+    report = PaperSubmissionFactory(category=reports_category, exam_type=report_exam_type, status=PaperStatus.PUBLISHED)
+    api_client.force_authenticate(user=user)
+
+    responses = [api_client.post(f"/api/papers/submissions/{report.id}/view/") for _ in range(DAILY_FREE_VIEWS + 3)]
+
+    assert all(r.status_code == 201 for r in responses)
+
+
+@pytest.mark.django_db
 def test_view_endpoint_enforces_paywall(api_client):
     user = UserFactory()
     paper = PaperSubmissionFactory(status=PaperStatus.PUBLISHED)

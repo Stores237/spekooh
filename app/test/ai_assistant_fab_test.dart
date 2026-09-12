@@ -4,6 +4,7 @@ import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/repository_locator.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/main.dart';
+import 'package:spekooh/screens/assistant/assistant_chat_screen.dart';
 import 'package:spekooh/shell/root_shell.dart';
 import 'package:spekooh/widgets/ai_assistant_fab.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -17,7 +18,7 @@ void main() {
     RootShellState.debugShowContributeNudge = true;
   });
 
-  testWidgets('AI assistant FAB is hidden for guest, appears after login, and opens its sheet', (tester) async {
+  testWidgets('AI assistant FAB is hidden for guest, appears after login, and opens a real, working assistant screen', (tester) async {
     RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
     RootShellState.debugShowContributeNudge = false; // dialog would steal taps meant for nav/Settings
     await tester.pumpWidget(const SpekoohApp());
@@ -46,11 +47,20 @@ void main() {
     await tester.tap(find.byIcon(LucideIcons.sparkles));
     await tester.pumpAndSettle();
 
+    // A real, pushed screen now — not the old static bottom sheet (owner-
+    // reported 2026-09-12: "the spekooh Assistant don't work at all").
+    expect(find.byType(AssistantChatScreen), findsOneWidget);
     expect(find.text('Spekooh Assistant'), findsOneWidget);
     expect(find.text('Explain a hard Physics topic'), findsOneWidget);
+
+    // And it's genuinely wired to a repository — a real reply comes back.
+    await tester.tap(find.text('Explain a hard Physics topic'));
+    await tester.pumpAndSettle();
+    expect(find.text('A real reply.'), findsOneWidget); // MockAssistantRepository's default
   });
 
-  testWidgets('AI assistant sheet renders in French once that locale is active', (tester) async {
+  testWidgets('AI assistant screen renders in French once that locale is active', (tester) async {
+    RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
     await LocaleController.instance.setLocale('fr');
     await tester.pumpWidget(l10nTestApp(

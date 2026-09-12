@@ -2222,6 +2222,12 @@ abstract class AppLocalizations {
   /// **'PhD and Master\'s theses require payment to view. Unlock below to read it.'**
   String get reportLockedMessage;
 
+  /// No description provided for @paperViewLimitLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily view limit reached'**
+  String get paperViewLimitLockedTitle;
+
   /// No description provided for @unlockToDownloadHint.
   ///
   /// In en, this message translates to:
@@ -2600,17 +2606,23 @@ abstract class AppLocalizations {
   /// **'Give me 5 Maths practice questions'**
   String get aiPromptMathsQuestions;
 
-  /// No description provided for @aiPromptSummarizeGuide.
+  /// No description provided for @aiPromptStudyPlan.
   ///
   /// In en, this message translates to:
-  /// **'Summarize this paper\'s marking guide'**
-  String get aiPromptSummarizeGuide;
+  /// **'Help me plan a study schedule'**
+  String get aiPromptStudyPlan;
 
   /// No description provided for @aiAssistantInputHint.
   ///
   /// In en, this message translates to:
   /// **'Ask about a topic or paper...'**
   String get aiAssistantInputHint;
+
+  /// No description provided for @aiAssistantEmptyStateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask me anything about your schoolwork. I can explain a concept, help you practice, or point you toward what to study next.'**
+  String get aiAssistantEmptyStateHint;
 
   /// No description provided for @submissionRejectedTitle.
   ///

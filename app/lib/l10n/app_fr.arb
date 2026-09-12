@@ -391,6 +391,7 @@
   "viewButton": "Consulter",
   "reportLockedTitle": "Ce rapport nécessite un déblocage",
   "reportLockedMessage": "Les thèses de Master et de Doctorat nécessitent un paiement pour être consultées. Débloquez ci-dessous pour la lire.",
+  "paperViewLimitLockedTitle": "Limite de consultation quotidienne atteinte",
   "unlockToDownloadHint": "Débloquez ci-dessous pour enregistrer une copie hors ligne.",
   "unlockDownloadButton": "Débloquer le téléchargement : {amount} FCFA",
   "haveRedeemCode": "Vous avez un code de réduction ?",
@@ -459,8 +460,9 @@
   "aiAssistantSubtitle": "Explique des notions à partir de vraies épreuves",
   "aiPromptExplainPhysics": "Expliquer une notion difficile de Physique",
   "aiPromptMathsQuestions": "Donne-moi 5 questions d'entraînement en Maths",
-  "aiPromptSummarizeGuide": "Résume le corrigé de cette épreuve",
+  "aiPromptStudyPlan": "Aide-moi à planifier mes révisions",
   "aiAssistantInputHint": "Posez une question sur un sujet ou une épreuve...",
+  "aiAssistantEmptyStateHint": "Posez-moi n'importe quelle question sur vos études. Je peux expliquer une notion, vous aider à vous entraîner, ou vous indiquer quoi réviser ensuite.",
 
   "submissionRejectedTitle": "Soumission non acceptée",
   "submissionRejectedIntro": "L'équipe de vérification n'a pas accepté cette soumission :",

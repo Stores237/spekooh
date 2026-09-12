@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_gradients.dart';
+import '../widgets/heritage_pattern_strip.dart';
 
 /// Shown briefly on app launch, then hands off to [child]. Owner-supplied
 /// logo (assets/branding/spekooh_logo.png) — placement/timing here is a
@@ -33,11 +34,22 @@ class _SplashScreenState extends State<SplashScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(gradient: AppGradients.goldSoft),
-        child: Center(
-          child: Image.asset(
-            'assets/branding/spekooh_logo.png',
-            width: 240,
-          ),
+        child: Stack(
+          children: [
+            Center(
+              child: Image.asset(
+                'assets/branding/spekooh_logo.png',
+                width: 240,
+              ),
+            ),
+            // Owner reference (2026-09-12): a real West African textile
+            // border pattern, "just a representation... not the app design
+            // itself... very less presence, not aggressive" — see
+            // HeritagePatternStrip's own doc comment for why this is a
+            // simplified, low-opacity single motif rather than the busy,
+            // multi-row, high-contrast reference band itself.
+            const Positioned(left: 0, right: 0, bottom: 32, child: HeritagePatternStrip()),
+          ],
         ),
       ),
     );
