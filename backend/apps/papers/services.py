@@ -235,8 +235,21 @@ def record_paper_view(*, user, paper_submission) -> PaperViewLog:
     Enforces the 3-free-views/day paywall (spec §5.3): Pro subscribers get
     unlimited views; everyone else gets 3/day, then must spend an unconsumed
     rewarded-ad watch for one more, or be blocked.
+
+    Scoped to actual question papers only — spec §5.3's own wording is
+    "non-subscribed users can view 3 question papers per day" and "ad
+    placement is scoped to paper viewing", written before Academic Reports
+    existed as a category at all. A report already has its own, entirely
+    separate payment gate (user_can_view_file/report_download_is_free) —
+    this exam-paper-specific, ad-monetized daily counter was never meant
+    to apply to reports and doesn't check for them, so a report view (even
+    a free-tier one, e.g. HND/Internship/Bachelor's) was being silently
+    swept into and blocked by this limit. Real bug, owner-reported live
+    (2026-09-12): "present on the HND report view which i think
+    shouldn't be" — confirmed true by reading this function, which had no
+    category check at all before this fix.
     """
-    if Subscription.objects.has_active(user):
+    if paper_submission.category.key == "reports" or Subscription.objects.has_active(user):
         return PaperViewLog.objects.create(user=user, paper_submission=paper_submission)
 
     today_views = PaperViewLog.objects.filter(user=user, created_at__gte=_today_start()).count()

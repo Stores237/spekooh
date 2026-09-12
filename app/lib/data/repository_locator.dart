@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
 import 'auth_session.dart';
+import 'repositories/assistant_repository.dart';
 import 'repositories/forum_repository.dart';
+import 'repositories/http/http_assistant_repository.dart';
 import 'repositories/http/http_forum_repository.dart';
 import 'repositories/http/http_notes_repository.dart';
 import 'repositories/http/http_notifications_repository.dart';
@@ -41,6 +43,7 @@ class RepositoryLocator {
     ProfileRepository? profile,
     PaymentsRepository? payments,
     PromotionsRepository? promotions,
+    AssistantRepository? assistant,
   })  : authSession = authSession ?? AuthSession.instance,
         apiClient = apiClient ?? ApiClient(authSession: authSession ?? AuthSession.instance) {
     this.papers = papers ?? HttpPapersRepository(this.apiClient);
@@ -52,6 +55,7 @@ class RepositoryLocator {
     this.profile = profile ?? HttpProfileRepository(this.apiClient);
     this.payments = payments ?? HttpPaymentsRepository(this.apiClient);
     this.promotions = promotions ?? HttpPromotionsRepository(this.apiClient);
+    this.assistant = assistant ?? HttpAssistantRepository(this.apiClient);
   }
 
   static RepositoryLocator instance = RepositoryLocator();
@@ -71,4 +75,5 @@ class RepositoryLocator {
   late final ProfileRepository profile;
   late final PaymentsRepository payments;
   late final PromotionsRepository promotions;
+  late final AssistantRepository assistant;
 }

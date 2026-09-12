@@ -500,6 +500,7 @@
   "viewButton": "View",
   "reportLockedTitle": "This report requires unlocking",
   "reportLockedMessage": "PhD and Master's theses require payment to view. Unlock below to read it.",
+  "paperViewLimitLockedTitle": "Daily view limit reached",
   "unlockToDownloadHint": "Unlock below to save a copy for offline reading.",
   "unlockDownloadButton": "Unlock download: {amount} FCFA",
   "@unlockDownloadButton": {
@@ -595,8 +596,9 @@
   "aiAssistantSubtitle": "Explains topics using real past papers",
   "aiPromptExplainPhysics": "Explain a hard Physics topic",
   "aiPromptMathsQuestions": "Give me 5 Maths practice questions",
-  "aiPromptSummarizeGuide": "Summarize this paper's marking guide",
+  "aiPromptStudyPlan": "Help me plan a study schedule",
   "aiAssistantInputHint": "Ask about a topic or paper...",
+  "aiAssistantEmptyStateHint": "Ask me anything about your schoolwork. I can explain a concept, help you practice, or point you toward what to study next.",
 
   "submissionRejectedTitle": "Submission not accepted",
   "submissionRejectedIntro": "The Review Team didn't accept this submission:",

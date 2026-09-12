@@ -246,7 +246,7 @@ class RootShellState extends State<RootShell> {
             SpekoohNavItem(icon: const Icon(LucideIcons.zap), label: l10n.navQuizzes),
           ],
         ),
-        floatingActionButton: _isLoggedIn ? const AIAssistantFab() : null,
+        floatingActionButton: _isLoggedIn ? AIAssistantFab(onOpenPaywall: () => _openPaywall(context)) : null,
       ),
     );
   }

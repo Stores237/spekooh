@@ -21,7 +21,9 @@ from .providers.base import AIError, AIRateLimited, AIRefused
 from .quota import consume_chat_quota, consume_provider_budget
 from .services import (
     get_or_queue_artifact,
+    send_assistant_message,
     send_chat_message,
+    stream_assistant_message,
     stream_chat_message,
     validate_chat_messages,
 )
@@ -29,6 +31,9 @@ from .services import (
 # Shared between PaperChatView's non-streaming and streaming paths so a
 # safety-filter refusal reads identically either way.
 CHAT_REFUSAL_MESSAGE = "I can't help with that. Let's stick to this paper."
+# AssistantChatView's own equivalent — "this paper" doesn't make sense for
+# the ungrounded general assistant.
+ASSISTANT_REFUSAL_MESSAGE = "I can't help with that. Let's stick to your schoolwork."
 
 # Real gap found 2026-09-12 while diagnosing a live "AI chat is currently
 # unavailable" report on staging: every AIError branch below (and in
@@ -61,7 +66,7 @@ class ServerSentEventRenderer(BaseRenderer):
         return data
 
 
-def _sse_chat_stream(deltas, quota_remaining):
+def _sse_chat_stream(deltas, quota_remaining, refusal_message=CHAT_REFUSAL_MESSAGE):
     """Wraps a GroqProvider.iter_stream_deltas() generator as Server-Sent
     Events. Real edge case this exists for (2026-09-08, see the streaming
     architecture decision): once PaperChatView has returned this generator
@@ -73,12 +78,16 @@ def _sse_chat_stream(deltas, quota_remaining):
     object: {"delta": str} while text is arriving, then exactly one final
     {"done": true, "quota_remaining": int|null} on success, or
     {"error": true, "code": str, "detail": str} in place of that final
-    frame on failure."""
+    frame on failure.
+
+    `refusal_message` defaults to PaperChatView's own copy — AssistantChatView
+    (2026-09-12) passes its own, since "let's stick to this paper" makes
+    no sense for the ungrounded general assistant."""
     try:
         for delta in deltas:
             yield f"data: {json.dumps({'delta': delta})}\n\n"
     except AIRefused:
-        yield f"data: {json.dumps({'delta': CHAT_REFUSAL_MESSAGE})}\n\n"
+        yield f"data: {json.dumps({'delta': refusal_message})}\n\n"
     except AIRateLimited as exc:
         logger.warning("_sse_chat_stream: rate limited mid-stream: %s", exc)
         yield f"data: {json.dumps({'error': True, 'code': 'rate_limited', 'detail': 'AI chat is busy right now. Try again in a moment.'})}\n\n"
@@ -221,6 +230,83 @@ class PaperChatView(APIView):
             return Response({"detail": "AI chat is busy right now. Try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except AIError as exc:
             logger.warning("PaperChatView (paper %s): %s", pk, exc)
+            return Response({"detail": "AI chat is currently unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        return Response({"role": "assistant", "content": result.text, "quota_remaining": quota_remaining})
+
+
+class AssistantChatView(APIView):
+    """
+    "Spekooh Assistant" — the general-purpose counterpart to PaperChatView
+    above. Real bug this replaces (2026-09-12): the gold sparkle FAB shown
+    throughout the app (app/lib/widgets/ai_assistant_fab.dart) was a fully
+    static mockup with no backend endpoint even shaped for it — owner-
+    reported "the spekooh Assistant don't work at all," confirmed true by
+    reading the widget before this existed (TODOS.md #15). PaperChatView
+    is deliberately left untouched; this is a new, separate endpoint, not
+    a paper-optional variant of it, since the two have genuinely different
+    system prompts (grounded vs ungrounded) and PaperChatView's own OCR-
+    readiness/paywall checks don't apply here at all.
+
+    Same real-accounts-only gate as PaperChatView (same cost-per-message,
+    same need for a stable identity to meter against — see that view's
+    own docstring), and the SAME shared per-user daily quota bucket
+    (apps.ai.quota.consume_chat_quota) — one "Lane B chat" allowance
+    across both surfaces, not a separate pool per surface, matching how
+    quota.py's own docstring already frames it ("per-user daily Lane B
+    chat message cap," not per-paper).
+    """
+
+    permission_classes = [IsAuthenticatedNotGuest]
+    renderer_classes = [*api_settings.DEFAULT_RENDERER_CLASSES, ServerSentEventRenderer]
+
+    def post(self, request):
+        if not settings.AI_ENABLED or not settings.AI_CHAT_ENABLED:
+            return Response({"detail": "AI chat is currently unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        user = request.user
+        error = validate_chat_messages(request.data.get("messages"))
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+
+        is_pro = Subscription.objects.has_active(user)
+        quota_remaining = None
+        if not is_pro:
+            allowed, remaining = consume_chat_quota(str(user.pk), settings.AI_CHAT_DAILY_LIMIT)
+            if not allowed:
+                return Response(
+                    {"detail": "You've used today's free chat messages. Upgrade to Kawlo Plus for unlimited chat.", "upgrade_required": True},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            quota_remaining = remaining
+
+        if not consume_provider_budget("groq", settings.GROQ_DAILY_BUDGET):
+            return Response({"detail": "AI chat is temporarily unavailable. Try again shortly."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        if request.META.get("HTTP_ACCEPT") == "text/event-stream":
+            try:
+                deltas = stream_assistant_message(messages=request.data["messages"])
+            except AIRateLimited as exc:
+                logger.warning("AssistantChatView (streaming): rate limited: %s", exc)
+                return Response({"detail": "AI chat is busy right now. Try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            except AIError as exc:
+                logger.warning("AssistantChatView (streaming): %s", exc)
+                return Response({"detail": "AI chat is currently unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+            return StreamingHttpResponse(
+                _sse_chat_stream(deltas, quota_remaining, refusal_message=ASSISTANT_REFUSAL_MESSAGE),
+                content_type="text/event-stream",
+            )
+
+        try:
+            result = send_assistant_message(messages=request.data["messages"])
+        except AIRefused:
+            return Response({"role": "assistant", "content": ASSISTANT_REFUSAL_MESSAGE, "quota_remaining": quota_remaining})
+        except AIRateLimited as exc:
+            logger.warning("AssistantChatView: rate limited: %s", exc)
+            return Response({"detail": "AI chat is busy right now. Try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except AIError as exc:
+            logger.warning("AssistantChatView: %s", exc)
             return Response({"detail": "AI chat is currently unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         return Response({"role": "assistant", "content": result.text, "quota_remaining": quota_remaining})

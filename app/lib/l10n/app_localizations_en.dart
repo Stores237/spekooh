@@ -1211,6 +1211,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'PhD and Master\'s theses require payment to view. Unlock below to read it.';
 
   @override
+  String get paperViewLimitLockedTitle => 'Daily view limit reached';
+
+  @override
   String get unlockToDownloadHint =>
       'Unlock below to save a copy for offline reading.';
 
@@ -1432,10 +1435,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiPromptMathsQuestions => 'Give me 5 Maths practice questions';
 
   @override
-  String get aiPromptSummarizeGuide => 'Summarize this paper\'s marking guide';
+  String get aiPromptStudyPlan => 'Help me plan a study schedule';
 
   @override
   String get aiAssistantInputHint => 'Ask about a topic or paper...';
+
+  @override
+  String get aiAssistantEmptyStateHint =>
+      'Ask me anything about your schoolwork. I can explain a concept, help you practice, or point you toward what to study next.';
 
   @override
   String get submissionRejectedTitle => 'Submission not accepted';
