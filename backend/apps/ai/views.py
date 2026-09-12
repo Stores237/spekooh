@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.conf import settings
 from django.db.models import Q
@@ -28,6 +29,18 @@ from .services import (
 # Shared between PaperChatView's non-streaming and streaming paths so a
 # safety-filter refusal reads identically either way.
 CHAT_REFUSAL_MESSAGE = "I can't help with that. Let's stick to this paper."
+
+# Real gap found 2026-09-12 while diagnosing a live "AI chat is currently
+# unavailable" report on staging: every AIError branch below (and in
+# PaperSummaryView) only ever turned into a clean client-facing Response —
+# nothing was ever logged server-side, so a real provider failure (wrong/
+# missing key, a genuine Groq/Gemini outage, a bad model name) was
+# indistinguishable from any other cause without direct DB/shell access,
+# which the free Render tier doesn't even have. logger.warning here still
+# reaches Render's log stream with zero LOGGING config needed — Python's
+# root logger prints WARNING+ via its own last-resort handler when nothing
+# else is configured.
+logger = logging.getLogger(__name__)
 
 
 class ServerSentEventRenderer(BaseRenderer):
@@ -66,10 +79,12 @@ def _sse_chat_stream(deltas, quota_remaining):
             yield f"data: {json.dumps({'delta': delta})}\n\n"
     except AIRefused:
         yield f"data: {json.dumps({'delta': CHAT_REFUSAL_MESSAGE})}\n\n"
-    except AIRateLimited:
+    except AIRateLimited as exc:
+        logger.warning("_sse_chat_stream: rate limited mid-stream: %s", exc)
         yield f"data: {json.dumps({'error': True, 'code': 'rate_limited', 'detail': 'AI chat is busy right now. Try again in a moment.'})}\n\n"
         return
-    except AIError:
+    except AIError as exc:
+        logger.warning("_sse_chat_stream: %s", exc)
         yield f"data: {json.dumps({'error': True, 'code': 'unavailable', 'detail': 'AI chat is currently unavailable.'})}\n\n"
         return
     yield f"data: {json.dumps({'done': True, 'quota_remaining': quota_remaining})}\n\n"
@@ -188,9 +203,11 @@ class PaperChatView(APIView):
             # _sse_chat_stream's own try/except below, never here.
             try:
                 deltas = stream_chat_message(paper=paper, messages=request.data["messages"])
-            except AIRateLimited:
+            except AIRateLimited as exc:
+                logger.warning("PaperChatView (paper %s, streaming): rate limited: %s", pk, exc)
                 return Response({"detail": "AI chat is busy right now. Try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-            except AIError:
+            except AIError as exc:
+                logger.warning("PaperChatView (paper %s, streaming): %s", pk, exc)
                 return Response({"detail": "AI chat is currently unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
             return StreamingHttpResponse(_sse_chat_stream(deltas, quota_remaining), content_type="text/event-stream")
@@ -199,9 +216,11 @@ class PaperChatView(APIView):
             result = send_chat_message(paper=paper, messages=request.data["messages"])
         except AIRefused:
             return Response({"role": "assistant", "content": CHAT_REFUSAL_MESSAGE, "quota_remaining": quota_remaining})
-        except AIRateLimited:
+        except AIRateLimited as exc:
+            logger.warning("PaperChatView (paper %s): rate limited: %s", pk, exc)
             return Response({"detail": "AI chat is busy right now. Try again in a moment."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        except AIError:
+        except AIError as exc:
+            logger.warning("PaperChatView (paper %s): %s", pk, exc)
             return Response({"detail": "AI chat is currently unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         return Response({"role": "assistant", "content": result.text, "quota_remaining": quota_remaining})

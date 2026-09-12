@@ -356,8 +356,12 @@ AI_ENABLED = env.bool("AI_ENABLED", default=True)
 GEMINI_API_KEY = env("GEMINI_API_KEY", default=None)
 AI_MODELS = {
     # Verify the current free-tier model roster before launch — these
-    # rosters change often; see https://ai.google.dev/pricing
-    "gemini_primary": env("GEMINI_MODEL", default="gemini-2.5-flash"),
+    # rosters change often; see https://ai.google.dev/pricing. Real live
+    # failure (2026-09-12): "gemini-2.5-flash" started 404ing on staging
+    # with "no longer available to new users... use models/
+    # gemini-3.6-flash" — caught via generate_pending_artifacts's own
+    # per-artifact failure logging, not assumed.
+    "gemini_primary": env("GEMINI_MODEL", default="gemini-3.6-flash"),
     # Groq's own model roster also changes often — see
     # https://console.groq.com/docs/models
     "groq_chat": env("GROQ_CHAT_MODEL", default="llama-3.3-70b-versatile"),
