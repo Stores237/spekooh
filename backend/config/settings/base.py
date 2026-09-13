@@ -310,6 +310,32 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@spekooh.app")
 # delivered) without pretending it has a real provider it doesn't have.
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
 
+# Django's SMTP backend reads these directly off settings, not off its own
+# env — left unset until now, so setting EMAIL_BACKEND to the real SMTP
+# backend (its own default, above) with no real provider configured landed
+# on Django's global defaults (localhost:25, no auth), which is exactly
+# what produced the ConnectionRefusedError this file's own comment above
+# describes. Wired to env now so a real transactional-email provider (e.g.
+# SendGrid/SES/Postmark's SMTP relay) is actually reachable once one
+# exists — still safe on a fresh clone: EMAIL_BACKEND stays the console
+# backend there (dev.py) or gets set to it explicitly (RENDER_STAGING.md),
+# so none of these are read in either case today.
+#
+# Confirmed (2026-09-13, Django 6.1.1 installed here): defining any of
+# these five explicitly triggers a real RemovedInDjango70Warning ("Migrate
+# to MAILERS") — Django's newer dict-based settings.MAILERS config is the
+# eventual replacement. Not adopted here: existing tests (apps/core/tests.py)
+# and dev.py already depend on the legacy EMAIL_BACKEND setting directly
+# (pytest-django itself overrides it this way for every test), and these
+# settings aren't actually removed until Django 7.0 — migrating the whole
+# codebase's email config is a real, separate piece of work, not a
+# byproduct of wiring production's connection details.
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=25)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+
 # Supabase Edge Function that verifies a registration email's domain has
 # real MX records (see supabase/functions/verify-email-domain) — both unset
 # by default, same no-op-safely pattern as SENTRY_DSN/REDIS_URL above: a
