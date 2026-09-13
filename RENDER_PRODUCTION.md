@@ -105,19 +105,40 @@ own model assumes (staging for anything that "exists to be broken"). Worth
 deciding deliberately — point `.env` at a local Postgres or at the staging
 project instead — rather than leaving it on production by inertia.
 
-### Storage S3 credentials — dashboard-only, still needed
+### Storage S3 credentials — done, real keys generated and verified (2026-09-13)
 
-Same limitation noted when this was set up: Supabase's Management API has
-no endpoint for generating S3-compatible access keys. From the Supabase
-dashboard, on the "Spekooh" project → **Project Settings → Storage → S3
-Connection → New access key**, then set on `spekooh-production`:
+Confirmed working end-to-end via a real signed request (boto3, SigV4)
+against Supabase's S3-compatible gateway — not just "the dashboard showed
+a key":
+
+- **Real anomaly found and fixed**: the `spekooh-media` bucket itself was
+  gone by the time these new keys were tested (`NoSuchBucket` on a direct
+  S3 call, confirmed independently via the Management API's own bucket
+  list returning `[]`) — despite this session having only emptied its
+  *contents* earlier, never the bucket itself. Cause unconfirmed (possibly
+  disturbed while generating the access key in the dashboard) — recreated
+  it via a real `CreateBucket` S3 call using the new key, which also
+  proved the new key has real write/admin permission on this project, not
+  just read access.
+- Recreated as **private** (`"public": false`, confirmed via the
+  Management API) — matching the bucket's original configuration.
+- Full round-trip verified: `PutObject` → `GetObject` (got the exact bytes
+  back) → a presigned `GetObject` URL resolved with a real `200` →
+  the same object requested **unsigned** was correctly rejected (`400`,
+  private bucket working as intended) → `DeleteObject` cleaned up the test
+  artifact. Nothing left behind in the bucket.
+
+Set these on `spekooh-production` (Render dashboard → Environment):
 
 | Key | Value |
 |---|---|
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | from that panel |
-| `AWS_STORAGE_BUCKET_NAME` | `spekooh-media` (already exists on this project, already emptied) |
-| `AWS_S3_ENDPOINT_URL` | from that same panel |
-| `AWS_S3_REGION_NAME` | the real AWS-style region code from that panel (e.g. `eu-west-1`) — **not** the bucket name; see `RENDER_STAGING.md` §4 for the exact live incident this caused when gotten wrong |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | sent separately, not committed to this doc/repo |
+| `AWS_STORAGE_BUCKET_NAME` | `spekooh-media` |
+| `AWS_S3_ENDPOINT_URL` | `https://gojwhocnznwxfdrszxfq.storage.supabase.co/storage/v1/s3` |
+| `AWS_S3_REGION_NAME` | `eu-west-1` |
+
+Also needed on the `spekooh-production-pending-ocr` cron service (§5) —
+it's the one job that touches Storage directly.
 
 ---
 
@@ -223,7 +244,8 @@ build further without one.
 - [ ] Render Blueprint re-synced (push this to `main`, then **New → Blueprint** or let the existing Blueprint pick up the new services) to actually create `spekooh-production` and the 5 cron services
 - [ ] `DATABASE_URL` set on `spekooh-production` (the string sent separately) — triggers the first real deploy, which runs `migrate` for real
 - [ ] Separate production Redis (Key Value) instance provisioned, `REDIS_URL` set on all 6 production services
-- [ ] S3 access keys generated from the Supabase dashboard (§3), `AWS_*` set on `spekooh-production` and on `spekooh-production-pending-ocr`
+- [x] S3 access keys generated from the Supabase dashboard (§3) — verified via a real signed round-trip (put/get/presigned-get/unsigned-get-rejected/delete); bucket had to be recreated (see §3's note), now private, confirmed
+- [ ] `AWS_*` actually set on `spekooh-production` and on `spekooh-production-pending-ocr` in the Render dashboard (values verified, not yet placed there)
 - [ ] A real email provider chosen and `EMAIL_*` set (§6) — **blocking for real signups**
 - [ ] `DJANGO_SUPERUSER_EMAIL`/`DJANGO_SUPERUSER_PASSWORD` set (own real admin login, separate from staging's)
 - [ ] `SENTRY_DSN` / `DJANGO_ADMIN_EMAILS` set — decide whether this reuses the same Sentry project as staging or gets its own (Sentry environments can separate them without a second project; simplest to start with the same project, filtered by its `environment` tag, which `config/settings/base.py`'s `sentry_sdk.init` already sets to `"production"` when `DEBUG=False`)
