@@ -420,6 +420,12 @@
     "placeholders": {"date": {"type": "String"}}
   },
   "viewPrivacyPolicyLink": "View Privacy Policy",
+  "termsOfServiceTitle": "Terms of Service",
+  "termsOfServiceLastUpdated": "Last updated {date}",
+  "@termsOfServiceLastUpdated": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "viewTermsOfServiceLink": "View Terms of Service",
   "viewOnlyNotice": "View only. Unlock to download a copy",
   "reportThanksMessage": "Thanks! The Review Team has been notified.",
   "reportSendError": "Could not send report: {error}",

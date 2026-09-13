@@ -200,6 +200,59 @@ def test_email_backend_is_actually_overridable_via_env_var():
     assert result.stdout.strip() == "django.core.mail.backends.console.EmailBackend", result.stderr
 
 
+def test_admins_defaults_to_empty_without_crashing():
+    """Release-roadmap P0 (2026-09-13): 'a paying user's failed payment
+    should page someone, not wait for them to complain' — ADMINS is
+    Django's own, second, independent error-visibility channel alongside
+    SENTRY_DSN. Same 'safe when unset' posture as every other real
+    credential in this codebase: a fresh clone with no DJANGO_ADMIN_EMAILS
+    set must not crash, just get no admin emails. Fresh subprocess, same
+    reasoning as the EMAIL_BACKEND tests above — pytest-django's own
+    settings overrides make asserting on this test process's own settings
+    unreliable."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    env = {**os.environ}
+    env.pop("DJANGO_ADMIN_EMAILS", None)
+    env["DJANGO_SETTINGS_MODULE"] = "config.settings.base"
+    result = subprocess.run(
+        [sys.executable, "-c", "import django; django.setup(); from django.conf import settings; print(settings.ADMINS)"],
+        env=env,
+        cwd=Path(__file__).resolve().parents[2],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.stdout.strip() == "[]", result.stderr
+
+
+def test_admins_parses_a_real_comma_separated_env_var(monkeypatch):
+    """The actual fix: before this, nothing in settings.py read this env
+    var at all — setting it in Render's dashboard would have silently done
+    nothing, same class of gap EMAIL_BACKEND had (see the test above)."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    env = {**os.environ, "DJANGO_SETTINGS_MODULE": "config.settings.base"}
+    env["DJANGO_ADMIN_EMAILS"] = "owner@example.com,oncall@example.com"
+    result = subprocess.run(
+        [sys.executable, "-c", "import django; django.setup(); from django.conf import settings; print(settings.ADMINS)"],
+        env=env,
+        cwd=Path(__file__).resolve().parents[2],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.stdout.strip() == "[('owner@example.com', 'owner@example.com'), ('oncall@example.com', 'oncall@example.com')]", result.stderr
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize("name", list(TRIGGERABLE_COMMANDS))
 def test_run_task_actually_runs_the_real_management_command(monkeypatch, name):

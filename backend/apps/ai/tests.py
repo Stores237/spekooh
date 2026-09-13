@@ -620,7 +620,16 @@ class TestPaperChatViewStreaming:
                 HTTP_ACCEPT="text/event-stream",
             )
         assert response.status_code == 503
-        assert response["Content-Type"] != "text/event-stream"
+        # Real regression test (2026-09-12): this used to only check
+        # Content-Type, which stayed correct in DRF's test client
+        # (response.data is set at Response construction time, unaffected
+        # by what render() actually does) even while the real wire body
+        # was broken — a live request got back the literal bytes b'detail'
+        # instead of real JSON. Assert the actual rendered bytes parse as
+        # real JSON with the real detail, matching what a genuine HTTP
+        # client (ApiClient.postStream, api_client.dart) actually reads.
+        assert json.loads(response.content) == {"detail": "AI chat is busy right now. Try again in a moment."}
+        assert response["Content-Type"] == "application/json"
 
     @pytest.mark.django_db
     def test_a_rate_limit_mid_stream_is_an_in_band_error_frame_with_no_trailing_done(self, api_client):
@@ -863,7 +872,16 @@ class TestAssistantChatViewStreaming:
                 HTTP_ACCEPT="text/event-stream",
             )
         assert response.status_code == 503
-        assert response["Content-Type"] != "text/event-stream"
+        # Real regression test (2026-09-12): this used to only check
+        # Content-Type, which stayed correct in DRF's test client
+        # (response.data is set at Response construction time, unaffected
+        # by what render() actually does) even while the real wire body
+        # was broken — a live request got back the literal bytes b'detail'
+        # instead of real JSON. Assert the actual rendered bytes parse as
+        # real JSON with the real detail, matching what a genuine HTTP
+        # client (ApiClient.postStream, api_client.dart) actually reads.
+        assert json.loads(response.content) == {"detail": "AI chat is busy right now. Try again in a moment."}
+        assert response["Content-Type"] == "application/json"
 
     @pytest.mark.django_db
     def test_streaming_requires_the_same_real_account_as_non_streaming(self, api_client):

@@ -33,6 +33,23 @@ sentry_sdk.init(
     send_default_pii=False,
 )
 
+# Django's own, second, independent error-visibility channel (2026-09-13,
+# release-roadmap P0: "a paying user's failed payment should page someone,
+# not wait for them to complain") — SENTRY_DSN above is the primary one,
+# but this needs no third-party account at all: when DEBUG=False, Django's
+# own AdminEmailHandler emails everyone in ADMINS on every unhandled
+# exception, using whatever EMAIL_BACKEND is already configured. A no-op
+# until two things are both real: EMAIL_BACKEND (still Django's console
+# backend — see the "Real email provider" item elsewhere) and this env
+# var — same "safe when unset" posture as SENTRY_DSN/GEMINI_API_KEY/etc.,
+# not a crash risk to leave unset on a fresh clone.
+#
+# DJANGO_ADMIN_EMAILS: comma-separated addresses, e.g.
+# "owner@example.com,oncall@example.com" — no name field, since Django's
+# AdminEmailHandler only ever uses the email half of each (name, email)
+# pair in its own message body anyway.
+ADMINS = [(email, email) for email in env.list("DJANGO_ADMIN_EMAILS", default=[])]
+
 INSTALLED_APPS = [
     "unfold",  # must precede django.contrib.admin to override its templates
     "django.contrib.admin",
@@ -363,8 +380,18 @@ AI_MODELS = {
     # per-artifact failure logging, not assumed.
     "gemini_primary": env("GEMINI_MODEL", default="gemini-3.6-flash"),
     # Groq's own model roster also changes often — see
-    # https://console.groq.com/docs/models
-    "groq_chat": env("GROQ_CHAT_MODEL", default="llama-3.3-70b-versatile"),
+    # https://console.groq.com/docs/models. Real live failure (2026-09-12,
+    # same day as the Gemini one above): "llama-3.3-70b-versatile" started
+    # 404ing on staging with "does not exist or you do not have access to
+    # it" — caught via the new per-request logging added the same day
+    # (apps.ai.views' logger.warning calls), not assumed. Confirmed via
+    # Groq's own current docs: both llama-3.3-70b-versatile and
+    # llama-3.1-8b-instant moved to Enterprise-only access; the generally
+    # available production models are the openai/gpt-oss-* family.
+    # gpt-oss-20b over -120b: cheaper and faster, and this is a free,
+    # daily-quota-capped student chat feature where cost-per-message
+    # directly limits how far GROQ_DAILY_BUDGET stretches.
+    "groq_chat": env("GROQ_CHAT_MODEL", default="openai/gpt-oss-20b"),
 }
 # Bump this to invalidate every cached artifact at once (e.g. after a real
 # prompt-quality improvement) — old rows stay valid until a new

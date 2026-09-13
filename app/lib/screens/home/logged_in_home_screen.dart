@@ -20,6 +20,7 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/heritage_pattern_strip.dart';
 import '../../widgets/house_ad_card.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/spekooh_button.dart';
@@ -75,12 +76,14 @@ class LoggedInHomeScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Full-bleed dark hero — no horizontal padding on the outer
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Full-bleed dark hero — no horizontal padding on the outer
               // scroll view, so this naturally spans the full width; all
               // content below it is individually wrapped in a Padding.
               FutureBuilder<SpekoohUser>(
@@ -474,6 +477,12 @@ class LoggedInHomeScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+          // Owner reference (2026-09-12): same subtle heritage motif as
+          // SplashScreen's own HeritagePatternStrip — see HomeScreen's
+          // (guest variant) matching comment for the full reasoning.
+          const Positioned(left: 0, right: 0, bottom: 0, child: HeritagePatternStrip()),
+        ],
       ),
     );
   }

@@ -20,6 +20,7 @@ import 'package:spekooh/screens/home/home_screen.dart';
 import 'package:spekooh/screens/home/logged_in_home_screen.dart';
 import 'package:spekooh/main.dart';
 import 'package:spekooh/shell/root_shell.dart';
+import 'package:spekooh/widgets/heritage_pattern_strip.dart';
 import 'package:spekooh/widgets/user_avatar.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -43,6 +44,10 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Guest'), findsOneWidget);
     expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget); // real featured pamphlet from the mock
+    // Owner reference (2026-09-12): the subtle heritage pattern strip
+    // should show on this screen too, "keeping the same characteristics"
+    // as SplashScreen's own.
+    expect(find.byType(HeritagePatternStrip), findsOneWidget);
   });
 
   testWidgets('HomeScreen (guest) contribution card opens Submit', (tester) async {
@@ -94,6 +99,7 @@ void main() {
     for (final label in ['Papers', 'Notes', 'Contribute', 'Shop', 'Forum', 'Quizzes']) {
       expect(find.text(label), findsOneWidget);
     }
+    expect(find.byType(HeritagePatternStrip), findsOneWidget);
   });
 
   testWidgets(

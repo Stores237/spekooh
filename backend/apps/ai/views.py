@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.renderers import BaseRenderer
+from rest_framework.renderers import BaseRenderer, JSONRenderer
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
@@ -52,18 +52,66 @@ class ServerSentEventRenderer(BaseRenderer):
     """Exists purely so DRF's own content negotiation (APIView.initial()
     calls this before post() ever runs) accepts `Accept: text/event-stream`
     instead of rejecting it with a 406 — found live while writing this
-    view's own tests, not something the docs warn you about. render() is
-    never actually called: PaperChatView's streaming branch returns a raw
-    StreamingHttpResponse, which bypasses DRF's render step entirely
-    (APIView.finalize_response only renders real rest_framework.Response
-    instances). Registered as an extra renderer_class below, alongside the
-    project's normal defaults, so the non-streaming JSON path is untouched."""
+    view's own tests, not something the docs warn you about. The real
+    streaming success path (a raw StreamingHttpResponse) bypasses DRF's
+    render step entirely (APIView.finalize_response only renders real
+    rest_framework.Response instances), so render() below is never called
+    for it — but every *plain* Response this module returns (kill
+    switches, paywall/OCR/quota/budget checks, a pre-stream AIError) is a
+    real rest_framework.Response, and DRF picks this renderer for ANY of
+    them once `Accept: text/event-stream` was sent, whether or not that
+    particular response was ever meant to be a stream.
+
+    render() previously just `return data` unchanged — this docstring
+    used to (wrongly) claim it was dead code. Real live bug found
+    2026-09-12: returning a dict unrendered here made Django iterate it
+    as the response body (a dict iterates over its keys), producing the
+    literal bytes b'detail' instead of real JSON for a real error, with
+    Content-Type still reporting text/event-stream — the app's own
+    apiErrorDetail (api_client.dart) couldn't parse that, so a real,
+    specific error (e.g. a Groq outage) surfaced to a student as a
+    generic "unknown error" instead. _CorrectsSSEMisrenderMixin below is
+    the actual fix (redirects these plain responses to JSONRenderer
+    instead) — render() now formats defensively too, so this renderer is
+    never the one responsible for a malformed body even if a future view
+    reuses it without that mixin."""
 
     media_type = "text/event-stream"
     format = "sse"
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        return data
+        if isinstance(data, (bytes, str)):
+            return data
+        # A plain dict slipped through without _CorrectsSSEMisrenderMixin
+        # catching it first — real JSON bytes beat the dict-iterates-to-
+        # its-keys bug above, even though this shouldn't be reachable now.
+        return json.dumps(data).encode()
+
+
+class _CorrectsSSEMisrenderMixin:
+    """Apply to any view that registers ServerSentEventRenderer alongside
+    the normal JSON renderer for a real streaming reply (PaperChatView,
+    AssistantChatView). See ServerSentEventRenderer's own docstring for
+    the real bug this fixes: DRF's content negotiation picks ONE renderer
+    for the whole view from the client's Accept header, with no way to
+    say "except for this one plain Response, that's not a real stream."
+    This redirects any plain rest_framework.Response that content
+    negotiation routed to ServerSentEventRenderer back to real JSON —
+    exactly what apps.data.api_client.dart's ApiClient.postStream already
+    expects for any non-2xx streaming response (it reads the raw body and
+    throws ApiException(statusCode, body), never attempting to parse SSE
+    framing for an error status).
+
+    A real StreamingHttpResponse (the actual streaming success path) is
+    never affected — it isn't a rest_framework.Response at all, so it
+    bypasses this (and DRF's renderer machinery entirely) untouched."""
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        if isinstance(response, Response) and isinstance(response.accepted_renderer, ServerSentEventRenderer):
+            response.accepted_renderer = JSONRenderer()
+            response.accepted_media_type = "application/json"
+        return response
 
 
 def _sse_chat_stream(deltas, quota_remaining, refusal_message=CHAT_REFUSAL_MESSAGE):
@@ -135,7 +183,7 @@ class PaperSummaryView(APIView):
         return Response({"status": "ready", "body": artifact.body})
 
 
-class PaperChatView(APIView):
+class PaperChatView(_CorrectsSSEMisrenderMixin, APIView):
     """
     Lane B — the real-time Groq student chatbot. Real accounts only
     (IsAuthenticatedNotGuest — fixed 2026-09-06; this used to say
@@ -235,7 +283,7 @@ class PaperChatView(APIView):
         return Response({"role": "assistant", "content": result.text, "quota_remaining": quota_remaining})
 
 
-class AssistantChatView(APIView):
+class AssistantChatView(_CorrectsSSEMisrenderMixin, APIView):
     """
     "Spekooh Assistant" — the general-purpose counterpart to PaperChatView
     above. Real bug this replaces (2026-09-12): the gold sparkle FAB shown

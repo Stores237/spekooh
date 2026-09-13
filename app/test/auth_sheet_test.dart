@@ -62,6 +62,20 @@ void main() {
     expect(find.textContaining('Spekooh ("we", "us", "our")'), findsOneWidget);
   });
 
+  testWidgets('the terms checkbox\'s own "View Terms of Service" link opens a real, readable document '
+      '(owner blocker, 2026-09-13: the checkbox named this document since before it existed anywhere in the app)', (tester) async {
+    AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
+
+    await tester.pumpWidget(l10nTestApp(const Scaffold(body: AuthSheet())));
+    await tester.tap(find.text('New here? Create an account'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('View Terms of Service'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('These Terms of Service'), findsOneWidget);
+  });
+
   testWidgets('registering with no referral code omits it entirely, not as an empty string', (tester) async {
     Map<String, dynamic>? sentBody;
     final mockClient = MockClient((request) async {

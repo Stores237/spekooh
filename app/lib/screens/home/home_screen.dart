@@ -9,6 +9,7 @@ import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/heritage_pattern_strip.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/spekooh_loader.dart';
@@ -55,14 +56,16 @@ class HomeScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPad),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppSpacing.space2),
-              Row(
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPad),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: AppSpacing.space2),
+                  Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
@@ -262,6 +265,16 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+          // Owner reference (2026-09-12): the same subtle heritage motif
+          // as SplashScreen's own HeritagePatternStrip — "keeping the same
+          // characteristics" (low opacity, this app's own gold tones, one
+          // simplified row, not the busy reference band itself). Fixed at
+          // the bottom of the visible screen, outside the scroll view, so
+          // it reads as a constant, quiet edge accent rather than
+          // scrolling past with the content.
+          const Positioned(left: 0, right: 0, bottom: 0, child: HeritagePatternStrip()),
+        ],
       ),
     );
   }

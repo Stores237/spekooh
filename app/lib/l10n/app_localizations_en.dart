@@ -1025,6 +1025,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewPrivacyPolicyLink => 'View Privacy Policy';
 
   @override
+  String get termsOfServiceTitle => 'Terms of Service';
+
+  @override
+  String termsOfServiceLastUpdated(String date) {
+    return 'Last updated $date';
+  }
+
+  @override
+  String get viewTermsOfServiceLink => 'View Terms of Service';
+
+  @override
   String get viewOnlyNotice => 'View only. Unlock to download a copy';
 
   @override

@@ -44,3 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .gstack/
+
+# Real Android release signing key (2026-09-13) — these hold the actual
+# upload-key passwords/keystore bytes; must never reach git. See
+# android/app/build.gradle.kts's own comment for how a build falls back
+# to the debug key when these are absent (a fresh clone, CI, this
+# sandbox).
+/android/key.properties
+/android/keystore/
