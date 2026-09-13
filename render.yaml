@@ -100,3 +100,226 @@ services:
         sync: false
       - key: DJANGO_SUPERUSER_PASSWORD
         sync: false
+
+  # spekooh-production (2026-09-13) — a real, separate service, not staging
+  # promoted in place. Same Dockerfile/build as spekooh-staging (identical
+  # code, identical runtime dependencies) — everything that differs is
+  # below, either in this block or in the env vars set by hand in the
+  # dashboard (RENDER_PRODUCTION.md has the full list and where each one
+  # comes from; never the staging project's own values — see that doc's
+  # own opening section for why).
+  - type: web
+    name: spekooh-production
+    runtime: docker
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    # Off the free tier on purpose (release-roadmap P4) — free-tier
+    # spin-down (15 min idle -> ~1 min cold start) is fine for testers who
+    # know to wait and not fine for a real user's first impression. Starter
+    # is Render's cheapest always-on plan; a real card on the Render
+    # account is required before this Blueprint apply will actually
+    # provision it — that step is the owner's, not something this repo's
+    # code can do for you.
+    plan: starter
+    region: frankfurt
+    branch: main
+    rootDir: backend
+    # Every push to main still auto-deploys spekooh-staging above. This
+    # service deliberately does NOT — merging to main is "ready for
+    # testers," not "ready for real users." Promote a verified commit by
+    # clicking Manual Deploy -> Deploy latest commit on this service in
+    # the Render dashboard once you've actually checked it on staging
+    # first, not automatically the moment CI goes green.
+    autoDeploy: false
+    healthCheckPath: /healthz/
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: WEB_CONCURRENCY
+        value: 2
+      # Unlike spekooh-staging above, EMAIL_BACKEND is NOT pinned to the
+      # console backend here — left sync: false so it must be a deliberate
+      # choice. Left unset entirely, base.py's own real default (SMTP,
+      # Django's global localhost:25) takes over and every registration/
+      # password-reset send_mail crashes loudly — the same honest "fail
+      # rather than pretend" behavior base.py already documents, and
+      # correct for production: a real user silently never receiving a
+      # verification email is worse than that signup failing visibly. See
+      # RENDER_PRODUCTION.md for what setting this to a real provider
+      # (and the new EMAIL_HOST/EMAIL_HOST_USER/EMAIL_HOST_PASSWORD/
+      # EMAIL_PORT/EMAIL_USE_TLS vars config/settings/base.py now reads)
+      # requires — this must be resolved before real users hit this
+      # service, not left as a staging-style stand-in.
+      - key: EMAIL_BACKEND
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        sync: false
+      # The production Supabase project's own pooler string (port 6543) —
+      # never spekooh-staging's. See RENDER_PRODUCTION.md.
+      - key: DATABASE_URL
+        sync: false
+      # A separate Key Value instance from staging's — rate-limit throttle
+      # keys are scoped by (scope, client IP/user), not by environment, so
+      # a shared instance would let staging load-testing contribute to a
+      # real user's own throttle counters if they ever shared an IP (e.g.
+      # NAT/carrier-grade NAT, common on Cameroonian mobile networks).
+      - key: REDIS_URL
+        sync: false
+      # The production Supabase project's own Storage bucket + S3
+      # credentials — never staging's. See RENDER_PRODUCTION.md.
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        sync: false
+      # No TASK_TRIGGER_TOKEN/run_task here on purpose — RENDER_STAGING.md
+      # §6 already calls this staging-only ("an HTTP endpoint that mutates
+      # instructor/pamphlet/account state on any correctly-tokened request
+      # is an availability and security liability under real load").
+      # Production's background jobs are the real Render Cron Job services
+      # below instead — no public endpoint, nothing to guess a token for.
+      - key: SENTRY_DSN
+        sync: false
+      - key: DJANGO_ADMIN_EMAILS
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+
+  # Production's real background-task mechanism (RENDER_STAGING.md §6,
+  # Option 3) — a native Render Cron Job per command instead of staging's
+  # HTTP-trigger + cron-job.org workaround. Same image, same code; each
+  # just runs one management command to completion and exits. Cadence
+  # matches scripts/crontab.example, with process-pending-ocr kept at the
+  # same 10-minute floor staging's own real incident (RENDER_STAGING.md
+  # §6, "part 5") found necessary to stay clear of free-tier idle-sleep —
+  # moot for an always-on Starter plan, but there's no reason to run it
+  # more often than that until real load says otherwise.
+  - type: cron
+    name: spekooh-production-instructor-timeouts
+    runtime: docker
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    dockerCommand: python manage.py process_instructor_timeouts
+    plan: starter
+    region: frankfurt
+    branch: main
+    rootDir: backend
+    schedule: "*/15 * * * *"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+  - type: cron
+    name: spekooh-production-pamphlet-expiry
+    runtime: docker
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    dockerCommand: python manage.py process_pamphlet_expiry
+    plan: starter
+    region: frankfurt
+    branch: main
+    rootDir: backend
+    schedule: "0 * * * *"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+  - type: cron
+    name: spekooh-production-prune-guest-accounts
+    runtime: docker
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    dockerCommand: python manage.py prune_stale_guest_accounts
+    plan: starter
+    region: frankfurt
+    branch: main
+    rootDir: backend
+    schedule: "5 * * * *"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+  - type: cron
+    name: spekooh-production-ai-artifacts
+    runtime: docker
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    dockerCommand: python manage.py generate_pending_artifacts
+    plan: starter
+    region: frankfurt
+    branch: main
+    rootDir: backend
+    schedule: "*/10 * * * *"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+  - type: cron
+    name: spekooh-production-pending-ocr
+    runtime: docker
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    dockerCommand: python manage.py process_pending_ocr
+    plan: starter
+    region: frankfurt
+    branch: main
+    rootDir: backend
+    schedule: "*/10 * * * *"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        sync: false
