@@ -19,6 +19,7 @@ import '../../sheets/password_reset_sheet.dart';
 import '../common/circular_back_button.dart';
 import '../legal/faq_screen.dart';
 import '../legal/privacy_policy_screen.dart';
+import '../legal/terms_of_service_screen.dart';
 
 /// Ported from ui_kits/spekooh-app/SettingsScreen.jsx. `onLogin` is called
 /// by the bottom "Log in" button (shown to guests); `onLogout` by "Log out"
@@ -187,6 +188,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: const IconChip(icon: LucideIcons.lock, tint: IconChipTint.blue, size: 38),
                   title: l10n.aboutPrivacyTitle,
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
+                ),
+                const Divider(height: 1),
+                // Real content (2026-09-13, owner blocker) — previously
+                // reachable only from the signup checkbox's own link;
+                // added here too so it's discoverable the same way
+                // Privacy Policy already is, without having to register
+                // an account first.
+                ListItemRow(
+                  icon: const IconChip(icon: LucideIcons.fileText, tint: IconChipTint.blue, size: 38),
+                  title: l10n.termsOfServiceTitle,
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TermsOfServiceScreen())),
                 ),
               ]),
               const SizedBox(height: AppSpacing.space6),

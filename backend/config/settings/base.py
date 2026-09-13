@@ -21,6 +21,9 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 # No-ops when SENTRY_DSN is unset (sentry-sdk's own documented behavior),
 # so a fresh clone with no Sentry project still works out of the box —
 # same fallback pattern as DATABASE_URL/REDIS_URL/AWS_* above and below.
+# Real project created 2026-09-13 (release-roadmap P0) — DSN set via env,
+# never hardcoded here even though a DSN isn't a secret in the same sense
+# an API key is (it only permits *sending* events, not reading data).
 sentry_sdk.init(
     dsn=env("SENTRY_DSN", default=None),
     integrations=[DjangoIntegration()],
@@ -28,10 +31,47 @@ sentry_sdk.init(
     # Errors are always captured regardless of this — this is the *trace*
     # sample rate for performance monitoring, kept low since this isn't a
     # latency-critical service and a low-traffic beta doesn't need every
-    # request traced to get useful signal.
+    # request traced to get useful signal. Sentry's own onboarding
+    # snippet (2026-09-13) defaults this to 1.0 — deliberately NOT
+    # adopted here, same "low-traffic beta doesn't need every request"
+    # reasoning as the value already chosen.
     traces_sample_rate=0.1,
+    # Sentry's own onboarding snippet defaults this to True — deliberately
+    # kept False here too: this project has its own established PII-
+    # redaction discipline elsewhere (see the admin's own PII-redaction
+    # work), and sending every user's IP/request headers to a third party
+    # by default would quietly undo that, not just leave a gap unfilled.
     send_default_pii=False,
+    # The one real addition from the onboarding snippet actually worth
+    # taking: forwards this codebase's own logger.warning/logger.error
+    # calls (e.g. apps/ai/views.py's swallowed-AI-provider-error logging,
+    # 2026-09-12) into Sentry too, not just Render's own stdout log
+    # stream — directly serves the same "someone should be paged, not
+    # find out from a support ticket" goal SENTRY_DSN exists for at all.
+    enable_logs=True,
+    # Continuous profiling (profile_session_sample_rate/profile_lifecycle
+    # in Sentry's onboarding snippet) deliberately NOT enabled — real,
+    # measurable overhead on top of tracing, and nothing about this app's
+    # actual traffic today indicates a need for it; revisit if a real
+    # performance question comes up, not preemptively.
 )
+
+# Django's own, second, independent error-visibility channel (2026-09-13,
+# release-roadmap P0: "a paying user's failed payment should page someone,
+# not wait for them to complain") — SENTRY_DSN above is the primary one,
+# but this needs no third-party account at all: when DEBUG=False, Django's
+# own AdminEmailHandler emails everyone in ADMINS on every unhandled
+# exception, using whatever EMAIL_BACKEND is already configured. A no-op
+# until two things are both real: EMAIL_BACKEND (still Django's console
+# backend — see the "Real email provider" item elsewhere) and this env
+# var — same "safe when unset" posture as SENTRY_DSN/GEMINI_API_KEY/etc.,
+# not a crash risk to leave unset on a fresh clone.
+#
+# DJANGO_ADMIN_EMAILS: comma-separated addresses, e.g.
+# "owner@example.com,oncall@example.com" — no name field, since Django's
+# AdminEmailHandler only ever uses the email half of each (name, email)
+# pair in its own message body anyway.
+ADMINS = [(email, email) for email in env.list("DJANGO_ADMIN_EMAILS", default=[])]
 
 INSTALLED_APPS = [
     "unfold",  # must precede django.contrib.admin to override its templates
@@ -363,8 +403,18 @@ AI_MODELS = {
     # per-artifact failure logging, not assumed.
     "gemini_primary": env("GEMINI_MODEL", default="gemini-3.6-flash"),
     # Groq's own model roster also changes often — see
-    # https://console.groq.com/docs/models
-    "groq_chat": env("GROQ_CHAT_MODEL", default="llama-3.3-70b-versatile"),
+    # https://console.groq.com/docs/models. Real live failure (2026-09-12,
+    # same day as the Gemini one above): "llama-3.3-70b-versatile" started
+    # 404ing on staging with "does not exist or you do not have access to
+    # it" — caught via the new per-request logging added the same day
+    # (apps.ai.views' logger.warning calls), not assumed. Confirmed via
+    # Groq's own current docs: both llama-3.3-70b-versatile and
+    # llama-3.1-8b-instant moved to Enterprise-only access; the generally
+    # available production models are the openai/gpt-oss-* family.
+    # gpt-oss-20b over -120b: cheaper and faster, and this is a free,
+    # daily-quota-capped student chat feature where cost-per-message
+    # directly limits how far GROQ_DAILY_BUDGET stretches.
+    "groq_chat": env("GROQ_CHAT_MODEL", default="openai/gpt-oss-20b"),
 }
 # Bump this to invalidate every cached artifact at once (e.g. after a real
 # prompt-quality improvement) — old rows stay valid until a new

@@ -167,6 +167,16 @@ void main() {
     expect(find.textContaining('Spekooh ("we", "us", "our")'), findsOneWidget);
   });
 
+  testWidgets('SettingsScreen "Terms of Service" opens a real screen, discoverable without signing up first '
+      '(owner blocker, 2026-09-13)', (tester) async {
+    await _pumpAndCheck(tester, SettingsScreen(profileRepository: MockProfileRepository()));
+    await tester.ensureVisible(find.text('Terms of Service'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Terms of Service'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('These Terms of Service'), findsOneWidget);
+  });
+
   testWidgets('SettingsScreen "FAQ" opens a real answers screen, not a dead row', (tester) async {
     await _pumpAndCheck(tester, SettingsScreen(profileRepository: MockProfileRepository()));
     await tester.ensureVisible(find.text('FAQ'));

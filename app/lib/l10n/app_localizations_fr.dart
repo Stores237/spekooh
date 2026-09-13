@@ -1039,6 +1039,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get viewPrivacyPolicyLink => 'Voir la politique de confidentialité';
 
   @override
+  String get termsOfServiceTitle => 'Conditions d\'utilisation';
+
+  @override
+  String termsOfServiceLastUpdated(String date) {
+    return 'Dernière mise à jour : $date';
+  }
+
+  @override
+  String get viewTermsOfServiceLink => 'Voir les conditions d\'utilisation';
+
+  @override
   String get viewOnlyNotice =>
       'Consultation uniquement. Débloquez pour télécharger une copie';
 

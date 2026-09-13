@@ -1904,6 +1904,24 @@ abstract class AppLocalizations {
   /// **'View Privacy Policy'**
   String get viewPrivacyPolicyLink;
 
+  /// No description provided for @termsOfServiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfServiceTitle;
+
+  /// No description provided for @termsOfServiceLastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated {date}'**
+  String termsOfServiceLastUpdated(String date);
+
+  /// No description provided for @viewTermsOfServiceLink.
+  ///
+  /// In en, this message translates to:
+  /// **'View Terms of Service'**
+  String get viewTermsOfServiceLink;
+
   /// No description provided for @viewOnlyNotice.
   ///
   /// In en, this message translates to:
