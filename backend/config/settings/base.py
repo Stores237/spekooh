@@ -21,6 +21,9 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 # No-ops when SENTRY_DSN is unset (sentry-sdk's own documented behavior),
 # so a fresh clone with no Sentry project still works out of the box —
 # same fallback pattern as DATABASE_URL/REDIS_URL/AWS_* above and below.
+# Real project created 2026-09-13 (release-roadmap P0) — DSN set via env,
+# never hardcoded here even though a DSN isn't a secret in the same sense
+# an API key is (it only permits *sending* events, not reading data).
 sentry_sdk.init(
     dsn=env("SENTRY_DSN", default=None),
     integrations=[DjangoIntegration()],
@@ -28,9 +31,29 @@ sentry_sdk.init(
     # Errors are always captured regardless of this — this is the *trace*
     # sample rate for performance monitoring, kept low since this isn't a
     # latency-critical service and a low-traffic beta doesn't need every
-    # request traced to get useful signal.
+    # request traced to get useful signal. Sentry's own onboarding
+    # snippet (2026-09-13) defaults this to 1.0 — deliberately NOT
+    # adopted here, same "low-traffic beta doesn't need every request"
+    # reasoning as the value already chosen.
     traces_sample_rate=0.1,
+    # Sentry's own onboarding snippet defaults this to True — deliberately
+    # kept False here too: this project has its own established PII-
+    # redaction discipline elsewhere (see the admin's own PII-redaction
+    # work), and sending every user's IP/request headers to a third party
+    # by default would quietly undo that, not just leave a gap unfilled.
     send_default_pii=False,
+    # The one real addition from the onboarding snippet actually worth
+    # taking: forwards this codebase's own logger.warning/logger.error
+    # calls (e.g. apps/ai/views.py's swallowed-AI-provider-error logging,
+    # 2026-09-12) into Sentry too, not just Render's own stdout log
+    # stream — directly serves the same "someone should be paged, not
+    # find out from a support ticket" goal SENTRY_DSN exists for at all.
+    enable_logs=True,
+    # Continuous profiling (profile_session_sample_rate/profile_lifecycle
+    # in Sentry's onboarding snippet) deliberately NOT enabled — real,
+    # measurable overhead on top of tracing, and nothing about this app's
+    # actual traffic today indicates a need for it; revisit if a real
+    # performance question comes up, not preemptively.
 )
 
 # Django's own, second, independent error-visibility channel (2026-09-13,
