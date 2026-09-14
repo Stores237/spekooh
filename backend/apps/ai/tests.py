@@ -390,7 +390,7 @@ class TestGroqProviderStreaming:
         mock above, which bypasses the decoding step entirely and so could
         never have caught this."""
         chunk = _delta_chunk("Bien sûr ! Voici ton résumé.")
-        line = f"data: {json.dumps(chunk)}".encode("utf-8")
+        line = f"data: {json.dumps(chunk)}".encode()
         response = mock.Mock(status_code=200)
         response.iter_lines.return_value = iter([line, b"data: [DONE]"])
 
