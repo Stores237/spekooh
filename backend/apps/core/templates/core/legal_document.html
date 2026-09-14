@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }} — Spekooh</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #241A08;">
+  <h1 style="margin-bottom: 4px;">{{ title }}</h1>
+  <p style="color: #6B6155; font-size: 13px;">Last updated: {{ last_updated }}</p>
+  <p>{{ intro }}</p>
+  {% for heading, body in sections %}
+    <h2 style="font-size: 17px; margin-top: 32px;">{{ heading }}</h2>
+    <p style="white-space: pre-line;">{{ body }}</p>
+  {% endfor %}
+</body>
+</html>

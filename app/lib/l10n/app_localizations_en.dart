@@ -1133,19 +1133,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get xpSlotBonusActiveLabel => 'Bonus slot active';
 
   @override
-  String get kawloPlusUnlimitedTitle => 'Kawlo Plus: unlimited downloads';
+  String get spekoohPlusUnlimitedTitle => 'Spekooh Plus: unlimited downloads';
 
   @override
-  String get kawloPlusUnlimitedSubtitle => 'Plus unlimited AI & no banner ads';
+  String get spekoohPlusUnlimitedSubtitle =>
+      'Plus unlimited AI & no banner ads';
 
   @override
-  String get kawloPlusPriceLabel => '500 FCFA/mo';
+  String get spekoohPlusPriceLabel => '500 FCFA/mo';
 
   @override
   String get houseAdSponsoredLabel => 'SPONSORED';
 
   @override
-  String get houseAdTitle => 'Advertise your business on Kawlo';
+  String get houseAdTitle => 'Advertise your business on Spekooh';
 
   @override
   String get houseAdSubtitle => 'Reach thousands of students across Cameroon.';
@@ -1155,7 +1156,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get houseAdExplanation =>
-      'This is a message from Kawlo, not a targeted ad. We\'re always open to featuring real businesses to our student audience, not just schools.';
+      'This is a message from Spekooh, not a targeted ad. We\'re always open to featuring real businesses to our student audience, not just schools.';
 
   @override
   String offlineSaveError(String error) {

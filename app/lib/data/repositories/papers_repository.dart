@@ -167,7 +167,7 @@ class ChatReply {
   const ChatReply({required this.content, this.quotaRemaining});
   final String content;
 
-  /// Free messages left today, or null for a Subscription-active (Kawlo
+  /// Free messages left today, or null for a Subscription-active (Spekooh
   /// Plus) user, who has no cap to count down (see PaperChatView).
   final int? quotaRemaining;
 }

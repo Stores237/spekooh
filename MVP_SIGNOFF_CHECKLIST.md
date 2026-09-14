@@ -69,7 +69,7 @@ until a fix is verified, not just made.
 
 | # | Flow | Steps | Pass | Fail | Tester / Date | Notes |
 |---|---|---|:-:|:-:|---|---|
-| 34 | Subscribe (Kawlo Plus) | Start a real subscription via the mock provider | ☐ | ☐ | | |
+| 34 | Subscribe (Spekooh Plus) | Start a real subscription via the mock provider | ☐ | ☐ | | |
 | 35 | First-unlock-free | A new user's first paper unlock is genuinely free | ☐ | ☐ | | |
 | 36 | Credit ledger | Earn credits from a real contribution, confirm the balance updates | ☐ | ☐ | | |
 | 37 | XP / redeem slot bonus | Earn XP, redeem the offline-slot bonus, confirm it actually applies | ☐ | ☐ | | |

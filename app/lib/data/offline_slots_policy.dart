@@ -6,7 +6,7 @@ import 'repositories/profile_repository.dart';
 /// "Download slots" (My Downloads mockup, owner request 2026-09-11): a
 /// free account may keep this many papers offline at once, and separately
 /// this many corrections (marking guides) offline at once — the two
-/// stores are capped independently, not shared. A Kawlo Plus subscriber
+/// stores are capped independently, not shared. A Spekooh Plus subscriber
 /// has no cap at all ("unlimited downloads").
 const kMaxOfflineSlots = 3;
 

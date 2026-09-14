@@ -10,7 +10,7 @@
 ///
 /// Deliberately included because it's real: the 3-free-question-papers/day
 /// limit + rewarded-ad/Pro unlock (apps.papers.services.record_paper_view),
-/// marking-guide/paper-download pay-per-unlock via mobile money, Kawlo Plus
+/// marking-guide/paper-download pay-per-unlock via mobile money, Spekooh Plus
 /// subscription, contributor bonus credits + redeem codes, XP + the 250-XP
 /// offline-slot redemption, referral bonuses, academic-report contribution
 /// with automatic watermarking, MCQ answers marked in-house (never sent to
@@ -69,10 +69,10 @@ const termsOfServiceSections = [
     'Spekooh lets students browse and view past exam papers and academic reports, contribute new ones, chat '
         'with an AI study assistant, take practice quizzes, and (once a paper is marked) access a marking guide. '
         'Non-subscribed users can view a limited number of question papers free each day; once that limit is '
-        'reached, you may watch a rewarded video ad for one additional view, or subscribe to Kawlo Plus for '
+        'reached, you may watch a rewarded video ad for one additional view, or subscribe to Spekooh Plus for '
         'unlimited views and an ad-free experience. Marking guides and, for most exam papers, downloading the '
         'scanned paper itself are separate, one-time purchases, paid for individually regardless of whether you '
-        'subscribe to Kawlo Plus. We do not guarantee that a marking guide will exist or be produced for any '
+        'subscribe to Spekooh Plus. We do not guarantee that a marking guide will exist or be produced for any '
         'specific paper, or how long that takes.',
   ),
   TermsSection(
@@ -103,7 +103,7 @@ const termsOfServiceSections = [
     'Spekooh\'s AI study assistant and AI-generated paper summaries are produced by third-party AI models and '
         'are meant to help you learn, not to replace your own judgment or your teacher. They can be wrong, '
         'incomplete, or occasionally decline to answer. Do not rely on an AI reply as a final or authoritative '
-        'answer, especially for anything graded. Free AI chat use is subject to a daily message limit; Kawlo '
+        'answer, especially for anything graded. Free AI chat use is subject to a daily message limit; Spekooh '
         'Plus subscribers are not subject to that per-user limit, though Spekooh may still apply a shared, '
         'provider-wide limit across all users to keep the service available for everyone.',
   ),
@@ -126,7 +126,7 @@ const termsOfServiceSections = [
   ),
   TermsSection(
     '9. Payments, subscriptions, and refunds',
-    'Paid features — marking-guide unlocks, exam-paper downloads, the Kawlo Plus subscription, and pamphlet '
+    'Paid features — marking-guide unlocks, exam-paper downloads, the Spekooh Plus subscription, and pamphlet '
         'purchases — are charged through the mobile money number you provide at the time (e.g. MTN Mobile Money '
         'or Orange Money); make sure it\'s correct, since Spekooh is not responsible for a charge sent to a '
         'wrong number you entered. Prices are shown in FCFA before you confirm a purchase and may change at any '
@@ -139,7 +139,7 @@ const termsOfServiceSections = [
   TermsSection(
     '10. Advertising',
     'Free-tier use of Spekooh shows ads, including rewarded video ads through Google AdMob when you choose to '
-        'watch one for an extra paper view. Kawlo Plus removes ads for the paper-viewing experience. We are not '
+        'watch one for an extra paper view. Spekooh Plus removes ads for the paper-viewing experience. We are not '
         'responsible for the content of third-party ads shown through AdMob.',
   ),
   TermsSection(

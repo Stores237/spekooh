@@ -184,7 +184,7 @@ void main() {
     expect(find.text('You need 250 XP to redeem this. You have 0.'), findsOneWidget);
   });
 
-  testWidgets('a Kawlo Plus subscriber sees no slots cap and no upsell banner', (tester) async {
+  testWidgets('a Spekooh Plus subscriber sees no slots cap and no upsell banner', (tester) async {
     await tester.pumpWidget(l10nTestApp(MyDownloadsScreen(profileRepository: MockProfileRepository(user: _plusUser))));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
@@ -193,7 +193,7 @@ void main() {
     expect(find.textContaining('unlimited downloads'), findsNothing);
   });
 
-  testWidgets('a free account sees both the slots card and the Kawlo Plus upsell', (tester) async {
+  testWidgets('a free account sees both the slots card and the Spekooh Plus upsell', (tester) async {
     await tester.pumpWidget(l10nTestApp(MyDownloadsScreen(profileRepository: MockProfileRepository(user: _freeUser))));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));

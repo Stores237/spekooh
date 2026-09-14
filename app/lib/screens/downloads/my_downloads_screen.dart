@@ -18,7 +18,7 @@ import '../../theme/app_theme.dart';
 
 /// My Downloads (owner-provided mockup, 2026-09-11): saved papers and
 /// saved corrections (marking guides) shown as two tabs, each capped at
-/// [effectiveMaxOfflineSlots] for a free account, unlimited for Kawlo Plus.
+/// [effectiveMaxOfflineSlots] for a free account, unlimited for Spekooh Plus.
 /// Only ever reached from a home-page entry point shown once something has
 /// actually been saved (see LoggedInHomeScreen) — this screen itself just
 /// renders whatever OfflinePapersStore/OfflineGuidesStore already hold, it
@@ -114,7 +114,7 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
                       _xpRedeemCard(l10n, user),
                       if (!isPlus) ...[
                         const SizedBox(height: AppSpacing.space3),
-                        _kawloPlusBanner(l10n),
+                        _spekoohPlusBanner(l10n),
                       ],
                       const SizedBox(height: AppSpacing.space6),
                     ],
@@ -293,7 +293,7 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
     );
   }
 
-  Widget _kawloPlusBanner(AppLocalizations l10n) {
+  Widget _spekoohPlusBanner(AppLocalizations l10n) {
     return GestureDetector(
       onTap: widget.onOpenPaywall,
       child: Container(
@@ -313,15 +313,15 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.kawloPlusUnlimitedTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.white)),
-                  Text(l10n.kawloPlusUnlimitedSubtitle, style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
+                  Text(l10n.spekoohPlusUnlimitedTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.white)),
+                  Text(l10n.spekoohPlusUnlimitedSubtitle, style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
                 ],
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(color: AppColors.gold500, borderRadius: BorderRadius.circular(999)),
-              child: Text(l10n.kawloPlusPriceLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.ink900)),
+              child: Text(l10n.spekoohPlusPriceLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.ink900)),
             ),
           ],
         ),

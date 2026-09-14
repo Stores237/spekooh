@@ -3,14 +3,51 @@ import os
 
 from django.core.management import call_command
 from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+
+from . import legal_content
 
 
 def healthz(request):
     """Render's own healthCheckPath (see /render.yaml) — deploys are marked
     unhealthy and rolled back without this."""
     return JsonResponse({"status": "ok"})
+
+
+def privacy_policy_page(request):
+    """A real, public URL for the Privacy Policy — 2026-09-14, owner
+    request: Play Console's Store Listing requires one (a validated field,
+    not optional), and this document previously only existed as an in-app
+    Flutter screen with no URL at all. See apps.core.legal_content's own
+    docstring for why this is a content duplicate, not a shared source of
+    truth, with the Flutter version."""
+    return render(
+        request,
+        "core/legal_document.html",
+        {
+            "title": "Privacy Policy",
+            "last_updated": legal_content.PRIVACY_POLICY_LAST_UPDATED,
+            "intro": legal_content.PRIVACY_POLICY_INTRO,
+            "sections": legal_content.PRIVACY_POLICY_SECTIONS,
+        },
+    )
+
+
+def terms_of_service_page(request):
+    """Same reasoning as privacy_policy_page above — App Store Connect
+    also asks for this as a URL, not just an in-app screen."""
+    return render(
+        request,
+        "core/legal_document.html",
+        {
+            "title": "Terms of Service",
+            "last_updated": legal_content.TERMS_OF_SERVICE_LAST_UPDATED,
+            "intro": legal_content.TERMS_OF_SERVICE_INTRO,
+            "sections": legal_content.TERMS_OF_SERVICE_SECTIONS,
+        },
+    )
 
 
 # Render's free web-service plan has no background-worker or cron concept

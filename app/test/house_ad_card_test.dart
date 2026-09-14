@@ -18,8 +18,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('SPONSORED'), findsOneWidget);
-    expect(find.text('Advertise your business on Kawlo'), findsOneWidget);
-    expect(find.text('Advertise your school on Kawlo'), findsNothing); // the old, school-only copy
+    expect(find.text('Advertise your business on Spekooh'), findsOneWidget);
+    expect(find.text('Advertise your school on Spekooh'), findsNothing); // the old, school-only copy
     expect(find.text('Why this ad?'), findsOneWidget);
   });
 
@@ -30,12 +30,12 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Advertise your business on Kawlo'), findsOneWidget);
+    expect(find.text('Advertise your business on Spekooh'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('houseAdDismissButton')));
     await tester.pump();
 
-    expect(find.text('Advertise your business on Kawlo'), findsNothing);
+    expect(find.text('Advertise your business on Spekooh'), findsNothing);
 
     // A real, separate check against the same storage sees it too — not
     // just in-memory widget state that would reappear on the next launch.
@@ -50,7 +50,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Advertise your business on Kawlo'), findsNothing);
+    expect(find.text('Advertise your business on Spekooh'), findsNothing);
   });
 
   testWidgets('"Why this ad?" shows a real, honest explanation', (tester) async {

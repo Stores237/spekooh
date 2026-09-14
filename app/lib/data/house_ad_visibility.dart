@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'token_storage.dart';
 
-/// Whether the "Advertise on Kawlo" house ad on Home is still shown —
+/// Whether the "Advertise on Spekooh" house ad on Home is still shown —
 /// owner request, 2026-09-11: "make it removable if not needed by user".
 /// Reuses TokenStorage (already wired to real flutter_secure_storage, with
 /// a real InMemoryTokenStorage test double) rather than adding a new
