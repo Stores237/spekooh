@@ -17,6 +17,8 @@ from .serializers import (
     EmailVerificationRequestByEmailSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    PhoneVerificationConfirmSerializer,
+    PhoneVerificationRequestSerializer,
     RegisterSerializer,
     UserSerializer,
     tokens_for_user,
@@ -175,6 +177,33 @@ class EmailVerificationConfirmByEmailView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "Email verified. Log in with your password."})
+
+
+class PhoneVerificationRequestView(APIView):
+    """Authenticated only — see PhoneVerificationRequestSerializer's
+    docstring for why there's no unauthenticated recovery pair like email's."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "phone_verification_request"
+
+    @extend_schema(request=None, responses=None)
+    def post(self, request):
+        serializer = PhoneVerificationRequestSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.send()
+        return Response({"detail": "Verification code sent."})
+
+
+class PhoneVerificationConfirmView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "phone_verification_confirm"
+
+    @extend_schema(request=PhoneVerificationConfirmSerializer, responses=UserSerializer)
+    def post(self, request):
+        serializer = PhoneVerificationConfirmSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(UserSerializer(user).data)
 
 
 class MeView(generics.RetrieveUpdateAPIView):

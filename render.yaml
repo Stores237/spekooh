@@ -91,6 +91,22 @@ services:
       # stays inert until this is set. See RENDER_STAGING.md §4.
       - key: GEMINI_API_KEY
         sync: false
+      # Twilio (2026-09-14) — phone verification (apps.core.sms, via a real
+      # Verify Service, no purchased number needed) + optional SMS
+      # notifications (apps.notifications.services.notify(sms=True), which
+      # DOES need TWILIO_MESSAGING_FROM_NUMBER — a real purchased number/
+      # Messaging Service, absent here same as production; see
+      # RENDER_PRODUCTION.md). Both features no-op safely when unset.
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_API_KEY_SID
+        sync: false
+      - key: TWILIO_API_KEY_SECRET
+        sync: false
+      - key: TWILIO_VERIFY_SERVICE_SID
+        sync: false
+      - key: TWILIO_MESSAGING_FROM_NUMBER
+        sync: false
       # Free-tier web services have no Shell tab and no one-off Jobs (both
       # paid-only), so the usual `createsuperuser` has nowhere interactive
       # to run — the Dockerfile's own CMD runs
@@ -202,6 +218,22 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: GROQ_API_KEY
+        sync: false
+      # Twilio (2026-09-14) — own account for production, never staging's
+      # credentials (same "never reuse a staging value" rule as everything
+      # else in this file — see RENDER_PRODUCTION.md §0). Phone verification
+      # (TWILIO_VERIFY_SERVICE_SID) works with no purchased number; SMS
+      # notifications (TWILIO_MESSAGING_FROM_NUMBER) need one and this
+      # account doesn't have one yet — no-ops safely until it does.
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_API_KEY_SID
+        sync: false
+      - key: TWILIO_API_KEY_SECRET
+        sync: false
+      - key: TWILIO_VERIFY_SERVICE_SID
+        sync: false
+      - key: TWILIO_MESSAGING_FROM_NUMBER
         sync: false
       - key: DJANGO_SUPERUSER_EMAIL
         sync: false

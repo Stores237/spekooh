@@ -10,6 +10,8 @@ from .views import (
     MeView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
+    PhoneVerificationConfirmView,
+    PhoneVerificationRequestView,
     RefreshView,
     RegisterView,
 )
@@ -30,4 +32,6 @@ urlpatterns = [
     # docstring for why this exists alongside the authenticated pair above.
     path("verify-email/request-by-email/", EmailVerificationRequestByEmailView.as_view(), name="verify-email-request-by-email"),
     path("verify-email/confirm-by-email/", EmailVerificationConfirmByEmailView.as_view(), name="verify-email-confirm-by-email"),
+    path("verify-phone/", PhoneVerificationRequestView.as_view(), name="verify-phone"),
+    path("verify-phone/confirm/", PhoneVerificationConfirmView.as_view(), name="verify-phone-confirm"),
 ]

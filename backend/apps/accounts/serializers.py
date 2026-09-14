@@ -26,6 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
     xp_balance = serializers.SerializerMethodField()
     has_active_slot_bonus = serializers.SerializerMethodField()
     email_verified = serializers.SerializerMethodField()
+    phone_verified = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
     # Write-only upload target — PATCH /me/ with multipart form data,
     # field name "avatar", to set/replace it. Not access-gated like paper
@@ -52,6 +53,7 @@ class UserSerializer(serializers.ModelSerializer):
             "has_active_slot_bonus",
             "referral_code",
             "email_verified",
+            "phone_verified",
             "avatar",
             "avatar_url",
         ]
@@ -66,6 +68,7 @@ class UserSerializer(serializers.ModelSerializer):
             "has_active_slot_bonus",
             "referral_code",
             "email_verified",
+            "phone_verified",
             "avatar_url",
         ]
 
@@ -87,6 +90,9 @@ class UserSerializer(serializers.ModelSerializer):
     def get_email_verified(self, obj) -> bool:
         return obj.email_verified_at is not None
 
+    def get_phone_verified(self, obj) -> bool:
+        return obj.phone_verified_at is not None
+
     def get_avatar_url(self, obj) -> str | None:
         if not obj.avatar:
             return None
@@ -102,12 +108,23 @@ class UserSerializer(serializers.ModelSerializer):
         # what email verification exists to prevent (see PR #41). Reset and
         # re-send, same real flow as at signup — not a new mechanism.
         email_changed = "email" in validated_data and (validated_data["email"] or None) != instance.email
+        # Same reasoning as email above: a changed number shouldn't keep
+        # showing "verified" for whoever's number it used to be. Unlike
+        # email, deliberately does NOT auto-send a new code here — that
+        # would spend a real Twilio Verify send on every profile save, not
+        # just ones where the user actually wants to verify right away;
+        # the client calls verify-phone/ explicitly instead (a natural
+        # "add number -> tap verify" step, not a silent side effect of PATCH).
+        phone_changed = "phone_number" in validated_data and (validated_data["phone_number"] or None) != instance.phone_number
         user = super().update(instance, validated_data)
         if email_changed:
             user.email_verified_at = None
             user.save(update_fields=["email_verified_at"])
             if user.email:
                 services.send_verification_email(user)
+        if phone_changed:
+            user.phone_verified_at = None
+            user.save(update_fields=["phone_verified_at"])
         return user
 
 
@@ -348,4 +365,57 @@ class EmailVerificationConfirmByEmailSerializer(serializers.Serializer):
         user.save(update_fields=["email_verified_at"])
         verification.used_at = timezone.now()
         verification.save(update_fields=["used_at"])
+        return user
+
+
+class PhoneVerificationRequestSerializer(serializers.Serializer):
+    """Always authenticated (unlike the email pair, there's no
+    "lost the session" recovery path here — phone_number is only ever set
+    via PATCH /me/ from a live session, never at registration-time-only
+    like email). No local OTP model: Twilio Verify owns the code."""
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        if not user.phone_number:
+            raise serializers.ValidationError("Add a phone number to your profile first.")
+        attrs["_user"] = user
+        return attrs
+
+    def send(self) -> None:
+        from apps.core.sms import SMSError, SMSUnavailable, send_verification_code
+
+        user = self.validated_data["_user"]
+        try:
+            send_verification_code(user.phone_number)
+        except SMSUnavailable:
+            raise serializers.ValidationError("Phone verification isn't available right now.")
+        except SMSError:
+            raise serializers.ValidationError("Couldn't send a verification code. Try again shortly.")
+
+
+class PhoneVerificationConfirmSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=6, min_length=4)
+
+    def validate(self, attrs):
+        from apps.core.sms import SMSError, SMSUnavailable, check_verification_code
+
+        user = self.context["request"].user
+        if not user.phone_number:
+            raise serializers.ValidationError("No phone number on this account.")
+        generic_error = "That code is invalid or has expired."
+        try:
+            approved = check_verification_code(user.phone_number, attrs["code"])
+        except SMSUnavailable:
+            raise serializers.ValidationError("Phone verification isn't available right now.")
+        except SMSError:
+            raise serializers.ValidationError(generic_error)
+        if not approved:
+            raise serializers.ValidationError(generic_error)
+        attrs["_user"] = user
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.validated_data["_user"]
+        user.phone_verified_at = timezone.now()
+        user.save(update_fields=["phone_verified_at"])
         return user
