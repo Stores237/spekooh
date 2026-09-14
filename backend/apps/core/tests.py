@@ -446,3 +446,36 @@ def test_send_sms_calls_twilio_messaging_for_real():
     args, kwargs = mocked_post.call_args
     assert args[0] == "https://api.twilio.com/2010-04-01/Accounts/ACtest/Messages.json"
     assert kwargs["data"] == {"To": "+237600000000", "From": "+15005550006", "Body": "Your paper was approved."}
+
+
+# --- Real public legal document pages (2026-09-14) --------------------------
+# Play Console's Store Listing and App Store Connect both require a real,
+# public URL for the Privacy Policy specifically — previously it only
+# existed as an in-app Flutter screen with no URL at all.
+
+
+def test_privacy_policy_page_is_public_and_real():
+    response = Client().get("/legal/privacy-policy/")
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Privacy Policy" in content
+    assert "storefix237@gmail.com" in content
+    # A real, complete document, not a stub — all 12 real sections present.
+    assert "12. Contact us" in content
+
+
+def test_terms_of_service_page_is_public_and_real():
+    response = Client().get("/legal/terms-of-service/")
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Terms of Service" in content
+    # A real, complete document, not a stub — all 16 real sections present.
+    assert "16. Contact us" in content
+
+
+def test_legal_pages_require_no_authentication():
+    """The whole point — Google/Apple's own review process, and any real
+    user, must be able to open these with no login at all."""
+    client = Client()
+    assert client.get("/legal/privacy-policy/").status_code == 200
+    assert client.get("/legal/terms-of-service/").status_code == 200
