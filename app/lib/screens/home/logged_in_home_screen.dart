@@ -470,7 +470,14 @@ class LoggedInHomeScreen extends StatelessWidget {
                       padding: EdgeInsets.only(top: AppSpacing.space2),
                       child: HouseAdCard(),
                     ),
-                    const SizedBox(height: AppSpacing.space6),
+                    // Real bug found 2026-09-14 (/design-review, confirmed
+                    // live at a real 390px mobile viewport): this used to be
+                    // AppSpacing.space6 (24px) — nowhere near enough to
+                    // clear root_shell.dart's real floating AIAssistantFab,
+                    // which sat directly on top of HouseAdCard's own "Learn
+                    // more" button, covering ~60% of its width and all of
+                    // its height. See AppSpacing.fabClearance's own comment.
+                    const SizedBox(height: AppSpacing.fabClearance),
                   ],
                 ),
               ),
