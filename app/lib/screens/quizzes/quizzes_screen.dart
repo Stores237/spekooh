@@ -11,6 +11,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/heritage_pattern_strip.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/search_input.dart';
 import '../../widgets/spekooh_avatar.dart';
@@ -403,6 +404,8 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                                   ))
                               .toList(),
                         ),
+                        const SizedBox(height: AppSpacing.space3),
+                        const HeritagePatternStrip.onDark(),
                       ],
                     );
                   },

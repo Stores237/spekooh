@@ -172,6 +172,8 @@ class LoggedInHomeScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            const SizedBox(height: AppSpacing.space4),
+                            const HeritagePatternStrip.onDark(),
                           ],
                         ),
                       );
@@ -485,10 +487,10 @@ class LoggedInHomeScreen extends StatelessWidget {
           ),
         ),
       ),
-          // Owner reference (2026-09-12): same subtle heritage motif as
-          // SplashScreen's own HeritagePatternStrip — see HomeScreen's
-          // (guest variant) matching comment for the full reasoning.
-          const Positioned(left: 0, right: 0, bottom: 0, child: HeritagePatternStrip()),
+          // The heritage pattern strip moved onto the dark greeting card
+          // itself (above) — see HeritagePatternStrip's own doc comment:
+          // pinned to this screen's cream background it was too
+          // low-contrast to read as anything at all.
         ],
       ),
     );
