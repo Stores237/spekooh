@@ -378,6 +378,26 @@ class TestGroqProviderStreaming:
         with pytest.raises(AIRefused):
             next(deltas)
 
+    def test_iter_stream_deltas_decodes_utf8_bytes_correctly(self):
+        """Regression test for a real live bug (2026-09-14): a French reply
+        rendered as mojibake in the app ("Ã»râ€¯" for "ûr " etc.) because
+        the old code used response.iter_lines(decode_unicode=True), which
+        decodes using requests' own *guessed* .encoding — Latin-1 by
+        default when a response doesn't declare a charset, which Groq's
+        text/event-stream doesn't. This mocks iter_lines() the way the real
+        requests library actually behaves for a raw byte stream (returning
+        UTF-8-encoded bytes, not str) — unlike _fake_groq_sse's plain-str
+        mock above, which bypasses the decoding step entirely and so could
+        never have caught this."""
+        chunk = _delta_chunk("Bien sûr ! Voici ton résumé.")
+        line = f"data: {json.dumps(chunk)}".encode()
+        response = mock.Mock(status_code=200)
+        response.iter_lines.return_value = iter([line, b"data: [DONE]"])
+
+        deltas = list(GroqProvider.iter_stream_deltas(response))
+
+        assert deltas == ["Bien sûr ! Voici ton résumé."]
+
 
 class TestValidateChatMessages:
     @pytest.mark.parametrize(

@@ -70,6 +70,15 @@ dependencies:
   pdfx: ^2.11.0
   photo_view: ^0.15.0
   pdf: ^3.13.0
+
+  # Real Markdown rendering for AI chat replies (2026-09-14) — Groq/Gemini
+  # both format responses with **bold**/numbered lists, which a plain Text
+  # widget was showing as literal asterisks instead of rendering. The
+  # original flutter_markdown (Flutter team) is discontinued (last
+  # published 2025-05-06); this is its actively-maintained community fork,
+  # same API. Not gpt_markdown — that pulls in flutter_math_fork for LaTeX
+  # rendering this app has no use for.
+  flutter_markdown_plus: ^1.0.12
 dev_dependencies:
   flutter_test:
     sdk: flutter

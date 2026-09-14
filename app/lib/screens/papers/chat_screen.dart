@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/chat_message_text.dart';
 import '../../widgets/spekooh_banner.dart';
 import '../common/circular_back_button.dart';
 
@@ -240,10 +241,7 @@ class _MessageBubble extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: isUser ? null : AppShadows.card,
         ),
-        child: Text(
-          message.content,
-          style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, height: 1.4, color: isUser ? AppColors.white : AppColors.textPrimary),
-        ),
+        child: ChatMessageText(content: message.content, color: isUser ? AppColors.white : AppColors.textPrimary),
       ),
     );
   }
