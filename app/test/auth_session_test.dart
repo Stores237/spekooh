@@ -99,5 +99,66 @@ void main() {
       expect(succeeded, isFalse);
       expect(session.refreshToken, 'stale-refresh'); // caller (ApiClient) decides what happens next, e.g. a real logout
     });
+
+    test('concurrent callers share one real refresh attempt instead of racing separate ones', () async {
+      // Real bug found live (2026-09-14, /design-review): two requests
+      // 401-ing around the same moment each used to call this
+      // independently — the backend rotates AND blacklists the refresh
+      // token on the first successful call, so the second caller's own
+      // /auth/refresh/ request presented an already-consumed token and
+      // failed. Reproduced live as a real chat message that never got a
+      // reply. This proves only one real HTTP call happens no matter how
+      // many callers overlap, and every one of them gets the real result.
+      var callCount = 0;
+      final session = AuthSession(
+        storage: InMemoryTokenStorage(),
+        httpClient: MockClient((request) async {
+          callCount++;
+          // A real network round-trip isn't instantaneous — without this,
+          // the second call's own `??=` check could win a race against the
+          // first call's field assignment purely by accident, without the
+          // memoization actually being exercised.
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          return http.Response(
+            jsonEncode({'access': 'new-access', 'refresh': 'new-refresh'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      session.refreshToken = 'old-refresh';
+
+      final results = await Future.wait([session.refreshAccessToken(), session.refreshAccessToken()]);
+
+      expect(callCount, 1);
+      expect(results, [true, true]);
+      expect(session.accessToken, 'new-access');
+      expect(session.refreshToken, 'new-refresh');
+    });
+
+    test('a later refresh after the first completes makes its own real call', () async {
+      // The memoized Future must clear once done — otherwise every refresh
+      // after the very first would wrongly reuse its long-stale result
+      // forever instead of ever hitting the network again.
+      var callCount = 0;
+      final session = AuthSession(
+        storage: InMemoryTokenStorage(),
+        httpClient: MockClient((request) async {
+          callCount++;
+          return http.Response(
+            jsonEncode({'access': 'access-$callCount', 'refresh': 'refresh-$callCount'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      session.refreshToken = 'old-refresh';
+
+      await session.refreshAccessToken();
+      await session.refreshAccessToken();
+
+      expect(callCount, 2);
+      expect(session.accessToken, 'access-2');
+    });
   });
 }

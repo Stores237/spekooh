@@ -292,7 +292,29 @@ class AuthSession extends ChangeNotifier {
   /// real logout. Falls back to keeping the current token if the backend
   /// response doesn't include a new one (e.g. rotation ever gets disabled
   /// again) — never leaves refreshToken null after a successful refresh.
-  Future<bool> refreshAccessToken() async {
+  /// Shares one real refresh attempt across every concurrent caller — see
+  /// refreshAccessToken's own comment for the real bug this fixes.
+  Future<bool>? _refreshInFlight;
+
+  /// Real bug found live (2026-09-14, /design-review): ApiClient's own
+  /// one-shot 401-refresh-retry (see its own doc comment) calls this
+  /// independently from every request that happens to 401 around the same
+  /// moment — e.g. a paper detail screen's quota check and its chat send
+  /// landing close together. The backend rotates AND blacklists the
+  /// refresh token on the first successful call (SIMPLE_JWT's
+  /// ROTATE_REFRESH_TOKENS + BLACKLIST_AFTER_ROTATION), so every other
+  /// concurrent caller's own /auth/refresh/ call used an already-consumed
+  /// token and failed — reproduced live as a real chat message that never
+  /// got a reply, with repeated 401s in the console and no path back to a
+  /// working session short of a full re-login. Memoizing the in-flight
+  /// Future means every concurrent caller shares the one real attempt
+  /// (and its result) instead of racing separate ones against the same
+  /// single-use token.
+  Future<bool> refreshAccessToken() {
+    return _refreshInFlight ??= _performRefresh().whenComplete(() => _refreshInFlight = null);
+  }
+
+  Future<bool> _performRefresh() async {
     final refresh = refreshToken;
     if (refresh == null) return false;
     try {
