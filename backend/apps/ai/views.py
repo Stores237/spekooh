@@ -232,7 +232,7 @@ class PaperChatView(_CorrectsSSEMisrenderMixin, APIView):
             allowed, remaining = consume_chat_quota(str(user.pk), settings.AI_CHAT_DAILY_LIMIT)
             if not allowed:
                 return Response(
-                    {"detail": "You've used today's free chat messages. Upgrade to Kawlo Plus for unlimited chat.", "upgrade_required": True},
+                    {"detail": "You've used today's free chat messages. Upgrade to Spekooh Plus for unlimited chat.", "upgrade_required": True},
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
             quota_remaining = remaining
@@ -323,7 +323,7 @@ class AssistantChatView(_CorrectsSSEMisrenderMixin, APIView):
             allowed, remaining = consume_chat_quota(str(user.pk), settings.AI_CHAT_DAILY_LIMIT)
             if not allowed:
                 return Response(
-                    {"detail": "You've used today's free chat messages. Upgrade to Kawlo Plus for unlimited chat.", "upgrade_required": True},
+                    {"detail": "You've used today's free chat messages. Upgrade to Spekooh Plus for unlimited chat.", "upgrade_required": True},
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
             quota_remaining = remaining

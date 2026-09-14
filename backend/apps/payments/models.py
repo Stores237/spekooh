@@ -52,7 +52,7 @@ class SubscriptionManager(models.Manager):
 
 
 class Subscription(TimeStampedModel):
-    """Kawlo Plus: ad-free + unlimited paper views. Does NOT grant marking-guide access."""
+    """Spekooh Plus: ad-free + unlimited paper views. Does NOT grant marking-guide access."""
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions")
     status = models.CharField(max_length=10, choices=SubscriptionStatus.choices, default=SubscriptionStatus.ACTIVE)

@@ -70,7 +70,7 @@ void main() {
     expect(find.text('Keep 3 papers offline at a time. Remove one to save another.'), findsOneWidget);
   });
 
-  testWidgets('a Kawlo Plus subscriber is never capped, even already at 3', (tester) async {
+  testWidgets('a Spekooh Plus subscriber is never capped, even already at 3', (tester) async {
     final result = await _run(tester, currentCount: 10, user: _plusUser);
 
     expect(result, isTrue);

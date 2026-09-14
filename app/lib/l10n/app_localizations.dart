@@ -2084,23 +2084,23 @@ abstract class AppLocalizations {
   /// **'Bonus slot active'**
   String get xpSlotBonusActiveLabel;
 
-  /// No description provided for @kawloPlusUnlimitedTitle.
+  /// No description provided for @spekoohPlusUnlimitedTitle.
   ///
   /// In en, this message translates to:
-  /// **'Kawlo Plus: unlimited downloads'**
-  String get kawloPlusUnlimitedTitle;
+  /// **'Spekooh Plus: unlimited downloads'**
+  String get spekoohPlusUnlimitedTitle;
 
-  /// No description provided for @kawloPlusUnlimitedSubtitle.
+  /// No description provided for @spekoohPlusUnlimitedSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Plus unlimited AI & no banner ads'**
-  String get kawloPlusUnlimitedSubtitle;
+  String get spekoohPlusUnlimitedSubtitle;
 
-  /// No description provided for @kawloPlusPriceLabel.
+  /// No description provided for @spekoohPlusPriceLabel.
   ///
   /// In en, this message translates to:
   /// **'500 FCFA/mo'**
-  String get kawloPlusPriceLabel;
+  String get spekoohPlusPriceLabel;
 
   /// No description provided for @houseAdSponsoredLabel.
   ///
@@ -2111,7 +2111,7 @@ abstract class AppLocalizations {
   /// No description provided for @houseAdTitle.
   ///
   /// In en, this message translates to:
-  /// **'Advertise your business on Kawlo'**
+  /// **'Advertise your business on Spekooh'**
   String get houseAdTitle;
 
   /// No description provided for @houseAdSubtitle.
@@ -2129,7 +2129,7 @@ abstract class AppLocalizations {
   /// No description provided for @houseAdExplanation.
   ///
   /// In en, this message translates to:
-  /// **'This is a message from Kawlo, not a targeted ad. We\'re always open to featuring real businesses to our student audience, not just schools.'**
+  /// **'This is a message from Spekooh, not a targeted ad. We\'re always open to featuring real businesses to our student audience, not just schools.'**
   String get houseAdExplanation;
 
   /// No description provided for @offlineSaveError.

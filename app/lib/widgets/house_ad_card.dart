@@ -9,10 +9,10 @@ import '../theme/app_shadows.dart';
 import '../theme/app_theme.dart';
 import 'icon_chip.dart';
 
-/// Kawlo's own house ad recruiting new advertisers (owner-provided
+/// Spekooh's own house ad recruiting new advertisers (owner-provided
 /// reference, 2026-09-11) — distinct from the sponsor/promotion section
 /// elsewhere on Home, which shows OTHER businesses' ads TO users; this one
-/// is Kawlo pitching advertising slots TO businesses. Copy is deliberately
+/// is Spekooh pitching advertising slots TO businesses. Copy is deliberately
 /// generic ("your business"), not "your school" — the owner's own point:
 /// this app doesn't only advertise schools (S@Learn, the first real
 /// sponsor, is a tutor-matching platform, not a school). Real WhatsApp

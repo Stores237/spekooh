@@ -272,7 +272,7 @@ I can write unilaterally. Grouped by what each one unblocks.
 - **Backend:** new `AssistantChatView` (`POST /api/ai/assistant/chat/`, `apps/ai/views.py`) —
   same real-accounts-only gate, streaming/non-streaming content negotiation, and Groq plumbing as
   `PaperChatView`, but genuinely ungrounded: no paper lookup, no OCR-readiness check, no paywall
-  check. New `apps.ai.prompts.assistant.SYSTEM_ASSISTANT` (a Kawlo study-assistant persona, not
+  check. New `apps.ai.prompts.assistant.SYSTEM_ASSISTANT` (a Spekooh study-assistant persona, not
   tied to any one document) and `send_assistant_message`/`stream_assistant_message` in
   `apps/ai/services.py`. Deliberately shares the exact same per-user daily quota bucket as the
   per-paper chat (`apps.ai.quota.consume_chat_quota` keys only on the user's own pk, not the
@@ -857,7 +857,7 @@ infra items and `SECURITY.md`/this session's own record for the guest-access aud
   real-time tutor chatbot grounded in one paper's own OCR text, stateless server-side (the
   client resends its running conversation each call). Gating model (owner decision, resolved
   via AskUserQuestion): free for everyone with a daily per-user quota
-  (`AI_CHAT_DAILY_LIMIT`/quota.py), then a Kawlo Plus upsell; a Pro subscriber skips the cap
+  (`AI_CHAT_DAILY_LIMIT`/quota.py), then a Spekooh Plus upsell; a Pro subscriber skips the cap
   entirely, same reasoning as ad-free + unlimited paper views. A hard provider-wide daily
   budget (`GROQ_DAILY_BUDGET`/`GEMINI_DAILY_BUDGET`) caps real spend regardless of per-user
   quotas, defense in depth against a runaway bug or abuse.
@@ -939,10 +939,10 @@ real, material gaps this list didn't previously know about.
   shown the real gap: no slots/XP/corrections system existed at all, only a simple unbounded
   offline-papers list): a real `MyDownloadsScreen` with Papers/Corrections tabs, a 3-item
   download-slots cap per tab enforced by a shared `confirmOfflineSlotAvailable` policy (unlimited
-  for a Kawlo Plus subscriber — added a real `is_plus_subscriber` field to the profile API,
+  for a Spekooh Plus subscriber — added a real `is_plus_subscriber` field to the profile API,
   backed by `Subscription.objects.has_active`, since nothing exposed that to the client before),
   a new `OfflineGuidesStore` (mirrors `OfflinePapersStore` but for a guide's real JSON content,
-  no binary file involved) so a correction can be saved for offline reading, and a Kawlo Plus
+  no binary file involved) so a correction can be saved for offline reading, and a Spekooh Plus
   upsell banner. The "+1 slot for 3 days" XP redemption card is shown honestly as coming soon —
   no XP/gamification economy exists anywhere in this codebase (no earning mechanism, no ledger),
   and inventing one wasn't part of this ask. A new home-page entry point (separate from the
@@ -1036,9 +1036,9 @@ Same day, a further round of functional-mismatch fixes from more live screenshot
   place, so a naive "save new, then delete the old reference" pattern ends up deleting the file
   it just uploaded whenever the storage backend overwrites in place by name (confirmed live: this
   bucket does). The fix is simpler than the bug: no separate delete step needed at all.
-- **A dismissible Kawlo house ad on Home**, recruiting new advertisers — distinct from the
+- **A dismissible Spekooh house ad on Home**, recruiting new advertisers — distinct from the
   sponsor/promotion section elsewhere on Home, which shows OTHER businesses' ads TO users; this
-  one is Kawlo's own pitch TO businesses. Real, persisted dismiss (`HouseAdVisibility`, reusing
+  one is Spekooh's own pitch TO businesses. Real, persisted dismiss (`HouseAdVisibility`, reusing
   `TokenStorage` rather than a new dependency for one boolean flag) — once closed, it stays
   closed. Copy is deliberately generic ("your business"), not "your school" — the owner's own
   point, and true on its own evidence: S@Learn, the first real sponsor, is a tutor-matching

@@ -1149,22 +1149,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get xpSlotBonusActiveLabel => 'Emplacement bonus actif';
 
   @override
-  String get kawloPlusUnlimitedTitle =>
-      'Kawlo Plus : téléchargements illimités';
+  String get spekoohPlusUnlimitedTitle =>
+      'Spekooh Plus : téléchargements illimités';
 
   @override
-  String get kawloPlusUnlimitedSubtitle =>
+  String get spekoohPlusUnlimitedSubtitle =>
       'Plus l\'IA illimitée et sans bannières publicitaires';
 
   @override
-  String get kawloPlusPriceLabel => '500 FCFA/mois';
+  String get spekoohPlusPriceLabel => '500 FCFA/mois';
 
   @override
   String get houseAdSponsoredLabel => 'SPONSORISÉ';
 
   @override
   String get houseAdTitle =>
-      'Faites de la publicité pour votre entreprise sur Kawlo';
+      'Faites de la publicité pour votre entreprise sur Spekooh';
 
   @override
   String get houseAdSubtitle =>
@@ -1175,7 +1175,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get houseAdExplanation =>
-      'Ceci est un message de Kawlo, pas une publicité ciblée. Nous sommes toujours ouverts à présenter de vraies entreprises à notre audience d\'étudiants, pas seulement des écoles.';
+      'Ceci est un message de Spekooh, pas une publicité ciblée. Nous sommes toujours ouverts à présenter de vraies entreprises à notre audience d\'étudiants, pas seulement des écoles.';
 
   @override
   String offlineSaveError(String error) {

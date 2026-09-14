@@ -838,7 +838,7 @@ class TestAssistantChatView:
             api_client.post("/api/ai/assistant/chat/", {"messages": [{"role": "user", "content": "hi"}]}, format="json")
         system_prompt = mocked_chat.call_args.kwargs["system"]
         assert "past examination paper" not in system_prompt
-        assert "Kawlo" in system_prompt
+        assert "Spekooh" in system_prompt
 
 
 class TestAssistantChatViewStreaming:
