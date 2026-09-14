@@ -221,7 +221,10 @@ class _PapersScreenState extends State<PapersScreen> {
               );
             },
           ),
-          const SizedBox(height: AppSpacing.space6),
+          // AppSpacing.fabClearance, not space6 — see that constant's own
+          // comment (/design-review, 2026-09-14): the shared AI assistant
+          // FAB overlaps whatever sits at the true end of this scroll view.
+          const SizedBox(height: AppSpacing.fabClearance),
         ],
       ),
     );
@@ -248,6 +251,8 @@ class _PapersScreenState extends State<PapersScreen> {
             category.key == ExamCategoryKey.university ? 'Semester Exam · Resit' : 'O Level · A Level',
             () => _select(() => _selection.selectSystem(ExamSystem.anglophone)),
           ),
+          // See AppSpacing.fabClearance's own comment (/design-review, 2026-09-14).
+          const SizedBox(height: AppSpacing.fabClearance),
         ],
       ),
     );
@@ -300,6 +305,8 @@ class _PapersScreenState extends State<PapersScreen> {
               );
             },
           ),
+          // See AppSpacing.fabClearance's own comment (/design-review, 2026-09-14).
+          const SizedBox(height: AppSpacing.fabClearance),
         ],
       ),
     );
@@ -319,6 +326,8 @@ class _PapersScreenState extends State<PapersScreen> {
             _optionRow(track, null, () => _select(() => _selection.selectTrack(track))),
             const SizedBox(height: AppSpacing.space3),
           ],
+          // See AppSpacing.fabClearance's own comment (/design-review, 2026-09-14).
+          const SizedBox(height: AppSpacing.fabClearance),
         ],
       ),
     );
@@ -366,6 +375,13 @@ class _PapersScreenState extends State<PapersScreen> {
               );
             },
           ),
+          // Real bug found live 2026-09-14 (/design-review, real 390px
+          // mobile viewport): this step had NO trailing spacer at all, so
+          // an odd-count subject grid's last card (e.g. 7 subjects, 2
+          // columns) sat directly under the shared AI assistant FAB,
+          // partially obscured and its bottom row of text/badge
+          // unreachable. See AppSpacing.fabClearance's own comment.
+          const SizedBox(height: AppSpacing.fabClearance),
         ],
       ),
     );
@@ -542,6 +558,13 @@ class _PapersScreenState extends State<PapersScreen> {
                   ),
                   const SizedBox(height: AppSpacing.space3),
                 ],
+              // Real bug found live 2026-09-14 (/design-review, real 390px
+              // mobile viewport): this list had no real trailing clearance
+              // (space3 = 12px between rows, including after the last one)
+              // — the shared AI assistant FAB sits on top of whatever paper
+              // row happens to be last. See AppSpacing.fabClearance's own
+              // comment.
+              const SizedBox(height: AppSpacing.fabClearance),
             ],
           ),
         );
