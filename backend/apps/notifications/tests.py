@@ -169,8 +169,8 @@ def test_notify_sms_false_never_touches_twilio():
 def test_notify_sms_true_still_creates_the_in_app_notification_even_when_twilio_fails():
     from django.utils import timezone
 
-    from .services import notify
     from .models import Notification
+    from .services import notify
 
     user = UserFactory(phone_number="+237600000013")
     user.phone_verified_at = timezone.now()
