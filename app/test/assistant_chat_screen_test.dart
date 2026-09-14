@@ -107,8 +107,29 @@ void main() {
     await tester.tap(find.byKey(const Key('assistantSendButton')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Here is a partial plan, '), findsOneWidget);
+    // textContaining, not an exact match — Markdown rendering (2026-09-14)
+    // trims a lone trailing space off a partial chunk, an invisible
+    // rendering difference, not a functional one (see chat_screen_test
+    // .dart's identical note).
+    expect(find.textContaining('Here is a partial plan,'), findsOneWidget);
     expect(find.textContaining('busy right now'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a reply with Markdown formatting actually renders, not literal asterisks', (tester) async {
+    // Regression test for a real bug found live (2026-09-14, screenshot):
+    // the assistant's real replies use **bold** and numbered lists (Groq's
+    // own formatting), which a plain Text widget showed as literal
+    // asterisks instead of rendering.
+    final repo = MockAssistantRepository()
+      ..mockStreamDeltas = ['**Quelles matières** dois-tu réviser ?'];
+    await tester.pumpWidget(l10nTestApp(AssistantChatScreen(repository: repo)));
+
+    await tester.enterText(find.byType(TextField), 'Aide-moi à planifier mes révisions');
+    await tester.tap(find.byKey(const Key('assistantSendButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Quelles matières'), findsOneWidget);
+    expect(find.textContaining('**'), findsNothing);
   });
 }

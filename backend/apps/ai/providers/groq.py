@@ -126,7 +126,20 @@ class GroqProvider(BaseProvider):
         (apps.ai.views.PaperChatView) is responsible for folding it into an
         in-band error frame rather than an HTTP status code."""
         try:
-            for line in response.iter_lines(decode_unicode=True):
+            # Real live bug found 2026-09-14 (French chat replies rendering
+            # as mojibake — "Ã»râ€¯" for "ûr " etc.): decode_unicode=True
+            # decodes bytes using requests' own *guessed* response.encoding,
+            # which defaults to Latin-1 per RFC 2616 whenever a response
+            # (Groq's text/event-stream included) doesn't declare a charset
+            # — unlike response.json(), which correctly auto-detects UTF-8
+            # regardless of headers. The accented/typographic characters a
+            # real French reply uses are exactly what that mis-decodes.
+            # Iterating raw bytes and decoding as UTF-8 explicitly (what the
+            # bytes actually are — OpenAI-compatible APIs always emit UTF-8)
+            # fixes it; .decode() is skipped for the existing test suite's
+            # mocked response, whose iter_lines() already yields plain str.
+            for raw_line in response.iter_lines():
+                line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
                 if not line or not line.startswith("data: "):
                     continue
                 payload = line[len("data: "):]

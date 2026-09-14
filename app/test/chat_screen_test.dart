@@ -98,7 +98,10 @@ void main() {
     // The text that already streamed in stays — a mid-stream failure
     // isn't a dropped connection, it's an honest "here's what I had, then
     // it broke", same reasoning as the backend's own in-band error frame.
-    expect(find.text('Here is a partial answer, '), findsOneWidget);
+    // textContaining (not an exact match) because Markdown rendering
+    // (2026-09-14) trims a lone trailing space off a partial chunk — an
+    // invisible rendering difference, not a functional one.
+    expect(find.textContaining('Here is a partial answer,'), findsOneWidget);
     expect(find.textContaining('busy right now'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
