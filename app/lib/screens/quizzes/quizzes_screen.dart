@@ -485,6 +485,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                   );
                 },
               ),
+              const SizedBox(height: AppSpacing.fabClearance),
             ],
           ),
         ),
