@@ -21,7 +21,12 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from apps.core.views import healthz, privacy_policy_page, run_task, terms_of_service_page
+from apps.core.views import (
+    healthz,
+    privacy_policy_page,
+    run_task,
+    terms_of_service_page,
+)
 from apps.pamphlets.views import redeem_page
 
 urlpatterns = [
