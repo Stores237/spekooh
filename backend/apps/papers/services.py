@@ -1,6 +1,7 @@
 import re
 import uuid
 
+from botocore.exceptions import BotoCoreError, ClientError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import transaction
@@ -62,6 +63,38 @@ def presign_paper_upload(*, filename: str, content_type: str) -> dict | None:
         ExpiresIn=600,
     )
     return {"upload_url": upload_url, "storage_key": key}
+
+
+def fetch_storage_key_header(storage_key: str, num_bytes: int) -> bytes | None:
+    """Reads just the first `num_bytes` of an already-uploaded object —
+    real magic-byte content validation (see apps.papers.validation) for
+    the direct-to-storage upload path, where Django never received the
+    file's bytes at all. A Range GET, not a full download: this only ever
+    needs a handful of bytes to sniff a PDF/JPEG/PNG signature. Returns
+    None on any failure (object doesn't exist, network error, ...) — the
+    caller treats "couldn't verify" the same as "failed verification",
+    not as "assume it's fine."""
+    if not hasattr(default_storage, "connection"):
+        return None
+    client = default_storage.connection.meta.client
+    try:
+        response = client.get_object(
+            Bucket=default_storage.bucket_name, Key=storage_key, Range=f"bytes=0-{num_bytes - 1}"
+        )
+        return response["Body"].read()
+    except (ClientError, BotoCoreError):
+        return None
+
+
+def delete_storage_key(storage_key: str) -> None:
+    """Cleans up an object a client PUT directly to storage but that
+    never became a real PaperSubmission (failed content validation) —
+    otherwise it's a permanent orphaned file nobody ever references or
+    cleans up."""
+    if not hasattr(default_storage, "connection"):
+        return
+    client = default_storage.connection.meta.client
+    client.delete_object(Bucket=default_storage.bucket_name, Key=storage_key)
 
 
 def user_can_view_file(user, paper_submission: PaperSubmission) -> bool:

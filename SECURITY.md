@@ -122,11 +122,18 @@ POST-only (a GET, e.g. a crawler following the URL, gets a 405).
   accepting it.
 - Per-exam-type maximum upload size is enforced server-side
   (`ExamType.max_upload_mb`), not just suggested in the UI copy.
-- **Known gap**: there's no content-sniffing (magic-byte) validation
-  beyond size and the client-declared `Content-Type` — a file renamed to
-  claim a JPEG/PDF content type isn't independently verified server-side.
-  Not fixed as part of this pass; flagged honestly rather than silently
-  left undocumented.
+- **Resolved 2026-09-14** (was a known gap): real magic-byte
+  content-sniffing now runs on both upload paths
+  (`apps/papers/validation.py` + `PaperSubmissionCreateSerializer
+  .validate()`) — a file renamed to claim a PDF/JPEG/PNG extension it
+  isn't is genuinely rejected, not just trusted by its declared
+  `Content-Type`. The direct-to-storage path (Django never receives the
+  bytes at upload time) is handled by a Range GET fetching just the first
+  8 bytes from Supabase Storage after the client reports the upload
+  done — a mismatched object is deleted immediately rather than left
+  behind as an orphan. Avatars were already covered separately: `User
+  .avatar` is a real Django `ImageField`, which does its own Pillow-based
+  image validation on upload.
 
 ## Payments
 
@@ -217,24 +224,26 @@ on. Staging/production never render Django's own debug traceback pages.
   the per-endpoint throttles above are enforced in the Django process
   itself (Redis-backed, see `CACHES["default"]`), which is real
   protection against scripted abuse but not against a large, distributed
-  attacker the way an edge layer would be. Worth revisiting (e.g. putting
-  Cloudflare in front of the Render domain) if real abuse traffic shows
-  up — not preemptively built here since there's no evidence it's needed
-  yet.
-- **No file-content-type validation on uploads beyond size** (see "File
-  uploads" above).
+  attacker the way an edge layer would be.
+  **Decision (2026-09-14, MVP exit-criteria security sign-off): fix
+  before launch**, not accepted as a v1 gap — Cloudflare in front of the
+  Render domain. Blocked on a real prerequisite that isn't in place yet:
+  Cloudflare's proxy/WAF needs a domain the owner controls pointed at
+  it — an `onrender.com` subdomain can't be proxied since Render owns
+  that domain, not this project. No custom domain is registered yet, so
+  the actual next step is registering one (e.g. `spekooh.app`), not a
+  Cloudflare config step.
+- **Resolved 2026-09-14** (was: no file-content-type validation on
+  uploads beyond size) — see "File uploads" above.
 - **The real payment provider isn't integrated yet** — see "Payments"
   above. No real financial risk today since nothing charges real money,
   but the real provider's own error-handling hasn't been exercised.
-- **Zero server-side error visibility on staging.** No `ADMINS`
-  configured (Django's default logging for unhandled exceptions goes
-  nowhere without it when `DEBUG=False`), and `SENTRY_DSN` isn't set
-  anywhere (`sentry_sdk.init(dsn=None, ...)` is a silent no-op). Found the
-  hard way (2026-09-02): three real infra misconfigurations (missing
-  `REDIS_URL`, missing `AWS_STORAGE_BUCKET_NAME`, wrong
-  `AWS_S3_REGION_NAME`) were causing live 500s with no way to see why —
-  diagnosing them required a temporary, deliberate code change to bypass
-  `DEBUG=False` for one request, which is not a sustainable way to debug
-  production. A real Sentry project (there's a free tier) would close
-  this properly; not set up here since it needs the owner's own
-  account/DSN.
+- **Resolved 2026-09-13** (was: zero server-side error visibility on
+  staging) — a real Sentry project and Django's own independent `ADMINS`
+  email-alert channel are both live; see the release roadmap for the
+  full verification. Historical note, unchanged: found the hard way
+  (2026-09-02), three real infra misconfigurations (missing `REDIS_URL`,
+  missing `AWS_STORAGE_BUCKET_NAME`, wrong `AWS_S3_REGION_NAME`) were
+  causing live 500s with no way to see why — diagnosing them required a
+  temporary, deliberate code change to bypass `DEBUG=False` for one
+  request, which is not a sustainable way to debug production.

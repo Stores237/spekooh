@@ -611,7 +611,12 @@ def test_thesis_tier_report_accepts_upload_that_would_be_rejected_for_standard_t
     client, _ = authed_client
     reports_category = ExamCategoryFactory(key="reports", requires_system=False)
     phd = ExamTypeFactory(category=reports_category, system=None, name="PhD Thesis (Thèse)", max_upload_mb=50)
-    between_20_and_50mb = SimpleUploadedFile("thesis.pdf", b"x" * (35 * 1024 * 1024), content_type="application/pdf")
+    # Real PDF signature, not just size — this test is about the per-exam-type
+    # size limit specifically, but still has to clear the real content check
+    # (apps.papers.validation) added 2026-09-14 like any other real upload.
+    between_20_and_50mb = SimpleUploadedFile(
+        "thesis.pdf", b"%PDF-1.4\n" + b"x" * (35 * 1024 * 1024), content_type="application/pdf"
+    )
 
     response = client.post(
         "/api/papers/submissions/",
@@ -1524,6 +1529,12 @@ def fake_s3_storage(monkeypatch):
 
     fake_client = mock.Mock()
     fake_client.generate_presigned_url.return_value = "https://storage.example.com/put/fake-key"
+    # Real magic-byte validation (apps.papers.validation) fetches a few
+    # header bytes from storage_key uploads via get_object — default to a
+    # real PDF signature so every existing "this is a valid upload" test
+    # using this fixture keeps passing; override per-test for the
+    # mismatched-content tests below.
+    fake_client.get_object.return_value = {"Body": io.BytesIO(b"%PDF-1.4 fake pdf bytes")}
     fake_storage = mock.Mock()
     fake_storage.connection.meta.client = fake_client
     fake_storage.bucket_name = "spekooh-media-test"
@@ -1693,6 +1704,131 @@ def test_submit_rejects_a_storage_key_that_was_never_actually_presigned(authed_c
     )
     assert response.status_code == 400
     assert "storage_key" in response.data
+
+
+# --- Real magic-byte content validation (SECURITY.md's own documented ------
+# --- "no content-sniffing" gap, closed 2026-09-14) -------------------------
+
+
+@pytest.mark.django_db
+def test_submit_rejects_a_multipart_file_whose_bytes_dont_match_its_extension(authed_client):
+    """A real renamed-extension attack: a plain text file saved as
+    submission.pdf. The multipart path receives the actual bytes, so this
+    was always checkable server-side — it just never was."""
+    client, _ = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    fake_pdf = SimpleUploadedFile("gce-bio-2024.pdf", b"just plain text, not a real PDF", content_type="application/pdf")
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "uploaded_file": fake_pdf,
+        },
+        format="multipart",
+    )
+
+    assert response.status_code == 400
+    assert "uploaded_file" in response.data
+
+
+@pytest.mark.django_db
+def test_submit_accepts_a_multipart_file_whose_bytes_genuinely_match(authed_client):
+    client, _ = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    real_pdf = SimpleUploadedFile("gce-bio-2024.pdf", _real_pdf_bytes(), content_type="application/pdf")
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "uploaded_file": real_pdf,
+        },
+        format="multipart",
+    )
+
+    assert response.status_code == 201
+
+
+@pytest.mark.django_db
+def test_submit_rejects_a_storage_key_whose_actual_content_doesnt_match_and_cleans_it_up(authed_client, fake_s3_storage):
+    """The direct-to-storage path: the client already PUT bytes straight to
+    Supabase, bypassing Django entirely — this is the exact gap SECURITY.md
+    called out ("storage_key path can't be size-checked server-side... "),
+    now genuinely closed for content too. The mismatched object gets
+    deleted, not left behind as an orphan nothing ever references."""
+    client, _ = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    presigned = presign_paper_upload(filename="gce-bio-2024.pdf", content_type="application/pdf")
+    # Override the fixture's default valid-PDF response with something that
+    # isn't a PDF at all, despite the .pdf-shaped key.
+    fake_s3_storage.connection.meta.client.get_object.return_value = {"Body": io.BytesIO(b"not a real pdf at all")}
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "storage_key": presigned["storage_key"],
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "uploaded_file" in response.data
+    assert PaperSubmission.objects.count() == 0
+    fake_s3_storage.connection.meta.client.delete_object.assert_called_once_with(
+        Bucket=fake_s3_storage.bucket_name, Key=presigned["storage_key"]
+    )
+
+
+@pytest.mark.django_db
+def test_submit_rejects_a_storage_key_when_the_object_cant_be_verified_at_all(authed_client, fake_s3_storage):
+    """Fails closed, not open: if the header can't even be fetched (network
+    error, object doesn't actually exist despite a validly-shaped key), the
+    submission is rejected rather than assumed fine."""
+    client, _ = authed_client
+    category = ExamCategoryFactory()
+    exam_type = ExamTypeFactory(category=category)
+    subject = SubjectFactory()
+    presigned = presign_paper_upload(filename="gce-bio-2024.pdf", content_type="application/pdf")
+    from botocore.exceptions import EndpointConnectionError
+
+    fake_s3_storage.connection.meta.client.get_object.side_effect = EndpointConnectionError(
+        endpoint_url="https://storage.example.com"
+    )
+
+    response = client.post(
+        "/api/papers/submissions/",
+        {
+            "category": category.id,
+            "exam_type": exam_type.id,
+            "subject": subject.id,
+            "system": "anglophone",
+            "year": 2024,
+            "storage_key": presigned["storage_key"],
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
 
 
 @pytest.mark.django_db

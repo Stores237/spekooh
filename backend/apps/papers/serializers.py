@@ -16,11 +16,14 @@ from .models import (
 )
 from .services import (
     STORAGE_KEY_RE,
+    delete_storage_key,
+    fetch_storage_key_header,
     paper_download_price_fcfa,
     report_download_is_free,
     user_can_download_paper_file,
     user_can_view_file,
 )
+from .validation import SNIFF_BYTES, content_matches_filename
 
 
 class ExamCategorySerializer(serializers.ModelSerializer):
@@ -333,6 +336,27 @@ class PaperSubmissionCreateSerializer(PaperAccessFieldsMixin, serializers.ModelS
             # storage_key path can't be size-checked server-side (Django
             # never receives the bytes) — relies on the app's own
             # client-side pre-check before it ever requests a presigned URL.
+
+        # Real magic-byte content validation (closes SECURITY.md's own
+        # documented "no content-sniffing" gap) — a file renamed to claim
+        # a PDF/image extension it isn't now genuinely fails here, on both
+        # upload paths, not just on the client-declared Content-Type.
+        invalid_content_error = {"uploaded_file": "That file's content doesn't match its extension."}
+        if uploaded_file is not None:
+            header = uploaded_file.read(SNIFF_BYTES)
+            uploaded_file.seek(0)  # must stay readable — this same file object gets saved right after
+            if not content_matches_filename(uploaded_file.name, header):
+                raise serializers.ValidationError(invalid_content_error)
+        elif storage_key is not None:
+            header = fetch_storage_key_header(storage_key, SNIFF_BYTES)
+            if header is None or not content_matches_filename(storage_key, header):
+                # Real object, wrong/unverifiable content — clean it up
+                # rather than leaving an orphaned file nothing ever
+                # references (it was PUT directly to storage by the
+                # client; this PaperSubmission row is the only thing that
+                # would otherwise ever have pointed at it).
+                delete_storage_key(storage_key)
+                raise serializers.ValidationError(invalid_content_error)
         return attrs
 
     def create(self, validated_data):
