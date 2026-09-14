@@ -140,6 +140,8 @@ class HomeScreen extends StatelessWidget {
                       width: double.infinity,
                       child: SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onLogin, child: Text(l10n.logIn)),
                     ),
+                    const SizedBox(height: 14),
+                    const HeritagePatternStrip.onDark(),
                   ],
                 ),
               ),
@@ -275,14 +277,10 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-          // Owner reference (2026-09-12): the same subtle heritage motif
-          // as SplashScreen's own HeritagePatternStrip — "keeping the same
-          // characteristics" (low opacity, this app's own gold tones, one
-          // simplified row, not the busy reference band itself). Fixed at
-          // the bottom of the visible screen, outside the scroll view, so
-          // it reads as a constant, quiet edge accent rather than
-          // scrolling past with the content.
-          const Positioned(left: 0, right: 0, bottom: 0, child: HeritagePatternStrip()),
+          // The heritage pattern strip moved onto the dark "Log in to
+          // browse papers" card itself (above) — see HeritagePatternStrip's
+          // own doc comment: pinned to this screen's cream background it
+          // was too low-contrast to read as anything at all.
         ],
       ),
     );
