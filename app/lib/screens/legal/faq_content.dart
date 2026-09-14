@@ -61,8 +61,9 @@ const faqEntries = [
   ),
   FaqEntry(
     'How many papers can I view for free?',
-    '3 free views per day, with no account needed. Once you hit the limit, watching a rewarded ad unlocks one '
-        'more view. Spekooh Pro removes the daily limit entirely.',
+    'Once you have a free account, 3 views per day at no cost. Once you hit the limit, watching a rewarded ad '
+        'unlocks one more view. Spekooh Pro removes the daily limit entirely. Viewing a paper does require being '
+        'logged in — Spekooh does not currently offer guest viewing.',
   ),
   FaqEntry(
     'Can I download the exam paper after viewing it?',

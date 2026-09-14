@@ -671,7 +671,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeReadingOpenNote.
   ///
   /// In en, this message translates to:
-  /// **'Reading papers stays open to everyone: 3 free views a day, no account needed.'**
+  /// **'Contributing a paper stays open to everyone, no account needed — reading requires a free account.'**
   String get homeReadingOpenNote;
 
   /// No description provided for @greetingMorning.

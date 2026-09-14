@@ -317,7 +317,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeReadingOpenNote =>
-      'Reading papers stays open to everyone: 3 free views a day, no account needed.';
+      'Contributing a paper stays open to everyone, no account needed — reading requires a free account.';
 
   @override
   String get greetingMorning => 'Good morning';

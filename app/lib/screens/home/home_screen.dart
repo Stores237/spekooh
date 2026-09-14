@@ -256,6 +256,15 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.space4),
+              // Real bug found 2026-09-14 (/design-review): this string used
+              // to say "Reading papers stays open to everyone: 3 free views
+              // a day, no account needed" — the exact false promise the
+              // "Owner decision (2026-09-06)" comment above already flagged
+              // and fixed for the top card, but this second, lower-down
+              // instance of the same claim was never updated, so the app
+              // contradicted itself on its own Home screen. Now says the
+              // one thing that actually stays guest-accessible
+              // (contributing), not the thing that doesn't (reading).
               Text(
                 l10n.homeReadingOpenNote,
                 textAlign: TextAlign.center,
