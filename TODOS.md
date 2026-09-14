@@ -1101,6 +1101,35 @@ Same day, a further round of functional-mismatch fixes from more live screenshot
 
 ---
 
+## Recently shipped (2026-09-14)
+
+- **Real `/design-review`, run against a live build, not source-reading alone** — built a real
+  Flutter web build, drove it with a headless browser at a real 390px mobile viewport (the only
+  width that matters for this app), registered a real test account, and found two real, confirmed
+  bugs — not style nitpicks:
+  - **Home's own self-contradiction on guest reading access**: the bottom of Home still said
+    "Reading papers stays open to everyone: 3 free views a day, no account needed" — directly
+    contradicting the same screen's own top card ("Log in to browse papers") and the real,
+    enforced behavior (`root_shell.dart`'s own "Owner decision (2026-09-06)" comment: viewing a
+    paper is no longer guest-accessible at all). Confirmed live by actually tapping Papers as a
+    guest and hitting the real "Log in to continue" wall. That 2026-09-06 decision fixed the top
+    card and left a comment explaining exactly why the old framing would be "an outright false
+    promise" — but missed this second, lower-down instance of the same claim. Also fixed the
+    same stale claim in the FAQ.
+  - **The AI assistant FAB overlapping `LoggedInHomeScreen`'s last card**: measured via real
+    `getBoundingClientRect()` comparison, not eyeballing — the FAB's real hit-box covered ~60% of
+    the width and 100% of the height of the house-ad card's own "Learn more"/CTA button, above it
+    in z-order, once scrolled to the natural end of the list. Root cause: the scroll view's
+    trailing spacer was 24px, nowhere near enough for a ~56px FAB. Added a real
+    `AppSpacing.fabClearance` (96px) constant and applied it.
+  - **Follow-up, not yet done**: the same "scroll view has no bottom clearance for the shared
+    FAB" pattern exists in `forum_post_detail_screen.dart` and `quizzes_screen.dart` (both
+    instances) — not fixed since only the Home instance was live-verified; needs checking
+    whether the FAB is actually reachable/visible on those specific screens before applying the
+    same fix blind.
+
+---
+
 ## Not in the spec at all, and correctly left alone
 
 These are decorative gaps found during this session's audit. Each was deliberately left
