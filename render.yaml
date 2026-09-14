@@ -155,8 +155,20 @@ services:
         generateValue: true
       - key: DJANGO_DEBUG
         value: "False"
+      # Real load test against spekooh-staging (2026-09-14, MVP exit
+      # criteria — see MVP_SIGNOFF_CHECKLIST.md): with staging's
+      # WEB_CONCURRENCY=2, only 40 concurrent reads to an unthrottled,
+      # read-only endpoint already produced a p95 of 13s and a 32s max;
+      # 8 concurrent registrations (bcrypt is deliberately CPU-slow) hit a
+      # 22s max. No errors/5xx — the app didn't break, it just queued
+      # behind too few workers. Production is on the paid starter plan
+      # specifically for more headroom than free-tier gives (see this
+      # service's own top comment) — doubled here to actually use it,
+      # not left at staging's deliberately modest value. Revisit with
+      # real Sentry/latency data once production has actual traffic,
+      # rather than guessing further from one synthetic run.
       - key: WEB_CONCURRENCY
-        value: 2
+        value: 4
       # Unlike spekooh-staging above, EMAIL_BACKEND is NOT pinned to the
       # console backend here — left sync: false so it must be a deliberate
       # choice. Left unset entirely, base.py's own real default (SMTP,
