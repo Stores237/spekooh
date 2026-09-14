@@ -181,7 +181,7 @@ class _ForumScreenState extends State<ForumScreen> {
             ),
             Positioned(
               bottom: AppSpacing.space5,
-              right: AppSpacing.screenPad,
+              right: AppSpacing.fabHorizontalClearance,
               child: GestureDetector(
                 onTap: _openAsk,
                 child: DecoratedBox(

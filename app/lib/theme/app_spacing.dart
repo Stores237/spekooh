@@ -24,4 +24,16 @@ class AppSpacing {
   // tap in that state. Use as bottom padding on any scrollable tab body
   // that can appear while the FAB is visible.
   static const double fabClearance = 96;
+
+  // Real bug found 2026-09-14 (/design-review, confirmed live at a real
+  // 390px mobile viewport): ForumScreen's own "+ Ask a question" pill sits
+  // in a Positioned(bottom, right) at the same bottom-right corner
+  // root_shell.dart's Scaffold uses for the logged-in AIAssistantFab (56px
+  // circle, endFloat default location) — the two overlap directly.
+  // Measured live: the FAB's left edge sat at x=322 on a 390px-wide
+  // viewport, 68px in from the right edge, covering the last ~4 characters
+  // of "+ Question" and blocking taps on that half of the pill. Use as the
+  // `right` offset for any Positioned bottom-right control that must share
+  // the screen with the FAB while logged in.
+  static const double fabHorizontalClearance = 76;
 }
