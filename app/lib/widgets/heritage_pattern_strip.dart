@@ -55,7 +55,16 @@ class HeritagePatternStrip extends StatelessWidget {
       child: SizedBox(
         height: height,
         width: double.infinity,
-        child: CustomPaint(painter: _DiamondRowPainter(primaryColor, accentColor)),
+        // Real bug found live (2026-09-14, owner screenshot): the painter
+        // below deliberately draws one extra diamond past the right edge
+        // (see its own comment) so the pattern never ends mid-cell —
+        // harmless when this widget sat directly on a screen background,
+        // but once it moved onto a rounded ink900 card, that overflow
+        // diamond painted right through the card's rounded corner and sat
+        // on the page background outside it, since CustomPaint doesn't
+        // clip to its own bounds by default. ClipRect guarantees nothing
+        // ever paints past this box, wherever this widget is placed.
+        child: ClipRect(child: CustomPaint(painter: _DiamondRowPainter(primaryColor, accentColor))),
       ),
     );
   }
