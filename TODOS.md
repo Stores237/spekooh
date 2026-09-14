@@ -1122,11 +1122,47 @@ Same day, a further round of functional-mismatch fixes from more live screenshot
     in z-order, once scrolled to the natural end of the list. Root cause: the scroll view's
     trailing spacer was 24px, nowhere near enough for a ~56px FAB. Added a real
     `AppSpacing.fabClearance` (96px) constant and applied it.
-  - **Follow-up, not yet done**: the same "scroll view has no bottom clearance for the shared
-    FAB" pattern exists in `forum_post_detail_screen.dart` and `quizzes_screen.dart` (both
-    instances) — not fixed since only the Home instance was live-verified; needs checking
-    whether the FAB is actually reachable/visible on those specific screens before applying the
-    same fix blind.
+  - **Follow-up, now checked live** (was: "not yet done" — see above):
+    - `quizzes_screen.dart`'s "By subject" list has the exact same bug: scrolled to its last card
+      ("Group VII the Halogens Quiz"), the FAB covered its chevron and right edge. Confirmed live
+      and fixed with the same `AppSpacing.fabClearance` spacer.
+    - `forum_post_detail_screen.dart` does **not** have this bug — it's pushed via
+      `Navigator.push(MaterialPageRoute(...))` outside `root_shell.dart`'s own `Scaffold`, so the
+      FAB isn't present on that route at all. Confirmed live (screenshot shows no FAB anywhere on
+      the screen); the grep-pattern match on this file was a false lead.
+    - Also found a **third, different** FAB collision live: `ForumScreen`'s own "+ Question" pill
+      (a `Positioned(bottom, right)` widget, not a scroll-clearance issue) sits in the exact same
+      bottom-right corner as the FAB — the FAB rendered on top of the pill's right half, covering
+      the last few characters of its label and about half its tap target. Fixed with a new
+      `AppSpacing.fabHorizontalClearance` (76) shifting the pill left, clear of the FAB.
+  - **Separate, more serious bug found live while testing the Forum fixes above**: submitting a
+    real question through "Ask the forum" always showed "Something went wrong. Check your
+    connection and try again." — even though the question was actually posted (confirmed via live
+    network inspection: `POST /api/forum/posts/` → real `201`, immediately followed by the app's
+    false error banner, and the post really existed in the list on reload). Root cause:
+    `ForumPostViewSet.create()` responded with `ForumPostCreateSerializer`'s own `{id, tag, title,
+    body}` — no `created_at` — so the app's `ForumPost._fromJson` threw casting `null as String`.
+    Fixed server-side: `create()` now re-serializes the new post with the same
+    `ForumPostListSerializer` a list/detail view uses.
+  - **The same FAB-clearance bug, live-verified in `papers_screen.dart`**: grepped the taxonomy
+    picker for the same "scrollable body, no/insufficient trailing spacer" shape and confirmed
+    live on all 6 steps (`_categoryStep`, `_systemStep`, `_examTypeStep`, `_trackStep`,
+    `_subjectStep`, `_paperListBody`) — each one scrolls to a last item that can sit under the
+    FAB. Fixed all 6 with the same `AppSpacing.fabClearance` spacer.
+  - **A real concurrency bug, found live via the per-paper AI Assistant chat**: sent a real
+    message, got no reply. `$B console --errors` showed a sustained run of `401`s — two
+    overlapping requests both 401'd near the same moment and each independently tried to refresh
+    the single-use, rotating refresh token; the backend blacklists it after first use, so
+    whichever refresh call lost the race presented an already-consumed token and failed for good,
+    silently dropping that request forever. Root-caused by reading `ApiClient`'s own "one-shot
+    401-refresh-retry" doc comment and `AuthSession.refreshAccessToken()`'s total lack of an
+    in-flight guard. Fixed with a memoized in-flight `Future<bool>?` so every concurrent caller
+    awaits the one real HTTP call instead of racing separate ones; covered with 2 new tests
+    (including one that reproduces the race with an artificial delay so the memoization is
+    actually exercised, not just accidentally correct).
+  - **PRs**: #126 (guest-reading promise), #127 (Home FAB), #128 (Papers taxonomy FAB, all 6
+    steps), #129 (concurrent-refresh race), #130 (Forum "+ Question" pill vs. FAB), #131 (Quizzes
+    FAB), #132 (Forum create-response missing fields).
 
 ---
 
