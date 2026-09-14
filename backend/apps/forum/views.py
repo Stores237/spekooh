@@ -37,6 +37,23 @@ class ForumPostViewSet(
             return ForumPostCreateSerializer
         return ForumPostListSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        # ForumPostCreateSerializer only writes {id, tag, title, body} — the
+        # app's ForumPost model requires created_at/author_name/reply_count/
+        # upvote_count/has_upvoted to parse a post, so responding with the
+        # write serializer's own data threw client-side on every real
+        # submission (confirmed live, 2026-09-14 /design-review: server
+        # returned 201, app showed "Something went wrong" and the question
+        # was silently posted anyway). Re-read through get_queryset() so the
+        # response carries the same annotated counts a list/detail view has.
+        instance = self.get_queryset().get(pk=serializer.instance.pk)
+        output_serializer = ForumPostListSerializer(instance, context=self.get_serializer_context())
+        headers = self.get_success_headers(output_serializer.data)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     @action(detail=True, methods=["get", "post"])
     def replies(self, request, pk=None):
         post = self.get_object()

@@ -58,6 +58,28 @@ def test_create_post_sets_author_from_request(api_client):
 
 
 @pytest.mark.django_db
+def test_create_post_response_includes_fields_the_app_requires_to_parse_it(api_client):
+    """Regression: the create response used to come straight from
+    ForumPostCreateSerializer ({id, tag, title, body} only) — a real 201
+    that the app's ForumPost._fromJson then threw on, because created_at
+    (and author_name/reply_count/upvote_count/has_upvoted) were missing.
+    Confirmed live (2026-09-14 /design-review): submitting a real question
+    always showed "Something went wrong" even though it was posted."""
+    user = UserFactory()
+    api_client.force_authenticate(user=user)
+    response = api_client.post(
+        "/api/forum/posts/", {"tag": "Biology", "title": "Enzyme question", "body": "Help?"}, format="json"
+    )
+    assert response.status_code == 201
+    for field in ("created_at", "author_name", "reply_count", "upvote_count", "has_upvoted"):
+        assert field in response.data, f"missing {field!r} — app can't parse this into a ForumPost"
+    assert response.data["author_name"] == user.name
+    assert response.data["reply_count"] == 0
+    assert response.data["upvote_count"] == 0
+    assert response.data["has_upvoted"] is False
+
+
+@pytest.mark.django_db
 def test_reply_endpoint_reading_is_public_but_posting_requires_authentication(api_client):
     """Regression: the `replies` action's own name (plural, from the method)
     didn't match the "reply" (singular) check in get_permissions, so an
