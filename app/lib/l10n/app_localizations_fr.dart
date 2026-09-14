@@ -320,7 +320,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get homeReadingOpenNote =>
-      'La lecture des épreuves reste ouverte à tous : 3 consultations gratuites par jour, sans compte.';
+      'Contribuer une épreuve reste ouvert à tous, sans compte — la lecture nécessite un compte gratuit.';
 
   @override
   String get greetingMorning => 'Bonjour';
