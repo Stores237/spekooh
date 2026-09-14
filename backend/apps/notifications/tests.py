@@ -1,4 +1,7 @@
+from unittest import mock
+
 import pytest
+from django.test import override_settings
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
@@ -93,3 +96,96 @@ def test_mark_all_read_endpoint(api_client):
     response = api_client.post("/api/notifications/mark-all-read/")
     assert response.status_code == 204
     assert Notification.objects.filter(user=user, is_read=False).count() == 0
+
+
+# --- SMS opt-in (Twilio, 2026-09-14) -----------------------------------------
+
+
+@pytest.mark.django_db
+def test_notify_sms_true_sends_sms_to_a_verified_phone():
+    from django.utils import timezone
+
+    from .services import notify
+
+    user = UserFactory(phone_number="+237600000010")
+    user.phone_verified_at = timezone.now()
+    user.save(update_fields=["phone_verified_at"])
+
+    with (
+        override_settings(
+            TWILIO_ACCOUNT_SID="ACtest",
+            TWILIO_API_KEY_SID="SKtest",
+            TWILIO_API_KEY_SECRET="secret",
+            TWILIO_MESSAGING_FROM_NUMBER="+15005550006",
+        ),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=201)
+        notify(user=user, title="Paper approved", body="Your submission is live.", sms=True)
+
+    mocked_post.assert_called_once()
+    assert mocked_post.call_args.kwargs["data"]["To"] == "+237600000010"
+
+
+@pytest.mark.django_db
+def test_notify_sms_true_is_a_noop_for_an_unverified_phone():
+    from .services import notify
+
+    user = UserFactory(phone_number="+237600000011")  # never verified
+
+    with (
+        override_settings(
+            TWILIO_ACCOUNT_SID="ACtest",
+            TWILIO_API_KEY_SID="SKtest",
+            TWILIO_API_KEY_SECRET="secret",
+            TWILIO_MESSAGING_FROM_NUMBER="+15005550006",
+        ),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        notify(user=user, title="Paper approved", body="Your submission is live.", sms=True)
+
+    mocked_post.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_notify_sms_false_never_touches_twilio():
+    """The default — sms defaults to False, so every existing notify() call
+    site is unaffected by this feature existing at all."""
+    from django.utils import timezone
+
+    from .services import notify
+
+    user = UserFactory(phone_number="+237600000012")
+    user.phone_verified_at = timezone.now()
+    user.save(update_fields=["phone_verified_at"])
+
+    with mock.patch("apps.core.sms.requests.post") as mocked_post:
+        notify(user=user, title="Paper approved", body="Your submission is live.")
+
+    mocked_post.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_notify_sms_true_still_creates_the_in_app_notification_even_when_twilio_fails():
+    from django.utils import timezone
+
+    from .services import notify
+    from .models import Notification
+
+    user = UserFactory(phone_number="+237600000013")
+    user.phone_verified_at = timezone.now()
+    user.save(update_fields=["phone_verified_at"])
+
+    with (
+        override_settings(
+            TWILIO_ACCOUNT_SID="ACtest",
+            TWILIO_API_KEY_SID="SKtest",
+            TWILIO_API_KEY_SECRET="secret",
+            TWILIO_MESSAGING_FROM_NUMBER="+15005550006",
+        ),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=500, text="Twilio is down")
+        notification = notify(user=user, title="Paper approved", body="Your submission is live.", sms=True)
+
+    assert Notification.objects.filter(pk=notification.pk).exists()

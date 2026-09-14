@@ -1,11 +1,12 @@
 import datetime
+from unittest import mock
 
 import pytest
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.db import IntegrityError
-from django.test import Client
+from django.test import Client, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -1103,3 +1104,119 @@ def test_email_verification_confirm_by_email_rejects_wrong_code(api_client):
     assert response.status_code == 400
     user.refresh_from_db()
     assert user.email_verified_at is None
+
+
+# --- Phone verification (Twilio Verify, 2026-09-14) -------------------------
+
+
+@pytest.mark.django_db
+def test_verify_phone_requires_a_phone_number_on_the_account(api_client):
+    user = UserFactory(phone_number=None)
+    api_client.force_authenticate(user=user)
+
+    response = api_client.post("/api/auth/verify-phone/", {}, format="json")
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_verify_phone_sends_a_real_twilio_verification(api_client):
+    user = UserFactory(phone_number="+237600000001")
+    api_client.force_authenticate(user=user)
+
+    with (
+        override_settings(TWILIO_API_KEY_SID="SKtest", TWILIO_API_KEY_SECRET="secret", TWILIO_VERIFY_SERVICE_SID="VAtest"),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=201)
+        response = api_client.post("/api/auth/verify-phone/", {}, format="json")
+
+    assert response.status_code == 200
+    mocked_post.assert_called_once()
+    assert mocked_post.call_args.kwargs["data"]["To"] == "+237600000001"
+
+
+@pytest.mark.django_db
+def test_verify_phone_is_unavailable_when_twilio_is_not_configured(api_client):
+    user = UserFactory(phone_number="+237600000002")
+    api_client.force_authenticate(user=user)
+
+    with (
+        override_settings(TWILIO_API_KEY_SID=None, TWILIO_API_KEY_SECRET=None, TWILIO_VERIFY_SERVICE_SID=None),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        response = api_client.post("/api/auth/verify-phone/", {}, format="json")
+
+    assert response.status_code == 400
+    mocked_post.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_verify_phone_confirm_full_round_trip(api_client):
+    user = UserFactory(phone_number="+237600000003")
+    api_client.force_authenticate(user=user)
+
+    with (
+        override_settings(TWILIO_API_KEY_SID="SKtest", TWILIO_API_KEY_SECRET="secret", TWILIO_VERIFY_SERVICE_SID="VAtest"),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=200, json=lambda: {"status": "approved"})
+        response = api_client.post("/api/auth/verify-phone/confirm/", {"code": "123456"}, format="json")
+
+    assert response.status_code == 200
+    assert response.data["phone_verified"] is True
+    user.refresh_from_db()
+    assert user.phone_verified_at is not None
+
+
+@pytest.mark.django_db
+def test_verify_phone_confirm_rejects_a_code_twilio_does_not_approve(api_client):
+    user = UserFactory(phone_number="+237600000004")
+    api_client.force_authenticate(user=user)
+
+    with (
+        override_settings(TWILIO_API_KEY_SID="SKtest", TWILIO_API_KEY_SECRET="secret", TWILIO_VERIFY_SERVICE_SID="VAtest"),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=200, json=lambda: {"status": "pending"})
+        response = api_client.post("/api/auth/verify-phone/confirm/", {"code": "000000"}, format="json")
+
+    assert response.status_code == 400
+    user.refresh_from_db()
+    assert user.phone_verified_at is None
+
+
+@pytest.mark.django_db
+def test_verify_phone_confirm_requires_authentication(api_client):
+    response = api_client.post("/api/auth/verify-phone/confirm/", {"code": "123456"}, format="json")
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_changing_phone_number_resets_verification(api_client):
+    user = UserFactory(phone_number="+237600000005")
+    user.phone_verified_at = timezone.now()
+    user.save(update_fields=["phone_verified_at"])
+    api_client.force_authenticate(user=user)
+
+    response = api_client.patch("/api/auth/me/", {"phone_number": "+237600000006"}, format="json")
+
+    assert response.status_code == 200
+    assert response.data["phone_verified"] is False
+    user.refresh_from_db()
+    assert user.phone_verified_at is None
+
+
+@pytest.mark.django_db
+def test_keeping_the_same_phone_number_does_not_reset_verification(api_client):
+    user = UserFactory(phone_number="+237600000007")
+    user.phone_verified_at = timezone.now()
+    user.save(update_fields=["phone_verified_at"])
+    api_client.force_authenticate(user=user)
+
+    response = api_client.patch("/api/auth/me/", {"phone_number": "+237600000007"}, format="json")
+
+    assert response.status_code == 200
+    assert response.data["phone_verified"] is True
+    user.refresh_from_db()
+    assert user.phone_verified_at is not None

@@ -112,6 +112,15 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     # an access-control mechanism. Null for guests, who have no email.
     email_verified_at = models.DateTimeField(null=True, blank=True)
 
+    # Same idea as email_verified_at, confirmed via Twilio Verify (SMS OTP)
+    # instead of an emailed code — see apps.accounts.serializers
+    # .PhoneVerificationConfirmSerializer. No local OTP-code model for this
+    # one (unlike EmailVerificationCode): Twilio Verify owns the code's own
+    # generation/expiry/attempt-limiting, this field just records the
+    # outcome. Null for guests (no phone) and for any account that never
+    # verified one.
+    phone_verified_at = models.DateTimeField(null=True, blank=True)
+
     # Regulatory: proof of Terms/Privacy consent at signup — required by
     # RegisterSerializer (a registration without it is rejected outright,
     # not just nudged client-side). Null for guests, who never go through

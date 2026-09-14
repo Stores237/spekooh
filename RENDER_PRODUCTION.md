@@ -234,7 +234,42 @@ build further without one.
 
 ---
 
-## 7. Deploy checklist
+## 7. SMS (Twilio) — phone verification works now, notifications need a number
+
+Added 2026-09-14 (owner request). Two independent capabilities with two
+different real-world requirements — see `apps.core.sms`'s own docstring
+for the full reasoning:
+
+- **Phone verification** (`/api/auth/verify-phone/`, `/confirm/`) uses a
+  Twilio Verify Service. Confirmed live: works with no purchased phone
+  number, even on this account's current $0-balance Trial status. A real
+  Verify Service ("Spekooh") already exists — its SID is one of the four
+  Twilio values sent to you separately, alongside `TWILIO_ACCOUNT_SID`/
+  `TWILIO_API_KEY_SID`/`TWILIO_API_KEY_SECRET`.
+- **SMS notifications** (`apps.notifications.services.notify(sms=True)`,
+  opt-in per call site — not wired to any existing notification yet) needs
+  `TWILIO_MESSAGING_FROM_NUMBER`: a real purchased Twilio phone number or
+  Messaging Service. This account has neither — buying one needs real
+  funds (confirmed live: $0 balance, no trial credit available), a real
+  owner action item like Render's card and SendGrid's sender verification.
+  No-ops safely (in-app notification still created) until one exists.
+
+**Important, confirmed live (2026-09-14):** this Twilio account is on
+**Trial** status, which restricts SMS delivery to phone numbers verified
+in the console as "Verified Caller IDs" — real users' numbers won't
+receive anything until the account is upgraded (a card added, same
+category as the above). Fine for your own testing with your own number;
+not fine for real users yet.
+
+Set on `spekooh-production` (and `spekooh-staging` if you want phone
+verification there too — see `RENDER_STAGING.md` §4's own row for these):
+`TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY_SID`, `TWILIO_API_KEY_SECRET`,
+`TWILIO_VERIFY_SERVICE_SID`. Leave `TWILIO_MESSAGING_FROM_NUMBER` unset
+until a number/Messaging Service exists.
+
+---
+
+## 8. Deploy checklist
 
 - [x] `render.yaml` — `spekooh-production` web service + 5 Cron Job services defined
 - [x] Production Supabase project reset to a clean slate, verified empty (schema + Storage)
@@ -250,6 +285,10 @@ build further without one.
 - [ ] `DJANGO_SUPERUSER_EMAIL`/`DJANGO_SUPERUSER_PASSWORD` set (own real admin login, separate from staging's)
 - [ ] `SENTRY_DSN` / `DJANGO_ADMIN_EMAILS` set — decide whether this reuses the same Sentry project as staging or gets its own (Sentry environments can separate them without a second project; simplest to start with the same project, filtered by its `environment` tag, which `config/settings/base.py`'s `sentry_sdk.init` already sets to `"production"` when `DEBUG=False`)
 - [ ] `GEMINI_API_KEY` / `GROQ_API_KEY` set — own keys or shared with staging is a real cost/quota decision, not an engineering one; either works, code-wise
+- [x] Twilio Verify Service created and verified live (§7) — phone verification works with no purchased number even on this $0-balance Trial account
+- [ ] `TWILIO_ACCOUNT_SID`/`TWILIO_API_KEY_SID`/`TWILIO_API_KEY_SECRET`/`TWILIO_VERIFY_SERVICE_SID` set on `spekooh-production` (values verified, not yet placed there)
+- [ ] Twilio account upgraded off Trial (a card, real funds) before real users' phone verification will work — Trial restricts SMS to console-verified numbers only
+- [ ] A Twilio phone number/Messaging Service purchased and `TWILIO_MESSAGING_FROM_NUMBER` set — only needed for SMS notifications, not phone verification
 - [ ] First manual deploy of `spekooh-production` (§2) after checking the same commit on staging
 - [ ] Flutter's real release build points `API_BASE_URL` at `spekooh-production`'s URL, not staging's, before it ships to Play Console/App Store
 

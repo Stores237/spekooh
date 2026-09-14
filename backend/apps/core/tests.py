@@ -1,6 +1,8 @@
+from unittest import mock
+
 import pytest
 from django.contrib.auth.models import Group
-from django.test import Client, RequestFactory
+from django.test import Client, RequestFactory, override_settings
 
 from apps.accounts.factories import UserFactory
 
@@ -325,3 +327,122 @@ class TestSafeMessageError:
             QuizError,
         ]:
             assert issubclass(cls, SafeMessageError), f"{cls.__name__} still inherits bare Exception"
+
+
+# --- apps.core.sms (Twilio) -------------------------------------------------
+
+
+def test_send_verification_code_noops_safely_when_unconfigured():
+    from .sms import SMSUnavailable, send_verification_code
+
+    with (
+        override_settings(TWILIO_API_KEY_SID=None, TWILIO_API_KEY_SECRET=None, TWILIO_VERIFY_SERVICE_SID=None),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+        pytest.raises(SMSUnavailable),
+    ):
+        send_verification_code("+237600000000")
+    mocked_post.assert_not_called()
+
+
+def test_send_verification_code_calls_twilio_verify_for_real():
+    from .sms import send_verification_code
+
+    with (
+        override_settings(
+            TWILIO_API_KEY_SID="SKtest", TWILIO_API_KEY_SECRET="secret", TWILIO_VERIFY_SERVICE_SID="VAtest"
+        ),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=201)
+        send_verification_code("+237600000000")
+
+    mocked_post.assert_called_once()
+    args, kwargs = mocked_post.call_args
+    assert args[0] == "https://verify.twilio.com/v2/Services/VAtest/Verifications"
+    assert kwargs["auth"] == ("SKtest", "secret")
+    assert kwargs["data"] == {"To": "+237600000000", "Channel": "sms"}
+
+
+def test_send_verification_code_raises_on_a_real_twilio_error():
+    from .sms import SMSError, send_verification_code
+
+    with (
+        override_settings(
+            TWILIO_API_KEY_SID="SKtest", TWILIO_API_KEY_SECRET="secret", TWILIO_VERIFY_SERVICE_SID="VAtest"
+        ),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=400, text="Invalid phone number")
+        with pytest.raises(SMSError):
+            send_verification_code("not-a-number")
+
+
+def test_check_verification_code_returns_true_only_when_twilio_approves():
+    from .sms import check_verification_code
+
+    with (
+        override_settings(
+            TWILIO_API_KEY_SID="SKtest", TWILIO_API_KEY_SECRET="secret", TWILIO_VERIFY_SERVICE_SID="VAtest"
+        ),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=200, json=lambda: {"status": "approved"})
+        assert check_verification_code("+237600000000", "123456") is True
+
+        mocked_post.return_value = mock.Mock(status_code=200, json=lambda: {"status": "pending"})
+        assert check_verification_code("+237600000000", "000000") is False
+
+
+def test_check_verification_code_treats_a_404_as_not_approved_not_an_error():
+    from .sms import check_verification_code
+
+    with (
+        override_settings(
+            TWILIO_API_KEY_SID="SKtest", TWILIO_API_KEY_SECRET="secret", TWILIO_VERIFY_SERVICE_SID="VAtest"
+        ),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=404, text="not found")
+        assert check_verification_code("+237600000000", "123456") is False
+
+
+def test_send_sms_requires_a_from_number_even_with_verify_configured():
+    """TWILIO_VERIFY_SERVICE_SID configured but no TWILIO_MESSAGING_FROM_NUMBER
+    (this codebase's real current state, 2026-09-14 — see base.py's own
+    comment) must still no-op safely for plain SMS, not just for Verify."""
+    from .sms import SMSUnavailable, send_sms
+
+    with (
+        override_settings(
+            TWILIO_ACCOUNT_SID="ACtest",
+            TWILIO_API_KEY_SID="SKtest",
+            TWILIO_API_KEY_SECRET="secret",
+            TWILIO_VERIFY_SERVICE_SID="VAtest",
+            TWILIO_MESSAGING_FROM_NUMBER=None,
+        ),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+        pytest.raises(SMSUnavailable),
+    ):
+        send_sms(to="+237600000000", body="hello")
+    mocked_post.assert_not_called()
+
+
+def test_send_sms_calls_twilio_messaging_for_real():
+    from .sms import send_sms
+
+    with (
+        override_settings(
+            TWILIO_ACCOUNT_SID="ACtest",
+            TWILIO_API_KEY_SID="SKtest",
+            TWILIO_API_KEY_SECRET="secret",
+            TWILIO_MESSAGING_FROM_NUMBER="+15005550006",
+        ),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=201)
+        send_sms(to="+237600000000", body="Your paper was approved.")
+
+    mocked_post.assert_called_once()
+    args, kwargs = mocked_post.call_args
+    assert args[0] == "https://api.twilio.com/2010-04-01/Accounts/ACtest/Messages.json"
+    assert kwargs["data"] == {"To": "+237600000000", "From": "+15005550006", "Body": "Your paper was approved."}

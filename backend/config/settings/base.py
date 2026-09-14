@@ -253,6 +253,15 @@ REST_FRAMEWORK = {
         # applies here that doesn't apply to the authenticated pair above.
         "email_verification_request_by_email": "5/hour",
         "email_verification_confirm_by_email": "20/hour",
+        # Per-user (authenticated) — same reasoning as email_verification_resend:
+        # a few legitimate retries are normal, unlimited requests would just
+        # spam the account's own phone (and burn real Twilio Verify sends).
+        "phone_verification_request": "5/hour",
+        # Deliberately looser than the request scope, same reasoning as
+        # password_reset_confirm/email_verification_confirm — Twilio Verify's
+        # own attempt-limiting (5 wrong tries expires the code) is what
+        # actually stops brute-forcing one code, not this.
+        "phone_verification_confirm": "20/hour",
     },
 }
 
@@ -335,6 +344,37 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=25)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+
+# Twilio (2026-09-14, owner request: SMS phone verification + SMS
+# notifications) — raw REST calls via apps.core.sms, same convention as
+# apps.ai.providers (Gemini/Groq) rather than the official SDK, so no new
+# heavy dependency. All four unset by default, same no-op-safely posture
+# as SENTRY_DSN/REDIS_URL/GEMINI_API_KEY above: apps.core.sms raises
+# SMSUnavailable (caught, not a crash) rather than failing on import.
+#
+# TWILIO_API_KEY_SID/SECRET (not the Account Auth Token) are what's
+# actually used for request auth — Twilio's REST API accepts an API Key
+# SID as the Basic Auth username and its Secret as the password, scoped to
+# TWILIO_ACCOUNT_SID in the request path/URL, same privilege as the Auth
+# Token itself. Confirmed live: real calls (account info, balance, a real
+# Verify Service creation) authenticated successfully this way.
+TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID", default=None)
+TWILIO_API_KEY_SID = env("TWILIO_API_KEY_SID", default=None)
+TWILIO_API_KEY_SECRET = env("TWILIO_API_KEY_SECRET", default=None)
+# A Twilio Verify Service handles OTP generation/expiry/attempt-limiting
+# itself (no local code-storage model needed, unlike EmailVerificationCode)
+# and — confirmed live, 2026-09-14 — doesn't require a purchased phone
+# number even on a $0-balance Trial account. Real service created this
+# session: "Spekooh" (see apps.core.sms for how it's used).
+TWILIO_VERIFY_SERVICE_SID = env("TWILIO_VERIFY_SERVICE_SID", default=None)
+# Separate requirement from Verify above: a plain SMS (notifications, not
+# OTP) needs a real purchased Twilio phone number or Messaging Service —
+# confirmed live, 2026-09-14: this Twilio account has neither yet (Trial,
+# $0 balance, buying a number needs real funds/a card — an owner action
+# item, same category as Render's billing/Supabase's S3 keys). Unset here
+# until one exists; apps.notifications.services.notify(sms=True) no-ops
+# safely (SMSUnavailable, caught) rather than crashing until it is.
+TWILIO_MESSAGING_FROM_NUMBER = env("TWILIO_MESSAGING_FROM_NUMBER", default=None)
 
 # Supabase Edge Function that verifies a registration email's domain has
 # real MX records (see supabase/functions/verify-email-domain) — both unset
