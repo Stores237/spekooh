@@ -199,38 +199,48 @@ matching a reserved test domain running against real user data at all.
 
 ---
 
-## 6. Email — the one real gap that must close before real users sign up
+## 6. Email — done (Brevo), verified with a real send (2026-09-14)
 
 Unlike staging, `EMAIL_BACKEND` is **not** pinned to the console backend
 for production — it's `sync: false` in `render.yaml`, forcing a conscious
 choice rather than inheriting staging's stand-in silently.
 
-Left unset entirely, `config/settings/base.py`'s own real default
-(`django.core.mail.backends.smtp.EmailBackend`) takes over, and — since no
-`EMAIL_HOST` exists yet either — every `send_mail` call (registration,
-password reset) will fail loudly with `ConnectionRefusedError`, the exact
-same failure `RENDER_STAGING.md` §4 documents hitting staging before its
-console-backend stand-in was set. That's the correct behavior for
-production: a signup failing visibly beats a real user silently never
-receiving their verification code.
+**SendGrid was tried first and rejected** — Twilio's own compliance/
+vetting team declined to activate the account outright ("unable to
+proceed with activating your account... at this time"), a business
+decision with no specifics given, not a technical issue. Notable: this
+account's separate Twilio (SMS/Verify, §7) account was already approved
+and working fine — SendGrid runs its own, stricter vetting even under the
+same parent company.
 
-**This needs a real transactional-email provider before real users hit
-this service** — e.g. SendGrid, Amazon SES, or Postmark's SMTP relay (any
-of TODOS.md's already-tracked "Real email provider" options). Newly wired
-this session (`config/settings/base.py`) so it's actually configurable via
-env once you have one:
+**Switched to Brevo instead, and it's real and confirmed working** — not
+just "the credentials look right": a real email was sent through Brevo's
+SMTP relay using `smtplib` directly (bypassing Django entirely, to test
+the credentials in isolation) and the owner confirmed receiving it in
+their real inbox. One real snag along the way, also resolved: the first
+attempt failed with `535 Unauthorized IP address` — Brevo restricts SMTP
+sending to an allowlist of IPs by default, unhelpful for a service like
+Render with no fixed outbound IP on shared plans; disabling that
+restriction in Brevo's own settings (Settings → SMTP & API → Authorised
+IPs) fixed it. Worth knowing if this ever mysteriously stops working after
+being previously fine.
+
+Set on `spekooh-production` (and `spekooh-staging` too, if you'd rather
+have real email there instead of the console-backend stand-in):
 
 | Key | Value |
 |---|---|
-| `EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` (Django's real default — only needs setting explicitly now since it's `sync: false`) |
-| `EMAIL_HOST` | your provider's SMTP host (e.g. `smtp.sendgrid.net`) |
-| `EMAIL_PORT` | usually `587` |
-| `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | your provider's real SMTP credentials/API key |
-| `EMAIL_USE_TLS` | `True` (default in code now, but Render's own env var takes precedence if you set it) |
+| `EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` |
+| `EMAIL_HOST` | `smtp-relay.brevo.com` |
+| `EMAIL_PORT` | `587` |
+| `EMAIL_HOST_USER` | `b94b43001@smtp-brevo.com` |
+| `EMAIL_HOST_PASSWORD` | the Brevo SMTP key (sent separately, not committed here) |
+| `EMAIL_USE_TLS` | `True` |
+| `DEFAULT_FROM_EMAIL` | `storefix237@gmail.com` — **must** match the verified Brevo sender exactly, or Brevo rejects the send even with valid SMTP credentials; overrides `base.py`'s own `no-reply@spekooh.app` default |
 
-This is a real owner action item (an account + credentials with a real
-provider), same category as Supabase/Render itself — not something to
-build further without one.
+Free tier is 300 emails/day — fine for now, worth watching once real
+signups start; Brevo's dashboard shows real send volume if it's ever
+worth checking before it becomes a problem.
 
 ---
 
@@ -281,7 +291,8 @@ until a number/Messaging Service exists.
 - [ ] Separate production Redis (Key Value) instance provisioned, `REDIS_URL` set on all 6 production services
 - [x] S3 access keys generated from the Supabase dashboard (§3) — verified via a real signed round-trip (put/get/presigned-get/unsigned-get-rejected/delete); bucket had to be recreated (see §3's note), now private, confirmed
 - [ ] `AWS_*` actually set on `spekooh-production` and on `spekooh-production-pending-ocr` in the Render dashboard (values verified, not yet placed there)
-- [ ] A real email provider chosen and `EMAIL_*` set (§6) — **blocking for real signups**
+- [x] Real email provider chosen (Brevo, after SendGrid's compliance team rejected the account) and verified with an actual send + confirmed receipt (§6)
+- [ ] `EMAIL_*`/`DEFAULT_FROM_EMAIL` actually set on `spekooh-production` in the Render dashboard (values verified, not yet placed there)
 - [ ] `DJANGO_SUPERUSER_EMAIL`/`DJANGO_SUPERUSER_PASSWORD` set (own real admin login, separate from staging's)
 - [ ] `SENTRY_DSN` / `DJANGO_ADMIN_EMAILS` set — decide whether this reuses the same Sentry project as staging or gets its own (Sentry environments can separate them without a second project; simplest to start with the same project, filtered by its `environment` tag, which `config/settings/base.py`'s `sentry_sdk.init` already sets to `"production"` when `DEBUG=False`)
 - [ ] `GEMINI_API_KEY` / `GROQ_API_KEY` set — own keys or shared with staging is a real cost/quota decision, not an engineering one; either works, code-wise
