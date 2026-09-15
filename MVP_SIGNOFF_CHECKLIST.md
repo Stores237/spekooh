@@ -17,12 +17,12 @@ until a fix is verified, not just made.
 | # | Flow | Steps | Pass | Fail | Tester / Date | Notes |
 |---|---|---|:-:|:-:|---|---|
 | 1 | Register (email) | Sign up with a real email + password, accept Terms | ☑ | ☐ | Claude, 2026-09-15 | Real account created on staging (`mvp-checklist-*@example.com`). Found in passing: submitting with an empty email crashes with a real `500` instead of a clean `400` validation error — see "Recently found" below. |
-| 2 | Email verification | Confirm the 6-digit code sent at registration | ☐ | ☐ | | **Untested** — this sandbox has no access to the real inbox the code is sent to, and no staging DB credentials to look the code up directly (only production's, a separate database — see "Recently found" below). `Resend` (row 3) confirmed the endpoint itself works. |
-| 3 | Resend verification code | Request a fresh code; old one stops working | ☑ | ☐ | Claude, 2026-09-15 | Real `200` from `POST /api/auth/verify-email/resend/`. Couldn't independently confirm the old code stops working (same inbox-access limitation as row 2). |
+| 2 | Email verification | Confirm the 6-digit code sent at registration | ☑ | ☐ | Claude, 2026-09-15 | Owner provided real staging DB read access. Requested a fresh code (`resend`), read the real code from `EmailVerificationCode` on staging (`291961`), confirmed it via `POST /api/auth/verify-email/` — real `200`, `email_verified: true`. |
+| 3 | Resend verification code | Request a fresh code; old one stops working | ☑ | ☐ | Claude, 2026-09-15 | Full real proof, not just the endpoint's status code: resent for a second account, read both the old and new code from the DB, confirmed the **old code is rejected** (`400`, "invalid or has expired") and the **new one succeeds** (`200`, `email_verified: true`). |
 | 4 | Login | Log out, log back in with the same credentials | ☑ | ☐ | Claude, 2026-09-15 | Real log out + log back in with the same credentials, session restored correctly. |
-| 5 | Password reset | Request a code, confirm it, log in with the new password | ☐ | ☐ | | **Untested** — same inbox-access limitation as row 2. |
+| 5 | Password reset | Request a code, confirm it, log in with the new password | ☑ | ☐ | Claude, 2026-09-15 | Real code read from `PasswordResetCode` on staging, confirmed via `POST /api/auth/password-reset/confirm/` — real `200`. Verified both directions: login with the **new** password succeeds (`200`), login with the **old** password is rejected (`401`). |
 | 6 | Guest mode | Use the app without registering; submit as a guest | ☑ | ☐ | Claude, 2026-09-15 | Guest Home loads correctly with the real "Log in to browse papers" wall; guest contribution flow already covered by earlier `/design-review` passes this cycle. |
-| 7 | Guest → registered | A guest's referral code / prior activity carries over correctly after registering | ☐ | ☐ | | **Not yet attempted** — needs a guest contribution followed by registration to confirm attribution carries over; deferred for a follow-up session. |
+| 7 | Guest → registered | A guest's referral code / prior activity carries over correctly after registering | ☐ | ☑ | Claude, 2026-09-15 | Not a bug — this row describes a feature that doesn't exist in the current app. `GuestView`'s own doc comment: a guest is "a permanent DB row until the 24h prune job reaps it" — there's no claim/merge endpoint anywhere in `apps/accounts/` linking a guest's prior activity to a real account registered afterward. `guest_ref` is just a display-name fallback, not a carryover key. This row's own "Steps" text describes behavior the codebase never built; recommend rewriting or removing it rather than leaving it perpetually unchecked. |
 | 8 | Phone verification | Add a phone number in Profile, request + confirm an SMS code (needs a Twilio-verified test number — see `RENDER_PRODUCTION.md` §7) | ☐ | ☐ | | **Blocked** — this Twilio account is Trial-restricted (documented in the release roadmap); SMS only reaches numbers pre-verified in Twilio's own console, which no test number in this sandbox is. |
 | 9 | Edit profile | Change name/education level/region/language; avatar upload | ☑ | ☐ | Claude, 2026-09-15 | Username edit real end-to-end (`PATCH /api/auth/me/` → 200, confirmed reflected on screen after refresh). Avatar upload **not verified** — the native OS file-picker dialog is outside headless-browser automation's reach; needs a real device pass. Note: the app's actual Edit Profile sheet only has Username/Email/Phone — no education level/region fields exist anywhere in the app, so this row's own "Steps" text overstates the real scope. |
 | 10 | Referral bonus | Register with a real referral code, confirm the referrer is credited on the referred user's first real action | ☑ | ☐ | Claude, 2026-09-15 | Full real chain: registered a second account with the first account's real referral code → referred user's first `unlock_paper` call (`POST /api/payments/unlock/`, free-trial path) → referrer's `/api/credits/ledger/` shows a real 200pt "Referral bonus: MVP Referred Tester unlocked their first paper" entry. |
@@ -138,13 +138,18 @@ staging rather than assuming they work:
   with a new regression test forcing exactly that shape. See PR
   (`fix(accounts): email domain check now actually fails open on any error`).
 
-Also note: this sandbox has no staging database credentials (only
-production's, confirmed above to be a separate database) and no access to
-the real inboxes/SMS numbers registration and password-reset codes are sent
-to — rows 2, 5, and 8 are genuinely untested, not assumed-fine. Row 16's
-unlock UI is deliberately absent from the web build entirely (`if
-(!kIsWeb)` in `paper_detail_screen.dart`), so it was verified at the API
-level; the on-screen mobile flow itself still needs a real device pass.
+**Update, same day**: the owner provided real staging DB read access
+(kept in a session-local file outside the repo, never committed, never
+written to `backend/.env`), which unblocked rows 2, 3, and 5 — each now
+carries real evidence (the actual emailed/texted code read from the DB
+and round-tripped through the real API), not just an endpoint status
+code. Row 8 (phone verification) is still blocked — that's a Twilio
+Trial-account limit (no verified test number), not a data-access gap.
+Row 7 turned out to test a feature that doesn't exist in this codebase
+at all (see its own row). Row 16's unlock UI is deliberately absent from
+the web build entirely (`if (!kIsWeb)` in `paper_detail_screen.dart`),
+so it was verified at the API level; the on-screen mobile flow itself
+still needs a real device pass.
 
 ---
 
