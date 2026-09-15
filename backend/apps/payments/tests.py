@@ -17,6 +17,7 @@ from .factories import SubscriptionFactory
 from .models import (
     PaperDownloadUnlock,
     PaperUnlock,
+    PaymentTransaction,
     PaymentTransactionStatus,
     Subscription,
     SubscriptionStatus,
@@ -55,6 +56,37 @@ def test_subscribe_endpoint_creates_active_subscription_via_mock_provider(api_cl
     sub = Subscription.objects.get(user=user)
     assert sub.payment_transaction.status == PaymentTransactionStatus.SUCCESS
     assert sub.payment_transaction.provider_reference.startswith("mock-")
+
+
+@pytest.mark.django_db
+def test_subscribe_endpoint_surfaces_a_real_error_and_unlocks_nothing_on_a_failed_charge(api_client, monkeypatch):
+    """Real gap found live (2026-09-15, MVP sign-off checklist row 38):
+    MockPaymentProvider.charge() always returns success=True — there was
+    no way, live or in tests, to exercise what happens when a real charge
+    fails. Monkeypatches the same _provider seam a real Flutterwave
+    integration will one day replace, so this exercises the actual
+    charge()/subscribe() failure branch, not a hand-rolled shortcut."""
+    from dataclasses import dataclass
+
+    from apps.core.payment_provider import PaymentResult
+
+    @dataclass
+    class _FailingProvider:
+        def charge(self, *, amount_fcfa, phone_number, description):
+            return PaymentResult(success=False, provider_reference="mock-failed", failure_reason="Insufficient balance")
+
+    monkeypatch.setattr("apps.payments.services._provider", _FailingProvider())
+
+    user = UserFactory()
+    api_client.force_authenticate(user=user)
+    response = api_client.post("/api/payments/subscribe/", {"phone_number": "670123456"}, format="json")
+
+    assert response.status_code == 402
+    assert response.data["detail"] == "Insufficient balance"
+    assert not Subscription.objects.filter(user=user).exists()
+    transaction = PaymentTransaction.objects.get(user=user)
+    assert transaction.status == PaymentTransactionStatus.FAILED
+    assert transaction.failure_reason == "Insufficient balance"
 
 
 @pytest.mark.django_db
