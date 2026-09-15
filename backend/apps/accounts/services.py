@@ -52,6 +52,16 @@ def email_domain_is_verifiable(email: str) -> bool:
         )
         response.raise_for_status()
         return response.json().get("valid", True)
-    except (requests.RequestException, ValueError):
+    except Exception:  # deliberately blind: this docstring's own
+        # "fails open ... or errors for any other reason" promise wasn't actually
+        # kept — only (RequestException, ValueError) were caught, so an
+        # unexpected shape from the edge function (e.g. a 200 with a non-dict
+        # body, raising AttributeError on .get()) crashed registration with a
+        # real 500 instead of failing open. Real bug found live 2026-09-15:
+        # registering with an empty email 500'd on staging but not locally
+        # against the same edge function code — the exact staging-side cause
+        # wasn't confirmed (no Sentry access from this pass), but this check
+        # is optional and best-effort by design, so no exception from it
+        # should ever be able to block a real registration.
         logger.warning("verify-email-domain call failed; letting registration through.", exc_info=True)
         return True

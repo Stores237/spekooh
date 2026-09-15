@@ -868,6 +868,33 @@ def test_register_rejects_an_unverifiable_email_domain(api_client, settings, mon
 
 
 @pytest.mark.django_db
+def test_email_domain_check_fails_open_on_an_unexpected_response_shape(settings, monkeypatch):
+    """Regression: real bug found live 2026-09-15 — registering with an empty
+    email 500'd on staging (not reproducible locally against the same edge
+    function code, so the exact staging-side cause wasn't confirmed without
+    Sentry access). email_domain_is_verifiable's own docstring promises it
+    "fails open ... or errors for any other reason", but the old except
+    clause only covered (RequestException, ValueError) — a 200 response
+    whose body isn't a dict (here, a bare list) raises AttributeError on
+    `.get()`, which wasn't caught, crashing registration outright instead of
+    failing open as designed."""
+    from . import services
+
+    settings.SUPABASE_EDGE_FUNCTION_BASE_URL = "https://example.supabase.co/functions/v1"
+
+    class _MalformedResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return []  # not a dict — .get() would raise AttributeError
+
+    monkeypatch.setattr(services.requests, "post", lambda *a, **k: _MalformedResponse())
+
+    assert services.email_domain_is_verifiable("someone@example.com") is True
+
+
+@pytest.mark.django_db
 def test_register_succeeds_when_edge_function_is_not_configured(api_client, settings):
     # Default posture (no SUPABASE_EDGE_FUNCTION_BASE_URL set): the check is
     # skipped entirely rather than blocking registration.
