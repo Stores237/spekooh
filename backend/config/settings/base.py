@@ -398,6 +398,14 @@ REQUIRE_EMAIL_VERIFICATION = env.bool("REQUIRE_EMAIL_VERIFICATION", default=Fals
 # Instructor webhook HMAC replay-protection window.
 INSTRUCTOR_WEBHOOK_MAX_SKEW_SECONDS = env.int("INSTRUCTOR_WEBHOOK_MAX_SKEW_SECONDS", default=300)
 
+# Outbound half of the same contract (see apps.instructors.outbound) — the
+# partner platform's own inbound webhook URL, and which PartnerCredential row
+# to sign outbound pushes with. Empty URL means outbound delivery is a no-op
+# (route_next_instructor still works locally; the partner just never gets
+# pushed a notification), so this is safe to leave unset in dev/CI.
+INSTRUCTOR_PARTNER_WEBHOOK_URL = env("INSTRUCTOR_PARTNER_WEBHOOK_URL", default="")
+INSTRUCTOR_PARTNER_ID = env("INSTRUCTOR_PARTNER_ID", default="s-learn")
+
 # django-unfold admin theme — brand palette ported 1:1 from tokens/colors.css
 # (the same tokens the Flutter app's design system uses). The 50/900/950
 # extremes and a few mid-ramp steps aren't literal token values (the token

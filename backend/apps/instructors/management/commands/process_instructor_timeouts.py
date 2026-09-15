@@ -12,6 +12,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from ...models import InstructorProfileCache, InstructorRequest, InstructorRequestStatus
+from ...outbound import notify_guide_reminder
 from ...services import GUIDE_REMINDER_DAYS, route_next_instructor
 
 
@@ -81,5 +82,6 @@ class Command(BaseCommand):
                     )
                     setattr(locked, field, now)
                     locked.save(update_fields=[field, "updated_at"])
+                    transaction.on_commit(lambda locked=locked, days=days: notify_guide_reminder(locked, day=days))
                     count += 1
         return count

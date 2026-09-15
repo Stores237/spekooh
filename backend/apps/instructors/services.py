@@ -24,6 +24,7 @@ from .models import (
     InstructorSubjectQueue,
     WithdrawalRequest,
 )
+from .outbound import notify_new_request
 
 REQUEST_TIMEOUT_HOURS = 48
 GUIDE_WINDOW_DAYS = 7
@@ -80,6 +81,10 @@ def route_next_instructor(paper: PaperSubmission) -> InstructorRequest | None:
     )
     paper.status = PaperStatus.INSTRUCTOR_REQUEST_SENT
     paper.save(update_fields=["status", "updated_at"])
+    # Deferred to on_commit: an HTTP call has no place inside this
+    # select_for_update block, and a partner-webhook delivery failure must
+    # never roll back a real routing decision.
+    transaction.on_commit(lambda: notify_new_request(request))
     return request
 
 
