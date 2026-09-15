@@ -36,9 +36,13 @@ class Command(BaseCommand):
             self.stdout.write("AI_ENABLED is False — skipping.")
             return
 
+        # Same fix as process_pending_ocr's own queryset, same real bug
+        # found live 2026-09-15: no explicit ordering on a LIMIT-ed
+        # queryset means row selection isn't guaranteed consistent between
+        # runs, which can perpetually starve some pending rows.
         queryset = GeneratedArtifact.objects.filter(
             Q(status=ArtifactStatus.PENDING) | Q(status=ArtifactStatus.FAILED, attempts__lt=MAX_ATTEMPTS)
-        ).select_related("content_type")[:BATCH_SIZE]
+        ).select_related("content_type").order_by("created_at")[:BATCH_SIZE]
 
         generated = failed = 0
         for artifact in queryset:
