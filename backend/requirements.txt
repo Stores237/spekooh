@@ -21,7 +21,7 @@ djangorestframework==3.18.1
 djangorestframework_simplejwt==5.5.1
 drf-spectacular==0.30.0
 factory_boy==3.3.3
-Faker==40.36.0
+Faker==40.38.0
 filelock==3.32.4
 gunicorn==26.2.0
 idna==3.19
