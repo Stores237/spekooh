@@ -52,9 +52,15 @@ class Command(BaseCommand):
     help = "Runs OCR (+ duplicate detection) over newly-submitted papers/reports. Cron-driven, see this module's own docstring."
 
     def handle(self, *args, **options):
+        # Real bug found live (2026-09-15): with no explicit ordering, a
+        # sliced (LIMIT-ed) queryset's row selection isn't guaranteed
+        # consistent between runs — on staging, 3 real submissions sat at
+        # ocr_attempts=0 for days while a newer one got processed
+        # immediately. order_by("created_at") makes this a real FIFO
+        # queue, so nothing waiting can be perpetually skipped.
         queryset = PaperSubmission.objects.filter(
             Q(ocr_status=OcrStatus.PENDING) | Q(ocr_status=OcrStatus.FAILED, ocr_attempts__lt=MAX_OCR_ATTEMPTS)
-        )[:BATCH_SIZE]
+        ).order_by("created_at")[:BATCH_SIZE]
 
         processed = failed = 0
         for submission in queryset:

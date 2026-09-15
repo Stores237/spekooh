@@ -80,6 +80,25 @@ def run_pending_generation(artifact: GeneratedArtifact) -> None:
     artifact.save(update_fields=["status", "attempts"])
     try:
         GENERATORS[artifact.kind](artifact)
+    except AIUnavailable as exc:
+        # Real bug found live (2026-09-15): this used to fall into the
+        # generic AIError branch below, which permanently burns one of
+        # only 3 lifetime attempts — but "no OCR text yet for this
+        # submission" (this exception's own real-world use, see
+        # generate_paper_summary) isn't a provider failure, it's a
+        # not-yet-ready state that OCR will resolve on its own. On
+        # staging, 3 of the only 4 artifacts ever attempted died exactly
+        # this way: permanently FAILED with attempts>=3 before their
+        # paper's OCR even finished, with zero chance of the cron ever
+        # retrying them again, even after OCR later completed for real.
+        # Undo the attempt and go back to PENDING so the next cron run
+        # gives it a completely free try, for as long as OCR actually
+        # takes.
+        artifact.status = ArtifactStatus.PENDING
+        artifact.attempts -= 1
+        artifact.error = str(exc)[:2000]
+        artifact.save(update_fields=["status", "attempts", "error"])
+        raise
     except AIError as exc:
         artifact.status = ArtifactStatus.FAILED
         artifact.error = str(exc)[:2000]

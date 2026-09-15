@@ -33,6 +33,7 @@ from .models import (
     AdWatchEvent,
     ExamCategory,
     ExamType,
+    OcrStatus,
     PaperStatus,
     PaperSubmission,
     PaperViewLog,
@@ -937,6 +938,30 @@ def test_process_ocr_endpoint_works_for_staff(tmp_path, api_client):
     response = api_client.post(f"/api/papers/submissions/{paper.id}/process_ocr/")
     assert response.status_code == 200
     assert "paper text" in response.data["ocr_text"].lower()
+
+
+@pytest.mark.django_db
+def test_process_pending_ocr_command_processes_oldest_pending_submission_first():
+    """Real bug found live (2026-09-15): the command's queryset had no
+    explicit ordering, so a sliced (LIMIT-ed) queryset's row selection
+    isn't guaranteed consistent between runs — on staging, 3 real
+    submissions sat at ocr_attempts=0 for days while a newer one got
+    processed first. order_by("created_at") makes this a real FIFO
+    queue; with BATCH_SIZE=1 in the real command, the oldest pending
+    submission must always be the one picked, never the newest."""
+    from django.core.management import call_command
+
+    older = PaperSubmissionFactory(ocr_status=OcrStatus.PENDING)
+    PaperSubmission.objects.filter(pk=older.pk).update(created_at="2020-01-01T00:00:00Z")
+    newer = PaperSubmissionFactory(ocr_status=OcrStatus.PENDING)
+
+    processed_ids = []
+    with mock.patch("apps.papers.management.commands.process_pending_ocr.run_pending_ocr") as mocked:
+        mocked.side_effect = lambda submission: processed_ids.append(submission.pk)
+        call_command("process_pending_ocr")
+
+    assert processed_ids == [older.pk]
+    assert newer.pk not in processed_ids
 
 
 class TestRunPendingOcr:

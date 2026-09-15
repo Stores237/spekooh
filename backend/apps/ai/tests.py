@@ -95,8 +95,49 @@ class TestRunPendingGeneration:
             mocked.assert_not_called()
 
         artifact.refresh_from_db()
-        assert artifact.status == ArtifactStatus.FAILED
         assert "no OCR text" in artifact.error
+        # Real bug found live 2026-09-15: this used to assert FAILED here,
+        # matching the old bug — "no OCR text yet" isn't a provider
+        # failure, it's a not-yet-ready state, so it must not burn one of
+        # the row's only 3 lifetime attempts or ever count as permanently
+        # FAILED. See test_no_ocr_text_yet_can_retry_indefinitely_without_
+        # ever_exhausting_its_attempts below for the full real-world case
+        # this was found from.
+        assert artifact.status == ArtifactStatus.PENDING
+        assert artifact.attempts == 0
+
+    @pytest.mark.django_db
+    def test_no_ocr_text_yet_can_retry_indefinitely_without_ever_exhausting_its_attempts(self):
+        """Real bug found live (2026-09-15): on staging, 3 of the only 4
+        artifacts ever attempted died permanently this exact way —
+        generate_pending_artifacts's own MAX_ATTEMPTS=3 exhausted within
+        the first few cron cycles, before OCR even finished, and the
+        query excluding attempts>=MAX_ATTEMPTS meant the cron would never
+        pick them up again — even after their paper's OCR later
+        completed for real. Simulates 10 cron cycles (far past the old
+        3-attempt ceiling) all failing on "no OCR text yet", then OCR
+        finally landing — the row must still be alive to succeed."""
+        paper = _published_paper(ocr_text="")
+        artifact, _ = get_or_queue_artifact(paper, ArtifactKind.SUMMARY, language="en")
+
+        for _ in range(10):
+            with pytest.raises(AIUnavailable):
+                run_pending_generation(artifact)
+            artifact.refresh_from_db()
+            assert artifact.status == ArtifactStatus.PENDING
+            assert artifact.attempts == 0
+
+        paper.ocr_text = "Real OCR text, finally."
+        paper.save(update_fields=["ocr_text"])
+        with mock.patch(
+            "apps.ai.services.GeminiProvider.generate",
+            return_value=AIResult(text="A real summary.", model="gemini-3.6-flash", tokens_in=10, tokens_out=5),
+        ):
+            run_pending_generation(artifact)
+
+        artifact.refresh_from_db()
+        assert artifact.status == ArtifactStatus.READY
+        assert artifact.body == "A real summary."
 
     @pytest.mark.django_db
     def test_a_provider_refusal_fails_the_row_but_creates_no_ticket_before_three_attempts(self):
