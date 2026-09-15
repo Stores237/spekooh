@@ -238,6 +238,12 @@ on. Staging/production never render Django's own debug traceback pages.
 - **The real payment provider isn't integrated yet** — see "Payments"
   above. No real financial risk today since nothing charges real money,
   but the real provider's own error-handling hasn't been exercised.
+  **Decision (2026-09-15, MVP exit-criteria security sign-off): fix
+  before launch**, not accepted as a v1 gap — already tracked as a P0
+  blocker on the release roadmap. Blocked on a real prerequisite that
+  isn't in place yet: the owner's own MTN Mobile Money / Orange Money
+  (or Flutterwave/Notch Pay) merchant registration — not an engineering
+  task until those credentials exist.
 - **Resolved 2026-09-13** (was: zero server-side error visibility on
   staging) — a real Sentry project and Django's own independent `ADMINS`
   email-alert channel are both live; see the release roadmap for the
