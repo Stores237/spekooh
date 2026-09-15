@@ -151,6 +151,41 @@ the web build entirely (`if (!kIsWeb)` in `paper_detail_screen.dart`),
 so it was verified at the API level; the on-screen mobile flow itself
 still needs a real device pass.
 
+**Update, later the same day — Instructors, Payments, Pamphlets, Forum/
+Quizzes/Notifications, Admin**: 49 of 50 rows now carry a real,
+evidenced status (up from 16). The full instructor lifecycle
+(routing → accept/reject → timeout reassignment → marking-guide
+delivery → instructor credit) was exercised end-to-end through real
+HMAC-signed webhook calls, matching exactly what a real partner
+platform would send — not a bypass of that contract. Same for the
+complete pamphlet lifecycle (order → QR issuance → a real courier
+"scan" of the generated QR page → handover confirmation with correct
+commission math → the courier self-confirm fallback → 30-day expiry),
+subscriptions, XP earning/redemption, forum posting (confirming PR
+#132's fix is genuinely live), quiz XP, and notifications.
+
+Two more rows (33, now also 7/9) turned out to describe features that
+were never built — see each row for specifics; worth a pass rewriting
+or removing these rather than leaving them perpetually unchecked.
+
+Three rows are genuinely blocked, not guessed at:
+- **Row 38** (failed payment): `MockPaymentProvider` has no failure
+  mode to trigger live at all — a real, previously-nonexistent gap,
+  now covered by a real regression test instead (see the payments PR).
+- **Row 48** (admin dashboard scoping): creating a Reviewer/Support
+  test account was denied by Claude Code's own auto-mode permission
+  classifier (creating a privileged account is treated as a sensitive
+  action). Needs the owner to create one and hand over credentials, or
+  run this check themselves.
+- **Row 50** (Sentry error visibility): this sandbox has `SENTRY_DSN`
+  (send-only) but no Sentry API read access to confirm a specific new
+  event actually landed — Sentry's own setup was already verified
+  working earlier this session, just not re-confirmed for a fresh
+  error today.
+
+Rows 12-14 and 21 remain deferred to their own existing regression test
+coverage rather than re-tested live (see each row).
+
 ---
 
 ## Load pass at realistic volume — done, 2026-09-14
