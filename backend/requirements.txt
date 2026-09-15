@@ -28,7 +28,7 @@ idna==3.19
 inflection==0.5.1
 iniconfig==2.3.0
 jmespath==1.1.0
-joblib==1.5.3
+joblib==1.6.0
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 license-expression==30.4.4
