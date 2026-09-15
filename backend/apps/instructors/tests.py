@@ -2,6 +2,7 @@ import datetime
 import json
 
 import pytest
+import requests
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -36,7 +37,7 @@ from .services import (
     request_withdrawal,
     route_next_instructor,
 )
-from .webhook import sign_payload
+from .webhook import sign_payload, verify_webhook_request
 
 
 @pytest.fixture
@@ -393,6 +394,98 @@ def test_cron_sends_day4_reminder_once():
     call_command("process_instructor_timeouts")
     request.refresh_from_db()
     assert request.day4_reminder_sent_at == first_sent_at  # not sent twice
+
+
+# --- Outbound partner webhook (apps.instructors.outbound) ---
+
+
+@pytest.mark.django_db
+def test_outbound_webhook_is_a_no_op_without_a_configured_partner_url(settings, monkeypatch):
+    settings.INSTRUCTOR_PARTNER_WEBHOOK_URL = ""
+    posted = []
+    monkeypatch.setattr("apps.instructors.outbound.requests.post", lambda *a, **k: posted.append(1))
+
+    from .outbound import send_partner_webhook
+
+    assert send_partner_webhook(event_type="new_request", payload={}) is False
+    assert posted == []
+
+
+@pytest.mark.django_db
+def test_outbound_webhook_sends_a_correctly_signed_request(settings, monkeypatch):
+    credential = PartnerCredentialFactory(partner_id="s-learn")
+    settings.INSTRUCTOR_PARTNER_WEBHOOK_URL = "https://s-learn-beta.vercel.app/functions/v1/spekooh-webhook"
+    settings.INSTRUCTOR_PARTNER_ID = "s-learn"
+
+    captured = {}
+
+    class _FakeResponse:
+        def raise_for_status(self):
+            pass
+
+    def _fake_post(url, data, headers, timeout):
+        captured["url"] = url
+        captured["data"] = data
+        captured["headers"] = headers
+        captured["timeout"] = timeout
+        return _FakeResponse()
+
+    monkeypatch.setattr("apps.instructors.outbound.requests.post", _fake_post)
+
+    from .outbound import send_partner_webhook
+
+    assert send_partner_webhook(event_type="new_request", payload={"instructor_id": "instructor-a"}) is True
+
+    assert captured["url"] == settings.INSTRUCTOR_PARTNER_WEBHOOK_URL
+    assert captured["headers"]["X-Spekooh-Partner-Id"] == "s-learn"
+    # Same verify_webhook_request the inbound endpoint uses — proves this is
+    # a genuine round-trippable signature, not just "some header exists".
+    verified = verify_webhook_request(
+        partner_id="s-learn",
+        raw_body=captured["data"],
+        signature_header=captured["headers"]["X-Spekooh-Signature"],
+        timestamp_header=captured["headers"]["X-Spekooh-Timestamp"],
+    )
+    assert verified == credential
+    assert json.loads(captured["data"]) == {"event_type": "new_request", "instructor_id": "instructor-a"}
+
+
+@pytest.mark.django_db
+def test_outbound_webhook_failure_is_swallowed_not_raised(settings, monkeypatch):
+    PartnerCredentialFactory(partner_id="s-learn")
+    settings.INSTRUCTOR_PARTNER_WEBHOOK_URL = "https://s-learn-beta.vercel.app/functions/v1/spekooh-webhook"
+    settings.INSTRUCTOR_PARTNER_ID = "s-learn"
+
+    def _raise(*args, **kwargs):
+        raise requests.ConnectionError("simulated network failure")
+
+    monkeypatch.setattr("apps.instructors.outbound.requests.post", _raise)
+
+    from .outbound import send_partner_webhook
+
+    assert send_partner_webhook(event_type="new_request", payload={}) is False
+
+
+@pytest.mark.django_db(transaction=True)
+def test_route_next_instructor_pushes_a_new_request_notification_on_commit(settings, monkeypatch):
+    # transaction=True: on_commit callbacks are only ever fired on a real
+    # commit of the OUTERMOST atomic block, which pytest-django's default
+    # (test-wrapping, never-committed) transaction handling would silently
+    # discard -- this is the one test in the file that needs the real thing.
+    PartnerCredentialFactory(partner_id="s-learn")
+    settings.INSTRUCTOR_PARTNER_WEBHOOK_URL = "https://s-learn-beta.vercel.app/functions/v1/spekooh-webhook"
+    settings.INSTRUCTOR_PARTNER_ID = "s-learn"
+
+    calls = []
+    monkeypatch.setattr("apps.instructors.services.notify_new_request", lambda request: calls.append(request.id))
+
+    subject = SubjectFactory(key="outbound_subject_1")
+    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-a", priority_order=1)
+    paper = _routable_paper(subject=subject)
+
+    request = route_next_instructor(paper)
+
+    assert calls == [request.id]
 
 
 # --- Admin-facing routing/merge endpoints ---
