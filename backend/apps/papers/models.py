@@ -286,7 +286,10 @@ class PublishedGuide(TimeStampedModel):
     # answer} dict, or null if the paper has no MCQ section>, "non_mcq":
     # <InstructorMarkingGuide.content, a list of {question_type, text,
     # answer} — validated by apps.instructors.serializers
-    # .MarkingGuideQuestionSerializer>}. See
+    # .MarkingGuideQuestionSerializer, or null when the instructor uploaded
+    # a file instead>, "guide_file_url": <signed URL to the uploaded guide
+    # file, or null when the instructor used the structured form instead —
+    # non_mcq and guide_file_url are mutually exclusive>}. See
     # apps.papers.serializers.PublishedGuideSerializer and the Flutter
     # MarkingGuideScreen, which both render this same real shape.
     content = models.JSONField()

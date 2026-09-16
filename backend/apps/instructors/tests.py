@@ -3,6 +3,7 @@ import json
 
 import pytest
 import requests
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -29,6 +30,7 @@ from .models import (
 )
 from .services import (
     GUIDE_REMINDER_DAYS,
+    GuideFileError,
     MergeError,
     RoutingError,
     handle_instructor_response,
@@ -225,6 +227,61 @@ def test_marking_guide_submission_rejects_non_accepted_request():
 
 
 @pytest.mark.django_db
+def test_marking_guide_submission_downloads_and_stores_an_uploaded_file(monkeypatch):
+    # File mode: content is still required (a {question_type} tally, real
+    # text/answer omitted) so PaperCreditCalculator has something to count
+    # even though the real guide content lives in the file, not content.
+    subject = SubjectFactory(key="guide_file_subject_1")
+    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-a", priority_order=1)
+    paper = _routable_paper(subject=subject)
+    request = route_next_instructor(paper)
+    handle_instructor_response(instructor_request_id=request.id, decision="ACCEPTED")
+
+    class _FakeResponse:
+        content = b"%PDF-1.4 fake pdf bytes"
+
+        def raise_for_status(self):
+            pass
+
+    monkeypatch.setattr("apps.instructors.services.requests.get", lambda url, timeout: _FakeResponse())
+
+    guide = handle_marking_guide_submission(
+        instructor_request_id=request.id,
+        content=[{"question_type": "ESSAY"}, {"question_type": "ESSAY"}],
+        guide_file_url="https://s-learn-beta.vercel.app/storage/guide.pdf",
+    )
+
+    assert guide.guide_file
+    assert guide.guide_file.read() == b"%PDF-1.4 fake pdf bytes"
+    assert InstructorCreditLedger.objects.filter(instructor_id="instructor-a", paper=paper).exists()
+
+
+@pytest.mark.django_db
+def test_marking_guide_submission_rejects_a_file_that_isnt_really_a_pdf(monkeypatch):
+    subject = SubjectFactory(key="guide_file_subject_2")
+    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-a", priority_order=1)
+    paper = _routable_paper(subject=subject)
+    request = route_next_instructor(paper)
+    handle_instructor_response(instructor_request_id=request.id, decision="ACCEPTED")
+
+    class _FakeResponse:
+        content = b"not actually a pdf"
+
+        def raise_for_status(self):
+            pass
+
+    monkeypatch.setattr("apps.instructors.services.requests.get", lambda url, timeout: _FakeResponse())
+
+    with pytest.raises(GuideFileError):
+        handle_marking_guide_submission(
+            instructor_request_id=request.id,
+            content=[{"question_type": "ESSAY"}],
+            guide_file_url="https://s-learn-beta.vercel.app/storage/not-a-guide.exe",
+        )
+    assert not InstructorMarkingGuide.objects.filter(paper=paper).exists()
+
+
+@pytest.mark.django_db
 def test_merge_and_publish_combines_mcq_and_instructor_guide_then_pays_bonus():
     subject = SubjectFactory(key="merge_subject_1")
     InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-a", priority_order=1)
@@ -239,9 +296,42 @@ def test_merge_and_publish_combines_mcq_and_instructor_guide_then_pays_bonus():
 
     assert published.content["mcq"] == {"q1": "A"}
     assert published.content["non_mcq"] == [{"question_type": "ESSAY"}]
+    assert published.content["guide_file_url"] is None
     paper.refresh_from_db()
     assert paper.status == PaperStatus.PUBLISHED
     assert CreditLedgerEntry.objects.filter(user=paper.submitted_by, paper_submission=paper).exists()
+
+
+@pytest.mark.django_db
+def test_merge_and_publish_uses_guide_file_url_and_omits_non_mcq_when_a_file_was_uploaded(monkeypatch):
+    # A file-mode guide's content is only a credit-calculation tally (real
+    # text/answer omitted) -- showing that to the paying customer would look
+    # like a broken, empty guide, so the published content shows the file
+    # instead and hides the tally.
+    subject = SubjectFactory(key="merge_subject_file_1")
+    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-a", priority_order=1)
+    paper = _routable_paper(subject=subject)
+    request = route_next_instructor(paper)
+    handle_instructor_response(instructor_request_id=request.id, decision="ACCEPTED")
+
+    class _FakeResponse:
+        content = b"%PDF-1.4 fake pdf bytes"
+
+        def raise_for_status(self):
+            pass
+
+    monkeypatch.setattr("apps.instructors.services.requests.get", lambda url, timeout: _FakeResponse())
+    handle_marking_guide_submission(
+        instructor_request_id=request.id,
+        content=[{"question_type": "ESSAY"}],
+        guide_file_url="https://s-learn-beta.vercel.app/storage/guide.pdf",
+    )
+    paper.refresh_from_db()
+
+    published = merge_and_publish(paper)
+
+    assert published.content["non_mcq"] is None
+    assert published.content["guide_file_url"]
 
 
 @pytest.mark.django_db
@@ -353,6 +443,40 @@ def test_webhook_marking_guide_submission_end_to_end(api_client):
     assert response.status_code == 200
     assert response.data["applied"] is True
     assert InstructorMarkingGuide.objects.filter(paper=paper).exists()
+
+
+@pytest.mark.django_db
+def test_webhook_marking_guide_submission_with_a_file_end_to_end(api_client, monkeypatch):
+    credential = PartnerCredentialFactory()
+    subject = SubjectFactory(key="webhook_subject_file_1")
+    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-a", priority_order=1)
+    paper = _routable_paper(subject=subject)
+    request = route_next_instructor(paper)
+    handle_instructor_response(instructor_request_id=request.id, decision="ACCEPTED")
+
+    class _FakeResponse:
+        content = b"%PDF-1.4 fake pdf bytes"
+
+        def raise_for_status(self):
+            pass
+
+    monkeypatch.setattr("apps.instructors.services.requests.get", lambda url, timeout: _FakeResponse())
+
+    response = _post_webhook(
+        api_client,
+        credential,
+        {
+            "event_type": "marking_guide_submission",
+            "instructor_request_id": request.id,
+            "content": [{"question_type": "CALCULATION"}],
+            "guide_file_url": "https://s-learn-beta.vercel.app/storage/guide.pdf",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.data["applied"] is True
+    guide = InstructorMarkingGuide.objects.get(paper=paper)
+    assert guide.guide_file
 
 
 # --- Timeout + reminder cron ---
@@ -499,6 +623,46 @@ def test_notify_new_request_builds_a_real_payload_from_a_real_request(settings, 
 
     assert notify_new_request(request) is True
     assert json.loads(captured["data"])["subject"] == "Biology"
+    assert json.loads(captured["data"])["paper_file_url"] is None
+
+
+@pytest.mark.django_db
+def test_notify_new_request_includes_the_real_question_paper_file_url(settings, monkeypatch):
+    # Found live, 2026-09-16: the instructor had a subject name and nothing
+    # else -- no way to actually see what they were being asked to mark.
+    PartnerCredentialFactory(partner_id="s-learn")
+    settings.INSTRUCTOR_PARTNER_WEBHOOK_URL = "https://s-learn-beta.vercel.app/functions/v1/spekooh-webhook"
+    settings.INSTRUCTOR_PARTNER_ID = "s-learn"
+
+    subject = SubjectFactory(key="notify_new_request_file_subject")
+    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-a", priority_order=1)
+    category = ExamCategoryFactory(key="notify_new_request_file_category")
+    exam_type = ExamTypeFactory(category=category, name="O Level file test")
+    paper = PaperSubmissionFactory(
+        category=category,
+        exam_type=exam_type,
+        subject=subject,
+        uploaded_file=SimpleUploadedFile("gce-bio-2024.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf"),
+    )
+
+    captured = {}
+
+    class _FakeResponse:
+        def raise_for_status(self):
+            pass
+
+    def _fake_post(url, data, headers, timeout):
+        captured["data"] = data
+        return _FakeResponse()
+
+    monkeypatch.setattr("apps.instructors.outbound.requests.post", _fake_post)
+
+    request = route_next_instructor(paper)
+
+    from .outbound import notify_new_request
+
+    assert notify_new_request(request) is True
+    assert json.loads(captured["data"])["paper_file_url"]
 
 
 @pytest.mark.django_db(transaction=True)

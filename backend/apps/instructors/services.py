@@ -1,5 +1,7 @@
 import datetime
 
+import requests
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
 
@@ -15,6 +17,7 @@ from apps.credits.services import award_contributor_bonus
 from apps.notifications.models import NotificationKind
 from apps.notifications.services import notify
 from apps.papers.models import PaperStatus, PaperSubmission, PublishedGuide
+from apps.papers.validation import sniff_content_type
 
 from .models import (
     InstructorCreditLedger,
@@ -28,6 +31,35 @@ from .outbound import notify_new_request
 
 REQUEST_TIMEOUT_HOURS = 48
 GUIDE_WINDOW_DAYS = 7
+GUIDE_FILE_MAX_BYTES = 20 * 1024 * 1024
+GUIDE_FILE_FETCH_TIMEOUT_SECONDS = 30
+
+
+class GuideFileError(SafeMessageError):
+    pass
+
+
+def _fetch_guide_file(url: str) -> ContentFile:
+    """Downloads and re-hosts an instructor-uploaded guide file rather than
+    trusting the partner platform's own storage URL to stay valid
+    indefinitely (same reasoning as apps.papers.PaperSubmission.uploaded_file
+    never linking out to wherever a contributor's upload landed). PDF only,
+    for now — matches the one format MarkingGuideScreen's viewer needs to
+    support first; magic-byte sniffed, not just trusted by extension/header,
+    same as every other upload this app accepts (apps.papers.validation)."""
+    try:
+        response = requests.get(url, timeout=GUIDE_FILE_FETCH_TIMEOUT_SECONDS)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise GuideFileError(f"Could not download guide file: {exc}") from exc
+
+    content = response.content
+    if len(content) > GUIDE_FILE_MAX_BYTES:
+        raise GuideFileError(f"Guide file exceeds the {GUIDE_FILE_MAX_BYTES // (1024 * 1024)}MB limit.")
+    if sniff_content_type(content) != "application/pdf":
+        raise GuideFileError("Guide file must be a real PDF.")
+
+    return ContentFile(content, name="guide.pdf")
 GUIDE_REMINDER_DAYS = [4, 6]
 
 
@@ -145,7 +177,15 @@ def _complexity_level_for(paper: PaperSubmission) -> str:
     return ComplexityLevel.UNIVERSITY
 
 
-def handle_marking_guide_submission(*, instructor_request_id: int, content: list[dict]) -> InstructorMarkingGuide:
+def handle_marking_guide_submission(
+    *, instructor_request_id: int, content: list[dict], guide_file_url: str | None = None
+) -> InstructorMarkingGuide:
+    # Fetched before the transaction, not inside it -- a network call has no
+    # place inside a select_for_update() block, same reasoning as
+    # apps.instructors.outbound's on_commit deferral. Worst case, a request
+    # that turns out stale below still paid this one network round trip.
+    guide_file = _fetch_guide_file(guide_file_url) if guide_file_url else None
+
     # The stale-state branch below writes an audit flag and must survive even
     # when the operation is rejected — so the flag() call happens outside
     # this atomic block, not inside it (a raise inside atomic would roll the
@@ -166,7 +206,11 @@ def handle_marking_guide_submission(*, instructor_request_id: int, content: list
         if stale_reason is False:
             paper = request.paper
             guide = InstructorMarkingGuide.objects.create(
-                paper=paper, instructor_id=request.instructor_id, content=content, submitted_at=timezone.now()
+                paper=paper,
+                instructor_id=request.instructor_id,
+                content=content,
+                guide_file=guide_file,
+                submitted_at=timezone.now(),
             )
             paper.status = PaperStatus.GUIDE_SUBMITTED
             paper.save(update_fields=["status", "updated_at"])
@@ -214,9 +258,14 @@ def merge_and_publish(paper: PaperSubmission) -> PublishedGuide:
 
     mcq_key = getattr(paper, "mcq_answer_key", None)
 
+    # instructor_guide.content is a real answer list in form mode, but only
+    # a credit-calculation tally (empty text/answer) in file mode -- showing
+    # that tally to the paying customer would look like a broken, empty
+    # guide, so non_mcq and guide_file_url are mutually exclusive here.
     merged_content = {
         "mcq": mcq_key.content if mcq_key else None,
-        "non_mcq": instructor_guide.content,
+        "non_mcq": instructor_guide.content if not instructor_guide.guide_file else None,
+        "guide_file_url": instructor_guide.guide_file.url if instructor_guide.guide_file else None,
     }
     published = PublishedGuide.objects.create(
         paper_submission=paper, content=merged_content, published_at=timezone.now()

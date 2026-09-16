@@ -61,13 +61,18 @@ def send_partner_webhook(*, event_type: str, payload: dict) -> bool:
 
 
 def notify_new_request(instructor_request) -> bool:
+    paper = instructor_request.paper
     return send_partner_webhook(
         event_type="new_request",
         payload={
             "instructor_request_id": instructor_request.id,
             "instructor_id": instructor_request.instructor_id,
             "paper_id": instructor_request.paper_id,
-            "subject": instructor_request.paper.subject.title if instructor_request.paper.subject_id else None,
+            "subject": paper.subject.title if paper.subject_id else None,
+            # The actual question paper the instructor is meant to produce a
+            # marking guide for -- previously this push carried no way to
+            # even see what they were being asked to mark.
+            "paper_file_url": paper.uploaded_file.url if paper.uploaded_file else None,
             "sent_at": instructor_request.sent_at.isoformat(),
             "responds_by": instructor_request.responds_by.isoformat(),
         },
