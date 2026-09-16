@@ -9,6 +9,15 @@ class PartnerBookshop(TimeStampedModel):
     name = models.CharField(max_length=150)
     contact_email = models.EmailField(blank=True)
     contact_phone = models.CharField(max_length=20, blank=True)
+    # Separate from contact_phone (owner request, 2026-09-16, QR Vault
+    # pickup card): not every bookshop's WhatsApp is the same number they
+    # answer calls on, and the app needs to know which numbers support
+    # which contact method rather than assuming one number does both.
+    whatsapp_number = models.CharField(max_length=20, blank=True)
+    # Free text, same rationale as Pamphlet.subject_title/academic_level:
+    # partners are entered one at a time via admin, not picked from a
+    # geocoded address taxonomy this app doesn't have.
+    location = models.CharField(max_length=255, blank=True)
     commission_percent = models.PositiveSmallIntegerField(default=5)
 
     class Meta:

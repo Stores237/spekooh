@@ -1183,6 +1183,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recentShopItemsStatusDisputed => 'Disputed';
 
   @override
+  String get qrVaultShortcutLabel => 'Vault';
+
+  @override
+  String get qrVaultTitle => 'QR Vault';
+
+  @override
+  String get qrVaultEmptyTitle => 'No pickup tickets yet';
+
+  @override
+  String get qrVaultEmptyBody =>
+      'Order a pamphlet from the shop to get a real pickup QR here.';
+
+  @override
+  String get qrVaultTicketRefLabel => 'TICKET REF';
+
+  @override
+  String get qrVaultSingleUseNote =>
+      'Single-use — show this to the bookshop to collect your order.';
+
+  @override
+  String get qrVaultPickupLocationLabel => 'PICKUP LOCATION';
+
+  @override
+  String get qrVaultPinHint => '4-digit PIN';
+
+  @override
+  String get qrVaultContinue => 'Continue';
+
+  @override
+  String get qrVaultSetPinTitle => 'Set a QR Vault PIN';
+
+  @override
+  String get qrVaultSetPinSubtitle =>
+      'Choose a 4-digit PIN to protect your pickup tickets.';
+
+  @override
+  String get qrVaultConfirmPinSubtitle =>
+      'Enter the same PIN again to confirm.';
+
+  @override
+  String get qrVaultEnterPinTitle => 'Enter your QR Vault PIN';
+
+  @override
+  String get qrVaultEnterPinSubtitle =>
+      'Your pickup tickets are protected — enter your PIN to continue.';
+
+  @override
+  String get qrVaultPinMustBe4Digits => 'Enter exactly 4 digits.';
+
+  @override
+  String get qrVaultPinsDontMatch => 'Those PINs don\'t match. Try again.';
+
+  @override
+  String qrVaultWrongPinAttemptsLeft(int remaining) {
+    return 'Wrong PIN. $remaining attempts left.';
+  }
+
+  @override
+  String qrVaultLockedOut(int minutes) {
+    return 'Too many wrong attempts. Try again in $minutes min.';
+  }
+
+  @override
+  String get pickupReadyBannerCta => 'Tap to view your pickup QR';
+
+  @override
   String offlineSaveError(String error) {
     return 'Could not save for offline: $error';
   }

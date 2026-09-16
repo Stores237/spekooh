@@ -8,6 +8,7 @@ class NotificationKind(models.TextChoices):
     ONBOARDING = "ONBOARDING", "Onboarding"
     SUBMISSION_STATUS = "SUBMISSION_STATUS", "Submission status changed"
     CREDIT_AWARDED = "CREDIT_AWARDED", "Credit awarded"
+    PAMPHLET_READY = "PAMPHLET_READY", "Pickup ticket ready"
     GENERIC = "GENERIC", "Generic"
 
 
@@ -23,6 +24,11 @@ class Notification(TimeStampedModel):
     kind = models.CharField(max_length=20, choices=NotificationKind.choices, default=NotificationKind.GENERIC)
     title = models.CharField(max_length=200)
     body = models.CharField(max_length=500)
+    # Opaque app-side route, e.g. "qr-vault/<order_id>" (QR Vault, 2026-09-16)
+    # -- this app has no deep-link convention prior to this, so kept as
+    # freeform text rather than a structured type/id pair; blank means "just
+    # open the notification list, there's nothing further to navigate to."
+    link = models.CharField(max_length=200, blank=True)
     is_read = models.BooleanField(default=False)
 
     class Meta:

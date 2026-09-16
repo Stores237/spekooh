@@ -1,4 +1,6 @@
 from apps.core.exceptions import SafeMessageError
+from apps.notifications.models import NotificationKind
+from apps.notifications.services import notify
 from apps.payments.models import PaymentPurpose, PaymentTransactionStatus
 from apps.payments.services import charge
 
@@ -36,4 +38,17 @@ def place_order(*, user, pamphlet, is_delivery: bool, phone_number: str) -> Pamp
         status=PamphletOrderStatus.PAID_HELD,
         payment_transaction=transaction,
     )
-    return issue_qr(order)
+    order = issue_qr(order)
+
+    # QR Vault (owner request, 2026-09-16): the pickup ticket is real and
+    # ready the moment this returns (see the docstring above) -- surface
+    # that with a real notification rather than only relying on the buyer
+    # to remember to open the Recent Shop Items card on Home.
+    notify(
+        user=user,
+        kind=NotificationKind.PAMPHLET_READY,
+        title="Your pickup ticket is ready",
+        body=f"{pamphlet.title} is ready for pickup at {pamphlet.partner.name}.",
+        link=f"qr-vault/{order.id}",
+    )
+    return order

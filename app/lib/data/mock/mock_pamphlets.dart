@@ -33,5 +33,11 @@ final mockPamphletOrders = [
     status: 'QR_ISSUED',
     amountPaid: 7500,
     createdAt: DateTime.now().subtract(const Duration(days: 1)),
+    qrToken: 'mock-qr-token-000001',
+    qrRedeemUrl: 'https://spekooh-staging.onrender.com/redeem/mock-qr-token-000001/',
+    partnerName: mockFeaturedPamphlet.partner,
+    partnerLocation: 'Avenue Kennedy, Douala',
+    partnerPhone: '670000099',
+    partnerWhatsapp: '670000098',
   ),
 ];

@@ -49,6 +49,19 @@ def test_place_order_issues_qr_immediately_per_spec():
 
 
 @pytest.mark.django_db
+def test_place_order_sends_a_real_notification_linking_to_qr_vault():
+    from apps.notifications.models import Notification, NotificationKind
+
+    user = UserFactory()
+    pamphlet = PamphletFactory(price_fcfa=3000)
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+
+    notification = Notification.objects.get(user=user)
+    assert notification.kind == NotificationKind.PAMPHLET_READY
+    assert notification.link == f"qr-vault/{order.id}"
+
+
+@pytest.mark.django_db
 def test_place_order_with_delivery_adds_delivery_fee():
     user = UserFactory()
     pamphlet = PamphletFactory(price_fcfa=3000, delivery_fee_fcfa=500)
@@ -117,6 +130,32 @@ def test_orders_list_includes_the_pamphlet_title(api_client):
     response = api_client.get("/api/pamphlets/orders/")
     rows = response.data["results"] if isinstance(response.data, dict) else response.data
     assert rows[0]["pamphlet_title"] == "Probatoire Philosophy Pamphlet"
+
+
+@pytest.mark.django_db
+def test_orders_list_includes_bookshop_info_and_a_real_redeem_url(api_client):
+    # QR Vault (2026-09-16): the pickup card needs to show a real bookshop
+    # to go to and a real, absolute, scannable URL -- not just an opaque
+    # token the app would have to know how to turn into a URL itself.
+    from .factories import PartnerBookshopFactory
+
+    me = UserFactory()
+    partner = PartnerBookshopFactory(
+        name="Librairie Centrale", location="Avenue Kennedy, Douala", contact_phone="670000099", whatsapp_number="670000098"
+    )
+    pamphlet = PamphletFactory(partner=partner)
+    place_order(user=me, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    api_client.force_authenticate(user=me)
+    response = api_client.get("/api/pamphlets/orders/")
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    row = rows[0]
+
+    assert row["partner_name"] == "Librairie Centrale"
+    assert row["partner_location"] == "Avenue Kennedy, Douala"
+    assert row["partner_phone"] == "670000099"
+    assert row["partner_whatsapp"] == "670000098"
+    assert row["qr_redeem_url"].startswith("http")
+    assert f"/redeem/{row['qr_token']}/" in row["qr_redeem_url"]
 
 
 @pytest.mark.django_db

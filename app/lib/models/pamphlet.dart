@@ -27,9 +27,9 @@ class Pamphlet {
 }
 
 /// One row of the student's own pamphlet-order history — backs the "Recent
-/// shop items" Home card. pamphletTitle mirrors
-/// apps.pamphlets.serializers.PamphletOrderSerializer.pamphlet_title (added
-/// alongside this feature — the bare "pamphlet" field is just its id).
+/// shop items" Home card and the QR Vault pickup card. Field names mirror
+/// apps.pamphlets.serializers.PamphletOrderSerializer 1:1 (added alongside
+/// this feature — the bare "pamphlet"/"pamphlet.partner" fields are just ids).
 class PamphletOrder {
   const PamphletOrder({
     required this.id,
@@ -37,6 +37,12 @@ class PamphletOrder {
     required this.status,
     required this.amountPaid,
     required this.createdAt,
+    this.qrToken,
+    this.qrRedeemUrl,
+    this.partnerName = '',
+    this.partnerLocation = '',
+    this.partnerPhone = '',
+    this.partnerWhatsapp = '',
   });
 
   final int id;
@@ -44,4 +50,17 @@ class PamphletOrder {
   final String status;
   final int amountPaid;
   final DateTime createdAt;
+
+  /// Null until the order is QR_ISSUED (always true immediately after
+  /// ordering per apps.pamphlets.services.place_order's own docstring, but
+  /// kept nullable here to match what the API can genuinely return).
+  final String? qrToken;
+
+  /// Real, absolute, scannable URL to apps.pamphlets.views.redeem_page —
+  /// what QrVaultScreen actually renders as a QR image, not the bare token.
+  final String? qrRedeemUrl;
+  final String partnerName;
+  final String partnerLocation;
+  final String partnerPhone;
+  final String partnerWhatsapp;
 }

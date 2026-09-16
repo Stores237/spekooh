@@ -13,6 +13,7 @@ class HttpNotificationsRepository implements NotificationsRepository {
     'ONBOARDING': LucideIcons.sparkles,
     'SUBMISSION_STATUS': LucideIcons.check,
     'CREDIT_AWARDED': LucideIcons.sparkles,
+    'PAMPHLET_READY': LucideIcons.qrCode,
     'GENERIC': LucideIcons.bell,
   };
 
@@ -20,6 +21,7 @@ class HttpNotificationsRepository implements NotificationsRepository {
     'ONBOARDING': IconChipTint.amber,
     'SUBMISSION_STATUS': IconChipTint.green,
     'CREDIT_AWARDED': IconChipTint.blue,
+    'PAMPHLET_READY': IconChipTint.green,
     'GENERIC': IconChipTint.blue,
   };
 
@@ -45,6 +47,7 @@ class HttpNotificationsRepository implements NotificationsRepository {
         body: row['body'] as String,
         time: _timeAgo(row['created_at'] as String),
         isRead: row['is_read'] as bool? ?? false,
+        link: row['link'] as String? ?? '',
       );
     }).toList();
   }

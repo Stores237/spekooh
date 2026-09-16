@@ -21,10 +21,15 @@ class RecentShopItemsCard extends StatefulWidget {
     super.key,
     required this.repository,
     this.onSeeAll,
+    this.onOpenOrder,
   });
 
   final ShopRepository repository;
   final VoidCallback? onSeeAll;
+
+  /// QR Vault (2026-09-16): tapping a specific order opens its pickup
+  /// ticket directly, rather than only the generic "See all" shop link.
+  final ValueChanged<int>? onOpenOrder;
 
   @override
   State<RecentShopItemsCard> createState() => _RecentShopItemsCardState();
@@ -164,7 +169,7 @@ class _RecentShopItemsCardState extends State<RecentShopItemsCard> {
                   const SizedBox(height: 10),
                   for (final order in orders.take(3)) ...[
                     GestureDetector(
-                      onTap: widget.onSeeAll,
+                      onTap: widget.onOpenOrder != null ? () => widget.onOpenOrder!(order.id) : widget.onSeeAll,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Row(

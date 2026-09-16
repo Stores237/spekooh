@@ -77,6 +77,18 @@ def test_list_endpoint_shows_only_own_notifications(api_client):
 
 
 @pytest.mark.django_db
+def test_list_endpoint_includes_the_link(api_client):
+    # QR Vault (2026-09-16): the app needs this to navigate a tapped
+    # notification straight to the right order's pickup card.
+    me = UserFactory()
+    NotificationFactory(user=me, link="qr-vault/7")
+    api_client.force_authenticate(user=me)
+    response = api_client.get("/api/notifications/")
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    assert rows[0]["link"] == "qr-vault/7"
+
+
+@pytest.mark.django_db
 def test_mark_read_action(api_client):
     user = UserFactory()
     notification = NotificationFactory(user=user, is_read=False)
@@ -163,6 +175,18 @@ def test_notify_sms_false_never_touches_twilio():
         notify(user=user, title="Paper approved", body="Your submission is live.")
 
     mocked_post.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_notify_link_defaults_to_blank_and_is_stored_when_given():
+    from .services import notify
+
+    user = UserFactory()
+    blank = notify(user=user, title="Generic", body="No link here.")
+    assert blank.link == ""
+
+    linked = notify(user=user, title="Ticket ready", body="Pick it up.", link="qr-vault/7")
+    assert linked.link == "qr-vault/7"
 
 
 @pytest.mark.django_db

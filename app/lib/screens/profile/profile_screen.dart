@@ -24,12 +24,13 @@ import '../../theme/responsive.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/user_avatar.dart';
+import '../../widgets/vault_shortcut_badge.dart';
 import '../common/circular_back_button.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Ported from ui_kits/spekooh-app/ProfileScreen.jsx.
 class ProfileScreen extends StatefulWidget {
-  ProfileScreen({super.key, ProfileRepository? repository, this.onOpenSettings, this.onLogin, this.onOpenPaywall})
+  ProfileScreen({super.key, ProfileRepository? repository, this.onOpenSettings, this.onLogin, this.onOpenPaywall, this.onOpenQrVault})
       : repository = repository ?? RepositoryLocator.instance.profile;
 
   final ProfileRepository repository;
@@ -41,6 +42,11 @@ class ProfileScreen extends StatefulWidget {
   /// 2026-08-28, adapting a reference promo card), same real paywall/price,
   /// not a separate offer.
   final VoidCallback? onOpenPaywall;
+
+  /// QR Vault entry point (owner-provided reference + annotated screenshot,
+  /// 2026-09-16) — the second of two places it's reachable from, alongside
+  /// Recent Shop Items on Home.
+  final VoidCallback? onOpenQrVault;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -337,25 +343,34 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       Container(
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(18)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Stack(
                           children: [
-                            Text(l10n.bonusCreditBalanceLabel, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
-                            const SizedBox(height: 4),
-                            RichText(
-                              text: TextSpan(
-                                style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 28, color: AppColors.white),
-                                children: [
-                                  TextSpan(text: '${user.creditBalance} '),
-                                  TextSpan(text: l10n.ptsLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                ],
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(l10n.bonusCreditBalanceLabel, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                                const SizedBox(height: 4),
+                                RichText(
+                                  text: TextSpan(
+                                    style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 28, color: AppColors.white),
+                                    children: [
+                                      TextSpan(text: '${user.creditBalance} '),
+                                      TextSpan(text: l10n.ptsLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  l10n.submissionsScaleNote(user.submissionsCount),
+                                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              l10n.submissionsScaleNote(user.submissionsCount),
-                              style: const TextStyle(color: Colors.white70, fontSize: 12),
-                            ),
+                            // Owner-annotated screenshot, 2026-09-16: this
+                            // exact corner is where the QR Vault shortcut
+                            // goes, right on the bonus credit balance card.
+                            if (widget.onOpenQrVault != null)
+                              Positioned(top: 0, right: 0, child: VaultShortcutBadge(onTap: widget.onOpenQrVault!)),
                           ],
                         ),
                       ),
