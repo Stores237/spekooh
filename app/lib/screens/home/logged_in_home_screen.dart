@@ -13,6 +13,7 @@ import '../../data/repositories/quizzes_repository.dart';
 import '../../data/repositories/shop_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/pamphlet.dart';
 import '../../models/promotion.dart';
 import '../../models/quiz.dart';
 import '../../models/spekooh_user.dart';
@@ -24,6 +25,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/heritage_pattern_strip.dart';
 import '../../widgets/house_ad_card.dart';
+import '../../widgets/featured_pamphlet_card.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/pickup_ready_banner.dart';
 import '../../widgets/recent_shop_items_card.dart';
@@ -48,6 +50,7 @@ class LoggedInHomeScreen extends StatelessWidget {
     this.onOpenShop,
     this.onOpenPaywall,
     this.onOpenQrVaultOrder,
+    this.onOpenFeaturedPamphlet,
     ProfileRepository? profileRepository,
     QuizzesRepository? quizzesRepository,
     PromotionsRepository? promotionsRepository,
@@ -74,6 +77,11 @@ class LoggedInHomeScreen extends StatelessWidget {
   /// when tapped from Recent Shop Items, rather than just the shop's
   /// generic "See all".
   final ValueChanged<int>? onOpenQrVaultOrder;
+
+  /// Opens the real order sheet for this specific featured pamphlet (same
+  /// PamphletSheet the guest Home screen's own featured card opens), not
+  /// just the generic Shop browse list.
+  final ValueChanged<Pamphlet>? onOpenFeaturedPamphlet;
   final ProfileRepository profileRepository;
   final QuizzesRepository quizzesRepository;
   final PromotionsRepository promotionsRepository;
@@ -281,6 +289,23 @@ class LoggedInHomeScreen extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.space2),
                       child: PickupReadyBanner(repository: notificationsRepository, onTap: onOpenQrVaultOrder),
+                    ),
+                    // Owner-provided reference (a competitor's richer shop
+                    // browse card, 2026-09-16): logged-in Home previously had
+                    // no pamphlet-browsing prompt at all, only Recent Shop
+                    // Items (past orders) further down -- this closes that
+                    // real gap, same FeaturedPamphletCard the guest Home
+                    // screen already uses.
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.space2),
+                      child: FutureBuilder<Pamphlet?>(
+                        future: shopRepository.getFeaturedPamphlet().then<Pamphlet?>((p) => p).catchError((_) => null),
+                        builder: (context, snapshot) {
+                          final pamphlet = snapshot.data;
+                          if (pamphlet == null) return const SizedBox.shrink();
+                          return FeaturedPamphletCard(pamphlet: pamphlet, onTap: () => onOpenFeaturedPamphlet?.call(pamphlet));
+                        },
+                      ),
                     ),
                     // Two separate cards (owner decision, 2026-08-28, adapting a
                     // reference design) instead of one dark card split by an
