@@ -286,6 +286,7 @@ class RootShellState extends State<RootShell> {
         onOpenQuizzes: () => goToTab(4),
         onOpenPaywall: () => _openPaywall(context),
         onOpenQrVaultOrder: (orderId) => _openQrVault(context, orderId),
+        onOpenFeaturedPamphlet: (pamphlet) => _openPamphletSheet(context, pamphlet),
       );
     }
     return HomeScreen(

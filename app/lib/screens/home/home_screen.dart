@@ -5,10 +5,10 @@ import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/pamphlet.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/featured_pamphlet_card.dart';
 import '../../widgets/heritage_pattern_strip.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
@@ -203,42 +203,7 @@ class HomeScreen extends StatelessWidget {
                       child: Text(l10n.homeNoPamphlet, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                     );
                   }
-                  return InkWell(
-                    onTap: onOpenPamphlet,
-                    borderRadius: BorderRadius.circular(18),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                      child: Row(
-                        children: [
-                          Container(width: 64, height: 64, decoration: BoxDecoration(gradient: AppGradients.goldDeep, borderRadius: BorderRadius.circular(10))),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(pamphlet.title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                Text(l10n.homePamphletSoldBy(pamphlet.partner), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    RichText(
-                                      text: TextSpan(
-                                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                                        children: [TextSpan(text: '${pamphlet.priceFcfa} '), TextSpan(text: 'FCFA', style: TextStyle(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w600))],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onOpenPamphlet, child: Text(l10n.buy)),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return FeaturedPamphletCard(pamphlet: pamphlet, onTap: onOpenPamphlet);
                 },
               ),
               const SizedBox(height: AppSpacing.space6),
