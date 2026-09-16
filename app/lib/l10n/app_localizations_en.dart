@@ -1159,6 +1159,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'This is a message from Spekooh, not a targeted ad. We\'re always open to featuring real businesses to our student audience, not just schools.';
 
   @override
+  String get recentShopItemsSponsoredLabel => 'SPONSORED';
+
+  @override
+  String get recentShopItemsTitle => 'Recent shop items';
+
+  @override
+  String get recentShopItemsSeeAll => 'See all';
+
+  @override
+  String get recentShopItemsStatusPaidHeld => 'Payment held';
+
+  @override
+  String get recentShopItemsStatusQrIssued => 'Ready for pickup';
+
+  @override
+  String get recentShopItemsStatusReleased => 'Completed';
+
+  @override
+  String get recentShopItemsStatusExpired => 'Expired';
+
+  @override
+  String get recentShopItemsStatusDisputed => 'Disputed';
+
+  @override
   String offlineSaveError(String error) {
     return 'Could not save for offline: $error';
   }

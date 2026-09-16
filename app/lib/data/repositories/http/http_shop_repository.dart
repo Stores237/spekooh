@@ -57,4 +57,19 @@ class HttpShopRepository implements ShopRepository {
     });
     return PamphletOrderResult(qrToken: row['qr_token'] as String, status: row['status'] as String);
   }
+
+  @override
+  Future<List<PamphletOrder>> getMyOrders() async {
+    final rows = await _client.get('/pamphlets/orders/') as List;
+    return rows.map((row) {
+      final map = row as Map<String, dynamic>;
+      return PamphletOrder(
+        id: map['id'] as int,
+        pamphletTitle: map['pamphlet_title'] as String? ?? '',
+        status: map['status'] as String,
+        amountPaid: map['amount_paid'] as int,
+        createdAt: DateTime.parse(map['created_at'] as String),
+      );
+    }).toList();
+  }
 }

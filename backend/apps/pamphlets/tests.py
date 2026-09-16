@@ -107,6 +107,19 @@ def test_orders_list_shows_only_own_orders(api_client):
 
 
 @pytest.mark.django_db
+def test_orders_list_includes_the_pamphlet_title(api_client):
+    # The app's "recent shop items" Home card needs a real title per order
+    # without a second round-trip -- the bare "pamphlet" field is just its id.
+    me = UserFactory()
+    pamphlet = PamphletFactory(title="Probatoire Philosophy Pamphlet")
+    place_order(user=me, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    api_client.force_authenticate(user=me)
+    response = api_client.get("/api/pamphlets/orders/")
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    assert rows[0]["pamphlet_title"] == "Probatoire Philosophy Pamphlet"
+
+
+@pytest.mark.django_db
 def test_featured_endpoint_returns_the_featured_pamphlet(api_client):
     PamphletFactory(is_featured=False)
     featured = PamphletFactory(is_featured=True)

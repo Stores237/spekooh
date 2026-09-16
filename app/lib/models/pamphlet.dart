@@ -25,3 +25,23 @@ class Pamphlet {
   final String subjectTitle;
   final String academicLevel;
 }
+
+/// One row of the student's own pamphlet-order history — backs the "Recent
+/// shop items" Home card. pamphletTitle mirrors
+/// apps.pamphlets.serializers.PamphletOrderSerializer.pamphlet_title (added
+/// alongside this feature — the bare "pamphlet" field is just its id).
+class PamphletOrder {
+  const PamphletOrder({
+    required this.id,
+    required this.pamphletTitle,
+    required this.status,
+    required this.amountPaid,
+    required this.createdAt,
+  });
+
+  final int id;
+  final String pamphletTitle;
+  final String status;
+  final int amountPaid;
+  final DateTime createdAt;
+}

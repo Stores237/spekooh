@@ -9,6 +9,7 @@ import '../../data/offline_papers_store.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repositories/promotions_repository.dart';
 import '../../data/repositories/quizzes_repository.dart';
+import '../../data/repositories/shop_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/promotion.dart';
@@ -23,6 +24,7 @@ import '../../theme/responsive.dart';
 import '../../widgets/heritage_pattern_strip.dart';
 import '../../widgets/house_ad_card.dart';
 import '../../widgets/icon_chip.dart';
+import '../../widgets/recent_shop_items_card.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/user_avatar.dart';
 import '../downloads/my_downloads_screen.dart';
@@ -46,9 +48,11 @@ class LoggedInHomeScreen extends StatelessWidget {
     ProfileRepository? profileRepository,
     QuizzesRepository? quizzesRepository,
     PromotionsRepository? promotionsRepository,
+    ShopRepository? shopRepository,
   })  : profileRepository = profileRepository ?? RepositoryLocator.instance.profile,
         quizzesRepository = quizzesRepository ?? RepositoryLocator.instance.quizzes,
-        promotionsRepository = promotionsRepository ?? RepositoryLocator.instance.promotions;
+        promotionsRepository = promotionsRepository ?? RepositoryLocator.instance.promotions,
+        shopRepository = shopRepository ?? RepositoryLocator.instance.shop;
 
   final VoidCallback? onOpenSettings;
   final VoidCallback? onOpenPapers;
@@ -63,6 +67,7 @@ class LoggedInHomeScreen extends StatelessWidget {
   final ProfileRepository profileRepository;
   final QuizzesRepository quizzesRepository;
   final PromotionsRepository promotionsRepository;
+  final ShopRepository shopRepository;
 
   String _greeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
@@ -467,6 +472,10 @@ class LoggedInHomeScreen extends StatelessWidget {
                           ),
                         );
                       },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.space2),
+                      child: RecentShopItemsCard(repository: shopRepository, onSeeAll: onOpenShop),
                     ),
                     const Padding(
                       padding: EdgeInsets.only(top: AppSpacing.space2),

@@ -30,11 +30,18 @@ class PamphletSerializer(serializers.ModelSerializer):
 
 
 class PamphletOrderSerializer(serializers.ModelSerializer):
+    # "pamphlet" alone is just the FK's id (ModelSerializer default) — the
+    # app's "recent shop items" Home card needs a real title to show
+    # without a second round-trip per order, same pattern as
+    # PamphletSerializer.partner_name above.
+    pamphlet_title = serializers.CharField(source="pamphlet.title", read_only=True)
+
     class Meta:
         model = PamphletOrder
         fields = [
             "id",
             "pamphlet",
+            "pamphlet_title",
             "is_delivery",
             "amount_paid",
             "status",
