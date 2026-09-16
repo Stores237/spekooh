@@ -28,7 +28,6 @@ import '../../widgets/house_ad_card.dart';
 import '../../widgets/featured_pamphlet_card.dart';
 import '../../widgets/icon_chip.dart';
 import '../../widgets/pickup_ready_banner.dart';
-import '../../widgets/recent_shop_items_card.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/user_avatar.dart';
 import '../downloads/my_downloads_screen.dart';
@@ -290,23 +289,6 @@ class LoggedInHomeScreen extends StatelessWidget {
                       padding: const EdgeInsets.only(top: AppSpacing.space2),
                       child: PickupReadyBanner(repository: notificationsRepository, onTap: onOpenQrVaultOrder),
                     ),
-                    // Owner-provided reference (a competitor's richer shop
-                    // browse card, 2026-09-16): logged-in Home previously had
-                    // no pamphlet-browsing prompt at all, only Recent Shop
-                    // Items (past orders) further down -- this closes that
-                    // real gap, same FeaturedPamphletCard the guest Home
-                    // screen already uses.
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.space2),
-                      child: FutureBuilder<Pamphlet?>(
-                        future: shopRepository.getFeaturedPamphlet().then<Pamphlet?>((p) => p).catchError((_) => null),
-                        builder: (context, snapshot) {
-                          final pamphlet = snapshot.data;
-                          if (pamphlet == null) return const SizedBox.shrink();
-                          return FeaturedPamphletCard(pamphlet: pamphlet, onTap: () => onOpenFeaturedPamphlet?.call(pamphlet));
-                        },
-                      ),
-                    ),
                     // Two separate cards (owner decision, 2026-08-28, adapting a
                     // reference design) instead of one dark card split by an
                     // internal divider — same real data as before (quiz.title,
@@ -513,9 +495,23 @@ class LoggedInHomeScreen extends StatelessWidget {
                         );
                       },
                     ),
+                    // Owner correction, 2026-09-16: this used to be Recent
+                    // Shop Items (past orders); the owner asked for the
+                    // shop's featured-pamphlet browse card here instead,
+                    // same FeaturedPamphletCard the guest Home screen uses
+                    // -- it stays live automatically (admin toggles which
+                    // single Pamphlet is is_featured/is_active on the
+                    // backend, nothing hardcoded on this screen).
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.space2),
-                      child: RecentShopItemsCard(repository: shopRepository, onSeeAll: onOpenShop, onOpenOrder: onOpenQrVaultOrder),
+                      child: FutureBuilder<Pamphlet?>(
+                        future: shopRepository.getFeaturedPamphlet().then<Pamphlet?>((p) => p).catchError((_) => null),
+                        builder: (context, snapshot) {
+                          final pamphlet = snapshot.data;
+                          if (pamphlet == null) return const SizedBox.shrink();
+                          return FeaturedPamphletCard(pamphlet: pamphlet, onTap: () => onOpenFeaturedPamphlet?.call(pamphlet));
+                        },
+                      ),
                     ),
                     const Padding(
                       padding: EdgeInsets.only(top: AppSpacing.space2),

@@ -381,7 +381,7 @@
   "recentShopItemsStatusReleased": "Terminé",
   "recentShopItemsStatusExpired": "Expiré",
   "recentShopItemsStatusDisputed": "En litige",
-  "qrVaultShortcutLabel": "Coffre",
+  "qrVaultShortcutLabel": "QR Coffre",
   "qrVaultTitle": "Coffre QR",
   "qrVaultEmptyTitle": "Aucun billet de retrait pour le moment",
   "qrVaultEmptyBody": "Commandez un fascicule dans la boutique pour obtenir un vrai code QR de retrait ici.",

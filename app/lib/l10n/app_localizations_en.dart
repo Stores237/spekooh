@@ -1183,7 +1183,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recentShopItemsStatusDisputed => 'Disputed';
 
   @override
-  String get qrVaultShortcutLabel => 'Vault';
+  String get qrVaultShortcutLabel => 'QR Vault';
 
   @override
   String get qrVaultTitle => 'QR Vault';
