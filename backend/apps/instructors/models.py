@@ -86,7 +86,17 @@ class InstructorMarkingGuide(TimeStampedModel):
         "papers.PaperSubmission", on_delete=models.CASCADE, related_name="instructor_marking_guide"
     )
     instructor_id = models.CharField(max_length=100, db_index=True)
+    # Always populated, even in file mode: a per-question {question_type}
+    # tally (real text/answer omitted) so PaperCreditCalculator still has
+    # something to count — see handle_marking_guide_submission. The full
+    # {question_type, text, answer} shape only when the instructor used the
+    # structured form instead of uploading a file.
     content = models.JSONField()
+    # Set only when the instructor uploaded a file instead of filling the
+    # structured form (owner decision, 2026-09-16: re-hosted here rather
+    # than trusting the partner platform's own storage URL to stay valid
+    # indefinitely — same reasoning as apps.papers.PaperSubmission.uploaded_file).
+    guide_file = models.FileField(upload_to="marking_guides/%Y/%m/", null=True, blank=True)
     submitted_at = models.DateTimeField()
 
     def __str__(self):

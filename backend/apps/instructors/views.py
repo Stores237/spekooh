@@ -14,6 +14,7 @@ from .serializers import (
     MarkingGuideSubmissionWebhookSerializer,
 )
 from .services import (
+    GuideFileError,
     MergeError,
     RoutingError,
     handle_instructor_response,
@@ -108,7 +109,10 @@ class InstructorWebhookView(APIView):
             handle_marking_guide_submission(
                 instructor_request_id=payload.validated_data["instructor_request_id"],
                 content=payload.validated_data["content"],
+                guide_file_url=payload.validated_data.get("guide_file_url"),
             )
         except RoutingError as exc:
             return Response({"applied": False, "detail": exc.detail}, status=status.HTTP_200_OK)
+        except GuideFileError as exc:
+            return Response({"applied": False, "detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"applied": True}, status=status.HTTP_200_OK)
