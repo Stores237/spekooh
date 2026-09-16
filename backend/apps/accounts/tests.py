@@ -662,6 +662,7 @@ def test_reviewer_staff_can_actually_create_a_note_and_a_pamphlet():
             "delivery_fee_fcfa": 0,
             "is_active": "on",
             "is_featured": "",
+            "display_order": 0,
         },
     )
     assert pamphlet_response.status_code == 302
@@ -732,6 +733,86 @@ def test_reviewer_staff_can_edit_a_paper_submission():
     client.force_login(staff)
 
     assert client.get(f"/admin/papers/papersubmission/{paper.id}/change/").status_code == 200
+
+
+@pytest.mark.django_db
+def test_integration_ops_group_has_expected_partner_pamphlet_permissions():
+    """Owner decision (2026-09-16): Integration Ops is the partner-onboarding
+    / pamphlet-pickup-ops team, distinct from Reviewer's content-moderation
+    scope even though both touch Pamphlet/PartnerBookshop. PamphletOrder and
+    AdminFlagQueue access (view/change) is new -- Reviewer never got those."""
+    ops = Group.objects.get(name="Integration Ops")
+    codenames = set(ops.permissions.values_list("codename", flat=True))
+    assert {"view_pamphlet", "add_pamphlet", "change_pamphlet", "delete_pamphlet"} <= codenames
+    assert {"view_partnerbookshop", "add_partnerbookshop", "change_partnerbookshop"} <= codenames
+    assert "delete_partnerbookshop" not in codenames
+    assert {"view_pamphletorder", "change_pamphletorder"} <= codenames
+    assert {"view_adminflagqueue", "change_adminflagqueue"} <= codenames
+    assert "view_user" not in codenames  # no user-account access at all
+
+
+@pytest.mark.django_db
+def test_integration_ops_staff_can_set_up_a_new_partner_and_pamphlet():
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+
+    client = Client()
+    client.force_login(staff)
+
+    partner_response = client.post(
+        "/admin/pamphlets/partnerbookshop/add/",
+        {
+            "name": "New Horizons Bookshop",
+            "contact_email": "",
+            "contact_phone": "",
+            "whatsapp_number": "",
+            "location": "",
+            "commission_percent": 5,
+        },
+    )
+    assert partner_response.status_code == 302
+    from apps.pamphlets.models import PartnerBookshop
+
+    partner = PartnerBookshop.objects.get(name="New Horizons Bookshop")
+
+    pamphlet_response = client.post(
+        "/admin/pamphlets/pamphlet/add/",
+        {
+            "partner": partner.id,
+            "title": "GCE Chemistry Pack",
+            "description": "",
+            "subject_title": "",
+            "academic_level": "",
+            "price_fcfa": 2500,
+            "delivery_available": False,
+            "delivery_fee_fcfa": 0,
+            "is_active": "on",
+            "is_featured": "",
+            "display_order": 0,
+        },
+    )
+    assert pamphlet_response.status_code == 302
+    from apps.pamphlets.models import Pamphlet
+
+    assert Pamphlet.objects.filter(title="GCE Chemistry Pack", partner=partner).exists()
+
+
+@pytest.mark.django_db
+def test_integration_ops_staff_cannot_delete_a_partner_bookshop():
+    from apps.pamphlets.factories import PartnerBookshopFactory
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    partner = PartnerBookshopFactory()
+
+    client = Client()
+    client.force_login(staff)
+
+    response = client.post(f"/admin/pamphlets/partnerbookshop/{partner.id}/delete/", {"post": "yes"})
+    assert response.status_code == 403
+    from apps.pamphlets.models import PartnerBookshop
+
+    assert PartnerBookshop.objects.filter(id=partner.id).exists()
 
 
 @pytest.mark.django_db

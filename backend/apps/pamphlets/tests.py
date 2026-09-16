@@ -18,7 +18,7 @@ from .escrow import (
     self_confirm_receipt,
 )
 from .factories import PamphletFactory
-from .models import PamphletOrder, PamphletOrderStatus
+from .models import Pamphlet, PamphletOrder, PamphletOrderStatus
 from .services import place_order
 
 
@@ -394,3 +394,55 @@ def test_issue_qr_endpoint_works_for_staff(api_client):
     response = api_client.post(f"/api/pamphlets/orders/{order.id}/issue-qr/")
     assert response.status_code == 200
     assert response.data["status"] == PamphletOrderStatus.QR_ISSUED
+
+
+@pytest.mark.django_db
+def test_pamphlet_ordering_respects_display_order_before_title():
+    PamphletFactory(title="Zoology Revision Pack", display_order=1)
+    PamphletFactory(title="Algebra Revision Pack", display_order=0)
+    titles = list(Pamphlet.objects.values_list("title", flat=True))
+    assert titles == ["Algebra Revision Pack", "Zoology Revision Pack"]
+
+
+@pytest.mark.django_db
+def test_pamphlet_ordering_still_puts_featured_first_regardless_of_display_order():
+    PamphletFactory(title="Featured but high display_order", is_featured=True, display_order=99)
+    PamphletFactory(title="Not featured, display_order 0", display_order=0)
+    titles = list(Pamphlet.objects.values_list("title", flat=True))
+    assert titles[0] == "Featured but high display_order"
+
+
+@pytest.mark.django_db
+def test_integration_ops_admin_action_releases_disputed_orders_only():
+    """The 'Resolve dispute (release to partner)' bulk action must only
+    touch orders actually in DISPUTED -- selecting a QR_ISSUED order
+    alongside a disputed one should leave the untouched one exactly as it
+    was, not force-release it too."""
+    from django.contrib.auth.models import Group
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+
+    disputed_order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    dispute(disputed_order, reason="Buyer says not received.")
+    untouched_order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000001")
+
+    client = Client()
+    client.force_login(staff)
+    response = client.post(
+        "/admin/pamphlets/pamphletorder/",
+        {
+            "action": "resolve_dispute_release",
+            "_selected_action": [str(disputed_order.id), str(untouched_order.id)],
+        },
+        follow=True,
+    )
+    assert response.status_code == 200
+
+    disputed_order.refresh_from_db()
+    untouched_order.refresh_from_db()
+    assert disputed_order.status == PamphletOrderStatus.RELEASED
+    assert disputed_order.payout_amount is not None
+    assert untouched_order.status == PamphletOrderStatus.QR_ISSUED

@@ -589,6 +589,24 @@ I can write unilaterally. Grouped by what each one unblocks.
   review flag) before implementation, not a drop-in addition on top of the OCR text that
   already exists now.
 
+### 13. Partner self-service pamphlet submission link (2026-09-16, owner idea)
+- **Today (shipped this session):** Pamphlets are entered by Integration Ops directly in Django
+  admin (a new "Integration Ops" staff group — see `apps/accounts/migrations/0011_seed_integration_ops_role.py`),
+  based on info the partner bookshop relays however's easiest for them (call, WhatsApp, email).
+  Full CRUD on `Pamphlet`, add/change (no delete) on `PartnerBookshop`, plus a `display_order`
+  field (admin-editable inline) to control shop ranking, and a "Resolve dispute (release to
+  partner)" bulk action on `PamphletOrder`.
+- **Idea:** instead of ops keying it in by hand, send the partner a unique tokenized link
+  (identifying them by their `PartnerBookshop` UUID) to a public form where they enter the
+  pamphlet's details themselves, including a cover photo.
+- **Why not now:** a meaningfully bigger build than it sounds — needs (1) a cover-image field on
+  `Pamphlet` that doesn't exist yet at all, (2) a new public, unauthenticated-but-signed
+  submission endpoint (same shape as the existing `redeem_page` token pattern), and (3) — the
+  part that actually matters — a review-before-publish step, since nothing on the storefront
+  ships unmoderated today; a partner's self-submitted pamphlet would need to land in the
+  existing `AdminFlagQueue` for approval rather than going live untouched. Worth building once
+  partner volume actually makes ops data-entry the bottleneck, not before.
+
 ---
 
 ## Recently shipped (2026-08-26 – 2026-08-30)

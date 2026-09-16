@@ -44,9 +44,13 @@ class Pamphlet(TimeStampedModel):
     delivery_fee_fcfa = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
+    # Integration Ops-controlled shop ranking (owner request, 2026-09-16):
+    # lower sorts first. Only breaks ties among non-featured pamphlets --
+    # is_featured still always wins the top slot regardless of this value.
+    display_order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ["-is_featured", "title"]
+        ordering = ["-is_featured", "display_order", "title"]
 
     def __str__(self):
         return f"{self.title} ({self.partner})"
