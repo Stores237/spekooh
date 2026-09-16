@@ -79,6 +79,8 @@ dependencies:
   # same API. Not gpt_markdown — that pulls in flutter_math_fork for LaTeX
   # rendering this app has no use for.
   flutter_markdown_plus: ^1.0.12
+  qr_flutter: ^4.1.0
+  crypto: ^3.0.7
 dev_dependencies:
   flutter_test:
     sdk: flutter

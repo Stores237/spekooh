@@ -12,10 +12,16 @@ import '../common/circular_back_button.dart';
 
 /// Ported from ui_kits/spekooh-app/NotificationsScreen.jsx.
 class NotificationsScreen extends StatefulWidget {
-  NotificationsScreen({super.key, NotificationsRepository? repository})
+  NotificationsScreen({super.key, NotificationsRepository? repository, this.onOpenQrVault})
       : repository = repository ?? RepositoryLocator.instance.notifications;
 
   final NotificationsRepository repository;
+
+  /// QR Vault (2026-09-16): notification.link is an opaque "qr-vault/ID"
+  /// route (see apps.pamphlets.services.place_order) -- parsed here, not in
+  /// the repository, since the repository shouldn't need to know what any
+  /// particular app screen does with a link.
+  final ValueChanged<int>? onOpenQrVault;
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -68,7 +74,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.space3),
                       itemBuilder: (context, i) {
                         final n = items[i];
-                        return Container(
+                        return GestureDetector(
+                          onTap: n.link.startsWith('qr-vault/')
+                              ? () => widget.onOpenQrVault?.call(int.parse(n.link.substring('qr-vault/'.length)))
+                              : null,
+                          child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: AppColors.surfaceCard,
@@ -93,6 +103,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 ),
                               ),
                             ],
+                          ),
                           ),
                         );
                       },

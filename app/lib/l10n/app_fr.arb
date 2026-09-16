@@ -381,6 +381,31 @@
   "recentShopItemsStatusReleased": "Terminé",
   "recentShopItemsStatusExpired": "Expiré",
   "recentShopItemsStatusDisputed": "En litige",
+  "qrVaultShortcutLabel": "Coffre",
+  "qrVaultTitle": "Coffre QR",
+  "qrVaultEmptyTitle": "Aucun billet de retrait pour le moment",
+  "qrVaultEmptyBody": "Commandez un fascicule dans la boutique pour obtenir un vrai code QR de retrait ici.",
+  "qrVaultTicketRefLabel": "RÉF. BILLET",
+  "qrVaultSingleUseNote": "Usage unique — montrez ceci à la librairie pour récupérer votre commande.",
+  "qrVaultPickupLocationLabel": "LIEU DE RETRAIT",
+  "qrVaultPinHint": "Code à 4 chiffres",
+  "qrVaultContinue": "Continuer",
+  "qrVaultSetPinTitle": "Définir un code pour le Coffre QR",
+  "qrVaultSetPinSubtitle": "Choisissez un code à 4 chiffres pour protéger vos billets de retrait.",
+  "qrVaultConfirmPinSubtitle": "Entrez à nouveau le même code pour confirmer.",
+  "qrVaultEnterPinTitle": "Entrez votre code du Coffre QR",
+  "qrVaultEnterPinSubtitle": "Vos billets de retrait sont protégés — entrez votre code pour continuer.",
+  "qrVaultPinMustBe4Digits": "Entrez exactement 4 chiffres.",
+  "qrVaultPinsDontMatch": "Ces codes ne correspondent pas. Réessayez.",
+  "qrVaultWrongPinAttemptsLeft": "Code incorrect. {remaining} tentatives restantes.",
+  "@qrVaultWrongPinAttemptsLeft": {
+    "placeholders": {"remaining": {"type": "int"}}
+  },
+  "qrVaultLockedOut": "Trop de tentatives incorrectes. Réessayez dans {minutes} min.",
+  "@qrVaultLockedOut": {
+    "placeholders": {"minutes": {"type": "int"}}
+  },
+  "pickupReadyBannerCta": "Appuyez pour voir votre QR de retrait",
   "offlineSaveError": "Impossible d'enregistrer hors ligne : {error}",
   "@offlineSaveError": {
     "placeholders": {"error": {"type": "String"}}

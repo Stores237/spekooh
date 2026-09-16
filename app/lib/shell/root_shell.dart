@@ -20,6 +20,7 @@ import '../screens/papers/papers_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/quizzes/quizzes_screen.dart';
 import '../screens/settings/settings_screen.dart';
+import '../screens/shop/qr_vault_screen.dart';
 import '../screens/shop/shop_screen.dart';
 import '../screens/submit/submit_screen.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -153,8 +154,13 @@ class RootShellState extends State<RootShell> {
             onOpenSettings: () => _openSettings(context),
             onLogin: () => _openAuthSheet(context),
             onOpenPaywall: () => _openPaywall(context),
+            onOpenQrVault: () => _openQrVault(context),
           ),
         ),
+      );
+
+  void _openQrVault(BuildContext context, [int? orderId]) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => QrVaultScreen(initialOrderId: orderId)),
       );
 
   void _openNotes(BuildContext context) =>
@@ -164,8 +170,9 @@ class RootShellState extends State<RootShell> {
         MaterialPageRoute(builder: (_) => ShopScreen(onOpenPamphlet: (pamphlet) => _openPamphletSheet(context, pamphlet))),
       );
 
-  void _openNotifications(BuildContext context) =>
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotificationsScreen()));
+  void _openNotifications(BuildContext context) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => NotificationsScreen(onOpenQrVault: (orderId) => _openQrVault(context, orderId))),
+      );
 
   void _openPaperDetail(BuildContext context, [PaperSelection? paper]) => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => PaperDetailScreen(paper: paper, onOpenPaywall: () => _openPaywall(context))),
@@ -278,6 +285,7 @@ class RootShellState extends State<RootShell> {
         onOpenForum: () => goToTab(3),
         onOpenQuizzes: () => goToTab(4),
         onOpenPaywall: () => _openPaywall(context),
+        onOpenQrVaultOrder: (orderId) => _openQrVault(context, orderId),
       );
     }
     return HomeScreen(

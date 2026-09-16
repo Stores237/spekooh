@@ -5,7 +5,9 @@ from .models import Notification, NotificationKind
 logger = logging.getLogger(__name__)
 
 
-def notify(*, user, kind: str = NotificationKind.GENERIC, title: str, body: str, sms: bool = False) -> Notification:
+def notify(
+    *, user, kind: str = NotificationKind.GENERIC, title: str, body: str, link: str = "", sms: bool = False
+) -> Notification:
     """The one place a Notification row gets created — called from real domain
     events in apps.papers/apps.instructors/apps.credits services.
 
@@ -19,7 +21,7 @@ def notify(*, user, kind: str = NotificationKind.GENERIC, title: str, body: str,
     TWILIO_VERIFY_SERVICE_SID, see apps.core.sms's own docstring); silently
     a no-op otherwise, same "best-effort, never blocks the in-app
     notification" posture as everything else optional in this codebase."""
-    notification = Notification.objects.create(user=user, kind=kind, title=title, body=body)
+    notification = Notification.objects.create(user=user, kind=kind, title=title, body=body, link=link)
     if sms and getattr(user, "phone_verified_at", None) and user.phone_number:
         from apps.core.sms import SMSError, SMSUnavailable, send_sms
 

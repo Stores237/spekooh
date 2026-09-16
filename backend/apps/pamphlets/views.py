@@ -65,7 +65,7 @@ class PamphletOrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, vie
             confirmed = self_confirm_receipt(order, user=request.user)
         except EscrowError as exc:
             return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(PamphletOrderSerializer(confirmed).data)
+        return Response(PamphletOrderSerializer(confirmed, context={"request": request}).data)
 
     @action(detail=True, methods=["post"])
     def dispute(self, request, pk=None):
@@ -73,7 +73,7 @@ class PamphletOrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, vie
         serializer = DisputeRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         disputed = dispute(order, reason=serializer.validated_data["reason"])
-        return Response(PamphletOrderSerializer(disputed).data)
+        return Response(PamphletOrderSerializer(disputed, context={"request": request}).data)
 
 
 class PlacePamphletOrderView(APIView):
@@ -99,7 +99,10 @@ class PlacePamphletOrderView(APIView):
             )
         except PamphletOrderError as exc:
             return Response({"detail": exc.detail}, status=status.HTTP_402_PAYMENT_REQUIRED)
-        return Response(PamphletOrderSerializer(order).data, status=status.HTTP_201_CREATED)
+        # context={"request": request} so qr_redeem_url resolves to a real
+        # absolute URL here too, not just on the list/retrieve endpoints
+        # (which get it for free via GenericViewSet.get_serializer_context).
+        return Response(PamphletOrderSerializer(order, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
 class IssueQrView(APIView):
@@ -119,7 +122,7 @@ class IssueQrView(APIView):
             issued = issue_qr(order)
         except EscrowError as exc:
             return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(PamphletOrderSerializer(issued).data)
+        return Response(PamphletOrderSerializer(issued, context={"request": request}).data)
 
 
 @csrf_protect

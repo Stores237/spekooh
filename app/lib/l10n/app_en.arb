@@ -487,6 +487,31 @@
   "recentShopItemsStatusReleased": "Completed",
   "recentShopItemsStatusExpired": "Expired",
   "recentShopItemsStatusDisputed": "Disputed",
+  "qrVaultShortcutLabel": "Vault",
+  "qrVaultTitle": "QR Vault",
+  "qrVaultEmptyTitle": "No pickup tickets yet",
+  "qrVaultEmptyBody": "Order a pamphlet from the shop to get a real pickup QR here.",
+  "qrVaultTicketRefLabel": "TICKET REF",
+  "qrVaultSingleUseNote": "Single-use — show this to the bookshop to collect your order.",
+  "qrVaultPickupLocationLabel": "PICKUP LOCATION",
+  "qrVaultPinHint": "4-digit PIN",
+  "qrVaultContinue": "Continue",
+  "qrVaultSetPinTitle": "Set a QR Vault PIN",
+  "qrVaultSetPinSubtitle": "Choose a 4-digit PIN to protect your pickup tickets.",
+  "qrVaultConfirmPinSubtitle": "Enter the same PIN again to confirm.",
+  "qrVaultEnterPinTitle": "Enter your QR Vault PIN",
+  "qrVaultEnterPinSubtitle": "Your pickup tickets are protected — enter your PIN to continue.",
+  "qrVaultPinMustBe4Digits": "Enter exactly 4 digits.",
+  "qrVaultPinsDontMatch": "Those PINs don't match. Try again.",
+  "qrVaultWrongPinAttemptsLeft": "Wrong PIN. {remaining} attempts left.",
+  "@qrVaultWrongPinAttemptsLeft": {
+    "placeholders": {"remaining": {"type": "int"}}
+  },
+  "qrVaultLockedOut": "Too many wrong attempts. Try again in {minutes} min.",
+  "@qrVaultLockedOut": {
+    "placeholders": {"minutes": {"type": "int"}}
+  },
+  "pickupReadyBannerCta": "Tap to view your pickup QR",
   "offlineSaveError": "Could not save for offline: {error}",
   "@offlineSaveError": {
     "placeholders": {"error": {"type": "String"}}

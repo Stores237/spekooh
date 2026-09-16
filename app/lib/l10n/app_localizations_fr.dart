@@ -1202,6 +1202,73 @@ class AppLocalizationsFr extends AppLocalizations {
   String get recentShopItemsStatusDisputed => 'En litige';
 
   @override
+  String get qrVaultShortcutLabel => 'Coffre';
+
+  @override
+  String get qrVaultTitle => 'Coffre QR';
+
+  @override
+  String get qrVaultEmptyTitle => 'Aucun billet de retrait pour le moment';
+
+  @override
+  String get qrVaultEmptyBody =>
+      'Commandez un fascicule dans la boutique pour obtenir un vrai code QR de retrait ici.';
+
+  @override
+  String get qrVaultTicketRefLabel => 'RÉF. BILLET';
+
+  @override
+  String get qrVaultSingleUseNote =>
+      'Usage unique — montrez ceci à la librairie pour récupérer votre commande.';
+
+  @override
+  String get qrVaultPickupLocationLabel => 'LIEU DE RETRAIT';
+
+  @override
+  String get qrVaultPinHint => 'Code à 4 chiffres';
+
+  @override
+  String get qrVaultContinue => 'Continuer';
+
+  @override
+  String get qrVaultSetPinTitle => 'Définir un code pour le Coffre QR';
+
+  @override
+  String get qrVaultSetPinSubtitle =>
+      'Choisissez un code à 4 chiffres pour protéger vos billets de retrait.';
+
+  @override
+  String get qrVaultConfirmPinSubtitle =>
+      'Entrez à nouveau le même code pour confirmer.';
+
+  @override
+  String get qrVaultEnterPinTitle => 'Entrez votre code du Coffre QR';
+
+  @override
+  String get qrVaultEnterPinSubtitle =>
+      'Vos billets de retrait sont protégés — entrez votre code pour continuer.';
+
+  @override
+  String get qrVaultPinMustBe4Digits => 'Entrez exactement 4 chiffres.';
+
+  @override
+  String get qrVaultPinsDontMatch =>
+      'Ces codes ne correspondent pas. Réessayez.';
+
+  @override
+  String qrVaultWrongPinAttemptsLeft(int remaining) {
+    return 'Code incorrect. $remaining tentatives restantes.';
+  }
+
+  @override
+  String qrVaultLockedOut(int minutes) {
+    return 'Trop de tentatives incorrectes. Réessayez dans $minutes min.';
+  }
+
+  @override
+  String get pickupReadyBannerCta => 'Appuyez pour voir votre QR de retrait';
+
+  @override
   String offlineSaveError(String error) {
     return 'Impossible d\'enregistrer hors ligne : $error';
   }

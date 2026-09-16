@@ -2180,6 +2180,120 @@ abstract class AppLocalizations {
   /// **'Disputed'**
   String get recentShopItemsStatusDisputed;
 
+  /// No description provided for @qrVaultShortcutLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault'**
+  String get qrVaultShortcutLabel;
+
+  /// No description provided for @qrVaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'QR Vault'**
+  String get qrVaultTitle;
+
+  /// No description provided for @qrVaultEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No pickup tickets yet'**
+  String get qrVaultEmptyTitle;
+
+  /// No description provided for @qrVaultEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Order a pamphlet from the shop to get a real pickup QR here.'**
+  String get qrVaultEmptyBody;
+
+  /// No description provided for @qrVaultTicketRefLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TICKET REF'**
+  String get qrVaultTicketRefLabel;
+
+  /// No description provided for @qrVaultSingleUseNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Single-use — show this to the bookshop to collect your order.'**
+  String get qrVaultSingleUseNote;
+
+  /// No description provided for @qrVaultPickupLocationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PICKUP LOCATION'**
+  String get qrVaultPickupLocationLabel;
+
+  /// No description provided for @qrVaultPinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'4-digit PIN'**
+  String get qrVaultPinHint;
+
+  /// No description provided for @qrVaultContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get qrVaultContinue;
+
+  /// No description provided for @qrVaultSetPinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a QR Vault PIN'**
+  String get qrVaultSetPinTitle;
+
+  /// No description provided for @qrVaultSetPinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a 4-digit PIN to protect your pickup tickets.'**
+  String get qrVaultSetPinSubtitle;
+
+  /// No description provided for @qrVaultConfirmPinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the same PIN again to confirm.'**
+  String get qrVaultConfirmPinSubtitle;
+
+  /// No description provided for @qrVaultEnterPinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your QR Vault PIN'**
+  String get qrVaultEnterPinTitle;
+
+  /// No description provided for @qrVaultEnterPinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your pickup tickets are protected — enter your PIN to continue.'**
+  String get qrVaultEnterPinSubtitle;
+
+  /// No description provided for @qrVaultPinMustBe4Digits.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter exactly 4 digits.'**
+  String get qrVaultPinMustBe4Digits;
+
+  /// No description provided for @qrVaultPinsDontMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Those PINs don\'t match. Try again.'**
+  String get qrVaultPinsDontMatch;
+
+  /// No description provided for @qrVaultWrongPinAttemptsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong PIN. {remaining} attempts left.'**
+  String qrVaultWrongPinAttemptsLeft(int remaining);
+
+  /// No description provided for @qrVaultLockedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many wrong attempts. Try again in {minutes} min.'**
+  String qrVaultLockedOut(int minutes);
+
+  /// No description provided for @pickupReadyBannerCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view your pickup QR'**
+  String get pickupReadyBannerCta;
+
   /// No description provided for @offlineSaveError.
   ///
   /// In en, this message translates to:

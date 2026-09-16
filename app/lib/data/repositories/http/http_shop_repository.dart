@@ -61,15 +61,22 @@ class HttpShopRepository implements ShopRepository {
   @override
   Future<List<PamphletOrder>> getMyOrders() async {
     final rows = await _client.get('/pamphlets/orders/') as List;
-    return rows.map((row) {
-      final map = row as Map<String, dynamic>;
-      return PamphletOrder(
-        id: map['id'] as int,
-        pamphletTitle: map['pamphlet_title'] as String? ?? '',
-        status: map['status'] as String,
-        amountPaid: map['amount_paid'] as int,
-        createdAt: DateTime.parse(map['created_at'] as String),
-      );
-    }).toList();
+    return rows.map((row) => _orderFromJson(row as Map<String, dynamic>)).toList();
+  }
+
+  PamphletOrder _orderFromJson(Map<String, dynamic> map) {
+    return PamphletOrder(
+      id: map['id'] as int,
+      pamphletTitle: map['pamphlet_title'] as String? ?? '',
+      status: map['status'] as String,
+      amountPaid: map['amount_paid'] as int,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      qrToken: map['qr_token'] as String?,
+      qrRedeemUrl: map['qr_redeem_url'] as String?,
+      partnerName: map['partner_name'] as String? ?? '',
+      partnerLocation: map['partner_location'] as String? ?? '',
+      partnerPhone: map['partner_phone'] as String? ?? '',
+      partnerWhatsapp: map['partner_whatsapp'] as String? ?? '',
+    );
   }
 }

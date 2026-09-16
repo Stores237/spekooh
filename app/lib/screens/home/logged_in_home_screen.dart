@@ -6,6 +6,7 @@ import '../../data/icon_lookup.dart';
 import '../../data/locale_controller.dart';
 import '../../data/offline_guides_store.dart';
 import '../../data/offline_papers_store.dart';
+import '../../data/repositories/notifications_repository.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repositories/promotions_repository.dart';
 import '../../data/repositories/quizzes_repository.dart';
@@ -24,6 +25,7 @@ import '../../theme/responsive.dart';
 import '../../widgets/heritage_pattern_strip.dart';
 import '../../widgets/house_ad_card.dart';
 import '../../widgets/icon_chip.dart';
+import '../../widgets/pickup_ready_banner.dart';
 import '../../widgets/recent_shop_items_card.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/user_avatar.dart';
@@ -45,14 +47,17 @@ class LoggedInHomeScreen extends StatelessWidget {
     this.onOpenNotes,
     this.onOpenShop,
     this.onOpenPaywall,
+    this.onOpenQrVaultOrder,
     ProfileRepository? profileRepository,
     QuizzesRepository? quizzesRepository,
     PromotionsRepository? promotionsRepository,
     ShopRepository? shopRepository,
+    NotificationsRepository? notificationsRepository,
   })  : profileRepository = profileRepository ?? RepositoryLocator.instance.profile,
         quizzesRepository = quizzesRepository ?? RepositoryLocator.instance.quizzes,
         promotionsRepository = promotionsRepository ?? RepositoryLocator.instance.promotions,
-        shopRepository = shopRepository ?? RepositoryLocator.instance.shop;
+        shopRepository = shopRepository ?? RepositoryLocator.instance.shop,
+        notificationsRepository = notificationsRepository ?? RepositoryLocator.instance.notifications;
 
   final VoidCallback? onOpenSettings;
   final VoidCallback? onOpenPapers;
@@ -64,10 +69,16 @@ class LoggedInHomeScreen extends StatelessWidget {
   final VoidCallback? onOpenNotes;
   final VoidCallback? onOpenShop;
   final VoidCallback? onOpenPaywall;
+
+  /// QR Vault (2026-09-16): opens a specific order's pickup ticket directly
+  /// when tapped from Recent Shop Items, rather than just the shop's
+  /// generic "See all".
+  final ValueChanged<int>? onOpenQrVaultOrder;
   final ProfileRepository profileRepository;
   final QuizzesRepository quizzesRepository;
   final PromotionsRepository promotionsRepository;
   final ShopRepository shopRepository;
+  final NotificationsRepository notificationsRepository;
 
   String _greeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
@@ -266,6 +277,10 @@ class LoggedInHomeScreen extends StatelessWidget {
                           _quickAction(LucideIcons.zap, l10n.navQuizzes, onOpenQuizzes, IconChipTint.amber),
                         ],
                       ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.space2),
+                      child: PickupReadyBanner(repository: notificationsRepository, onTap: onOpenQrVaultOrder),
                     ),
                     // Two separate cards (owner decision, 2026-08-28, adapting a
                     // reference design) instead of one dark card split by an
@@ -475,7 +490,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.space2),
-                      child: RecentShopItemsCard(repository: shopRepository, onSeeAll: onOpenShop),
+                      child: RecentShopItemsCard(repository: shopRepository, onSeeAll: onOpenShop, onOpenOrder: onOpenQrVaultOrder),
                     ),
                     const Padding(
                       padding: EdgeInsets.only(top: AppSpacing.space2),

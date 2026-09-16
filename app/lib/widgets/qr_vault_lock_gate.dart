@@ -1,0 +1,195 @@
+import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../data/qr_vault_pin.dart';
+import '../l10n/app_localizations.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_theme.dart';
+import 'auth_form_field.dart';
+import 'spekooh_button.dart';
+
+/// Gates [child] behind a 4-digit PIN the user sets on first visit and
+/// enters on every visit after (owner request, 2026-09-16) -- see
+/// QrVaultPin's own doc comment for the real security properties this
+/// enforces (salted hash, never plaintext, a real attempt-cap lockout).
+class QrVaultLockGate extends StatefulWidget {
+  const QrVaultLockGate({super.key, required this.child});
+  final Widget child;
+
+  @override
+  State<QrVaultLockGate> createState() => _QrVaultLockGateState();
+}
+
+enum _SetupStep { choose, confirm }
+
+class _QrVaultLockGateState extends State<QrVaultLockGate> {
+  final Future<bool> _hasPinFuture = QrVaultPin.instance.hasPin();
+  bool _unlocked = false;
+
+  final _pinController = TextEditingController();
+  final _confirmController = TextEditingController();
+  _SetupStep _setupStep = _SetupStep.choose;
+  String? _chosenPin;
+  String? _error;
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _pinController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitSetupStep(AppLocalizations l10n) async {
+    final value = _pinController.text.trim();
+    if (value.length != 4 || int.tryParse(value) == null) {
+      setState(() => _error = l10n.qrVaultPinMustBe4Digits);
+      return;
+    }
+    if (_setupStep == _SetupStep.choose) {
+      setState(() {
+        _chosenPin = value;
+        _setupStep = _SetupStep.confirm;
+        _pinController.clear();
+        _error = null;
+      });
+      return;
+    }
+    // Confirm step.
+    if (value != _chosenPin) {
+      setState(() {
+        _error = l10n.qrVaultPinsDontMatch;
+        _setupStep = _SetupStep.choose;
+        _chosenPin = null;
+        _pinController.clear();
+      });
+      return;
+    }
+    setState(() => _busy = true);
+    await QrVaultPin.instance.setPin(value);
+    if (mounted) setState(() => _unlocked = true);
+  }
+
+  Future<void> _submitUnlock(AppLocalizations l10n) async {
+    final value = _pinController.text.trim();
+    if (value.length != 4) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final result = await QrVaultPin.instance.verifyPin(value);
+    if (!mounted) return;
+    switch (result) {
+      case QrVaultPinResult.success:
+        setState(() => _unlocked = true);
+      case QrVaultPinResult.wrongPin:
+        final remaining = await QrVaultPin.instance.attemptsRemaining();
+        setState(() {
+          _busy = false;
+          _pinController.clear();
+          _error = l10n.qrVaultWrongPinAttemptsLeft(remaining);
+        });
+      case QrVaultPinResult.lockedOut:
+        final seconds = await QrVaultPin.instance.lockedOutForSeconds() ?? 0;
+        setState(() {
+          _busy = false;
+          _pinController.clear();
+          _error = l10n.qrVaultLockedOut((seconds / 60).ceil());
+        });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    if (_unlocked) return widget.child;
+
+    return FutureBuilder<bool>(
+      future: _hasPinFuture,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        return snapshot.data! ? _unlockScaffold(l10n) : _setupScaffold(l10n);
+      },
+    );
+  }
+
+  Widget _lockScaffold({
+    required AppLocalizations l10n,
+    required String title,
+    required String subtitle,
+    required VoidCallback onSubmit,
+  }) {
+    return Scaffold(
+      backgroundColor: AppColors.surfaceBg,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPad),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(color: AppColors.gold200, shape: BoxShape.circle),
+                  alignment: Alignment.center,
+                  child: const Icon(LucideIcons.lock, color: AppColors.gold700, size: 30),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space4),
+              Text(title, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
+              const SizedBox(height: 6),
+              Text(subtitle, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
+              const SizedBox(height: AppSpacing.space5),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                child: AuthTextField(
+                  controller: _pinController,
+                  hint: l10n.qrVaultPinHint,
+                  obscureText: true,
+                  keyboardType: TextInputType.number,
+                  enabled: !_busy,
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: AppSpacing.space2),
+                Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.red500, fontSize: 12)),
+              ],
+              const SizedBox(height: AppSpacing.space4),
+              SpekoohButton(onPressed: _busy ? null : onSubmit, child: Text(_busy ? l10n.processingLabel : l10n.qrVaultContinue)),
+              const SizedBox(height: AppSpacing.space3),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(l10n.doneLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.textTertiary)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _setupScaffold(AppLocalizations l10n) {
+    return _lockScaffold(
+      l10n: l10n,
+      title: l10n.qrVaultSetPinTitle,
+      subtitle: _setupStep == _SetupStep.choose ? l10n.qrVaultSetPinSubtitle : l10n.qrVaultConfirmPinSubtitle,
+      onSubmit: () => _submitSetupStep(l10n),
+    );
+  }
+
+  Widget _unlockScaffold(AppLocalizations l10n) {
+    return _lockScaffold(
+      l10n: l10n,
+      title: l10n.qrVaultEnterPinTitle,
+      subtitle: l10n.qrVaultEnterPinSubtitle,
+      onSubmit: () => _submitUnlock(l10n),
+    );
+  }
+}

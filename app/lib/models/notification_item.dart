@@ -10,6 +10,7 @@ class NotificationItem {
     required this.body,
     required this.time,
     this.isRead = false,
+    this.link = '',
   });
 
   final int id;
@@ -19,4 +20,9 @@ class NotificationItem {
   final String body;
   final String time;
   final bool isRead;
+
+  /// Opaque app route, e.g. "qr-vault/7" (QR Vault, 2026-09-16) — mirrors
+  /// apps.notifications.models.Notification.link 1:1. Blank means this
+  /// notification has nowhere further to navigate to.
+  final String link;
 }
