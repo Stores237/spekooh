@@ -479,6 +479,14 @@
   "houseAdSubtitle": "Reach thousands of students across Cameroon.",
   "houseAdWhyThisAd": "Why this ad?",
   "houseAdExplanation": "This is a message from Spekooh, not a targeted ad. We're always open to featuring real businesses to our student audience, not just schools.",
+  "recentShopItemsSponsoredLabel": "SPONSORED",
+  "recentShopItemsTitle": "Recent shop items",
+  "recentShopItemsSeeAll": "See all",
+  "recentShopItemsStatusPaidHeld": "Payment held",
+  "recentShopItemsStatusQrIssued": "Ready for pickup",
+  "recentShopItemsStatusReleased": "Completed",
+  "recentShopItemsStatusExpired": "Expired",
+  "recentShopItemsStatusDisputed": "Disputed",
   "offlineSaveError": "Could not save for offline: {error}",
   "@offlineSaveError": {
     "placeholders": {"error": {"type": "String"}}

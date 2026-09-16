@@ -25,3 +25,13 @@ const mockPamphlets = [
     academicLevel: 'Baccalauréat',
   ),
 ];
+
+final mockPamphletOrders = [
+  PamphletOrder(
+    id: 1,
+    pamphletTitle: mockFeaturedPamphlet.title,
+    status: 'QR_ISSUED',
+    amountPaid: 7500,
+    createdAt: DateTime.now().subtract(const Duration(days: 1)),
+  ),
+];

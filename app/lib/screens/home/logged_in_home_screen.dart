@@ -9,6 +9,7 @@ import '../../data/offline_papers_store.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../data/repositories/promotions_repository.dart';
 import '../../data/repositories/quizzes_repository.dart';
+import '../../data/repositories/shop_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/promotion.dart';
@@ -23,6 +24,7 @@ import '../../theme/responsive.dart';
 import '../../widgets/heritage_pattern_strip.dart';
 import '../../widgets/house_ad_card.dart';
 import '../../widgets/icon_chip.dart';
+import '../../widgets/recent_shop_items_card.dart';
 import '../../widgets/spekooh_button.dart';
 import '../../widgets/user_avatar.dart';
 import '../downloads/my_downloads_screen.dart';
@@ -46,9 +48,14 @@ class LoggedInHomeScreen extends StatelessWidget {
     ProfileRepository? profileRepository,
     QuizzesRepository? quizzesRepository,
     PromotionsRepository? promotionsRepository,
-  })  : profileRepository = profileRepository ?? RepositoryLocator.instance.profile,
-        quizzesRepository = quizzesRepository ?? RepositoryLocator.instance.quizzes,
-        promotionsRepository = promotionsRepository ?? RepositoryLocator.instance.promotions;
+    ShopRepository? shopRepository,
+  }) : profileRepository =
+           profileRepository ?? RepositoryLocator.instance.profile,
+       quizzesRepository =
+           quizzesRepository ?? RepositoryLocator.instance.quizzes,
+       promotionsRepository =
+           promotionsRepository ?? RepositoryLocator.instance.promotions,
+       shopRepository = shopRepository ?? RepositoryLocator.instance.shop;
 
   final VoidCallback? onOpenSettings;
   final VoidCallback? onOpenPapers;
@@ -63,6 +70,7 @@ class LoggedInHomeScreen extends StatelessWidget {
   final ProfileRepository profileRepository;
   final QuizzesRepository quizzesRepository;
   final PromotionsRepository promotionsRepository;
+  final ShopRepository shopRepository;
 
   String _greeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
@@ -84,409 +92,733 @@ class LoggedInHomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Full-bleed dark hero — no horizontal padding on the outer
-              // scroll view, so this naturally spans the full width; all
-              // content below it is individually wrapped in a Padding.
-              FutureBuilder<SpekoohUser>(
-                future: profileRepository.getUser(),
-                builder: (context, userSnapshot) {
-                  final user = userSnapshot.data;
-                  return FutureBuilder<({int currentStreak, bool playedToday})>(
-                    future: quizzesRepository.getStreak(),
-                    builder: (context, streakSnapshot) {
-                      final streak = streakSnapshot.data?.currentStreak ?? 0;
-                      return Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, AppSpacing.space4, AppSpacing.screenPad, 40),
-                        decoration: const BoxDecoration(
-                          color: AppColors.ink900,
-                          borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // scroll view, so this naturally spans the full width; all
+                  // content below it is individually wrapped in a Padding.
+                  FutureBuilder<SpekoohUser>(
+                    future: profileRepository.getUser(),
+                    builder: (context, userSnapshot) {
+                      final user = userSnapshot.data;
+                      return FutureBuilder<
+                        ({int currentStreak, bool playedToday})
+                      >(
+                        future: quizzesRepository.getStreak(),
+                        builder: (context, streakSnapshot) {
+                          final streak =
+                              streakSnapshot.data?.currentStreak ?? 0;
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.screenPad,
+                              AppSpacing.space4,
+                              AppSpacing.screenPad,
+                              40,
+                            ),
+                            decoration: const BoxDecoration(
+                              color: AppColors.ink900,
+                              borderRadius: BorderRadius.vertical(
+                                bottom: Radius.circular(32),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    GestureDetector(
+                                      onTap: onOpenProfile,
+                                      child: Row(
+                                        children: [
+                                          // Owner-reported (2026-09-03): a real,
+                                          // set-and-visible-on-Profile avatar
+                                          // never showed here — this was its own
+                                          // separate copy that only ever
+                                          // rendered the initial letter, never
+                                          // checking avatarUrl at all.
+                                          UserAvatar(
+                                            name: user?.name ?? '',
+                                            avatarUrl: user?.avatarUrl,
+                                            size: 38,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                _greeting(l10n),
+                                                style: TextStyle(
+                                                  color:
+                                                      AppColors.textOnDarkMuted,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                              Text(
+                                                user?.name ?? '…',
+                                                style: TextStyle(
+                                                  fontFamily:
+                                                      plusJakartaSansFamily,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 15,
+                                                  color: AppColors.white,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.12,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              999,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              _langPill('EN', 'en'),
+                                              _langPill('FR', 'fr'),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _darkIconButton(
+                                          LucideIcons.settings,
+                                          onOpenSettings,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _darkIconButton(
+                                          LucideIcons.bell,
+                                          onOpenNotifications,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.space4),
                                 GestureDetector(
-                                  onTap: onOpenProfile,
+                                  onTap: onOpenQuizzes,
                                   child: Row(
                                     children: [
-                                      // Owner-reported (2026-09-03): a real,
-                                      // set-and-visible-on-Profile avatar
-                                      // never showed here — this was its own
-                                      // separate copy that only ever
-                                      // rendered the initial letter, never
-                                      // checking avatarUrl at all.
-                                      UserAvatar(name: user?.name ?? '', avatarUrl: user?.avatarUrl, size: 38),
-                                      const SizedBox(width: 10),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(_greeting(l10n), style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12)),
-                                          Text(user?.name ?? '…', style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.white)),
-                                        ],
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.gold500,
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              LucideIcons.flame,
+                                              size: 12,
+                                              color: AppColors.ink900,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              streak > 0
+                                                  ? l10n.streakDayCount(streak)
+                                                  : l10n.startAStreak,
+                                              style: const TextStyle(
+                                                color: AppColors.ink900,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(2),
-                                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
-                                      child: Row(
-                                        children: [
-                                          _langPill('EN', 'en'),
-                                          _langPill('FR', 'fr'),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _darkIconButton(LucideIcons.settings, onOpenSettings),
-                                    const SizedBox(width: 8),
-                                    _darkIconButton(LucideIcons.bell, onOpenNotifications),
-                                  ],
-                                ),
+                                const SizedBox(height: AppSpacing.space4),
+                                const HeritagePatternStrip.onDark(),
                               ],
                             ),
-                            const SizedBox(height: AppSpacing.space4),
-                            GestureDetector(
-                              onTap: onOpenQuizzes,
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(color: AppColors.gold500, borderRadius: BorderRadius.circular(999)),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(LucideIcons.flame, size: 12, color: AppColors.ink900),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          streak > 0 ? l10n.streakDayCount(streak) : l10n.startAStreak,
-                                          style: const TextStyle(color: AppColors.ink900, fontSize: 11, fontWeight: FontWeight.w800),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.space4),
-                            const HeritagePatternStrip.onDark(),
-                          ],
-                        ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPad),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Transform.translate(
-                      offset: const Offset(0, -24),
-                      child: InkWell(
-                        onTap: onOpenPapers,
-                        borderRadius: BorderRadius.circular(18),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.green500, width: 3)),
-                                alignment: Alignment.center,
-                                child: const Icon(LucideIcons.target, size: 20, color: AppColors.green500),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(l10n.practiceModeLabel, style: TextStyle(color: AppColors.green600, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-                                    Text(l10n.practiceModeTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
-                                    Text(l10n.practiceModeSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-                                  ],
-                                ),
-                              ),
-                              const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
-                            ],
-                          ),
-                        ),
-                      ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.screenPad,
                     ),
-                    Transform.translate(
-                      offset: const Offset(0, -12),
-                      child: FutureBuilder<SpekoohUser>(
-                        future: profileRepository.getUser(),
-                        builder: (context, snapshot) {
-                          final user = snapshot.data;
-                          if (user == null) return const SizedBox.shrink();
-                          // A Plus subscriber never sees either state — they
-                          // already have exactly what both banners are
-                          // upselling, trial-active or not.
-                          if (user.isPlusSubscriber) return const SizedBox.shrink();
-                          if (user.trialDaysRemaining > 0) return _activeTrialBanner(l10n, user, onOpenPaywall);
-                          // Trial ended (owner request, 2026-09-11): home
-                          // used to just go silent forever once
-                          // trialDaysRemaining hit 0 — this keeps the same
-                          // upsell moment alive instead of dropping it.
-                          return _trialEndedBanner(l10n, onOpenPaywall);
-                        },
-                      ),
-                    ),
-                    Transform.translate(
-                      offset: const Offset(0, -8),
-                      child: GridView.count(
-                        crossAxisCount: responsiveCrossAxisCount(context, 3),
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                        // Taller-than-wide before (icon over label, 2 lines);
-                        // icon-and-label now sit on one line (owner decision,
-                        // 2026-08-28), so each card needs far less height.
-                        childAspectRatio: 2.6,
-                        children: [
-                          _quickAction(LucideIcons.fileText, l10n.navPapers, onOpenPapers, IconChipTint.blue),
-                          _quickAction(LucideIcons.bookOpen, l10n.notesTitle, onOpenNotes, IconChipTint.purple),
-                          _quickAction(LucideIcons.upload, l10n.quickActionContribute, onOpenSubmit, IconChipTint.gold),
-                          _quickAction(LucideIcons.shoppingBag, l10n.shopTitle, onOpenShop, IconChipTint.green),
-                          _quickAction(LucideIcons.messageCircle, l10n.navForum, onOpenForum, IconChipTint.red),
-                          _quickAction(LucideIcons.zap, l10n.navQuizzes, onOpenQuizzes, IconChipTint.amber),
-                        ],
-                      ),
-                    ),
-                    // Two separate cards (owner decision, 2026-08-28, adapting a
-                    // reference design) instead of one dark card split by an
-                    // internal divider — same real data as before (quiz.title,
-                    // quiz.questionCount, the real quiz.suggestedTime, and the
-                    // real streak from quizzesRepository.getStreak()), just
-                    // restyled. IntrinsicHeight lets CrossAxisAlignment.stretch
-                    // make both cards match height even though their content
-                    // differs — without it, Expanded inside a Row that's
-                    // itself height-unconstrained (this Column sits inside a
-                    // SingleChildScrollView) throws at layout time.
-                    Transform.translate(
-                      offset: const Offset(0, -4),
-                      child: IntrinsicHeight(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: FutureBuilder<Quiz>(
-                                future: quizzesRepository.getDailyChallenge(),
-                                builder: (context, snapshot) {
-                                  final quiz = snapshot.data;
-                                  return GestureDetector(
-                                    onTap: onOpenQuizzes,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text(
-                                                l10n.dailyChallengeLabel.toUpperCase(),
-                                                style: const TextStyle(color: AppColors.gold700, fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
-                                              ),
-                                              if (quiz != null) ...[
-                                                const SizedBox(width: 8),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                  decoration: BoxDecoration(color: AppColors.gold50, borderRadius: BorderRadius.circular(999)),
-                                                  child: Row(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    children: [
-                                                      const Icon(LucideIcons.clock, size: 10, color: AppColors.gold700),
-                                                      const SizedBox(width: 3),
-                                                      Text(quiz.suggestedTime, style: const TextStyle(color: AppColors.gold700, fontWeight: FontWeight.w800, fontSize: 10)),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            quiz == null ? l10n.dailyChallengeLoading : quiz.title,
-                                            style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 15),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          if (quiz != null) ...[
-                                            const SizedBox(height: 3),
-                                            Text(
-                                              l10n.dailyChallengeInfo(quiz.title, quiz.questionCount),
-                                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                          const SizedBox(height: 12),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                                            decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(999)),
-                                            alignment: Alignment.center,
-                                            child: Text(l10n.playNow, style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 12)),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              flex: 2,
-                              child: FutureBuilder<({int currentStreak, bool playedToday})>(
-                                future: quizzesRepository.getStreak(),
-                                builder: (context, streakSnapshot) {
-                                  final streak = streakSnapshot.data?.currentStreak ?? 0;
-                                  return GestureDetector(
-                                    onTap: onOpenQuizzes,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Container(
-                                            width: 48,
-                                            height: 48,
-                                            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.gold200, width: 3)),
-                                            alignment: Alignment.center,
-                                            child: const Icon(LucideIcons.flame, size: 20, color: AppColors.gold600),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            streak > 0 ? l10n.streakDaysCount(streak) : l10n.streakStart,
-                                            style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 14),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            streak > 0 ? l10n.streakKeepGoing : l10n.streakPlayToBegin,
-                                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    // My Downloads entry point (owner request, 2026-09-11):
-                    // shown only once something real has actually been
-                    // saved — a free tour of an empty slots/upsell screen
-                    // isn't worth a permanent spot on home. Kept separate
-                    // from the "Ready offline" list right below (which
-                    // stays exactly as it was) rather than folding the two
-                    // together — that section is papers-only and already
-                    // has its own passing tests; this is the one place a
-                    // saved correction (marking guide) becomes visible from
-                    // home at all.
-                    ListenableBuilder(
-                      listenable: Listenable.merge([OfflinePapersStore.instance, OfflineGuidesStore.instance]),
-                      builder: (context, _) {
-                        final total = OfflinePapersStore.instance.papers.length + OfflineGuidesStore.instance.guides.length;
-                        if (total == 0) return const SizedBox.shrink();
-                        return Padding(
-                          padding: const EdgeInsets.only(top: AppSpacing.space2),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Transform.translate(
+                          offset: const Offset(0, -24),
                           child: InkWell(
-                            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => MyDownloadsScreen(onOpenPaywall: onOpenPaywall))),
+                            onTap: onOpenPapers,
                             borderRadius: BorderRadius.circular(18),
                             child: Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceCard,
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: AppShadows.card,
+                              ),
                               child: Row(
                                 children: [
                                   Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(color: AppColors.gold50, borderRadius: BorderRadius.circular(12)),
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: AppColors.green500,
+                                        width: 3,
+                                      ),
+                                    ),
                                     alignment: Alignment.center,
-                                    child: const Icon(LucideIcons.folderDown, size: 18, color: AppColors.gold700),
+                                    child: const Icon(
+                                      LucideIcons.target,
+                                      size: 20,
+                                      color: AppColors.green500,
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(l10n.myDownloadsTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                                        Text(l10n.myDownloadsSubtitle(total), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                                        Text(
+                                          l10n.practiceModeLabel,
+                                          style: TextStyle(
+                                            color: AppColors.green600,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.4,
+                                          ),
+                                        ),
+                                        Text(
+                                          l10n.practiceModeTitle,
+                                          style: TextStyle(
+                                            fontFamily: plusJakartaSansFamily,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 15,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        Text(
+                                          l10n.practiceModeSubtitle,
+                                          style: TextStyle(
+                                            fontFamily: plusJakartaSansFamily,
+                                            fontSize: 12,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
-                                  const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
+                                  const Icon(
+                                    LucideIcons.chevronRight,
+                                    color: AppColors.textTertiary,
+                                  ),
                                 ],
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                    // Sponsor/promotion slots (owner request, 2026-09-11) —
-                    // replaces the old inline "Ready offline" list, since
-                    // My Downloads' own home entry point (above) now covers
-                    // that need. Deliberately not visible yet: the backend
-                    // queryset (apps.promotions.views.ActivePromotionsView)
-                    // is empty until a real sponsor deal exists and someone
-                    // flips is_active on in admin — no section at all
-                    // rather than a fake one, same pattern as everywhere
-                    // else "not built yet" is handled in this app.
-                    FutureBuilder<List<Promotion>>(
-                      future: promotionsRepository.getActivePromotions(),
-                      builder: (context, snapshot) {
-                        final promotions = snapshot.data ?? const [];
-                        if (promotions.isEmpty) return const SizedBox.shrink();
-                        return Padding(
-                          padding: const EdgeInsets.only(top: AppSpacing.space2),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                        Transform.translate(
+                          offset: const Offset(0, -12),
+                          child: FutureBuilder<SpekoohUser>(
+                            future: profileRepository.getUser(),
+                            builder: (context, snapshot) {
+                              final user = snapshot.data;
+                              if (user == null) return const SizedBox.shrink();
+                              // A Plus subscriber never sees either state — they
+                              // already have exactly what both banners are
+                              // upselling, trial-active or not.
+                              if (user.isPlusSubscriber)
+                                return const SizedBox.shrink();
+                              if (user.trialDaysRemaining > 0)
+                                return _activeTrialBanner(
+                                  l10n,
+                                  user,
+                                  onOpenPaywall,
+                                );
+                              // Trial ended (owner request, 2026-09-11): home
+                              // used to just go silent forever once
+                              // trialDaysRemaining hit 0 — this keeps the same
+                              // upsell moment alive instead of dropping it.
+                              return _trialEndedBanner(l10n, onOpenPaywall);
+                            },
+                          ),
+                        ),
+                        Transform.translate(
+                          offset: const Offset(0, -8),
+                          child: GridView.count(
+                            crossAxisCount: responsiveCrossAxisCount(
+                              context,
+                              3,
+                            ),
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            // Taller-than-wide before (icon over label, 2 lines);
+                            // icon-and-label now sit on one line (owner decision,
+                            // 2026-08-28), so each card needs far less height.
+                            childAspectRatio: 2.6,
                             children: [
-                              for (final promo in promotions) ...[
-                                _promotionCard(context, promo),
-                                const SizedBox(height: AppSpacing.space2),
-                              ],
+                              _quickAction(
+                                LucideIcons.fileText,
+                                l10n.navPapers,
+                                onOpenPapers,
+                                IconChipTint.blue,
+                              ),
+                              _quickAction(
+                                LucideIcons.bookOpen,
+                                l10n.notesTitle,
+                                onOpenNotes,
+                                IconChipTint.purple,
+                              ),
+                              _quickAction(
+                                LucideIcons.upload,
+                                l10n.quickActionContribute,
+                                onOpenSubmit,
+                                IconChipTint.gold,
+                              ),
+                              _quickAction(
+                                LucideIcons.shoppingBag,
+                                l10n.shopTitle,
+                                onOpenShop,
+                                IconChipTint.green,
+                              ),
+                              _quickAction(
+                                LucideIcons.messageCircle,
+                                l10n.navForum,
+                                onOpenForum,
+                                IconChipTint.red,
+                              ),
+                              _quickAction(
+                                LucideIcons.zap,
+                                l10n.navQuizzes,
+                                onOpenQuizzes,
+                                IconChipTint.amber,
+                              ),
                             ],
                           ),
-                        );
-                      },
+                        ),
+                        // Two separate cards (owner decision, 2026-08-28, adapting a
+                        // reference design) instead of one dark card split by an
+                        // internal divider — same real data as before (quiz.title,
+                        // quiz.questionCount, the real quiz.suggestedTime, and the
+                        // real streak from quizzesRepository.getStreak()), just
+                        // restyled. IntrinsicHeight lets CrossAxisAlignment.stretch
+                        // make both cards match height even though their content
+                        // differs — without it, Expanded inside a Row that's
+                        // itself height-unconstrained (this Column sits inside a
+                        // SingleChildScrollView) throws at layout time.
+                        Transform.translate(
+                          offset: const Offset(0, -4),
+                          child: IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: FutureBuilder<Quiz>(
+                                    future: quizzesRepository
+                                        .getDailyChallenge(),
+                                    builder: (context, snapshot) {
+                                      final quiz = snapshot.data;
+                                      return GestureDetector(
+                                        onTap: onOpenQuizzes,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.surfaceCard,
+                                            borderRadius: BorderRadius.circular(
+                                              18,
+                                            ),
+                                            boxShadow: AppShadows.card,
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    l10n.dailyChallengeLabel
+                                                        .toUpperCase(),
+                                                    style: const TextStyle(
+                                                      color: AppColors.gold700,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      fontSize: 11,
+                                                      letterSpacing: 0.5,
+                                                    ),
+                                                  ),
+                                                  if (quiz != null) ...[
+                                                    const SizedBox(width: 8),
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 3,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: AppColors.gold50,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              999,
+                                                            ),
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          const Icon(
+                                                            LucideIcons.clock,
+                                                            size: 10,
+                                                            color: AppColors
+                                                                .gold700,
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 3,
+                                                          ),
+                                                          Text(
+                                                            quiz.suggestedTime,
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: AppColors
+                                                                      .gold700,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w800,
+                                                                  fontSize: 10,
+                                                                ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                quiz == null
+                                                    ? l10n.dailyChallengeLoading
+                                                    : quiz.title,
+                                                style: TextStyle(
+                                                  fontFamily:
+                                                      plusJakartaSansFamily,
+                                                  color: AppColors.textPrimary,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 15,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              if (quiz != null) ...[
+                                                const SizedBox(height: 3),
+                                                Text(
+                                                  l10n.dailyChallengeInfo(
+                                                    quiz.title,
+                                                    quiz.questionCount,
+                                                  ),
+                                                  style: const TextStyle(
+                                                    color:
+                                                        AppColors.textSecondary,
+                                                    fontSize: 11,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                              const SizedBox(height: 12),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 9,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  gradient:
+                                                      AppGradients.primary,
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        999,
+                                                      ),
+                                                ),
+                                                alignment: Alignment.center,
+                                                child: Text(
+                                                  l10n.playNow,
+                                                  style: const TextStyle(
+                                                    color: AppColors.white,
+                                                    fontWeight: FontWeight.w800,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  flex: 2,
+                                  child:
+                                      FutureBuilder<
+                                        ({int currentStreak, bool playedToday})
+                                      >(
+                                        future: quizzesRepository.getStreak(),
+                                        builder: (context, streakSnapshot) {
+                                          final streak =
+                                              streakSnapshot
+                                                  .data
+                                                  ?.currentStreak ??
+                                              0;
+                                          return GestureDetector(
+                                            onTap: onOpenQuizzes,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(16),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.surfaceCard,
+                                                borderRadius:
+                                                    BorderRadius.circular(18),
+                                                boxShadow: AppShadows.card,
+                                              ),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Container(
+                                                    width: 48,
+                                                    height: 48,
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(
+                                                        color:
+                                                            AppColors.gold200,
+                                                        width: 3,
+                                                      ),
+                                                    ),
+                                                    alignment: Alignment.center,
+                                                    child: const Icon(
+                                                      LucideIcons.flame,
+                                                      size: 20,
+                                                      color: AppColors.gold600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    streak > 0
+                                                        ? l10n.streakDaysCount(
+                                                            streak,
+                                                          )
+                                                        : l10n.streakStart,
+                                                    style: TextStyle(
+                                                      fontFamily:
+                                                          plusJakartaSansFamily,
+                                                      color:
+                                                          AppColors.textPrimary,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      fontSize: 14,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    streak > 0
+                                                        ? l10n.streakKeepGoing
+                                                        : l10n.streakPlayToBegin,
+                                                    style: const TextStyle(
+                                                      color: AppColors
+                                                          .textSecondary,
+                                                      fontSize: 10,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // My Downloads entry point (owner request, 2026-09-11):
+                        // shown only once something real has actually been
+                        // saved — a free tour of an empty slots/upsell screen
+                        // isn't worth a permanent spot on home. Kept separate
+                        // from the "Ready offline" list right below (which
+                        // stays exactly as it was) rather than folding the two
+                        // together — that section is papers-only and already
+                        // has its own passing tests; this is the one place a
+                        // saved correction (marking guide) becomes visible from
+                        // home at all.
+                        ListenableBuilder(
+                          listenable: Listenable.merge([
+                            OfflinePapersStore.instance,
+                            OfflineGuidesStore.instance,
+                          ]),
+                          builder: (context, _) {
+                            final total =
+                                OfflinePapersStore.instance.papers.length +
+                                OfflineGuidesStore.instance.guides.length;
+                            if (total == 0) return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.space2,
+                              ),
+                              child: InkWell(
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => MyDownloadsScreen(
+                                      onOpenPaywall: onOpenPaywall,
+                                    ),
+                                  ),
+                                ),
+                                borderRadius: BorderRadius.circular(18),
+                                child: Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceCard,
+                                    borderRadius: BorderRadius.circular(18),
+                                    boxShadow: AppShadows.card,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.gold50,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: const Icon(
+                                          LucideIcons.folderDown,
+                                          size: 18,
+                                          color: AppColors.gold700,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              l10n.myDownloadsTitle,
+                                              style: TextStyle(
+                                                fontFamily:
+                                                    plusJakartaSansFamily,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 14,
+                                                color: AppColors.textPrimary,
+                                              ),
+                                            ),
+                                            Text(
+                                              l10n.myDownloadsSubtitle(total),
+                                              style: TextStyle(
+                                                fontFamily:
+                                                    plusJakartaSansFamily,
+                                                fontSize: 12,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(
+                                        LucideIcons.chevronRight,
+                                        color: AppColors.textTertiary,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        // Sponsor/promotion slots (owner request, 2026-09-11) —
+                        // replaces the old inline "Ready offline" list, since
+                        // My Downloads' own home entry point (above) now covers
+                        // that need. Deliberately not visible yet: the backend
+                        // queryset (apps.promotions.views.ActivePromotionsView)
+                        // is empty until a real sponsor deal exists and someone
+                        // flips is_active on in admin — no section at all
+                        // rather than a fake one, same pattern as everywhere
+                        // else "not built yet" is handled in this app.
+                        FutureBuilder<List<Promotion>>(
+                          future: promotionsRepository.getActivePromotions(),
+                          builder: (context, snapshot) {
+                            final promotions = snapshot.data ?? const [];
+                            if (promotions.isEmpty)
+                              return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.space2,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  for (final promo in promotions) ...[
+                                    _promotionCard(context, promo),
+                                    const SizedBox(height: AppSpacing.space2),
+                                  ],
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.space2,
+                          ),
+                          child: RecentShopItemsCard(
+                            repository: shopRepository,
+                            onSeeAll: onOpenShop,
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(top: AppSpacing.space2),
+                          child: HouseAdCard(),
+                        ),
+                        // Real bug found 2026-09-14 (/design-review, confirmed
+                        // live at a real 390px mobile viewport): this used to be
+                        // AppSpacing.space6 (24px) — nowhere near enough to
+                        // clear root_shell.dart's real floating AIAssistantFab,
+                        // which sat directly on top of HouseAdCard's own "Learn
+                        // more" button, covering ~60% of its width and all of
+                        // its height. See AppSpacing.fabClearance's own comment.
+                        const SizedBox(height: AppSpacing.fabClearance),
+                      ],
                     ),
-                    const Padding(
-                      padding: EdgeInsets.only(top: AppSpacing.space2),
-                      child: HouseAdCard(),
-                    ),
-                    // Real bug found 2026-09-14 (/design-review, confirmed
-                    // live at a real 390px mobile viewport): this used to be
-                    // AppSpacing.space6 (24px) — nowhere near enough to
-                    // clear root_shell.dart's real floating AIAssistantFab,
-                    // which sat directly on top of HouseAdCard's own "Learn
-                    // more" button, covering ~60% of its width and all of
-                    // its height. See AppSpacing.fabClearance's own comment.
-                    const SizedBox(height: AppSpacing.fabClearance),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
           // The heritage pattern strip moved onto the dark greeting card
           // itself (above) — see HeritagePatternStrip's own doc comment:
           // pinned to this screen's cream background it was too
@@ -501,7 +833,11 @@ class LoggedInHomeScreen extends StatelessWidget {
     final hasCta = promo.ctaLabel.isNotEmpty && promo.ctaUrl.isNotEmpty;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppShadows.card,
+      ),
       child: Row(
         children: [
           if (promo.logoUrl != null)
@@ -515,33 +851,80 @@ class LoggedInHomeScreen extends StatelessWidget {
                 // A real sponsor logo failing to load falls back to the
                 // same generic chip as no logo at all — never a broken-
                 // image icon on a live promo.
-                errorBuilder: (context, error, stackTrace) => IconChip(icon: iconByName[promo.iconName] ?? LucideIcons.megaphone, tint: IconChipTint.amber, size: 40),
+                errorBuilder: (context, error, stackTrace) => IconChip(
+                  icon: iconByName[promo.iconName] ?? LucideIcons.megaphone,
+                  tint: IconChipTint.amber,
+                  size: 40,
+                ),
               ),
             )
           else
-            IconChip(icon: iconByName[promo.iconName] ?? LucideIcons.megaphone, tint: IconChipTint.amber, size: 40),
+            IconChip(
+              icon: iconByName[promo.iconName] ?? LucideIcons.megaphone,
+              tint: IconChipTint.amber,
+              size: 40,
+            ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(promo.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
+                Text(
+                  promo.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: plusJakartaSansFamily,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 if (promo.subtitle.isNotEmpty)
-                  Text(promo.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                  Text(
+                    promo.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: plusJakartaSansFamily,
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 if (promo.sponsorName.isNotEmpty)
-                  Text(promo.sponsorName, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textTertiary)),
+                  Text(
+                    promo.sponsorName,
+                    style: TextStyle(
+                      fontFamily: plusJakartaSansFamily,
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
               ],
             ),
           ),
           if (hasCta)
             GestureDetector(
               onTap: () async {
-                final ok = await launchUrl(Uri.parse(promo.ctaUrl), mode: LaunchMode.externalApplication);
+                final ok = await launchUrl(
+                  Uri.parse(promo.ctaUrl),
+                  mode: LaunchMode.externalApplication,
+                );
                 if (!ok && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.couldNotOpenLink)));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.couldNotOpenLink)),
+                  );
                 }
               },
-              child: Text(promo.ctaLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.gold700)),
+              child: Text(
+                promo.ctaLabel,
+                style: TextStyle(
+                  fontFamily: plusJakartaSansFamily,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                  color: AppColors.gold700,
+                ),
+              ),
             ),
         ],
       ),
@@ -557,18 +940,36 @@ class LoggedInHomeScreen extends StatelessWidget {
   Future<void> _changeLanguage(String code) async {
     await LocaleController.instance.setLocale(code);
     if (AuthSession.instance.isLoggedIn) {
-      unawaited(profileRepository.setLanguagePreference(code).catchError((_) {}));
+      unawaited(
+        profileRepository.setLanguagePreference(code).catchError((_) {}),
+      );
     }
   }
 
-  Widget _activeTrialBanner(AppLocalizations l10n, SpekoohUser user, VoidCallback? onOpenPaywall) {
+  Widget _activeTrialBanner(
+    AppLocalizations l10n,
+    SpekoohUser user,
+    VoidCallback? onOpenPaywall,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppShadows.card,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.trialLabel, style: TextStyle(color: AppColors.gold700, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+          Text(
+            l10n.trialLabel,
+            style: TextStyle(
+              color: AppColors.gold700,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+            ),
+          ),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -577,28 +978,68 @@ class LoggedInHomeScreen extends StatelessWidget {
                 width: 22,
                 height: 22,
                 margin: const EdgeInsets.only(top: 2),
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold50),
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.gold50,
+                ),
                 alignment: Alignment.center,
-                child: const Icon(LucideIcons.check, size: 12, color: AppColors.gold700),
+                child: const Icon(
+                  LucideIcons.check,
+                  size: 12,
+                  color: AppColors.gold700,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  user.firstUnlockFreeEligible ? l10n.trialFirstUnlockFree : l10n.trialUnlimitedViews,
-                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary),
+                  user.firstUnlockFreeEligible
+                      ? l10n.trialFirstUnlockFree
+                      : l10n.trialUnlimitedViews,
+                  style: TextStyle(
+                    fontFamily: plusJakartaSansFamily,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: AppColors.surfaceSunken, borderRadius: BorderRadius.circular(999)),
-                child: Text(l10n.trialDaysLeft(user.trialDaysRemaining), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSunken,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  l10n.trialDaysLeft(user.trialDaysRemaining),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(l10n.trialFeatures, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+          Text(
+            l10n.trialFeatures,
+            style: TextStyle(
+              fontFamily: plusJakartaSansFamily,
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 10),
-          SizedBox(width: double.infinity, child: SpekoohButton(onPressed: onOpenPaywall, child: Text(l10n.trialKeepAccess))),
+          SizedBox(
+            width: double.infinity,
+            child: SpekoohButton(
+              onPressed: onOpenPaywall,
+              child: Text(l10n.trialKeepAccess),
+            ),
+          ),
         ],
       ),
     );
@@ -613,11 +1054,23 @@ class LoggedInHomeScreen extends StatelessWidget {
   Widget _trialEndedBanner(AppLocalizations l10n, VoidCallback? onOpenPaywall) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppShadows.card,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.trialEndedLabel, style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+          Text(
+            l10n.trialEndedLabel,
+            style: TextStyle(
+              color: AppColors.textTertiary,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+            ),
+          ),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,21 +1079,39 @@ class LoggedInHomeScreen extends StatelessWidget {
                 width: 22,
                 height: 22,
                 margin: const EdgeInsets.only(top: 2),
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.surfaceSunken),
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.surfaceSunken,
+                ),
                 alignment: Alignment.center,
-                child: const Icon(LucideIcons.lock, size: 12, color: AppColors.textTertiary),
+                child: const Icon(
+                  LucideIcons.lock,
+                  size: 12,
+                  color: AppColors.textTertiary,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   l10n.trialEndedBody,
-                  style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary),
+                  style: TextStyle(
+                    fontFamily: plusJakartaSansFamily,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          SizedBox(width: double.infinity, child: SpekoohButton(onPressed: onOpenPaywall, child: Text(l10n.trialEndedCta))),
+          SizedBox(
+            width: double.infinity,
+            child: SpekoohButton(
+              onPressed: onOpenPaywall,
+              child: Text(l10n.trialEndedCta),
+            ),
+          ),
         ],
       ),
     );
@@ -652,10 +1123,18 @@ class LoggedInHomeScreen extends StatelessWidget {
       onTap: active ? null : () => _changeLanguage(code),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(color: active ? AppColors.white : null, borderRadius: BorderRadius.circular(999)),
+        decoration: BoxDecoration(
+          color: active ? AppColors.white : null,
+          borderRadius: BorderRadius.circular(999),
+        ),
         child: Text(
           label,
-          style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w800, color: active ? AppColors.ink900 : AppColors.white),
+          style: TextStyle(
+            fontFamily: plusJakartaSansFamily,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: active ? AppColors.ink900 : AppColors.white,
+          ),
         ),
       ),
     );
@@ -667,7 +1146,10 @@ class LoggedInHomeScreen extends StatelessWidget {
       child: Container(
         width: 32,
         height: 32,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.12)),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.12),
+        ),
         alignment: Alignment.center,
         child: Icon(icon, size: 15, color: AppColors.white),
       ),
@@ -679,13 +1161,22 @@ class LoggedInHomeScreen extends StatelessWidget {
   // the same IconChip tint system the rest of the app already uses for
   // categorical color (owner decision, 2026-08-28, found from a live
   // screenshot).
-  Widget _quickAction(IconData icon, String label, VoidCallback? onTap, IconChipTint tint) {
+  Widget _quickAction(
+    IconData icon,
+    String label,
+    VoidCallback? onTap,
+    IconChipTint tint,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(12), boxShadow: AppShadows.card),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: AppShadows.card,
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -694,7 +1185,12 @@ class LoggedInHomeScreen extends StatelessWidget {
             Flexible(
               child: Text(
                 label,
-                style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                style: TextStyle(
+                  fontFamily: plusJakartaSansFamily,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

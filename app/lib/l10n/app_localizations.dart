@@ -2132,6 +2132,54 @@ abstract class AppLocalizations {
   /// **'This is a message from Spekooh, not a targeted ad. We\'re always open to featuring real businesses to our student audience, not just schools.'**
   String get houseAdExplanation;
 
+  /// No description provided for @recentShopItemsSponsoredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SPONSORED'**
+  String get recentShopItemsSponsoredLabel;
+
+  /// No description provided for @recentShopItemsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent shop items'**
+  String get recentShopItemsTitle;
+
+  /// No description provided for @recentShopItemsSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get recentShopItemsSeeAll;
+
+  /// No description provided for @recentShopItemsStatusPaidHeld.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment held'**
+  String get recentShopItemsStatusPaidHeld;
+
+  /// No description provided for @recentShopItemsStatusQrIssued.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for pickup'**
+  String get recentShopItemsStatusQrIssued;
+
+  /// No description provided for @recentShopItemsStatusReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get recentShopItemsStatusReleased;
+
+  /// No description provided for @recentShopItemsStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get recentShopItemsStatusExpired;
+
+  /// No description provided for @recentShopItemsStatusDisputed.
+  ///
+  /// In en, this message translates to:
+  /// **'Disputed'**
+  String get recentShopItemsStatusDisputed;
+
   /// No description provided for @offlineSaveError.
   ///
   /// In en, this message translates to:

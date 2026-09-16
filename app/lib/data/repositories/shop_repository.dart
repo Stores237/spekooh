@@ -17,6 +17,10 @@ abstract class ShopRepository {
     required bool isDelivery,
     required String phoneNumber,
   });
+
+  /// The requesting student's own past orders, most recent first — backs
+  /// the "Recent shop items" Home card.
+  Future<List<PamphletOrder>> getMyOrders();
 }
 
 class MockShopRepository implements ShopRepository {
@@ -35,4 +39,7 @@ class MockShopRepository implements ShopRepository {
     final token = 'mock-qr-${Random().nextInt(999999)}';
     return PamphletOrderResult(qrToken: token, status: 'QR_ISSUED');
   }
+
+  @override
+  Future<List<PamphletOrder>> getMyOrders() => Future.value(mockPamphletOrders);
 }

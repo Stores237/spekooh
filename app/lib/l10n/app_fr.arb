@@ -373,6 +373,14 @@
   "houseAdSubtitle": "Touchez des milliers d'étudiants à travers le Cameroun.",
   "houseAdWhyThisAd": "Pourquoi cette pub ?",
   "houseAdExplanation": "Ceci est un message de Spekooh, pas une publicité ciblée. Nous sommes toujours ouverts à présenter de vraies entreprises à notre audience d'étudiants, pas seulement des écoles.",
+  "recentShopItemsSponsoredLabel": "SPONSORISÉ",
+  "recentShopItemsTitle": "Articles récents de la boutique",
+  "recentShopItemsSeeAll": "Tout voir",
+  "recentShopItemsStatusPaidHeld": "Paiement en attente",
+  "recentShopItemsStatusQrIssued": "Prêt pour le retrait",
+  "recentShopItemsStatusReleased": "Terminé",
+  "recentShopItemsStatusExpired": "Expiré",
+  "recentShopItemsStatusDisputed": "En litige",
   "offlineSaveError": "Impossible d'enregistrer hors ligne : {error}",
   "@offlineSaveError": {
     "placeholders": {"error": {"type": "String"}}

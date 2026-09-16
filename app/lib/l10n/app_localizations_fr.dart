@@ -1178,6 +1178,30 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ceci est un message de Spekooh, pas une publicité ciblée. Nous sommes toujours ouverts à présenter de vraies entreprises à notre audience d\'étudiants, pas seulement des écoles.';
 
   @override
+  String get recentShopItemsSponsoredLabel => 'SPONSORISÉ';
+
+  @override
+  String get recentShopItemsTitle => 'Articles récents de la boutique';
+
+  @override
+  String get recentShopItemsSeeAll => 'Tout voir';
+
+  @override
+  String get recentShopItemsStatusPaidHeld => 'Paiement en attente';
+
+  @override
+  String get recentShopItemsStatusQrIssued => 'Prêt pour le retrait';
+
+  @override
+  String get recentShopItemsStatusReleased => 'Terminé';
+
+  @override
+  String get recentShopItemsStatusExpired => 'Expiré';
+
+  @override
+  String get recentShopItemsStatusDisputed => 'En litige';
+
+  @override
   String offlineSaveError(String error) {
     return 'Impossible d\'enregistrer hors ligne : $error';
   }
