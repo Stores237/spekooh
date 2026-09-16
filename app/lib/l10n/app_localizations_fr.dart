@@ -1202,7 +1202,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get recentShopItemsStatusDisputed => 'En litige';
 
   @override
-  String get qrVaultShortcutLabel => 'Coffre';
+  String get qrVaultShortcutLabel => 'QR Coffre';
 
   @override
   String get qrVaultTitle => 'Coffre QR';

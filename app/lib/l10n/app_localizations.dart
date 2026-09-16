@@ -2183,7 +2183,7 @@ abstract class AppLocalizations {
   /// No description provided for @qrVaultShortcutLabel.
   ///
   /// In en, this message translates to:
-  /// **'Vault'**
+  /// **'QR Vault'**
   String get qrVaultShortcutLabel;
 
   /// No description provided for @qrVaultTitle.

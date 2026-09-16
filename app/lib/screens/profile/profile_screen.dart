@@ -340,37 +340,47 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.space5),
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(18)),
-                        child: Stack(
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(l10n.bonusCreditBalanceLabel, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
-                                const SizedBox(height: 4),
-                                RichText(
-                                  text: TextSpan(
-                                    style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 28, color: AppColors.white),
-                                    children: [
-                                      TextSpan(text: '${user.creditBalance} '),
-                                      TextSpan(text: l10n.ptsLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                    ],
-                                  ),
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(18)),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(l10n.bonusCreditBalanceLabel, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                                    const SizedBox(height: 4),
+                                    RichText(
+                                      text: TextSpan(
+                                        style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 28, color: AppColors.white),
+                                        children: [
+                                          TextSpan(text: '${user.creditBalance} '),
+                                          TextSpan(text: l10n.ptsLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      l10n.submissionsScaleNote(user.submissionsCount),
+                                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  l10n.submissionsScaleNote(user.submissionsCount),
-                                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                ),
-                              ],
+                              ),
                             ),
-                            // Owner-annotated screenshot, 2026-09-16: this
-                            // exact corner is where the QR Vault shortcut
-                            // goes, right on the bonus credit balance card.
-                            if (widget.onOpenQrVault != null)
-                              Positioned(top: 0, right: 0, child: VaultShortcutBadge(onTap: widget.onOpenQrVault!)),
+                            // Owner correction, 2026-09-16: QR Vault is its
+                            // own separate card next to the bonus card (same
+                            // row layout as Home's Daily Challenge/Start-quiz
+                            // pair), not a badge overlaid on top of it.
+                            if (widget.onOpenQrVault != null) ...[
+                              const SizedBox(width: 10),
+                              Expanded(flex: 2, child: VaultShortcutBadge(onTap: widget.onOpenQrVault!)),
+                            ],
                           ],
                         ),
                       ),

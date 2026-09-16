@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../l10n/app_localizations.dart';
+import '../theme/app_shadows.dart';
 import '../theme/app_theme.dart';
 
-/// The "Vault" shortcut to QR Vault (owner-provided reference image,
-/// 2026-09-16), placed in the top-right corner of the bonus credit balance
-/// card on Profile (owner-annotated screenshot pinpointing that exact
-/// spot). No IconChipTint matches the reference's pink/magenta -- this is a
-/// one-off badge, not a new shared tint added to that enum for a single use.
+/// The "QR Vault" shortcut card on Profile, sitting beside the bonus credit
+/// balance card as its own separate pink card (owner correction, 2026-09-16
+/// — an earlier version overlaid this as a small badge on top of the bonus
+/// card; the owner asked for two distinct cards instead, same row layout as
+/// the Home screen's Daily Challenge / Start-quiz pair). No IconChipTint
+/// matches the reference's pink/magenta -- this is a one-off card, not a
+/// new shared tint added to that enum for a single use.
 class VaultShortcutBadge extends StatelessWidget {
   const VaultShortcutBadge({super.key, required this.onTap});
   final VoidCallback onTap;
@@ -21,19 +24,27 @@ class VaultShortcutBadge extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(color: _bg, shape: BoxShape.circle),
-            alignment: Alignment.center,
-            child: const Icon(LucideIcons.lock, color: _fg, size: 20),
-          ),
-          const SizedBox(height: 4),
-          Text(l10n.qrVaultShortcutLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 11, color: Colors.white)),
-        ],
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: _bg, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: const BoxDecoration(color: _fg, shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: const Icon(LucideIcons.lock, color: Colors.white, size: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.qrVaultShortcutLabel,
+              style: const TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 13, color: _fg),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
