@@ -473,7 +473,7 @@ def test_notify_new_request_builds_a_real_payload_from_a_real_request(settings, 
     # ever executed notify_new_request's own body -- which is exactly how a
     # real bug (Subject has no attribute "name"; the field is "title")
     # shipped and only surfaced live, routing a real paper against staging.
-    credential = PartnerCredentialFactory(partner_id="s-learn")
+    PartnerCredentialFactory(partner_id="s-learn")
     settings.INSTRUCTOR_PARTNER_WEBHOOK_URL = "https://s-learn-beta.vercel.app/functions/v1/spekooh-webhook"
     settings.INSTRUCTOR_PARTNER_ID = "s-learn"
 
