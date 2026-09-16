@@ -50,18 +50,12 @@ class HttpShopRepository implements ShopRepository {
     required bool isDelivery,
     required String phoneNumber,
   }) async {
-    final row = await _client.post(
-      '/pamphlets/orders/place/',
-      body: {
-        'pamphlet': pamphletId,
-        'is_delivery': isDelivery,
-        'phone_number': phoneNumber,
-      },
-    );
-    return PamphletOrderResult(
-      qrToken: row['qr_token'] as String,
-      status: row['status'] as String,
-    );
+    final row = await _client.post('/pamphlets/orders/place/', body: {
+      'pamphlet': pamphletId,
+      'is_delivery': isDelivery,
+      'phone_number': phoneNumber,
+    });
+    return PamphletOrderResult(qrToken: row['qr_token'] as String, status: row['status'] as String);
   }
 
   @override
