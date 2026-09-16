@@ -67,7 +67,7 @@ def notify_new_request(instructor_request) -> bool:
             "instructor_request_id": instructor_request.id,
             "instructor_id": instructor_request.instructor_id,
             "paper_id": instructor_request.paper_id,
-            "subject": instructor_request.paper.subject.name if instructor_request.paper.subject_id else None,
+            "subject": instructor_request.paper.subject.title if instructor_request.paper.subject_id else None,
             "sent_at": instructor_request.sent_at.isoformat(),
             "responds_by": instructor_request.responds_by.isoformat(),
         },

@@ -466,6 +466,41 @@ def test_outbound_webhook_failure_is_swallowed_not_raised(settings, monkeypatch)
     assert send_partner_webhook(event_type="new_request", payload={}) is False
 
 
+@pytest.mark.django_db
+def test_notify_new_request_builds_a_real_payload_from_a_real_request(settings, monkeypatch):
+    # Regression: every other outbound test here calls send_partner_webhook
+    # directly or monkeypatches notify_new_request itself, so none of them
+    # ever executed notify_new_request's own body -- which is exactly how a
+    # real bug (Subject has no attribute "name"; the field is "title")
+    # shipped and only surfaced live, routing a real paper against staging.
+    credential = PartnerCredentialFactory(partner_id="s-learn")
+    settings.INSTRUCTOR_PARTNER_WEBHOOK_URL = "https://s-learn-beta.vercel.app/functions/v1/spekooh-webhook"
+    settings.INSTRUCTOR_PARTNER_ID = "s-learn"
+
+    subject = SubjectFactory(key="notify_new_request_subject", title="Biology")
+    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-a", priority_order=1)
+    paper = _routable_paper(subject=subject)
+
+    captured = {}
+
+    class _FakeResponse:
+        def raise_for_status(self):
+            pass
+
+    def _fake_post(url, data, headers, timeout):
+        captured["data"] = data
+        return _FakeResponse()
+
+    monkeypatch.setattr("apps.instructors.outbound.requests.post", _fake_post)
+
+    request = route_next_instructor(paper)
+
+    from .outbound import notify_new_request
+
+    assert notify_new_request(request) is True
+    assert json.loads(captured["data"])["subject"] == "Biology"
+
+
 @pytest.mark.django_db(transaction=True)
 def test_route_next_instructor_pushes_a_new_request_notification_on_commit(settings, monkeypatch):
     # transaction=True: on_commit callbacks are only ever fired on a real
