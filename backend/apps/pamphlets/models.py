@@ -77,6 +77,15 @@ class PamphletOrder(TimeStampedModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="pamphlet_orders")
     pamphlet = models.ForeignKey(Pamphlet, on_delete=models.PROTECT, related_name="orders")
     is_delivery = models.BooleanField(default=False)
+    # Owner request, 2026-09-17: PamphletSheet previously always ordered
+    # exactly one copy -- amount_paid already accounted for is_delivery's
+    # fee, now also multiplies by this.
+    quantity = models.PositiveIntegerField(default=1)
+    # is_delivery already existed but nothing ever captured *where* to
+    # deliver to -- a real pre-existing gap, not new scope creep. Blank for
+    # pickup orders, required (validated in PlaceOrderRequestSerializer)
+    # for delivery ones.
+    delivery_address = models.CharField(max_length=255, blank=True)
     amount_paid = models.PositiveIntegerField()
     status = models.CharField(max_length=12, choices=PamphletOrderStatus.choices, default=PamphletOrderStatus.PAID_HELD)
     payment_transaction = models.ForeignKey(

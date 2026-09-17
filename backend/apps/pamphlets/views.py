@@ -96,6 +96,8 @@ class PlacePamphletOrderView(APIView):
                 pamphlet=pamphlet,
                 is_delivery=data["is_delivery"],
                 phone_number=data["phone_number"],
+                quantity=data["quantity"],
+                delivery_address=data["delivery_address"],
             )
         except PamphletOrderError as exc:
             return Response({"detail": exc.detail}, status=status.HTTP_402_PAYMENT_REQUIRED)

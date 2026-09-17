@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
@@ -21,13 +22,26 @@ class AuthFieldLabel extends StatelessWidget {
 }
 
 class AuthTextField extends StatelessWidget {
-  const AuthTextField({super.key, required this.controller, required this.hint, this.obscureText = false, this.keyboardType, this.enabled = true});
+  const AuthTextField({
+    super.key,
+    required this.controller,
+    required this.hint,
+    this.obscureText = false,
+    this.keyboardType,
+    this.enabled = true,
+    this.inputFormatters,
+    this.maxLength,
+  });
 
   final TextEditingController controller;
   final String hint;
   final bool obscureText;
   final TextInputType? keyboardType;
   final bool enabled;
+  final List<TextInputFormatter>? inputFormatters;
+  // e.g. QrVaultLockGate's 4-digit PIN -- callers that pass this also want
+  // the input itself capped, not just validated after submit.
+  final int? maxLength;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +57,9 @@ class AuthTextField extends StatelessWidget {
         obscureText: obscureText,
         keyboardType: keyboardType,
         enabled: enabled,
-        decoration: InputDecoration(hintText: hint, border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
+        inputFormatters: inputFormatters,
+        maxLength: maxLength,
+        decoration: InputDecoration(hintText: hint, border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero, counterText: ''),
         style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 14),
       ),
     );
