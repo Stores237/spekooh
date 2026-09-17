@@ -194,6 +194,22 @@ def test_mark_published_endpoint_awards_bonus(api_client):
 
 
 @pytest.mark.django_db
+def test_mark_published_endpoint_also_awards_real_xp(api_client):
+    """Owner request (2026-09-17): a real paper/report contribution should
+    feed the same spendable XP balance "Get more slots" reads from,
+    alongside the separate credits-based reward -- not just credits."""
+    from apps.xp.services import XP_PER_CONTRIBUTION, xp_balance
+
+    admin_user = UserFactory(is_staff=True)
+    submitter = UserFactory()
+    paper = PaperSubmissionFactory(submitted_by=submitter, is_duplicate=False)
+    api_client.force_authenticate(user=admin_user)
+    response = api_client.post(f"/api/papers/submissions/{paper.id}/mark_published/")
+    assert response.status_code == 200
+    assert xp_balance(submitter) == XP_PER_CONTRIBUTION
+
+
+@pytest.mark.django_db
 def test_issue_redeem_code_endpoint_counts_published_submissions(api_client):
     user = UserFactory()
     for _ in range(6):

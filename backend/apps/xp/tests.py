@@ -7,8 +7,12 @@ from .factories import XPLedgerEntryFactory
 from .models import XPLedgerEntry
 from .services import (
     SLOT_BONUS_COST_XP,
+    XP_PER_CONTRIBUTION,
+    XP_PER_REFERRAL,
     InsufficientXPError,
+    award_contribution_xp,
     award_quiz_attempt_xp,
+    award_referral_xp,
     redeem_slot_bonus,
     xp_balance,
 )
@@ -86,7 +90,7 @@ def test_redeem_slot_bonus_endpoint_charges_402_when_insufficient():
     response = client.post("/api/xp/redeem-slot-bonus/")
 
     assert response.status_code == 402
-    assert "250 XP" in response.data["detail"]
+    assert f"{SLOT_BONUS_COST_XP} XP" in response.data["detail"]
 
 
 @pytest.mark.django_db
@@ -100,3 +104,21 @@ def test_redeem_slot_bonus_endpoint_succeeds_with_enough_real_xp():
 
     assert response.status_code == 200
     assert response.data["bonus_offline_slot_until"] is not None
+
+
+@pytest.mark.django_db
+def test_award_contribution_xp_awards_the_real_flat_amount():
+    user = UserFactory()
+    amount = award_contribution_xp(user)
+    assert amount == XP_PER_CONTRIBUTION
+    assert xp_balance(user) == XP_PER_CONTRIBUTION
+    assert XPLedgerEntry.objects.get(user=user).reason == "Paper/report contribution accepted"
+
+
+@pytest.mark.django_db
+def test_award_referral_xp_awards_the_real_flat_amount():
+    user = UserFactory()
+    amount = award_referral_xp(user)
+    assert amount == XP_PER_REFERRAL
+    assert xp_balance(user) == XP_PER_REFERRAL
+    assert XPLedgerEntry.objects.get(user=user).reason == "Referral bonus"
