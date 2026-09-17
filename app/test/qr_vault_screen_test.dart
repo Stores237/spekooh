@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:spekooh/data/qr_vault_biometrics.dart';
+import 'package:spekooh/data/qr_vault_dismissed_tickets.dart';
 import 'package:spekooh/data/qr_vault_pin.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
@@ -61,6 +63,18 @@ final _order = PamphletOrder(
   partnerWhatsapp: '670000098',
 );
 
+final _releasedOrder = PamphletOrder(
+  id: 8,
+  pamphletTitle: 'GCE A Level Physics: Full Course Pack',
+  status: 'RELEASED',
+  amountPaid: 3000,
+  createdAt: DateTime(2026, 9, 10),
+  qrToken: 'alreadypickedup1234567890',
+  qrRedeemUrl: 'https://spekooh-staging.onrender.com/redeem/alreadypickedup1234567890/',
+  partnerName: 'Bookshop 1',
+  partnerLocation: 'Molyko, Buea',
+);
+
 /// Types [pin] on the real on-screen number pad (owner reference,
 /// 2026-09-17), one tap per digit -- there's no text field/system keyboard
 /// on this screen anymore. Entering the 4th digit submits immediately.
@@ -75,6 +89,7 @@ void main() {
   tearDown(() {
     QrVaultPin.debugSetInstance(QrVaultPin(storage: InMemoryTokenStorage()));
     QrVaultBiometrics.debugSetInstance(QrVaultBiometrics(storage: InMemoryTokenStorage(), authenticator: _FakeBiometricAuthenticator()));
+    QrVaultDismissedTickets.debugSetInstance(QrVaultDismissedTickets(storage: InMemoryTokenStorage()));
   });
 
   testWidgets('a first-time visitor must set a PIN before seeing any real ticket data', (tester) async {
@@ -280,5 +295,76 @@ void main() {
 
     expect(await QrVaultBiometrics.instance.isEnabled(), isFalse);
     expect(await QrVaultBiometrics.instance.hasBeenPrompted(), isTrue);
+  });
+
+  testWidgets('a completed pickup can be deleted from the vault list, a still-pending one cannot', (tester) async {
+    final storage = InMemoryTokenStorage();
+    await QrVaultPin(storage: storage).setPin('4321');
+    QrVaultPin.debugSetInstance(QrVaultPin(storage: storage));
+    QrVaultDismissedTickets.debugSetInstance(QrVaultDismissedTickets(storage: InMemoryTokenStorage()));
+
+    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order, _releasedOrder]))));
+    await tester.pump();
+    await tester.pump();
+
+    await _tapPin(tester, '4321');
+    await tester.pumpAndSettle();
+
+    // Two tickets -> the picker list, not the auto-selected single-order
+    // detail view.
+    expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
+    expect(find.text('GCE A Level Physics: Full Course Pack'), findsOneWidget);
+    final deleteButton = find.widgetWithIcon(IconButton, LucideIcons.trash2);
+    expect(deleteButton, findsOneWidget);
+    // Exercises the wiring (does tapping this button call _deleteTicket)
+    // rather than Flutter's own hit-testing geometry, which is flaky for a
+    // tiny compact IconButton at this exact offset when run alongside the
+    // rest of this file's suite.
+    tester.widget<IconButton>(deleteButton).onPressed!();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete this ticket?'), findsOneWidget);
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('GCE A Level Physics: Full Course Pack'), findsNothing);
+    // Deleting a ticket only clears it from this device's Vault view --
+    // it never means the still-QR_ISSUED ticket goes away too.
+    expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
+    expect(await QrVaultDismissedTickets.instance.dismissedIds(), contains(_releasedOrder.id));
+  });
+
+  testWidgets('the vault settings sheet lets a user enable fingerprint unlock later, even after declining it once', (tester) async {
+    QrVaultPin.debugSetInstance(QrVaultPin(storage: InMemoryTokenStorage()));
+    final bioStorage = InMemoryTokenStorage();
+    final authenticator = _FakeBiometricAuthenticator(authenticateResult: true);
+    final bio = QrVaultBiometrics(storage: bioStorage, authenticator: authenticator);
+    // Simulates having already declined the one-time enrollment offer --
+    // there is otherwise no other way back in short of reinstalling.
+    await bio.markPrompted();
+    QrVaultBiometrics.debugSetInstance(bio);
+
+    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order]))));
+    await tester.pump();
+    await tester.pump();
+
+    await _tapPin(tester, '1234');
+    await _tapPin(tester, '1234');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Use fingerprint to unlock?'), findsNothing);
+
+    await tester.tap(find.byIcon(LucideIcons.settings));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Vault settings'), findsOneWidget);
+    final toggle = find.byType(SwitchListTile);
+    expect(toggle, findsOneWidget);
+
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+
+    expect(authenticator.authenticateCalls, 1);
+    expect(await QrVaultBiometrics.instance.isEnabled(), isTrue);
   });
 }

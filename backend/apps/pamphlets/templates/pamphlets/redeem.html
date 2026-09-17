@@ -41,6 +41,12 @@
         <button type="submit" name="channel" value="PHONE">Send code by SMS</button>
       {% endif %}
     </form>
+    <p>Already have a support code from Spekooh support?</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="text" name="code" inputmode="numeric" maxlength="6" placeholder="6-digit support code" required>
+      <button type="submit">Confirm handover &amp; release payment</button>
+    </form>
   {% else %}
     <h1>Cannot redeem this ticket</h1>
     <p>{{ error }}</p>

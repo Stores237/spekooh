@@ -2354,6 +2354,66 @@ abstract class AppLocalizations {
   /// **'Too many wrong attempts. Try again in {minutes} min.'**
   String qrVaultLockedOut(int minutes);
 
+  /// No description provided for @qrVaultSettingsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault settings'**
+  String get qrVaultSettingsTooltip;
+
+  /// No description provided for @qrVaultSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault settings'**
+  String get qrVaultSettingsTitle;
+
+  /// No description provided for @qrVaultBiometricSettingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with fingerprint / Face ID'**
+  String get qrVaultBiometricSettingLabel;
+
+  /// No description provided for @qrVaultBiometricSettingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your fingerprint or face instead of your PIN to open QR Vault.'**
+  String get qrVaultBiometricSettingSubtitle;
+
+  /// No description provided for @qrVaultBiometricSettingConfirmFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t confirm your fingerprint or face. Try again.'**
+  String get qrVaultBiometricSettingConfirmFailed;
+
+  /// No description provided for @qrVaultBiometricNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This device doesn\'t support fingerprint or face unlock.'**
+  String get qrVaultBiometricNotSupported;
+
+  /// No description provided for @qrVaultDeleteTicketAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete ticket'**
+  String get qrVaultDeleteTicketAction;
+
+  /// No description provided for @qrVaultDeleteTicketConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this ticket?'**
+  String get qrVaultDeleteTicketConfirmTitle;
+
+  /// No description provided for @qrVaultDeleteTicketConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This order is already picked up — deleting the ticket only removes it from this list, it never affects the order itself.'**
+  String get qrVaultDeleteTicketConfirmBody;
+
+  /// No description provided for @qrVaultDeleteTicketConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get qrVaultDeleteTicketConfirmAction;
+
   /// No description provided for @pickupReadyBannerCta.
   ///
   /// In en, this message translates to:

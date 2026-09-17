@@ -416,6 +416,16 @@
   "@qrVaultLockedOut": {
     "placeholders": {"minutes": {"type": "int"}}
   },
+  "qrVaultSettingsTooltip": "Paramètres du coffre",
+  "qrVaultSettingsTitle": "Paramètres du coffre",
+  "qrVaultBiometricSettingLabel": "Déverrouiller avec l'empreinte / Face ID",
+  "qrVaultBiometricSettingSubtitle": "Utilisez votre empreinte ou votre visage au lieu de votre code pour ouvrir le coffre QR.",
+  "qrVaultBiometricSettingConfirmFailed": "Impossible de confirmer votre empreinte ou votre visage. Réessayez.",
+  "qrVaultBiometricNotSupported": "Cet appareil ne prend pas en charge le déverrouillage par empreinte ou visage.",
+  "qrVaultDeleteTicketAction": "Supprimer le billet",
+  "qrVaultDeleteTicketConfirmTitle": "Supprimer ce billet ?",
+  "qrVaultDeleteTicketConfirmBody": "Cette commande a déjà été récupérée — supprimer le billet ne fait que le retirer de cette liste, cela n'affecte jamais la commande elle-même.",
+  "qrVaultDeleteTicketConfirmAction": "Supprimer",
   "pickupReadyBannerCta": "Appuyez pour voir votre QR de retrait",
   "offlineSaveError": "Impossible d'enregistrer hors ligne : {error}",
   "@offlineSaveError": {

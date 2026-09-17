@@ -232,7 +232,12 @@ def redeem_page(request, token):
 
         if "channel" in request.POST:
             channel = request.POST.get("channel")
-            if channel not in RedeemVerificationChannel.values:
+            # SUPPORT is deliberately excluded here even though it's a real
+            # RedeemVerificationChannel value -- it must never be
+            # self-service-selectable, only ever issued by Integration Ops
+            # via generate_support_override_code. See has_support_form
+            # below for how a support code is actually redeemed instead.
+            if channel not in (RedeemVerificationChannel.EMAIL, RedeemVerificationChannel.PHONE):
                 return _channel_step("Choose a real option.")
             try:
                 verification = start_redeem_verification(order, channel=channel)
@@ -242,15 +247,34 @@ def redeem_page(request, token):
             return _code_step(verification)
 
         if "code" in request.POST:
-            verification_id = request.session.get(session_key)
-            verification = RedeemVerification.objects.filter(id=verification_id, order=order).first()
-            if verification is None:
-                return _channel_step("That code has expired. Choose how to receive a new one.")
-            if not verification.is_usable:
-                request.session.pop(session_key, None)
-                return _channel_step("Too many attempts or the code expired. Choose how to receive a new one.")
+            entered_code = request.POST.get("code", "").strip()
 
-            if confirm_redeem_verification(verification, code=request.POST.get("code", "")):
+            # A live Integration-Ops-issued support code always takes
+            # precedence when it matches -- it works independent of
+            # session state by design (see generate_support_override_
+            # code's own docstring: relayed over a phone call, often in a
+            # different browser session entirely, e.g. via the standalone
+            # support-code form on the channel step below), and checking it
+            # first means a real email/phone verification's own attempt
+            # counter is never penalized for a code that was never meant
+            # for it.
+            support_verification = (
+                RedeemVerification.objects.filter(order=order, channel=RedeemVerificationChannel.SUPPORT, code=entered_code)
+                .order_by("-created_at")
+                .first()
+            )
+            if support_verification is not None and support_verification.is_usable:
+                verification = support_verification
+            else:
+                verification_id = request.session.get(session_key)
+                verification = RedeemVerification.objects.filter(id=verification_id, order=order).first()
+                if verification is None:
+                    return _channel_step("That code has expired. Choose how to receive a new one.")
+                if not verification.is_usable:
+                    request.session.pop(session_key, None)
+                    return _channel_step("Too many attempts or the code expired. Choose how to receive a new one.")
+
+            if confirm_redeem_verification(verification, code=entered_code):
                 request.session.pop(session_key, None)
                 try:
                     released = redeem_qr(token)

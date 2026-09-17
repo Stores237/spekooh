@@ -3,6 +3,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../data/qr_vault_biometrics.dart';
+import '../../data/qr_vault_dismissed_tickets.dart';
 import '../../data/repositories/shop_repository.dart';
 import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
@@ -31,8 +33,47 @@ class QrVaultScreen extends StatefulWidget {
 
 class _QrVaultScreenState extends State<QrVaultScreen> {
   late final Future<List<PamphletOrder>> _ordersFuture = widget.repository.getMyOrders();
+  Set<int> _dismissedIds = {};
   PamphletOrder? _selected;
   bool _appliedInitialSelection = false;
+
+  @override
+  void initState() {
+    super.initState();
+    QrVaultDismissedTickets.instance.dismissedIds().then((ids) {
+      if (mounted) setState(() => _dismissedIds = ids);
+    });
+  }
+
+  Future<void> _deleteTicket(AppLocalizations l10n, PamphletOrder order) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.qrVaultDeleteTicketConfirmTitle),
+        content: Text(l10n.qrVaultDeleteTicketConfirmBody),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.doneLabel)),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(l10n.qrVaultDeleteTicketConfirmAction)),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await QrVaultDismissedTickets.instance.dismiss(order.id);
+    if (!mounted) return;
+    setState(() {
+      _dismissedIds = {..._dismissedIds, order.id};
+      if (_selected?.id == order.id) _selected = null;
+    });
+  }
+
+  Future<void> _openSettings(AppLocalizations l10n) async {
+    final supported = await QrVaultBiometrics.instance.isDeviceSupported();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => _VaultSettingsSheet(l10n: l10n, biometricSupported: supported),
+    );
+  }
 
   String _statusLabel(AppLocalizations l10n, String key) {
     switch (key) {
@@ -89,7 +130,14 @@ class _QrVaultScreenState extends State<QrVaultScreen> {
                       },
                     ),
                     const SizedBox(width: AppSpacing.space3),
-                    Text(l10n.qrVaultTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
+                    Expanded(
+                      child: Text(l10n.qrVaultTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
+                    ),
+                    IconButton(
+                      tooltip: l10n.qrVaultSettingsTooltip,
+                      onPressed: () => _openSettings(l10n),
+                      icon: const Icon(LucideIcons.settings, size: 20, color: AppColors.textSecondary),
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.space4),
@@ -101,7 +149,9 @@ class _QrVaultScreenState extends State<QrVaultScreen> {
                       if (snapshot.connectionState != ConnectionState.done) {
                         return const Center(child: CircularProgressIndicator());
                       }
-                      final withTicket = orders.where((o) => o.qrToken != null).toList();
+                      final withTicket = orders
+                          .where((o) => o.qrToken != null && !_dismissedIds.contains(o.id))
+                          .toList();
 
                       if (!_appliedInitialSelection) {
                         _appliedInitialSelection = true;
@@ -166,14 +216,26 @@ class _QrVaultScreenState extends State<QrVaultScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(order.pamphletTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
+      Text(order.pamphletTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
                       Text(order.partnerName, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                     ],
                   ),
                 ),
                 Text(_statusLabel(l10n, order.status), style: const TextStyle(fontSize: 11, color: AppColors.textTertiary)),
-                const SizedBox(width: 6),
-                const Icon(LucideIcons.chevronRight, size: 18, color: AppColors.textTertiary),
+                // Only a completed (RELEASED) pickup can be cleared out --
+                // the ticket is still live/needed for anything still in
+                // escrow (owner request, 2026-09-17).
+                if (order.status == 'RELEASED')
+                  IconButton(
+                    tooltip: l10n.qrVaultDeleteTicketAction,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _deleteTicket(l10n, order),
+                    icon: const Icon(LucideIcons.trash2, size: 16, color: AppColors.textTertiary),
+                  )
+                else ...[
+                  const SizedBox(width: 6),
+                  const Icon(LucideIcons.chevronRight, size: 18, color: AppColors.textTertiary),
+                ],
               ],
             ),
           ),
@@ -266,6 +328,112 @@ class _QrVaultScreenState extends State<QrVaultScreen> {
                   ),
               ],
             ),
+            if (order.status == 'RELEASED') ...[
+              const SizedBox(height: AppSpacing.space3),
+              GestureDetector(
+                onTap: () => _deleteTicket(l10n, order),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(LucideIcons.trash2, size: 14, color: AppColors.red500),
+                    const SizedBox(width: 6),
+                    Text(l10n.qrVaultDeleteTicketAction, style: const TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.red500)),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Owner request (2026-09-17): the one-time biometric-enrollment prompt
+/// (QrVaultLockGate._offerBiometricEnrollment) only ever fires once per
+/// device -- declining it ("Not now") used to mean there was no way back
+/// in without an app reinstall. This settings sheet is that way back in,
+/// reachable any time from inside an already-unlocked vault.
+class _VaultSettingsSheet extends StatefulWidget {
+  const _VaultSettingsSheet({required this.l10n, required this.biometricSupported});
+
+  final AppLocalizations l10n;
+  final bool biometricSupported;
+
+  @override
+  State<_VaultSettingsSheet> createState() => _VaultSettingsSheetState();
+}
+
+class _VaultSettingsSheetState extends State<_VaultSettingsSheet> {
+  bool? _enabled;
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    QrVaultBiometrics.instance.isEnabled().then((value) {
+      if (mounted) setState(() => _enabled = value);
+    });
+  }
+
+  Future<void> _toggle(bool value) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    if (!value) {
+      await QrVaultBiometrics.instance.setEnabled(false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _enabled = false;
+        });
+      }
+      return;
+    }
+    // Same rule as first-time enrollment: never flip this on without a
+    // real successful biometric prompt first, so a stale/mistaken toggle
+    // can't lock someone into believing it's protected when it isn't.
+    final confirmed = await QrVaultBiometrics.instance.authenticate(widget.l10n.qrVaultBiometricReason);
+    if (confirmed) await QrVaultBiometrics.instance.setEnabled(true);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _enabled = confirmed;
+      if (!confirmed) _error = widget.l10n.qrVaultBiometricSettingConfirmFailed;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.screenPad),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.qrVaultSettingsTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
+            const SizedBox(height: AppSpacing.space4),
+            if (widget.biometricSupported)
+              _enabled == null
+                  ? const SizedBox(height: 48, child: Center(child: CircularProgressIndicator()))
+                  : SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      value: _enabled!,
+                      onChanged: _busy ? null : _toggle,
+                      title: Text(l10n.qrVaultBiometricSettingLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                      subtitle: Text(l10n.qrVaultBiometricSettingSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                      activeThumbColor: AppColors.gold600,
+                    )
+            else
+              Text(l10n.qrVaultBiometricNotSupported, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.space2),
+              Text(_error!, style: const TextStyle(color: AppColors.red500, fontSize: 12)),
+            ],
           ],
         ),
       ),

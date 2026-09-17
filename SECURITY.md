@@ -171,7 +171,32 @@ carriers — a real accountability anchor a shared shop landline number
 isn't. Partner onboarding (`PartnerBookshopAdmin`) now requires a real
 full name, email, CNI, and NUI, and at least one of Orange Money/MoMo,
 so this identity check has real data to work with for every partner
-going forward.
+going forward. CNI/NUI are now real uploaded documents
+(`PartnerBookshop.cni_document`/`nui_document`), not just typed-in
+numbers — the number fields alone can't actually be verified against
+anything.
+
+**Added 2026-09-17** — a support-override escape hatch for the same flow:
+if a partner genuinely can't receive either the email or SMS code (a real
+carrier/network issue) and calls support, Integration Ops staff can
+generate a fresh code for that exact order and read it to them over the
+phone (`PamphletOrderAdmin.generate_support_code`,
+`apps/pamphlets/escrow.py`'s `generate_support_override_code`). This is
+never self-service — the redeem page's channel-selection step explicitly
+rejects `SUPPORT` as a chosen value even though it's a real
+`RedeemVerificationChannel`, and the admin action itself re-checks group
+membership (`request.user.is_superuser or ...groups.filter(name="Integration
+Ops")`) at call time rather than relying on Django's action-visibility
+gating alone, consistent with how every other security-sensitive custom
+admin action in this codebase is gated. The code is deliberately
+shorter-lived than the normal 10 minutes (`SUPPORT_TTL_MINUTES = 3`)
+since it's relayed by a human who hasn't proven control of a registered
+channel the way the email/SMS codes do, and it's checked independent of
+the redeeming browser's session (so it still works if the partner is
+now on a different device/browser than the one that started the original
+flow). `RedeemVerification` is registered read-only in admin for audit
+visibility into every code ever issued for an order, including who
+issued a support override.
 
 ## Error handling
 

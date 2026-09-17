@@ -522,6 +522,16 @@
   "@qrVaultLockedOut": {
     "placeholders": {"minutes": {"type": "int"}}
   },
+  "qrVaultSettingsTooltip": "Vault settings",
+  "qrVaultSettingsTitle": "Vault settings",
+  "qrVaultBiometricSettingLabel": "Unlock with fingerprint / Face ID",
+  "qrVaultBiometricSettingSubtitle": "Use your fingerprint or face instead of your PIN to open QR Vault.",
+  "qrVaultBiometricSettingConfirmFailed": "Couldn't confirm your fingerprint or face. Try again.",
+  "qrVaultBiometricNotSupported": "This device doesn't support fingerprint or face unlock.",
+  "qrVaultDeleteTicketAction": "Delete ticket",
+  "qrVaultDeleteTicketConfirmTitle": "Delete this ticket?",
+  "qrVaultDeleteTicketConfirmBody": "This order is already picked up — deleting the ticket only removes it from this list, it never affects the order itself.",
+  "qrVaultDeleteTicketConfirmAction": "Delete",
   "pickupReadyBannerCta": "Tap to view your pickup QR",
   "offlineSaveError": "Could not save for offline: {error}",
   "@offlineSaveError": {
