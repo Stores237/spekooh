@@ -301,6 +301,14 @@ def test_merge_and_publish_combines_mcq_and_instructor_guide_then_pays_bonus():
     assert paper.status == PaperStatus.PUBLISHED
     assert CreditLedgerEntry.objects.filter(user=paper.submitted_by, paper_submission=paper).exists()
 
+    # Owner request (2026-09-17): the merge-and-publish pipeline is the
+    # other real place a paper gets accepted -- it must feed the same
+    # spendable XP balance "Get more slots" reads from too, not just the
+    # mark_published admin action.
+    from apps.xp.services import XP_PER_CONTRIBUTION, xp_balance
+
+    assert xp_balance(paper.submitted_by) == XP_PER_CONTRIBUTION
+
 
 @pytest.mark.django_db
 def test_merge_and_publish_uses_guide_file_url_and_omits_non_mcq_when_a_file_was_uploaded(monkeypatch):

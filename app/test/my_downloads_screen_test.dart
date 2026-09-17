@@ -114,7 +114,7 @@ void main() {
 
     await tester.tap(find.text('Redeem'));
     await tester.pump();
-    // Disabled (0 XP < 250) — no call was made, no SnackBar, still 0 XP shown.
+    // Disabled (0 XP < 500) — no call was made, no SnackBar, still 0 XP shown.
     expect(find.text('You have 0 XP'), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
   });
@@ -128,7 +128,7 @@ void main() {
       creditBalance: 0,
       redeemCode: '',
       redeemCodeSubtitle: '',
-      xpBalance: 250,
+      xpBalance: 500,
     );
     final activeUser = SpekoohUser(
       name: 'Lucien',
@@ -148,7 +148,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('You have 250 XP'), findsOneWidget);
+    expect(find.text('You have 500 XP'), findsOneWidget);
 
     await tester.tap(find.text('Redeem'));
     await tester.pump();
@@ -168,9 +168,9 @@ void main() {
       creditBalance: 0,
       redeemCode: '',
       redeemCodeSubtitle: '',
-      xpBalance: 250,
+      xpBalance: 500,
     );
-    final payments = MockPaymentsRepository()..mockRedeemError = InsufficientXPError('You need 250 XP to redeem this. You have 0.');
+    final payments = MockPaymentsRepository()..mockRedeemError = InsufficientXPError('You need 500 XP to redeem this. You have 0.');
     await tester.pumpWidget(l10nTestApp(
       MyDownloadsScreen(profileRepository: MockProfileRepository(user: xpUser), paymentsRepository: payments),
     ));
@@ -181,7 +181,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('You need 250 XP to redeem this. You have 0.'), findsOneWidget);
+    expect(find.text('You need 500 XP to redeem this. You have 0.'), findsOneWidget);
   });
 
   testWidgets('a Spekooh Plus subscriber sees no slots cap and no upsell banner', (tester) async {

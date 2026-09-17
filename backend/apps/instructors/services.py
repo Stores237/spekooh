@@ -18,6 +18,7 @@ from apps.notifications.models import NotificationKind
 from apps.notifications.services import notify
 from apps.papers.models import PaperStatus, PaperSubmission, PublishedGuide
 from apps.papers.validation import sniff_content_type
+from apps.xp.services import award_contribution_xp
 
 from .models import (
     InstructorCreditLedger,
@@ -274,6 +275,8 @@ def merge_and_publish(paper: PaperSubmission) -> PublishedGuide:
     paper.status = PaperStatus.PUBLISHED
     paper.save(update_fields=["status", "updated_at"])
     bonus_entry = award_contributor_bonus(paper)
+    if bonus_entry:
+        award_contribution_xp(paper.submitted_by)
 
     notify(
         user=paper.submitted_by,

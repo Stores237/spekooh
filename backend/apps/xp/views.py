@@ -8,9 +8,10 @@ from .services import InsufficientXPError, redeem_slot_bonus
 
 
 class RedeemSlotBonusView(APIView):
-    """Spends 250 XP for a real +1 offline download slot, 3 days —
-    see apps.xp.services.redeem_slot_bonus. Guests can't earn XP at all
-    (quiz submission is IsAuthenticatedNotGuest-gated), so this is too."""
+    """Spends SLOT_BONUS_COST_XP for a real +1 offline download slot, 3
+    days — see apps.xp.services.redeem_slot_bonus. Guests can't earn XP at
+    all (quiz submission is IsAuthenticatedNotGuest-gated), so this is
+    too."""
 
     permission_classes = [IsAuthenticatedNotGuest]
 

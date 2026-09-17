@@ -242,6 +242,20 @@ def test_unlock_paper_credits_the_referrer_on_first_unlock():
 
 
 @pytest.mark.django_db
+def test_unlock_paper_also_awards_real_xp_to_the_referrer_on_first_unlock():
+    """Owner request (2026-09-17): a referral should feed the same
+    spendable XP balance "Get more slots" reads from, alongside the
+    separate credits-based reward -- not just credits."""
+    from apps.xp.services import XP_PER_REFERRAL, xp_balance
+
+    referrer = UserFactory()
+    referred = UserFactory(referred_by=referrer)
+    paper = PaperSubmissionFactory()
+    unlock_paper(user=referred, paper_submission=paper, phone_number="670000000")
+    assert xp_balance(referrer) == XP_PER_REFERRAL
+
+
+@pytest.mark.django_db
 def test_unlock_paper_does_not_credit_referrer_again_on_a_second_unlock():
     from apps.credits.models import CreditLedgerEntry
 

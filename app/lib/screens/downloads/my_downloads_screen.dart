@@ -248,7 +248,7 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
   /// disabled button rather than a fabricated balance in that instant.
   Widget _xpRedeemCard(AppLocalizations l10n, SpekoohUser? user) {
     final active = user?.hasActiveSlotBonus ?? false;
-    final canRedeem = !active && !_redeeming && (user?.xpBalance ?? 0) >= 250;
+    final canRedeem = !active && !_redeeming && (user?.xpBalance ?? 0) >= 500;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(16), boxShadow: AppShadows.card),
