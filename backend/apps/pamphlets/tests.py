@@ -1,8 +1,9 @@
 import datetime
+from unittest import mock
 
 import pytest
 from django.core.management import call_command
-from django.test import Client
+from django.test import Client, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -17,8 +18,8 @@ from .escrow import (
     redeem_qr,
     self_confirm_receipt,
 )
-from .factories import PamphletFactory
-from .models import Pamphlet, PamphletOrder, PamphletOrderStatus
+from .factories import PamphletFactory, PartnerBookshopFactory
+from .models import Pamphlet, PamphletOrder, PamphletOrderStatus, RedeemVerification
 from .services import place_order
 
 
@@ -414,14 +415,112 @@ def test_redeem_page_get_shows_confirm_form():
 
 
 @pytest.mark.django_db
-def test_redeem_page_post_releases_and_shows_success():
+def test_redeem_page_post_without_a_code_never_releases_anything():
+    """Owner-reported security fix (2026-09-17): the old flow released
+    escrow off a single unauthenticated button click. A bare POST with no
+    real verification step must never release the order."""
     user = UserFactory()
     pamphlet = PamphletFactory()
     order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
     client = Client()
-    response = client.post(f"/redeem/{order.qr_token}/")
+    client.post(f"/redeem/{order.qr_token}/")
+    order.refresh_from_db()
+    assert order.status != PamphletOrderStatus.RELEASED
+
+
+@pytest.mark.django_db
+def test_redeem_page_email_channel_full_round_trip_releases_the_order():
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    client = Client()
+
+    channel_response = client.post(f"/redeem/{order.qr_token}/", {"channel": "EMAIL"})
+    assert channel_response.status_code == 200
+    assert b"sent a code" in channel_response.content
+
+    verification = RedeemVerification.objects.get(order=order)
+    assert verification.code
+
+    code_response = client.post(f"/redeem/{order.qr_token}/", {"code": verification.code})
+    assert code_response.status_code == 200
+    assert b"Handover confirmed" in code_response.content
+    order.refresh_from_db()
+    assert order.status == PamphletOrderStatus.RELEASED
+
+
+@pytest.mark.django_db
+def test_redeem_page_wrong_code_never_releases_and_counts_against_the_attempt_cap():
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    client = Client()
+    client.post(f"/redeem/{order.qr_token}/", {"channel": "EMAIL"})
+
+    response = client.post(f"/redeem/{order.qr_token}/", {"code": "000000"})
     assert response.status_code == 200
-    assert b"Handover confirmed" in response.content
+    assert b"Wrong code" in response.content
+    order.refresh_from_db()
+    assert order.status != PamphletOrderStatus.RELEASED
+
+    verification = RedeemVerification.objects.get(order=order)
+    assert verification.attempts == 1
+    assert verification.used_at is None
+
+
+@pytest.mark.django_db
+def test_redeem_page_locks_out_after_the_real_attempt_cap_and_offers_a_fresh_code():
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    client = Client()
+    client.post(f"/redeem/{order.qr_token}/", {"channel": "EMAIL"})
+
+    for _ in range(RedeemVerification.MAX_ATTEMPTS - 1):
+        client.post(f"/redeem/{order.qr_token}/", {"code": "000000"})
+
+    final_response = client.post(f"/redeem/{order.qr_token}/", {"code": "000000"})
+    assert b"Too many" in final_response.content or b"Choose how" in final_response.content
+
+    verification = RedeemVerification.objects.get(order=order)
+    assert verification.attempts == RedeemVerification.MAX_ATTEMPTS
+    order.refresh_from_db()
+    assert order.status != PamphletOrderStatus.RELEASED
+
+
+@pytest.mark.django_db
+def test_redeem_page_channel_step_omits_a_channel_the_partner_has_no_contact_for():
+    partner = PartnerBookshopFactory(orange_money_number="", momo_number="")
+    pamphlet = PamphletFactory(partner=partner)
+    user = UserFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    client = Client()
+    response = client.get(f"/redeem/{order.qr_token}/")
+    assert b"Send code to email" in response.content
+    assert b"Send code by SMS" not in response.content
+
+
+@pytest.mark.django_db
+def test_redeem_page_phone_channel_full_round_trip_releases_the_order():
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    client = Client()
+
+    with (
+        override_settings(TWILIO_API_KEY_SID="SKtest", TWILIO_API_KEY_SECRET="secret", TWILIO_VERIFY_SERVICE_SID="VAtest"),
+        mock.patch("apps.core.sms.requests.post") as mocked_post,
+    ):
+        mocked_post.return_value = mock.Mock(status_code=201)
+        channel_response = client.post(f"/redeem/{order.qr_token}/", {"channel": "PHONE"})
+        assert channel_response.status_code == 200
+        mocked_post.assert_called_once()
+        assert mocked_post.call_args.kwargs["data"]["To"] == pamphlet.partner.orange_money_number
+
+        mocked_post.return_value = mock.Mock(status_code=200, json=lambda: {"status": "approved"})
+        code_response = client.post(f"/redeem/{order.qr_token}/", {"code": "123456"})
+
+    assert b"Handover confirmed" in code_response.content
     order.refresh_from_db()
     assert order.status == PamphletOrderStatus.RELEASED
 

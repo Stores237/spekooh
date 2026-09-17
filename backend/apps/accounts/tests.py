@@ -763,10 +763,15 @@ def test_integration_ops_staff_can_set_up_a_new_partner_and_pamphlet():
         "/admin/pamphlets/partnerbookshop/add/",
         {
             "name": "New Horizons Bookshop",
-            "contact_email": "",
+            "full_name": "Jean Mbarga",
+            "contact_email": "jean@example.com",
             "contact_phone": "",
             "whatsapp_number": "",
-            "location": "",
+            "orange_money_number": "670000000",
+            "momo_number": "",
+            "cni_number": "1234567890",
+            "nui_number": "P000000000000A",
+            "location": "Molyko, Buea",
             "commission_percent": 5,
         },
     )
@@ -795,6 +800,69 @@ def test_integration_ops_staff_can_set_up_a_new_partner_and_pamphlet():
     from apps.pamphlets.models import Pamphlet
 
     assert Pamphlet.objects.filter(title="GCE Chemistry Pack", partner=partner).exists()
+
+
+@pytest.mark.django_db
+def test_integration_ops_cannot_register_a_partner_with_neither_mobile_money_number():
+    """Owner decision (2026-09-17, partner KYC hardening): at least one of
+    Orange Money/MoMo is required -- these are the real, ID-linked numbers
+    a handover-redemption OTP gets sent to (see PartnerBookshop.clean/
+    verification_phone), so a partner with neither can never actually
+    confirm a pickup."""
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    client = Client()
+    client.force_login(staff)
+
+    response = client.post(
+        "/admin/pamphlets/partnerbookshop/add/",
+        {
+            "name": "No Money Bookshop",
+            "full_name": "Jean Mbarga",
+            "contact_email": "jean@example.com",
+            "contact_phone": "",
+            "whatsapp_number": "",
+            "orange_money_number": "",
+            "momo_number": "",
+            "cni_number": "1234567890",
+            "nui_number": "P000000000000A",
+            "location": "Molyko, Buea",
+            "commission_percent": 5,
+        },
+    )
+    assert response.status_code == 200  # re-rendered form, not a redirect
+    from apps.pamphlets.models import PartnerBookshop
+
+    assert not PartnerBookshop.objects.filter(name="No Money Bookshop").exists()
+
+
+@pytest.mark.django_db
+def test_integration_ops_cannot_register_a_partner_missing_a_compulsory_kyc_field():
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    client = Client()
+    client.force_login(staff)
+
+    response = client.post(
+        "/admin/pamphlets/partnerbookshop/add/",
+        {
+            "name": "Missing CNI Bookshop",
+            "full_name": "Jean Mbarga",
+            "contact_email": "jean@example.com",
+            "contact_phone": "",
+            "whatsapp_number": "",
+            "orange_money_number": "670000000",
+            "momo_number": "",
+            "cni_number": "",
+            "nui_number": "P000000000000A",
+            "location": "Molyko, Buea",
+            "commission_percent": 5,
+        },
+    )
+    assert response.status_code == 200
+    from apps.pamphlets.models import PartnerBookshop
+
+    assert not PartnerBookshop.objects.filter(name="Missing CNI Bookshop").exists()
 
 
 @pytest.mark.django_db

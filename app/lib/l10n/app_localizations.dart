@@ -2243,7 +2243,7 @@ abstract class AppLocalizations {
   /// No description provided for @qrVaultResetPin.
   ///
   /// In en, this message translates to:
-  /// **'Forgot your PIN? Reset it'**
+  /// **'Forgot?'**
   String get qrVaultResetPin;
 
   /// No description provided for @qrVaultResetPinConfirmTitle.

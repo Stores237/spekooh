@@ -17,8 +17,20 @@ ORDER_STATUS_LABELS = {
 
 @admin.register(PartnerBookshop)
 class PartnerBookshopAdmin(ModelAdmin):
-    list_display = ("name", "contact_email", "contact_phone", "location", "commission_percent")
-    search_fields = ("name", "contact_email")
+    list_display = ("name", "full_name", "contact_email", "orange_money_number", "momo_number", "location", "commission_percent")
+    search_fields = ("name", "full_name", "contact_email", "cni_number", "nui_number")
+    # Owner decision (2026-09-17, partner KYC hardening): full_name/
+    # contact_email/location/cni_number/nui_number are model-required
+    # (blank=False) so the admin form itself refuses to save a partner
+    # missing any of them; PartnerBookshop.clean() additionally enforces
+    # at least one of orange_money_number/momo_number, which Django's
+    # ModelForm calls automatically via full_clean() on save.
+    fieldsets = (
+        (None, {"fields": ("name", "full_name", "location", "commission_percent")}),
+        ("Contact", {"fields": ("contact_email", "contact_phone", "whatsapp_number")}),
+        ("Mobile money (at least one required)", {"fields": ("orange_money_number", "momo_number")}),
+        ("Identity documents", {"fields": ("cni_number", "nui_number")}),
+    )
 
 
 @admin.register(Pamphlet)

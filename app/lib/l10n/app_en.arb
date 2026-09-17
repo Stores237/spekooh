@@ -497,7 +497,7 @@
   "qrVaultPickupLocationLabel": "PICKUP LOCATION",
   "qrVaultPinHint": "4-digit PIN",
   "qrVaultContinue": "Continue",
-  "qrVaultResetPin": "Forgot your PIN? Reset it",
+  "qrVaultResetPin": "Forgot?",
   "qrVaultResetPinConfirmTitle": "Reset your QR Vault PIN?",
   "qrVaultResetPinConfirmBody": "You'll need to set a new 4-digit PIN before you can open QR Vault again.",
   "qrVaultResetPinConfirmAction": "Reset PIN",

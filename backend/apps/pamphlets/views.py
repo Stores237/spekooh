@@ -13,11 +13,19 @@ from apps.accounts.permissions import IsAuthenticatedNotGuest
 from .escrow import (
     AlreadyRedeemedError,
     EscrowError,
+    confirm_redeem_verification,
     dispute,
     redeem_qr,
     self_confirm_receipt,
+    start_redeem_verification,
 )
-from .models import Pamphlet, PamphletOrder, PamphletOrderStatus
+from .models import (
+    Pamphlet,
+    PamphletOrder,
+    PamphletOrderStatus,
+    RedeemVerification,
+    RedeemVerificationChannel,
+)
 from .qr import QR_EXPIRY_DAYS, verify_qr_token
 from .serializers import (
     DisputeRequestSerializer,
@@ -127,15 +135,42 @@ class IssueQrView(APIView):
         return Response(PamphletOrderSerializer(issued, context={"request": request}).data)
 
 
+def _mask_email(email: str) -> str:
+    name, _, domain = email.partition("@")
+    visible = name[:1] or "*"
+    return f"{visible}{'*' * max(len(name) - 1, 3)}@{domain}"
+
+
+def _mask_phone(phone: str) -> str:
+    if len(phone) <= 4:
+        return "*" * len(phone)
+    return f"{phone[:2]}{'*' * (len(phone) - 4)}{phone[-2:]}"
+
+
+def _session_key(token: str) -> str:
+    return f"pamphlet_redeem_verification_{token}"
+
+
 @csrf_protect
 def redeem_page(request, token):
     """
     Plain HTML page (not DRF/JSON) — the partner-side redemption interface,
     scanned by bookshop staff or a courier's phone camera opening the link.
+
+    Owner-reported security fix (2026-09-17): this used to release escrow
+    off a single unauthenticated button click — anyone holding the
+    scanning phone could confirm someone else's handover. Now a real
+    one-time code, sent to the *partner's own* registered email or phone
+    (never the buyer's), must be entered correctly first — see
+    RedeemVerification and apps.pamphlets.escrow.start_redeem_verification
+    / confirm_redeem_verification. Session-tracked across this view's
+    plain-HTML POST steps since there's no account/JWT to key state to
+    here (whoever scans this link is, by definition, not logged into the
+    app).
     """
     try:
         order_id = verify_qr_token(token, max_age_seconds=QR_EXPIRY_DAYS * 86400)
-        order = PamphletOrder.objects.select_related("pamphlet").get(id=order_id)
+        order = PamphletOrder.objects.select_related("pamphlet__partner").get(id=order_id)
     except signing.SignatureExpired:
         return render(request, "pamphlets/redeem.html", {"error": "This ticket has expired."})
     except (signing.BadSignature, PamphletOrder.DoesNotExist):
@@ -154,25 +189,94 @@ def redeem_page(request, token):
             {"error": f"This ticket cannot be redeemed (order is {order.get_status_display()})."},
         )
 
-    if request.method == "POST":
-        try:
-            released = redeem_qr(token)
-        except AlreadyRedeemedError as exc:
-            return render(request, "pamphlets/redeem.html", {"error": exc.detail})
-        except EscrowError as exc:
-            return render(request, "pamphlets/redeem.html", {"error": exc.detail})
+    partner = order.pamphlet.partner
+    session_key = _session_key(token)
+
+    def _channel_step(error: str | None = None):
         return render(
             request,
             "pamphlets/redeem.html",
             {
-                "released": True,
-                "pamphlet_title": released.pamphlet.title,
-                "payout_amount": released.payout_amount,
+                "step": "channel",
+                "pamphlet_title": order.pamphlet.title,
+                "amount_paid": order.amount_paid,
+                "has_email": bool(partner.contact_email),
+                "has_phone": bool(partner.verification_phone),
+                "error": error,
             },
         )
 
-    return render(
-        request,
-        "pamphlets/redeem.html",
-        {"pamphlet_title": order.pamphlet.title, "amount_paid": order.amount_paid},
-    )
+    def _code_step(verification: RedeemVerification, error: str | None = None):
+        masked = (
+            _mask_email(partner.contact_email)
+            if verification.channel == RedeemVerificationChannel.EMAIL
+            else _mask_phone(partner.verification_phone)
+        )
+        return render(
+            request,
+            "pamphlets/redeem.html",
+            {
+                "step": "code",
+                "pamphlet_title": order.pamphlet.title,
+                "amount_paid": order.amount_paid,
+                "masked_destination": masked,
+                "attempts_remaining": RedeemVerification.MAX_ATTEMPTS - verification.attempts,
+                "error": error,
+            },
+        )
+
+    if request.method == "POST":
+        if "restart" in request.POST:
+            request.session.pop(session_key, None)
+            return _channel_step()
+
+        if "channel" in request.POST:
+            channel = request.POST.get("channel")
+            if channel not in RedeemVerificationChannel.values:
+                return _channel_step("Choose a real option.")
+            try:
+                verification = start_redeem_verification(order, channel=channel)
+            except EscrowError as exc:
+                return _channel_step(exc.detail)
+            request.session[session_key] = verification.id
+            return _code_step(verification)
+
+        if "code" in request.POST:
+            verification_id = request.session.get(session_key)
+            verification = RedeemVerification.objects.filter(id=verification_id, order=order).first()
+            if verification is None:
+                return _channel_step("That code has expired. Choose how to receive a new one.")
+            if not verification.is_usable:
+                request.session.pop(session_key, None)
+                return _channel_step("Too many attempts or the code expired. Choose how to receive a new one.")
+
+            if confirm_redeem_verification(verification, code=request.POST.get("code", "")):
+                request.session.pop(session_key, None)
+                try:
+                    released = redeem_qr(token)
+                except AlreadyRedeemedError as exc:
+                    return render(request, "pamphlets/redeem.html", {"error": exc.detail})
+                except EscrowError as exc:
+                    return render(request, "pamphlets/redeem.html", {"error": exc.detail})
+                return render(
+                    request,
+                    "pamphlets/redeem.html",
+                    {
+                        "released": True,
+                        "pamphlet_title": released.pamphlet.title,
+                        "payout_amount": released.payout_amount,
+                    },
+                )
+
+            verification.refresh_from_db()
+            if not verification.is_usable:
+                request.session.pop(session_key, None)
+                return _channel_step("Too many wrong attempts. Choose how to receive a new one.")
+            return _code_step(verification, "Wrong code.")
+
+    verification_id = request.session.get(session_key)
+    verification = RedeemVerification.objects.filter(id=verification_id, order=order).first()
+    if verification is not None and verification.is_usable:
+        return _code_step(verification)
+    request.session.pop(session_key, None)
+    return _channel_step()

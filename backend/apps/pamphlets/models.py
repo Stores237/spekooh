@@ -7,17 +7,37 @@ from apps.payments.models import PaymentTransaction
 
 class PartnerBookshop(TimeStampedModel):
     name = models.CharField(max_length=150)
-    contact_email = models.EmailField(blank=True)
+    # The real individual Integration Ops is onboarding, distinct from the
+    # shop's own trading name above (owner decision, 2026-09-17, partner
+    # KYC hardening) -- required so a handover-redemption OTP (see
+    # RedeemVerification) is always tied to an accountable real person.
+    full_name = models.CharField(max_length=150, default="")
+    contact_email = models.EmailField()
     contact_phone = models.CharField(max_length=20, blank=True)
     # Separate from contact_phone (owner request, 2026-09-16, QR Vault
     # pickup card): not every bookshop's WhatsApp is the same number they
     # answer calls on, and the app needs to know which numbers support
     # which contact method rather than assuming one number does both.
     whatsapp_number = models.CharField(max_length=20, blank=True)
+    # Owner decision (2026-09-17, partner KYC hardening): real mobile-money
+    # numbers, not just a general contact_phone -- Cameroonian OM/MoMo SIMs
+    # are ID-linked at registration by the carriers, which is what makes
+    # these numbers (not contact_phone, which could be a shared shop
+    # landline) trustworthy enough to anchor the handover-redemption OTP
+    # (RedeemVerification's PHONE channel) to a real accountable person.
+    # At least one of the two is required -- see clean().
+    orange_money_number = models.CharField("Orange Money number", max_length=20, blank=True, default="")
+    momo_number = models.CharField("MTN MoMo number", max_length=20, blank=True, default="")
+    # Real Cameroonian ID documents (owner decision, 2026-09-17) -- required
+    # so a partner can be held accountable if a handover dispute ever needs
+    # real-world escalation, the same reasoning CNI/NUI collection serves
+    # for any real merchant onboarding in Cameroon.
+    cni_number = models.CharField("CNI number", max_length=30, default="")
+    nui_number = models.CharField("NUI number", max_length=30, default="")
     # Free text, same rationale as Pamphlet.subject_title/academic_level:
     # partners are entered one at a time via admin, not picked from a
     # geocoded address taxonomy this app doesn't have.
-    location = models.CharField(max_length=255, blank=True)
+    location = models.CharField(max_length=255)
     commission_percent = models.PositiveSmallIntegerField(default=5)
 
     class Meta:
@@ -25,6 +45,20 @@ class PartnerBookshop(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if not self.orange_money_number and not self.momo_number:
+            raise ValidationError("Provide at least one of Orange Money number or MoMo number.")
+
+    @property
+    def verification_phone(self) -> str:
+        """The real, ID-linked number a handover-redemption OTP is sent to
+        (RedeemVerification's PHONE channel) -- Orange Money preferred,
+        falling back to MoMo, since clean() guarantees at least one exists
+        on any partner actually onboarded through the required-fields form."""
+        return self.orange_money_number or self.momo_number
 
 
 class Pamphlet(TimeStampedModel):
@@ -106,3 +140,57 @@ class PamphletOrder(TimeStampedModel):
 
     def __str__(self):
         return f"{self.pamphlet}, {self.user} ({self.status})"
+
+
+class RedeemVerificationChannel(models.TextChoices):
+    EMAIL = "EMAIL", "Email"
+    PHONE = "PHONE", "Phone (SMS)"
+
+
+class RedeemVerification(TimeStampedModel):
+    """
+    Owner-reported security gap (2026-09-17): the redeem page previously
+    let anyone holding the scanning phone confirm a handover with a single
+    unauthenticated button click, releasing escrow to the partner without
+    ever checking that the person scanning actually IS that partner. This
+    is the real identity check that closes it -- a one-time code sent to
+    the partner's own registered email or phone (never the buyer's), which
+    must be entered correctly before apps.pamphlets.escrow.redeem_qr ever
+    runs. Same OTP shape (TTL + independent attempt cap) as
+    apps.accounts.models.EmailVerificationCode/PasswordResetCode, per
+    SECURITY.md's own stated reasoning for why a short numeric code needs
+    a cap independent of anything else.
+
+    Scoped to a specific order rather than the partner generally: a fresh
+    code is required per redemption, so a code sent for one order can't be
+    reused to redeem a different one.
+
+    code is only ever populated for the EMAIL channel -- PHONE uses
+    Twilio Verify (apps.core.sms), which owns the code/expiry/attempt
+    state itself, the same "no local OTP model" pattern
+    apps.accounts.models.User.phone_verified_at's own docstring already
+    established for phone verification in this codebase.
+    """
+
+    TTL_MINUTES = 10
+    MAX_ATTEMPTS = 5
+
+    order = models.ForeignKey(PamphletOrder, on_delete=models.CASCADE, related_name="redeem_verifications")
+    channel = models.CharField(max_length=10, choices=RedeemVerificationChannel.choices)
+    code = models.CharField(max_length=6, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @property
+    def is_expired(self) -> bool:
+        from django.utils import timezone
+
+        age = timezone.now() - self.created_at
+        return age.total_seconds() > self.TTL_MINUTES * 60
+
+    @property
+    def is_usable(self) -> bool:
+        return self.used_at is None and not self.is_expired and self.attempts < self.MAX_ATTEMPTS

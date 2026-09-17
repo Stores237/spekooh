@@ -1,12 +1,27 @@
+import secrets
+
+from django.conf import settings
 from django.core import signing
+from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
 
 from apps.admin_queue.models import FlagCategory
 from apps.admin_queue.services import flag
 from apps.core.exceptions import SafeMessageError
+from apps.core.sms import (
+    SMSError,
+    SMSUnavailable,
+    check_verification_code,
+    send_verification_code,
+)
 
-from .models import PamphletOrder, PamphletOrderStatus
+from .models import (
+    PamphletOrder,
+    PamphletOrderStatus,
+    RedeemVerification,
+    RedeemVerificationChannel,
+)
 from .qr import QR_EXPIRY_DAYS, generate_qr_token, verify_qr_token
 
 
@@ -62,6 +77,68 @@ def redeem_qr(token: str) -> PamphletOrder:
         raise EscrowError(f"This ticket cannot be redeemed (order is {order.status}).")
 
     return release_order(order)
+
+
+def start_redeem_verification(order: PamphletOrder, *, channel: str) -> RedeemVerification:
+    """
+    Owner-reported security fix (2026-09-17): before this, redeem_qr ran
+    off a single unauthenticated button click -- anyone holding the
+    scanning phone could confirm someone else's handover. This sends a
+    real one-time code to the *partner's own* registered email or phone
+    (never the buyer's), which confirm_redeem_verification must approve
+    before redeem_qr is allowed to run.
+    """
+    partner = order.pamphlet.partner
+    verification = RedeemVerification.objects.create(order=order, channel=channel)
+    if channel == RedeemVerificationChannel.EMAIL:
+        if not partner.contact_email:
+            raise EscrowError("This partner has no email on file to send a code to.")
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        verification.code = code
+        verification.save(update_fields=["code"])
+        send_mail(
+            subject="Spekooh pickup confirmation code",
+            message=f"Your confirmation code is {code}. It expires in {RedeemVerification.TTL_MINUTES} minutes.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[partner.contact_email],
+        )
+    else:
+        phone = partner.verification_phone
+        if not phone:
+            raise EscrowError("This partner has no verified phone number on file to send a code to.")
+        try:
+            send_verification_code(phone)
+        except SMSUnavailable as exc:
+            raise EscrowError("SMS verification isn't available right now. Try email instead.") from exc
+        except SMSError as exc:
+            raise EscrowError("Couldn't send the SMS code. Try again or use email instead.") from exc
+    return verification
+
+
+def confirm_redeem_verification(verification: RedeemVerification, *, code: str) -> bool:
+    """True only for a genuinely correct, still-usable code -- never
+    trusts the caller's own say-so. A wrong/expired/attempts-exhausted
+    code is a normal False, counted against the same independent attempt
+    cap SECURITY.md asks of every short numeric code in this app."""
+    if not verification.is_usable:
+        return False
+
+    if verification.channel == RedeemVerificationChannel.EMAIL:
+        correct = code == verification.code
+    else:
+        phone = verification.order.pamphlet.partner.verification_phone
+        try:
+            correct = check_verification_code(phone, code)
+        except SMSError:
+            correct = False
+
+    verification.attempts += 1
+    update_fields = ["attempts"]
+    if correct:
+        verification.used_at = timezone.now()
+        update_fields.append("used_at")
+    verification.save(update_fields=update_fields)
+    return correct
 
 
 def self_confirm_receipt(order: PamphletOrder, *, user) -> PamphletOrder:

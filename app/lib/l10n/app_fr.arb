@@ -391,7 +391,7 @@
   "qrVaultPickupLocationLabel": "LIEU DE RETRAIT",
   "qrVaultPinHint": "Code à 4 chiffres",
   "qrVaultContinue": "Continuer",
-  "qrVaultResetPin": "Code oublié ? Réinitialiser",
+  "qrVaultResetPin": "Oublié ?",
   "qrVaultResetPinConfirmTitle": "Réinitialiser votre code du coffre QR ?",
   "qrVaultResetPinConfirmBody": "Vous devrez définir un nouveau code à 4 chiffres avant de pouvoir rouvrir le coffre QR.",
   "qrVaultResetPinConfirmAction": "Réinitialiser",

@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../data/qr_vault_biometrics.dart';
 import '../data/qr_vault_pin.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
-import 'auth_form_field.dart';
-import 'spekooh_button.dart';
 
 /// Gates [child] behind a 4-digit PIN the user sets on first visit and
 /// enters on every visit after (owner request, 2026-09-16) -- see
@@ -19,6 +15,8 @@ import 'spekooh_button.dart';
 /// Fingerprint/Face ID unlock (owner request, 2026-09-17) is layered on top,
 /// opt-in only -- see QrVaultBiometrics's own doc comment for why a
 /// successful biometric match is trusted as equivalent to a correct PIN.
+/// A real on-screen number pad (owner reference, 2026-09-17), not a text
+/// field + system keyboard -- entering the 4th digit submits immediately.
 class QrVaultLockGate extends StatefulWidget {
   const QrVaultLockGate({super.key, required this.child});
   final Widget child;
@@ -34,8 +32,7 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
   bool _unlocked = false;
   bool _biometricAvailable = false;
 
-  final _pinController = TextEditingController();
-  final _confirmController = TextEditingController();
+  String _input = '';
   _SetupStep _setupStep = _SetupStep.choose;
   String? _chosenPin;
   String? _error;
@@ -45,13 +42,6 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoTriggerBiometric());
-  }
-
-  @override
-  void dispose() {
-    _pinController.dispose();
-    _confirmController.dispose();
-    super.dispose();
   }
 
   Future<void> _maybeAutoTriggerBiometric() async {
@@ -112,17 +102,12 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
     if (confirmed) await QrVaultBiometrics.instance.setEnabled(true);
   }
 
-  Future<void> _submitSetupStep(AppLocalizations l10n) async {
-    final value = _pinController.text.trim();
-    if (value.length != 4 || int.tryParse(value) == null) {
-      setState(() => _error = l10n.qrVaultPinMustBe4Digits);
-      return;
-    }
+  Future<void> _submitSetupStep(AppLocalizations l10n, String value) async {
     if (_setupStep == _SetupStep.choose) {
       setState(() {
         _chosenPin = value;
         _setupStep = _SetupStep.confirm;
-        _pinController.clear();
+        _input = '';
         _error = null;
       });
       return;
@@ -133,7 +118,7 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
         _error = l10n.qrVaultPinsDontMatch;
         _setupStep = _SetupStep.choose;
         _chosenPin = null;
-        _pinController.clear();
+        _input = '';
       });
       return;
     }
@@ -142,9 +127,7 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
     if (mounted) await _completeUnlock(l10n);
   }
 
-  Future<void> _submitUnlock(AppLocalizations l10n) async {
-    final value = _pinController.text.trim();
-    if (value.length != 4) return;
+  Future<void> _submitUnlock(AppLocalizations l10n, String value) async {
     setState(() {
       _busy = true;
       _error = null;
@@ -158,14 +141,14 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
         final remaining = await QrVaultPin.instance.attemptsRemaining();
         setState(() {
           _busy = false;
-          _pinController.clear();
+          _input = '';
           _error = l10n.qrVaultWrongPinAttemptsLeft(remaining);
         });
       case QrVaultPinResult.lockedOut:
         final seconds = await QrVaultPin.instance.lockedOutForSeconds() ?? 0;
         setState(() {
           _busy = false;
-          _pinController.clear();
+          _input = '';
           _error = l10n.qrVaultLockedOut((seconds / 60).ceil());
         });
     }
@@ -188,12 +171,25 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
     if (!mounted) return;
     setState(() {
       _hasPinFuture = QrVaultPin.instance.hasPin();
-      _pinController.clear();
-      _confirmController.clear();
+      _input = '';
       _setupStep = _SetupStep.choose;
       _chosenPin = null;
       _error = null;
     });
+  }
+
+  void _onDigit(AppLocalizations l10n, String digit, VoidCallback onSubmit4th) {
+    if (_busy || _input.length >= 4) return;
+    setState(() {
+      _input += digit;
+      _error = null;
+    });
+    if (_input.length == 4) onSubmit4th();
+  }
+
+  void _onBackspace() {
+    if (_busy || _input.isEmpty) return;
+    setState(() => _input = _input.substring(0, _input.length - 1));
   }
 
   @override
@@ -216,66 +212,56 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
     required AppLocalizations l10n,
     required String title,
     required String subtitle,
-    required VoidCallback onSubmit,
+    required void Function(AppLocalizations, String) onSubmit,
     VoidCallback? onReset,
   }) {
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPad),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPad, vertical: AppSpacing.space4),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Center(
                 child: Container(
-                  width: 64,
-                  height: 64,
+                  width: 56,
+                  height: 56,
                   decoration: const BoxDecoration(color: AppColors.gold200, shape: BoxShape.circle),
                   alignment: Alignment.center,
-                  child: const Icon(LucideIcons.lock, color: AppColors.gold700, size: 30),
+                  child: const Icon(LucideIcons.lock, color: AppColors.gold700, size: 26),
                 ),
               ),
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.space3),
               Text(title, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
               const SizedBox(height: 6),
               Text(subtitle, textAlign: TextAlign.center, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.space5),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-                child: AuthTextField(
-                  controller: _pinController,
-                  hint: l10n.qrVaultPinHint,
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
-                  enabled: !_busy,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  maxLength: 4,
-                ),
-              ),
+              _PinDots(filled: _input.length),
               if (_error != null) ...[
-                const SizedBox(height: AppSpacing.space2),
+                const SizedBox(height: AppSpacing.space3),
                 Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.red500, fontSize: 12)),
               ],
-              const SizedBox(height: AppSpacing.space4),
-              SpekoohButton(onPressed: _busy ? null : onSubmit, child: Text(_busy ? l10n.processingLabel : l10n.qrVaultContinue)),
-              if (_biometricAvailable) ...[
-                const SizedBox(height: AppSpacing.space2),
-                TextButton.icon(
-                  onPressed: _busy ? null : () => _tryBiometricUnlock(l10n),
-                  icon: const Icon(LucideIcons.fingerprint, size: 16, color: AppColors.gold700),
-                  label: Text(l10n.qrVaultUseFingerprint, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700)),
+              const SizedBox(height: AppSpacing.space5),
+              // Capped so a wide screen (tablet, or a stretched split-screen
+              // view) never blows up each key to an absurd size -- the
+              // aspect-ratio-based keys below size themselves off the
+              // keypad's own width, not the raw device width.
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: _Keypad(
+                    busy: _busy,
+                    hasInput: _input.isNotEmpty,
+                    showFingerprint: _biometricAvailable && _input.isEmpty,
+                    forgotLabel: onReset != null ? l10n.qrVaultResetPin : null,
+                    onDigit: (digit) => _onDigit(l10n, digit, () => onSubmit(l10n, _input)),
+                    onBackspace: _onBackspace,
+                    onFingerprint: () => _tryBiometricUnlock(l10n),
+                    onForgot: onReset,
+                  ),
                 ),
-              ],
-              if (onReset != null) ...[
-                const SizedBox(height: AppSpacing.space2),
-                TextButton(
-                  onPressed: _busy ? null : () => onReset(),
-                  child: Text(l10n.qrVaultResetPin, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.red500)),
-                ),
-              ],
+              ),
             ],
           ),
         ),
@@ -288,7 +274,7 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
       l10n: l10n,
       title: l10n.qrVaultSetPinTitle,
       subtitle: _setupStep == _SetupStep.choose ? l10n.qrVaultSetPinSubtitle : l10n.qrVaultConfirmPinSubtitle,
-      onSubmit: () => _submitSetupStep(l10n),
+      onSubmit: _submitSetupStep,
     );
   }
 
@@ -297,8 +283,108 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
       l10n: l10n,
       title: l10n.qrVaultEnterPinTitle,
       subtitle: l10n.qrVaultEnterPinSubtitle,
-      onSubmit: () => _submitUnlock(l10n),
+      onSubmit: _submitUnlock,
       onReset: () => _resetPin(l10n),
+    );
+  }
+}
+
+/// 4 dots, filled solid for every digit typed so far -- never shows the
+/// digits themselves.
+class _PinDots extends StatelessWidget {
+  const _PinDots({required this.filled});
+  final int filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(4, (i) {
+        final isFilled = i < filled;
+        return Container(
+          width: 16,
+          height: 16,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isFilled ? AppColors.gold600 : Colors.transparent,
+            border: Border.all(color: AppColors.gold600, width: 1.5),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+/// Real on-screen number pad (owner reference, 2026-09-17) -- 1-9, then a
+/// bottom row with Forgot?/0/fingerprint-or-backspace, matching a native
+/// phone lock screen rather than a text field + system keyboard.
+class _Keypad extends StatelessWidget {
+  const _Keypad({
+    required this.busy,
+    required this.hasInput,
+    required this.showFingerprint,
+    required this.forgotLabel,
+    required this.onDigit,
+    required this.onBackspace,
+    required this.onFingerprint,
+    required this.onForgot,
+  });
+
+  final bool busy;
+  final bool hasInput;
+  final bool showFingerprint;
+  final String? forgotLabel;
+  final ValueChanged<String> onDigit;
+  final VoidCallback onBackspace;
+  final VoidCallback onFingerprint;
+  final VoidCallback? onForgot;
+
+  Widget _key({Widget? child, VoidCallback? onTap}) {
+    return Expanded(
+      child: AspectRatio(
+        aspectRatio: 1.9,
+        child: InkWell(
+          onTap: busy ? null : onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Center(child: child),
+        ),
+      ),
+    );
+  }
+
+  Widget _digitKey(String digit) {
+    return _key(
+      onTap: () => onDigit(digit),
+      child: Text(digit, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w600, fontSize: 26, color: AppColors.textPrimary)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(children: [_digitKey('1'), _digitKey('2'), _digitKey('3')]),
+        Row(children: [_digitKey('4'), _digitKey('5'), _digitKey('6')]),
+        Row(children: [_digitKey('7'), _digitKey('8'), _digitKey('9')]),
+        Row(
+          children: [
+            _key(
+              onTap: onForgot,
+              child: onForgot != null
+                  ? Text(forgotLabel!.toUpperCase(), style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.textSecondary))
+                  : null,
+            ),
+            _digitKey('0'),
+            _key(
+              onTap: hasInput ? onBackspace : (showFingerprint ? onFingerprint : null),
+              child: hasInput
+                  ? const Icon(LucideIcons.delete, size: 22, color: AppColors.textSecondary)
+                  : (showFingerprint ? const Icon(LucideIcons.fingerprint, size: 24, color: AppColors.gold700) : null),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
