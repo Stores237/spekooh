@@ -149,6 +149,7 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
     required String subtitle,
     required VoidCallback onSubmit,
     VoidCallback? onReset,
+    bool showDoneButton = true,
   }) {
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
@@ -199,11 +200,13 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
                   child: Text(l10n.qrVaultResetPin, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.red500)),
                 ),
               ],
-              const SizedBox(height: AppSpacing.space3),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(l10n.doneLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.textTertiary)),
-              ),
+              if (showDoneButton) ...[
+                const SizedBox(height: AppSpacing.space3),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(l10n.doneLabel, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.textTertiary)),
+                ),
+              ],
             ],
           ),
         ),
@@ -227,6 +230,10 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
       subtitle: l10n.qrVaultEnterPinSubtitle,
       onSubmit: () => _submitUnlock(l10n),
       onReset: () => _resetPin(l10n),
+      // Owner feedback, 2026-09-17: this button had no real use here --
+      // Reset already covers "I can't get in", and the hardware/gesture
+      // back button already leaves the screen the same way this did.
+      showDoneButton: false,
     );
   }
 }
