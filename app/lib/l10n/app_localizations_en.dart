@@ -1228,6 +1228,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qrVaultResetPinConfirmAction => 'Reset PIN';
 
   @override
+  String get qrVaultUseFingerprint => 'Use fingerprint instead';
+
+  @override
+  String get qrVaultBiometricReason => 'Unlock your QR Vault';
+
+  @override
+  String get qrVaultEnableBiometricTitle => 'Use fingerprint to unlock?';
+
+  @override
+  String get qrVaultEnableBiometricBody =>
+      'Unlock QR Vault faster next time with your fingerprint or face, instead of typing your PIN.';
+
+  @override
+  String get qrVaultEnableBiometricEnable => 'Enable';
+
+  @override
+  String get qrVaultEnableBiometricNotNow => 'Not now';
+
+  @override
   String get qrVaultSetPinTitle => 'Set a QR Vault PIN';
 
   @override

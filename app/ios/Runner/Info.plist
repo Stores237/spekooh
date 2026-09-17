@@ -78,5 +78,9 @@
 	     because this app's real-device testing has so far been Android-only. -->
 	<key>NSCameraUsageDescription</key>
 	<string>Spekooh uses your camera to scan and submit past papers, academic reports, and your profile photo.</string>
+	<!-- Required for local_auth's Face ID unlock (QR Vault, 2026-09-17) --
+	     iOS refuses biometric authentication outright without this key. -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Spekooh uses Face ID to unlock your QR Vault pickup tickets.</string>
 </dict>
 </plist>
