@@ -40,7 +40,7 @@ class PamphletViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
         pamphlet = self.get_queryset().filter(is_featured=True).first()
         if pamphlet is None:
             return Response({"detail": "No featured pamphlet configured."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(PamphletSerializer(pamphlet).data)
+        return Response(PamphletSerializer(pamphlet, context={"request": request}).data)
 
 
 class PamphletOrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):

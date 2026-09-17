@@ -37,6 +37,13 @@ class Pamphlet(TimeStampedModel):
     partner = models.ForeignKey(PartnerBookshop, on_delete=models.CASCADE, related_name="pamphlets")
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    # Owner request, 2026-09-17: shown on the Featured Pamphlet card at a
+    # fixed 76x96 slot (BoxFit.cover on the Flutter side, same pattern as
+    # Promotion.logo) -- whatever aspect ratio Integration Ops uploads gets
+    # cropped to fit, never stretched. Optional: falls back to the existing
+    # gold subject/level placeholder when unset, same "real data or nothing
+    # fabricated" rule FeaturedPamphletCard already follows.
+    cover_image = models.ImageField(upload_to="pamphlets/%Y/%m/", null=True, blank=True)
     subject_title = models.CharField(max_length=100, blank=True)
     academic_level = models.CharField(max_length=100, blank=True)
     price_fcfa = models.PositiveIntegerField()
