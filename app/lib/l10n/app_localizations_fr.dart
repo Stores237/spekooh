@@ -1248,6 +1248,26 @@ class AppLocalizationsFr extends AppLocalizations {
   String get qrVaultResetPinConfirmAction => 'Réinitialiser';
 
   @override
+  String get qrVaultUseFingerprint => 'Utiliser l\'empreinte digitale';
+
+  @override
+  String get qrVaultBiometricReason => 'Déverrouillez votre coffre QR';
+
+  @override
+  String get qrVaultEnableBiometricTitle =>
+      'Déverrouiller par empreinte digitale ?';
+
+  @override
+  String get qrVaultEnableBiometricBody =>
+      'Déverrouillez le coffre QR plus rapidement la prochaine fois avec votre empreinte digitale ou votre visage, au lieu de saisir votre code.';
+
+  @override
+  String get qrVaultEnableBiometricEnable => 'Activer';
+
+  @override
+  String get qrVaultEnableBiometricNotNow => 'Pas maintenant';
+
+  @override
   String get qrVaultSetPinTitle => 'Définir un code pour le Coffre QR';
 
   @override

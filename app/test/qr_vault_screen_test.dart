@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spekooh/data/qr_vault_biometrics.dart';
 import 'package:spekooh/data/qr_vault_pin.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
 import 'package:spekooh/data/token_storage.dart';
@@ -7,6 +8,21 @@ import 'package:spekooh/models/pamphlet.dart';
 import 'package:spekooh/screens/shop/qr_vault_screen.dart';
 
 import 'support/l10n_test_app.dart';
+
+class _FakeBiometricAuthenticator implements BiometricAuthenticator {
+  _FakeBiometricAuthenticator({this.authenticateResult = true});
+  final bool authenticateResult;
+  int authenticateCalls = 0;
+
+  @override
+  Future<bool> isDeviceSupported() async => true;
+
+  @override
+  Future<bool> authenticate(String reason) async {
+    authenticateCalls++;
+    return authenticateResult;
+  }
+}
 
 class _FakeShopRepository implements ShopRepository {
   _FakeShopRepository(this.orders);
@@ -48,6 +64,7 @@ final _order = PamphletOrder(
 void main() {
   tearDown(() {
     QrVaultPin.debugSetInstance(QrVaultPin(storage: InMemoryTokenStorage()));
+    QrVaultBiometrics.debugSetInstance(QrVaultBiometrics(storage: InMemoryTokenStorage(), authenticator: _FakeBiometricAuthenticator()));
   });
 
   testWidgets('a first-time visitor must set a PIN before seeing any real ticket data', (tester) async {
@@ -173,5 +190,101 @@ void main() {
 
     expect(find.text('Set a QR Vault PIN'), findsOneWidget);
     expect(await QrVaultPin.instance.hasPin(), isFalse);
+  });
+
+  testWidgets('unlocks automatically via fingerprint when it is already enabled, without needing the PIN', (tester) async {
+    final pinStorage = InMemoryTokenStorage();
+    await QrVaultPin(storage: pinStorage).setPin('4321');
+    QrVaultPin.debugSetInstance(QrVaultPin(storage: pinStorage));
+
+    final bioStorage = InMemoryTokenStorage();
+    final authenticator = _FakeBiometricAuthenticator(authenticateResult: true);
+    final bio = QrVaultBiometrics(storage: bioStorage, authenticator: authenticator);
+    await bio.setEnabled(true);
+    await bio.markPrompted(); // already onboarded -- no enrollment offer should fire here
+    QrVaultBiometrics.debugSetInstance(bio);
+
+    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order]))));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(authenticator.authenticateCalls, 1);
+    expect(find.text('Enter your QR Vault PIN'), findsNothing);
+    expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
+  });
+
+  testWidgets('falls back to real PIN entry when fingerprint fails, offering a manual retry', (tester) async {
+    final pinStorage = InMemoryTokenStorage();
+    await QrVaultPin(storage: pinStorage).setPin('4321');
+    QrVaultPin.debugSetInstance(QrVaultPin(storage: pinStorage));
+
+    final bioStorage = InMemoryTokenStorage();
+    final authenticator = _FakeBiometricAuthenticator(authenticateResult: false);
+    final bio = QrVaultBiometrics(storage: bioStorage, authenticator: authenticator);
+    await bio.setEnabled(true);
+    await bio.markPrompted();
+    QrVaultBiometrics.debugSetInstance(bio);
+
+    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order]))));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(authenticator.authenticateCalls, 1);
+    expect(find.text('Enter your QR Vault PIN'), findsOneWidget);
+    expect(find.text('Use fingerprint instead'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '4321');
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
+  });
+
+  testWidgets('offers fingerprint enrollment once, right after setting up a PIN for the first time', (tester) async {
+    QrVaultPin.debugSetInstance(QrVaultPin(storage: InMemoryTokenStorage()));
+    final bioStorage = InMemoryTokenStorage();
+    final authenticator = _FakeBiometricAuthenticator(authenticateResult: true);
+    QrVaultBiometrics.debugSetInstance(QrVaultBiometrics(storage: bioStorage, authenticator: authenticator));
+
+    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order]))));
+    await tester.pump();
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField), '1234');
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), '1234');
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Use fingerprint to unlock?'), findsOneWidget);
+    await tester.tap(find.text('Enable'));
+    await tester.pumpAndSettle();
+
+    expect(await QrVaultBiometrics.instance.isEnabled(), isTrue);
+    expect(await QrVaultBiometrics.instance.hasBeenPrompted(), isTrue);
+  });
+
+  testWidgets('declining the fingerprint offer never enables it, and never asks again', (tester) async {
+    QrVaultPin.debugSetInstance(QrVaultPin(storage: InMemoryTokenStorage()));
+    final bioStorage = InMemoryTokenStorage();
+    QrVaultBiometrics.debugSetInstance(QrVaultBiometrics(storage: bioStorage, authenticator: _FakeBiometricAuthenticator()));
+
+    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order]))));
+    await tester.pump();
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField), '1234');
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), '1234');
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+
+    expect(await QrVaultBiometrics.instance.isEnabled(), isFalse);
+    expect(await QrVaultBiometrics.instance.hasBeenPrompted(), isTrue);
   });
 }

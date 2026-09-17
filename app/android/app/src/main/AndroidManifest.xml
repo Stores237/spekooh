@@ -11,6 +11,8 @@
          the system camera app via an implicit intent and never needed this
          permission declared. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- local_auth (QR Vault fingerprint/biometric unlock, 2026-09-17). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <application
         android:label="spekooh"
         android:name="${applicationName}"

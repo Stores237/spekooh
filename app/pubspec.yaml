@@ -81,6 +81,7 @@ dependencies:
   flutter_markdown_plus: ^1.0.12
   qr_flutter: ^4.1.0
   crypto: ^3.0.7
+  local_auth: ^3.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

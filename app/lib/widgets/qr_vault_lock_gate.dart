@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../data/qr_vault_biometrics.dart';
 import '../data/qr_vault_pin.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
@@ -15,6 +16,9 @@ import 'spekooh_button.dart';
 /// enters on every visit after (owner request, 2026-09-16) -- see
 /// QrVaultPin's own doc comment for the real security properties this
 /// enforces (salted hash, never plaintext, a real attempt-cap lockout).
+/// Fingerprint/Face ID unlock (owner request, 2026-09-17) is layered on top,
+/// opt-in only -- see QrVaultBiometrics's own doc comment for why a
+/// successful biometric match is trusted as equivalent to a correct PIN.
 class QrVaultLockGate extends StatefulWidget {
   const QrVaultLockGate({super.key, required this.child});
   final Widget child;
@@ -28,6 +32,7 @@ enum _SetupStep { choose, confirm }
 class _QrVaultLockGateState extends State<QrVaultLockGate> {
   Future<bool> _hasPinFuture = QrVaultPin.instance.hasPin();
   bool _unlocked = false;
+  bool _biometricAvailable = false;
 
   final _pinController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -37,10 +42,74 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
   bool _busy = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoTriggerBiometric());
+  }
+
+  @override
   void dispose() {
     _pinController.dispose();
     _confirmController.dispose();
     super.dispose();
+  }
+
+  Future<void> _maybeAutoTriggerBiometric() async {
+    final hasPin = await QrVaultPin.instance.hasPin();
+    if (!hasPin) return;
+    final enabled = await QrVaultBiometrics.instance.isEnabled();
+    if (!enabled) return;
+    final supported = await QrVaultBiometrics.instance.isDeviceSupported();
+    if (!supported || !mounted) return;
+    setState(() => _biometricAvailable = true);
+    final l10n = AppLocalizations.of(context)!;
+    await _tryBiometricUnlock(l10n);
+  }
+
+  Future<void> _tryBiometricUnlock(AppLocalizations l10n) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final success = await QrVaultBiometrics.instance.authenticate(l10n.qrVaultBiometricReason);
+    if (!mounted) return;
+    if (success) {
+      setState(() => _unlocked = true);
+    } else {
+      setState(() => _busy = false);
+    }
+  }
+
+  /// Reveals the vault immediately (both PIN-setup and PIN-entry call this
+  /// on success), then -- once, ever, per device -- offers fingerprint/Face
+  /// ID as a faster way in next time.
+  Future<void> _completeUnlock(AppLocalizations l10n) async {
+    if (mounted) setState(() => _unlocked = true);
+    final supported = await QrVaultBiometrics.instance.isDeviceSupported();
+    if (!supported) return;
+    final alreadyPrompted = await QrVaultBiometrics.instance.hasBeenPrompted();
+    if (alreadyPrompted || !mounted) return;
+    await _offerBiometricEnrollment(l10n);
+  }
+
+  Future<void> _offerBiometricEnrollment(AppLocalizations l10n) async {
+    final enable = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.qrVaultEnableBiometricTitle),
+        content: Text(l10n.qrVaultEnableBiometricBody),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.qrVaultEnableBiometricNotNow)),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(l10n.qrVaultEnableBiometricEnable)),
+        ],
+      ),
+    );
+    await QrVaultBiometrics.instance.markPrompted();
+    if (enable != true) return;
+    // Confirm the enrollment with a real prompt right away, rather than
+    // flipping the setting on trust alone -- if this fails (cancelled,
+    // hardware error), never silently enable something that wasn't proven
+    // to work.
+    final confirmed = await QrVaultBiometrics.instance.authenticate(l10n.qrVaultBiometricReason);
+    if (confirmed) await QrVaultBiometrics.instance.setEnabled(true);
   }
 
   Future<void> _submitSetupStep(AppLocalizations l10n) async {
@@ -70,7 +139,7 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
     }
     setState(() => _busy = true);
     await QrVaultPin.instance.setPin(value);
-    if (mounted) setState(() => _unlocked = true);
+    if (mounted) await _completeUnlock(l10n);
   }
 
   Future<void> _submitUnlock(AppLocalizations l10n) async {
@@ -84,7 +153,7 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
     if (!mounted) return;
     switch (result) {
       case QrVaultPinResult.success:
-        setState(() => _unlocked = true);
+        await _completeUnlock(l10n);
       case QrVaultPinResult.wrongPin:
         final remaining = await QrVaultPin.instance.attemptsRemaining();
         setState(() {
@@ -193,6 +262,14 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
               ],
               const SizedBox(height: AppSpacing.space4),
               SpekoohButton(onPressed: _busy ? null : onSubmit, child: Text(_busy ? l10n.processingLabel : l10n.qrVaultContinue)),
+              if (_biometricAvailable) ...[
+                const SizedBox(height: AppSpacing.space2),
+                TextButton.icon(
+                  onPressed: _busy ? null : () => _tryBiometricUnlock(l10n),
+                  icon: const Icon(LucideIcons.fingerprint, size: 16, color: AppColors.gold700),
+                  label: Text(l10n.qrVaultUseFingerprint, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.gold700)),
+                ),
+              ],
               if (onReset != null) ...[
                 const SizedBox(height: AppSpacing.space2),
                 TextButton(

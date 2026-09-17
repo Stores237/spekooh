@@ -2264,6 +2264,42 @@ abstract class AppLocalizations {
   /// **'Reset PIN'**
   String get qrVaultResetPinConfirmAction;
 
+  /// No description provided for @qrVaultUseFingerprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use fingerprint instead'**
+  String get qrVaultUseFingerprint;
+
+  /// No description provided for @qrVaultBiometricReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock your QR Vault'**
+  String get qrVaultBiometricReason;
+
+  /// No description provided for @qrVaultEnableBiometricTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use fingerprint to unlock?'**
+  String get qrVaultEnableBiometricTitle;
+
+  /// No description provided for @qrVaultEnableBiometricBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock QR Vault faster next time with your fingerprint or face, instead of typing your PIN.'**
+  String get qrVaultEnableBiometricBody;
+
+  /// No description provided for @qrVaultEnableBiometricEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get qrVaultEnableBiometricEnable;
+
+  /// No description provided for @qrVaultEnableBiometricNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get qrVaultEnableBiometricNotNow;
+
   /// No description provided for @qrVaultSetPinTitle.
   ///
   /// In en, this message translates to:
