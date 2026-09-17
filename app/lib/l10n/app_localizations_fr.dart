@@ -1303,6 +1303,41 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get qrVaultSettingsTooltip => 'Paramètres du coffre';
+
+  @override
+  String get qrVaultSettingsTitle => 'Paramètres du coffre';
+
+  @override
+  String get qrVaultBiometricSettingLabel =>
+      'Déverrouiller avec l\'empreinte / Face ID';
+
+  @override
+  String get qrVaultBiometricSettingSubtitle =>
+      'Utilisez votre empreinte ou votre visage au lieu de votre code pour ouvrir le coffre QR.';
+
+  @override
+  String get qrVaultBiometricSettingConfirmFailed =>
+      'Impossible de confirmer votre empreinte ou votre visage. Réessayez.';
+
+  @override
+  String get qrVaultBiometricNotSupported =>
+      'Cet appareil ne prend pas en charge le déverrouillage par empreinte ou visage.';
+
+  @override
+  String get qrVaultDeleteTicketAction => 'Supprimer le billet';
+
+  @override
+  String get qrVaultDeleteTicketConfirmTitle => 'Supprimer ce billet ?';
+
+  @override
+  String get qrVaultDeleteTicketConfirmBody =>
+      'Cette commande a déjà été récupérée — supprimer le billet ne fait que le retirer de cette liste, cela n\'affecte jamais la commande elle-même.';
+
+  @override
+  String get qrVaultDeleteTicketConfirmAction => 'Supprimer';
+
+  @override
   String get pickupReadyBannerCta => 'Appuyez pour voir votre QR de retrait';
 
   @override

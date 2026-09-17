@@ -31,9 +31,14 @@ class PartnerBookshop(TimeStampedModel):
     # Real Cameroonian ID documents (owner decision, 2026-09-17) -- required
     # so a partner can be held accountable if a handover dispute ever needs
     # real-world escalation, the same reasoning CNI/NUI collection serves
-    # for any real merchant onboarding in Cameroon.
+    # for any real merchant onboarding in Cameroon. The number alone isn't
+    # enough to actually verify anything -- a scan/photo of each real
+    # document is required too (owner correction, 2026-09-17), same
+    # ImageField-on-a-model pattern as Pamphlet.cover_image.
     cni_number = models.CharField("CNI number", max_length=30, default="")
+    cni_document = models.FileField("CNI document", upload_to="partner_kyc/%Y/%m/", null=True, blank=True)
     nui_number = models.CharField("NUI number", max_length=30, default="")
+    nui_document = models.FileField("NUI document", upload_to="partner_kyc/%Y/%m/", null=True, blank=True)
     # Free text, same rationale as Pamphlet.subject_title/academic_level:
     # partners are entered one at a time via admin, not picked from a
     # geocoded address taxonomy this app doesn't have.
@@ -145,6 +150,15 @@ class PamphletOrder(TimeStampedModel):
 class RedeemVerificationChannel(models.TextChoices):
     EMAIL = "EMAIL", "Email"
     PHONE = "PHONE", "Phone (SMS)"
+    # Owner request (2026-09-17): a real network/carrier issue can mean a
+    # partner never receives either the email or the SMS. If they call
+    # support, Integration Ops can generate one of these for their exact
+    # order instead -- see apps.pamphlets.escrow.generate_support_override_
+    # code and PamphletOrderAdmin.generate_support_code (permission-gated
+    # to that group specifically). Deliberately short-lived (3 minutes, not
+    # the normal 10) since it's relayed by a human over a phone call rather
+    # than a channel the partner already proved they control.
+    SUPPORT = "SUPPORT", "Support override (Integration Ops)"
 
 
 class RedeemVerification(TimeStampedModel):
@@ -165,14 +179,15 @@ class RedeemVerification(TimeStampedModel):
     code is required per redemption, so a code sent for one order can't be
     reused to redeem a different one.
 
-    code is only ever populated for the EMAIL channel -- PHONE uses
-    Twilio Verify (apps.core.sms), which owns the code/expiry/attempt
-    state itself, the same "no local OTP model" pattern
+    code is only ever populated for the EMAIL and SUPPORT channels --
+    PHONE uses Twilio Verify (apps.core.sms), which owns the code/expiry/
+    attempt state itself, the same "no local OTP model" pattern
     apps.accounts.models.User.phone_verified_at's own docstring already
     established for phone verification in this codebase.
     """
 
     TTL_MINUTES = 10
+    SUPPORT_TTL_MINUTES = 3
     MAX_ATTEMPTS = 5
 
     order = models.ForeignKey(PamphletOrder, on_delete=models.CASCADE, related_name="redeem_verifications")
@@ -180,16 +195,26 @@ class RedeemVerification(TimeStampedModel):
     code = models.CharField(max_length=6, blank=True)
     attempts = models.PositiveSmallIntegerField(default=0)
     used_at = models.DateTimeField(null=True, blank=True)
+    # Who actually issued a SUPPORT-channel code -- blank for EMAIL/PHONE,
+    # which the system itself sends. A real audit trail for a mechanism
+    # that deliberately bypasses proving control of a registered channel.
+    issued_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
 
     class Meta:
         ordering = ["-created_at"]
+
+    @property
+    def ttl_minutes(self) -> int:
+        return self.SUPPORT_TTL_MINUTES if self.channel == RedeemVerificationChannel.SUPPORT else self.TTL_MINUTES
 
     @property
     def is_expired(self) -> bool:
         from django.utils import timezone
 
         age = timezone.now() - self.created_at
-        return age.total_seconds() > self.TTL_MINUTES * 60
+        return age.total_seconds() > self.ttl_minutes * 60
 
     @property
     def is_usable(self) -> bool:

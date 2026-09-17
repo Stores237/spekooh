@@ -931,6 +931,31 @@ def test_integration_ops_group_has_note_permissions():
 
 
 @pytest.mark.django_db
+def test_integration_ops_group_has_redeemverification_view_permission():
+    """Owner request (2026-09-17): RedeemVerification is registered
+    read-only in admin as an audit trail for handover codes, including
+    support overrides -- view-only (RedeemVerificationAdmin itself blocks
+    add/change/delete regardless of what permissions exist), layered onto
+    the group's existing permissions, not replacing them."""
+    ops = Group.objects.get(name="Integration Ops")
+    codenames = set(ops.permissions.values_list("codename", flat=True))
+    assert "view_redeemverification" in codenames
+    assert {"view_pamphletorder", "change_pamphletorder"} <= codenames
+
+
+@pytest.mark.django_db
+def test_integration_ops_staff_can_view_the_redeemverification_audit_trail():
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    client = Client()
+    client.force_login(staff)
+
+    response = client.get("/admin/pamphlets/redeemverification/")
+
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
 def test_integration_ops_staff_can_upload_a_pdf_for_a_note():
     from django.core.files.uploadedfile import SimpleUploadedFile
 

@@ -1281,6 +1281,41 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get qrVaultSettingsTooltip => 'Vault settings';
+
+  @override
+  String get qrVaultSettingsTitle => 'Vault settings';
+
+  @override
+  String get qrVaultBiometricSettingLabel =>
+      'Unlock with fingerprint / Face ID';
+
+  @override
+  String get qrVaultBiometricSettingSubtitle =>
+      'Use your fingerprint or face instead of your PIN to open QR Vault.';
+
+  @override
+  String get qrVaultBiometricSettingConfirmFailed =>
+      'Couldn\'t confirm your fingerprint or face. Try again.';
+
+  @override
+  String get qrVaultBiometricNotSupported =>
+      'This device doesn\'t support fingerprint or face unlock.';
+
+  @override
+  String get qrVaultDeleteTicketAction => 'Delete ticket';
+
+  @override
+  String get qrVaultDeleteTicketConfirmTitle => 'Delete this ticket?';
+
+  @override
+  String get qrVaultDeleteTicketConfirmBody =>
+      'This order is already picked up — deleting the ticket only removes it from this list, it never affects the order itself.';
+
+  @override
+  String get qrVaultDeleteTicketConfirmAction => 'Delete';
+
+  @override
   String get pickupReadyBannerCta => 'Tap to view your pickup QR';
 
   @override

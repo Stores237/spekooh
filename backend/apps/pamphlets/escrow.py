@@ -87,22 +87,26 @@ def start_redeem_verification(order: PamphletOrder, *, channel: str) -> RedeemVe
     real one-time code to the *partner's own* registered email or phone
     (never the buyer's), which confirm_redeem_verification must approve
     before redeem_qr is allowed to run.
+
+    Deliberately only EMAIL/PHONE here -- SUPPORT-channel codes are never
+    self-service; they only ever come from
+    generate_support_override_code, called from the permission-gated
+    PamphletOrderAdmin action, never from anything a public visitor to
+    this page could trigger.
     """
     partner = order.pamphlet.partner
-    verification = RedeemVerification.objects.create(order=order, channel=channel)
     if channel == RedeemVerificationChannel.EMAIL:
         if not partner.contact_email:
             raise EscrowError("This partner has no email on file to send a code to.")
         code = f"{secrets.randbelow(1_000_000):06d}"
-        verification.code = code
-        verification.save(update_fields=["code"])
+        verification = RedeemVerification.objects.create(order=order, channel=channel, code=code)
         send_mail(
             subject="Spekooh pickup confirmation code",
             message=f"Your confirmation code is {code}. It expires in {RedeemVerification.TTL_MINUTES} minutes.",
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[partner.contact_email],
         )
-    else:
+    elif channel == RedeemVerificationChannel.PHONE:
         phone = partner.verification_phone
         if not phone:
             raise EscrowError("This partner has no verified phone number on file to send a code to.")
@@ -112,7 +116,28 @@ def start_redeem_verification(order: PamphletOrder, *, channel: str) -> RedeemVe
             raise EscrowError("SMS verification isn't available right now. Try email instead.") from exc
         except SMSError as exc:
             raise EscrowError("Couldn't send the SMS code. Try again or use email instead.") from exc
+        verification = RedeemVerification.objects.create(order=order, channel=channel)
+    else:
+        raise EscrowError("Not a real verification channel.")
     return verification
+
+
+def generate_support_override_code(order: PamphletOrder, *, issued_by) -> RedeemVerification:
+    """
+    Integration-Ops-only escape hatch (owner request, 2026-09-17): if a
+    partner genuinely can't receive either the email or SMS code (a real
+    network/carrier issue) and calls support, ops can read them a fresh
+    code manually over the phone instead of leaving the handover stuck.
+    Deliberately short-lived (RedeemVerification.SUPPORT_TTL_MINUTES,
+    shorter than the normal channels) since it's relayed by a human who
+    hasn't proven control of a registered channel the way EMAIL/PHONE
+    codes do -- see PamphletOrderAdmin.generate_support_code for the
+    group-membership check that gates who can actually call this.
+    """
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    return RedeemVerification.objects.create(
+        order=order, channel=RedeemVerificationChannel.SUPPORT, code=code, issued_by=issued_by
+    )
 
 
 def confirm_redeem_verification(verification: RedeemVerification, *, code: str) -> bool:
@@ -123,14 +148,15 @@ def confirm_redeem_verification(verification: RedeemVerification, *, code: str) 
     if not verification.is_usable:
         return False
 
-    if verification.channel == RedeemVerificationChannel.EMAIL:
-        correct = code == verification.code
-    else:
+    if verification.channel == RedeemVerificationChannel.PHONE:
         phone = verification.order.pamphlet.partner.verification_phone
         try:
             correct = check_verification_code(phone, code)
         except SMSError:
             correct = False
+    else:
+        # EMAIL and SUPPORT both compare against a locally-stored code.
+        correct = code == verification.code
 
     verification.attempts += 1
     update_fields = ["attempts"]

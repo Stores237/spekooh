@@ -14,12 +14,19 @@ from .escrow import (
     AlreadyRedeemedError,
     EscrowError,
     dispute,
+    generate_support_override_code,
     issue_qr,
     redeem_qr,
     self_confirm_receipt,
 )
 from .factories import PamphletFactory, PartnerBookshopFactory
-from .models import Pamphlet, PamphletOrder, PamphletOrderStatus, RedeemVerification
+from .models import (
+    Pamphlet,
+    PamphletOrder,
+    PamphletOrderStatus,
+    RedeemVerification,
+    RedeemVerificationChannel,
+)
 from .services import place_order
 
 
@@ -534,6 +541,147 @@ def test_redeem_page_shows_invalid_for_garbage_token():
 
 
 @pytest.mark.django_db
+def test_redeem_page_channel_post_rejects_support_as_a_self_service_choice():
+    """SUPPORT is a real RedeemVerificationChannel value, but it must never
+    be reachable by simply POSTing it as a chosen channel -- it's only
+    ever created by generate_support_override_code, gated to Integration
+    Ops in the admin."""
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    client = Client()
+
+    response = client.post(f"/redeem/{order.qr_token}/", {"channel": "SUPPORT"})
+
+    assert b"Choose a real option" in response.content
+    assert RedeemVerification.objects.filter(order=order).count() == 0
+
+
+@pytest.mark.django_db
+def test_redeem_page_support_code_releases_independent_of_any_session_state():
+    """A support code, read to the partner over the phone, must work even
+    without ever POSTing a 'channel' first on that browser/session -- this
+    is the whole point of the escape hatch (owner request, 2026-09-17)."""
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    ops = UserFactory(is_staff=True)
+    verification = generate_support_override_code(order, issued_by=ops)
+
+    client = Client()
+    response = client.post(f"/redeem/{order.qr_token}/", {"code": verification.code})
+
+    assert b"Handover confirmed" in response.content
+    order.refresh_from_db()
+    assert order.status == PamphletOrderStatus.RELEASED
+    verification.refresh_from_db()
+    assert verification.used_at is not None
+
+
+@pytest.mark.django_db
+def test_generate_support_override_code_has_a_shorter_ttl_than_normal_codes():
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    ops = UserFactory(is_staff=True)
+
+    verification = generate_support_override_code(order, issued_by=ops)
+
+    assert verification.channel == RedeemVerificationChannel.SUPPORT
+    assert verification.issued_by == ops
+    assert verification.ttl_minutes == RedeemVerification.SUPPORT_TTL_MINUTES
+    assert RedeemVerification.SUPPORT_TTL_MINUTES < RedeemVerification.TTL_MINUTES
+
+    verification.created_at = timezone.now() - datetime.timedelta(
+        minutes=RedeemVerification.SUPPORT_TTL_MINUTES + 1
+    )
+    verification.save(update_fields=["created_at"])
+    assert verification.is_expired is True
+
+
+@pytest.mark.django_db
+def test_generate_support_code_admin_action_requires_integration_ops():
+    """A staff account outside Integration Ops (and outside superuser)
+    must never be able to mint a support override code -- Django's own
+    action-visibility gating isn't enough on its own, so this is enforced
+    inside the action itself. Real model permissions (view/change on
+    PamphletOrder) are only ever granted to Integration Ops today (see
+    accounts migration 0011), so this grants them directly rather than via
+    that group -- otherwise the request 403s before the action even runs,
+    which would test Django's page-access gate instead of our own check."""
+    from django.contrib.auth.models import Permission
+
+    outsider_staff = UserFactory(is_staff=True)
+    outsider_staff.user_permissions.add(
+        *Permission.objects.filter(content_type__app_label="pamphlets", content_type__model="pamphletorder")
+    )
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+
+    client = Client()
+    client.force_login(outsider_staff)
+    response = client.post(
+        "/admin/pamphlets/pamphletorder/",
+        {"action": "generate_support_code", "_selected_action": [str(order.id)]},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Only Integration Ops" in response.content
+    assert RedeemVerification.objects.filter(order=order, channel=RedeemVerificationChannel.SUPPORT).count() == 0
+
+
+@pytest.mark.django_db
+def test_generate_support_code_admin_action_works_for_integration_ops():
+    from django.contrib.auth.models import Group
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+
+    client = Client()
+    client.force_login(staff)
+    response = client.post(
+        "/admin/pamphlets/pamphletorder/",
+        {"action": "generate_support_code", "_selected_action": [str(order.id)]},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    verification = RedeemVerification.objects.get(order=order, channel=RedeemVerificationChannel.SUPPORT)
+    assert verification.issued_by == staff
+    assert verification.code.encode() in response.content
+
+
+@pytest.mark.django_db
+def test_generate_support_code_admin_action_refuses_orders_not_awaiting_pickup():
+    from django.contrib.auth.models import Group
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    user = UserFactory()
+    pamphlet = PamphletFactory()
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    redeem_qr(order.qr_token)
+    order.refresh_from_db()
+    assert order.status == PamphletOrderStatus.RELEASED
+
+    client = Client()
+    client.force_login(staff)
+    response = client.post(
+        "/admin/pamphlets/pamphletorder/",
+        {"action": "generate_support_code", "_selected_action": [str(order.id)]},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert RedeemVerification.objects.filter(order=order, channel=RedeemVerificationChannel.SUPPORT).count() == 0
+
+
+@pytest.mark.django_db
 def test_issue_qr_endpoint_requires_staff(api_client):
     user = UserFactory()
     pamphlet = PamphletFactory()
@@ -609,6 +757,25 @@ def test_integration_ops_admin_action_releases_disputed_orders_only():
     assert disputed_order.status == PamphletOrderStatus.RELEASED
     assert disputed_order.payout_amount is not None
     assert untouched_order.status == PamphletOrderStatus.QR_ISSUED
+
+
+@pytest.mark.django_db
+def test_partner_bookshop_cni_and_nui_documents_are_real_uploadable_files():
+    """Owner correction (2026-09-17): a typed CNI/NUI number alone can't
+    actually be verified against anything -- a real scan/photo of each
+    document is required too, same ImageField-on-a-model pattern as
+    Pamphlet.cover_image."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    partner = PartnerBookshopFactory(
+        cni_document=SimpleUploadedFile("cni.jpg", b"fake-cni-bytes", content_type="image/jpeg"),
+        nui_document=SimpleUploadedFile("nui.jpg", b"fake-nui-bytes", content_type="image/jpeg"),
+    )
+    partner.refresh_from_db()
+    assert partner.cni_document.name
+    assert "cni" in partner.cni_document.name
+    assert partner.nui_document.name
+    assert "nui" in partner.nui_document.name
 
 
 @pytest.mark.django_db

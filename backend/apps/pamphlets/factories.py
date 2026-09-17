@@ -1,4 +1,5 @@
 import factory
+from django.core.files.base import ContentFile
 
 from .models import Pamphlet, PartnerBookshop
 
@@ -18,6 +19,14 @@ class PartnerBookshopFactory(factory.django.DjangoModelFactory):
     cni_number = "1234567890"
     nui_number = "P000000000000A"
     location = "Molyko, Buea"
+
+    @factory.lazy_attribute
+    def cni_document(self):
+        return ContentFile(b"fake-cni-scan", name="cni.jpg")
+
+    @factory.lazy_attribute
+    def nui_document(self):
+        return ContentFile(b"fake-nui-scan", name="nui.jpg")
 
 
 class PamphletFactory(factory.django.DjangoModelFactory):
