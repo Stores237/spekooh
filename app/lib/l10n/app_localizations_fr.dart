@@ -1234,7 +1234,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get qrVaultContinue => 'Continuer';
 
   @override
-  String get qrVaultResetPin => 'Code oublié ? Réinitialiser';
+  String get qrVaultResetPin => 'Oublié ?';
 
   @override
   String get qrVaultResetPinConfirmTitle =>

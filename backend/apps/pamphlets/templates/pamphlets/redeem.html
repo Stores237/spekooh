@@ -6,21 +6,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body style="font-family: sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px;">
-  {% if error %}
-    <h1>Cannot redeem this ticket</h1>
-    <p>{{ error }}</p>
-  {% elif released %}
+  {% if released %}
     <h1>Handover confirmed</h1>
     <p>{{ pamphlet_title }} — released to partner.</p>
     <p>Payout amount: {{ payout_amount }} FCFA.</p>
-  {% else %}
+  {% elif step == "code" %}
+    <h1>Confirm it's really you</h1>
+    <p><strong>{{ pamphlet_title }}</strong></p>
+    <p>Amount held in escrow: {{ amount_paid }} FCFA</p>
+    <p>We sent a code to <strong>{{ masked_destination }}</strong>. Enter it below to release the handover.</p>
+    {% if error %}<p style="color: #b00020;">{{ error }}</p>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <input type="text" name="code" inputmode="numeric" maxlength="6" placeholder="6-digit code" autofocus required>
+      <button type="submit">Confirm handover &amp; release payment</button>
+    </form>
+    <p>{{ attempts_remaining }} attempt(s) left.</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" name="restart" value="1">Didn't get it? Choose a different way to receive it</button>
+    </form>
+  {% elif step == "channel" %}
     <h1>Confirm pamphlet handover</h1>
     <p><strong>{{ pamphlet_title }}</strong></p>
     <p>Amount held in escrow: {{ amount_paid }} FCFA</p>
+    <p>For your protection, we need to confirm you're the registered partner before releasing this payment. Choose where to receive a one-time code:</p>
+    {% if error %}<p style="color: #b00020;">{{ error }}</p>{% endif %}
     <form method="post">
       {% csrf_token %}
-      <button type="submit">Confirm handover &amp; release payment</button>
+      {% if has_email %}
+        <button type="submit" name="channel" value="EMAIL">Send code to email</button>
+      {% endif %}
+      {% if has_phone %}
+        <button type="submit" name="channel" value="PHONE">Send code by SMS</button>
+      {% endif %}
     </form>
+  {% else %}
+    <h1>Cannot redeem this ticket</h1>
+    <p>{{ error }}</p>
   {% endif %}
 </body>
 </html>

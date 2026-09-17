@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:spekooh/data/qr_vault_biometrics.dart';
 import 'package:spekooh/data/qr_vault_pin.dart';
 import 'package:spekooh/data/repositories/shop_repository.dart';
@@ -61,6 +61,16 @@ final _order = PamphletOrder(
   partnerWhatsapp: '670000098',
 );
 
+/// Types [pin] on the real on-screen number pad (owner reference,
+/// 2026-09-17), one tap per digit -- there's no text field/system keyboard
+/// on this screen anymore. Entering the 4th digit submits immediately.
+Future<void> _tapPin(WidgetTester tester, String pin) async {
+  for (final digit in pin.split('')) {
+    await tester.tap(find.text(digit));
+    await tester.pump();
+  }
+}
+
 void main() {
   tearDown(() {
     QrVaultPin.debugSetInstance(QrVaultPin(storage: InMemoryTokenStorage()));
@@ -84,14 +94,10 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    await tester.enterText(find.byType(TextField), '1234');
-    await tester.tap(find.text('Continue'));
-    await tester.pump();
+    await _tapPin(tester, '1234');
     expect(find.text('Enter the same PIN again to confirm.'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField), '1234');
-    await tester.tap(find.text('Continue'));
-    await tester.pump();
+    await _tapPin(tester, '1234');
     await tester.pumpAndSettle();
 
     // The real ticket detail, not just the picker list -- with only one
@@ -99,6 +105,21 @@ void main() {
     // WidgetsBinding.addPostFrameCallback, hence pumpAndSettle here).
     expect(find.text('Avenue Kennedy, Douala'), findsOneWidget);
     expect(await QrVaultPin.instance.hasPin(), isTrue);
+  });
+
+  testWidgets('a mismatched confirmation PIN restarts setup with a real error', (tester) async {
+    QrVaultPin.debugSetInstance(QrVaultPin(storage: InMemoryTokenStorage()));
+    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order]))));
+    await tester.pump();
+    await tester.pump();
+
+    await _tapPin(tester, '1234');
+    expect(find.text('Enter the same PIN again to confirm.'), findsOneWidget);
+
+    await _tapPin(tester, '9999');
+
+    expect(find.text("Those PINs don't match. Try again."), findsOneWidget);
+    expect(await QrVaultPin.instance.hasPin(), isFalse);
   });
 
   testWidgets('a returning visitor with the wrong PIN never sees the ticket', (tester) async {
@@ -112,10 +133,7 @@ void main() {
 
     expect(find.text('Enter your QR Vault PIN'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField), '0000');
-    await tester.tap(find.text('Continue'));
-    await tester.pump();
-    await tester.pump();
+    await _tapPin(tester, '0000');
 
     expect(find.text('Probatoire Philosophy Pamphlet'), findsNothing);
     expect(find.textContaining('Wrong PIN'), findsOneWidget);
@@ -130,9 +148,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    await tester.enterText(find.byType(TextField), '4321');
-    await tester.tap(find.text('Continue'));
-    await tester.pump();
+    await _tapPin(tester, '4321');
     await tester.pumpAndSettle();
 
     expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
@@ -143,7 +159,7 @@ void main() {
     expect(find.text('View on map'), findsOneWidget);
   });
 
-  testWidgets('the enter-PIN screen has no "Done" button -- only Reset', (tester) async {
+  testWidgets('the enter-PIN screen has no "Done" button -- only Forgot?', (tester) async {
     final storage = InMemoryTokenStorage();
     await QrVaultPin(storage: storage).setPin('4321');
     QrVaultPin.debugSetInstance(QrVaultPin(storage: storage));
@@ -154,21 +170,7 @@ void main() {
 
     expect(find.text('Enter your QR Vault PIN'), findsOneWidget);
     expect(find.text('Done'), findsNothing);
-    expect(find.text('Forgot your PIN? Reset it'), findsOneWidget);
-  });
-
-  testWidgets('the PIN field refuses more than 4 digits', (tester) async {
-    final storage = InMemoryTokenStorage();
-    await QrVaultPin(storage: storage).setPin('4321');
-    QrVaultPin.debugSetInstance(QrVaultPin(storage: storage));
-
-    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order]))));
-    await tester.pump();
-    await tester.pump();
-
-    await tester.enterText(find.byType(TextField), '432112345');
-    final field = tester.widget<TextField>(find.byType(TextField));
-    expect(field.controller!.text.length, 4);
+    expect(find.text('FORGOT?'), findsOneWidget);
   });
 
   testWidgets('resetting the PIN clears it and returns to first-time setup', (tester) async {
@@ -181,7 +183,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Enter your QR Vault PIN'), findsOneWidget);
-    await tester.tap(find.text('Forgot your PIN? Reset it'));
+    await tester.tap(find.text('FORGOT?'));
     await tester.pumpAndSettle();
 
     expect(find.text('Reset your QR Vault PIN?'), findsOneWidget);
@@ -231,11 +233,9 @@ void main() {
 
     expect(authenticator.authenticateCalls, 1);
     expect(find.text('Enter your QR Vault PIN'), findsOneWidget);
-    expect(find.text('Use fingerprint instead'), findsOneWidget);
+    expect(find.byIcon(LucideIcons.fingerprint), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField), '4321');
-    await tester.tap(find.text('Continue'));
-    await tester.pump();
+    await _tapPin(tester, '4321');
     await tester.pumpAndSettle();
     expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
   });
@@ -250,11 +250,8 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    await tester.enterText(find.byType(TextField), '1234');
-    await tester.tap(find.text('Continue'));
-    await tester.pump();
-    await tester.enterText(find.byType(TextField), '1234');
-    await tester.tap(find.text('Continue'));
+    await _tapPin(tester, '1234');
+    await _tapPin(tester, '1234');
     await tester.pumpAndSettle();
 
     expect(find.text('Use fingerprint to unlock?'), findsOneWidget);
@@ -274,11 +271,8 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    await tester.enterText(find.byType(TextField), '1234');
-    await tester.tap(find.text('Continue'));
-    await tester.pump();
-    await tester.enterText(find.byType(TextField), '1234');
-    await tester.tap(find.text('Continue'));
+    await _tapPin(tester, '1234');
+    await _tapPin(tester, '1234');
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Not now'));

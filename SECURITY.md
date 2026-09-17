@@ -152,6 +152,27 @@ held in escrow until release, with an explicit ownership check on
 self-confirmation (`apps/pamphlets/escrow.py`) — a customer can't confirm
 someone else's order's receipt.
 
+**Resolved 2026-09-17** (owner-reported: was a real gap) — the *partner*-
+side redemption page (`/redeem/<token>/`, scanned by whoever's phone
+reads the buyer's QR) used to release escrow off a single unauthenticated
+button click. Anyone holding the scanning phone — not necessarily the
+registered partner — could confirm a handover that never happened. It
+now requires a real one-time code, sent to the partner's own registered
+email or phone (never the buyer's), before `redeem_qr` is allowed to run
+(`RedeemVerification`, `apps/pamphlets/escrow.py`'s
+`start_redeem_verification`/`confirm_redeem_verification`) — same OTP
+shape (TTL + independent attempt cap) as `PasswordResetCode`/
+`EmailVerificationCode`, scoped per-order so a code sent for one
+redemption can't be reused on another. The phone channel is anchored to
+`PartnerBookshop.verification_phone` (Orange Money, falling back to
+MoMo) rather than the general `contact_phone`, specifically because
+Cameroonian mobile-money SIMs are ID-linked at registration by the
+carriers — a real accountability anchor a shared shop landline number
+isn't. Partner onboarding (`PartnerBookshopAdmin`) now requires a real
+full name, email, CNI, and NUI, and at least one of Orange Money/MoMo,
+so this identity check has real data to work with for every partner
+going forward.
+
 ## Error handling
 
 Every domain-level exception a view might catch and show to a caller
