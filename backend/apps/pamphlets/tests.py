@@ -446,3 +446,37 @@ def test_integration_ops_admin_action_releases_disputed_orders_only():
     assert disputed_order.status == PamphletOrderStatus.RELEASED
     assert disputed_order.payout_amount is not None
     assert untouched_order.status == PamphletOrderStatus.QR_ISSUED
+
+
+@pytest.mark.django_db
+def test_catalog_cover_image_url_is_none_when_not_uploaded(api_client):
+    PamphletFactory()
+    response = api_client.get("/api/pamphlets/catalog/")
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    assert rows[0]["cover_image_url"] is None
+
+
+@pytest.mark.django_db
+def test_catalog_cover_image_url_is_a_real_absolute_url_once_uploaded(api_client):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    pamphlet = PamphletFactory(
+        cover_image=SimpleUploadedFile("cover.jpg", b"fake-jpeg-bytes", content_type="image/jpeg")
+    )
+    response = api_client.get("/api/pamphlets/catalog/")
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    row = next(r for r in rows if r["id"] == pamphlet.id)
+    assert row["cover_image_url"].startswith("http")
+    assert "cover" in row["cover_image_url"]
+
+
+@pytest.mark.django_db
+def test_featured_endpoint_includes_a_real_absolute_cover_image_url(api_client):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    PamphletFactory(
+        is_featured=True, cover_image=SimpleUploadedFile("cover.jpg", b"fake-jpeg-bytes", content_type="image/jpeg")
+    )
+    response = api_client.get("/api/pamphlets/catalog/featured/")
+    assert response.status_code == 200
+    assert response.data["cover_image_url"].startswith("http")

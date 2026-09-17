@@ -12,6 +12,14 @@ class PartnerBookshopSerializer(serializers.ModelSerializer):
 
 class PamphletSerializer(serializers.ModelSerializer):
     partner_name = serializers.CharField(source="partner.name", read_only=True)
+    cover_image_url = serializers.SerializerMethodField()
+
+    def get_cover_image_url(self, obj) -> str | None:
+        if not obj.cover_image:
+            return None
+        request = self.context.get("request")
+        url = obj.cover_image.url
+        return request.build_absolute_uri(url) if request else url
 
     class Meta:
         model = Pamphlet
@@ -27,6 +35,7 @@ class PamphletSerializer(serializers.ModelSerializer):
             "delivery_available",
             "delivery_fee_fcfa",
             "is_featured",
+            "cover_image_url",
         ]
 
 

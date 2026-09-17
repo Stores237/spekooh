@@ -44,4 +44,28 @@ void main() {
     expect(find.text('GCE A Level Further Maths Pack'), findsOneWidget);
     expect(find.text('11 years of past questions + solutions.'), findsNothing);
   });
+
+  testWidgets('renders no Image widget at all for the gold placeholder path (no cover uploaded yet)', (tester) async {
+    await tester.pumpWidget(l10nTestApp(Scaffold(body: FeaturedPamphletCard(pamphlet: _pamphlet))));
+
+    expect(find.byType(Image), findsNothing);
+    expect(find.text('PHILOSOPHY'), findsOneWidget);
+  });
+
+  testWidgets('wires the real uploaded cover URL into a network image once one exists', (tester) async {
+    const coverUrl = 'https://example.com/pamphlets/philosophy-cover.jpg';
+    const withCover = Pamphlet(
+      title: 'Advance Level Philosophy Pamphlet',
+      partner: 'Librairie Centrale',
+      priceFcfa: '7,500',
+      subjectTitle: 'Philosophy',
+      coverImageUrl: coverUrl,
+    );
+    await tester.pumpWidget(l10nTestApp(Scaffold(body: FeaturedPamphletCard(pamphlet: withCover))));
+
+    expect(
+      find.byWidgetPredicate((w) => w is Image && w.image is NetworkImage && (w.image as NetworkImage).url == coverUrl),
+      findsOneWidget,
+    );
+  });
 }

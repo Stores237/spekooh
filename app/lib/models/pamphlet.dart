@@ -10,6 +10,7 @@ class Pamphlet {
     this.deliveryFeeFcfa = 0,
     this.subjectTitle = '',
     this.academicLevel = '',
+    this.coverImageUrl,
   });
 
   final int id;
@@ -24,6 +25,11 @@ class Pamphlet {
   /// Backs the Subject/Academic level filter chips on ShopScreen.
   final String subjectTitle;
   final String academicLevel;
+
+  /// Null until Integration Ops uploads one (owner request, 2026-09-17) --
+  /// FeaturedPamphletCard falls back to the gold subject/level placeholder
+  /// rather than fabricating a cover image when this is absent.
+  final String? coverImageUrl;
 }
 
 /// One row of the student's own pamphlet-order history — backs the "Recent

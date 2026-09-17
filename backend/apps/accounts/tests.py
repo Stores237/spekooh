@@ -798,6 +798,41 @@ def test_integration_ops_staff_can_set_up_a_new_partner_and_pamphlet():
 
 
 @pytest.mark.django_db
+def test_integration_ops_staff_can_upload_a_cover_image_when_creating_a_pamphlet():
+    from apps.pamphlets.factories import PartnerBookshopFactory
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    partner = PartnerBookshopFactory()
+
+    client = Client()
+    client.force_login(staff)
+
+    response = client.post(
+        "/admin/pamphlets/pamphlet/add/",
+        {
+            "partner": partner.id,
+            "title": "GCE Chemistry Pack",
+            "description": "",
+            "subject_title": "",
+            "academic_level": "",
+            "price_fcfa": 2500,
+            "delivery_available": False,
+            "delivery_fee_fcfa": 0,
+            "is_active": "on",
+            "is_featured": "",
+            "display_order": 0,
+            "cover_image": _tiny_png(),
+        },
+    )
+    assert response.status_code == 302
+    from apps.pamphlets.models import Pamphlet
+
+    pamphlet = Pamphlet.objects.get(title="GCE Chemistry Pack")
+    assert pamphlet.cover_image.name is not None
+
+
+@pytest.mark.django_db
 def test_integration_ops_staff_cannot_delete_a_partner_bookshop():
     from apps.pamphlets.factories import PartnerBookshopFactory
 
@@ -813,6 +848,48 @@ def test_integration_ops_staff_cannot_delete_a_partner_bookshop():
     from apps.pamphlets.models import PartnerBookshop
 
     assert PartnerBookshop.objects.filter(id=partner.id).exists()
+
+
+@pytest.mark.django_db
+def test_integration_ops_group_has_note_permissions():
+    """Owner request (2026-09-17): Integration Ops uploads the PDF for a
+    Note the same way it enters a Pamphlet's details -- layered onto the
+    group's existing pamphlets/pamphletorder/adminflagqueue permissions
+    from 0011, not replacing them."""
+    ops = Group.objects.get(name="Integration Ops")
+    codenames = set(ops.permissions.values_list("codename", flat=True))
+    assert {"view_note", "add_note", "change_note", "delete_note"} <= codenames
+    assert {"view_pamphlet", "add_pamphlet", "change_pamphlet", "delete_pamphlet"} <= codenames
+
+
+@pytest.mark.django_db
+def test_integration_ops_staff_can_upload_a_pdf_for_a_note():
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+
+    client = Client()
+    client.force_login(staff)
+
+    pdf = SimpleUploadedFile("physics-revision.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf")
+    response = client.post(
+        "/admin/notes/note/add/",
+        {
+            "title": "Physics Revision Notes",
+            "subtitle": "",
+            "subject_title": "",
+            "academic_level": "",
+            "sort_order": 0,
+            "pdf_file": pdf,
+        },
+    )
+    assert response.status_code == 302
+    from apps.notes.models import Note
+
+    note = Note.objects.get(title="Physics Revision Notes")
+    assert note.pdf_file.name is not None
+    assert "physics-revision" in note.pdf_file.name
 
 
 @pytest.mark.django_db

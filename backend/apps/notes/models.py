@@ -23,6 +23,12 @@ class Note(TimeStampedModel):
     subject_title = models.CharField(max_length=100, blank=True)
     academic_level = models.CharField(max_length=100, blank=True)
     sort_order = models.PositiveIntegerField(default=0)
+    # Owner request, 2026-09-17: the actual note content Integration Ops
+    # uploads -- optional so existing/placeholder rows (and this session's
+    # own admin tests) still save without one; the app has no detail view
+    # to open it from yet (see the class docstring), just the file itself
+    # once a real download/open flow exists.
+    pdf_file = models.FileField(upload_to="notes/%Y/%m/", null=True, blank=True)
 
     class Meta:
         ordering = ["sort_order", "title"]

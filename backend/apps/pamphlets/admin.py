@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
@@ -22,7 +23,8 @@ class PartnerBookshopAdmin(ModelAdmin):
 
 @admin.register(Pamphlet)
 class PamphletAdmin(ModelAdmin):
-    list_display = ("title", "partner", "subject_title", "academic_level", "price_fcfa", "display_order", "is_active", "is_featured")
+    list_display = ("cover_thumbnail", "title", "partner", "subject_title", "academic_level", "price_fcfa", "display_order", "is_active", "is_featured")
+    list_display_links = ("title",)
     list_filter = ("partner", "is_active", "is_featured", "subject_title", "academic_level")
     search_fields = ("title", "partner__name")
     # Integration Ops (owner request, 2026-09-16): reorder the shop listing
@@ -30,6 +32,12 @@ class PamphletAdmin(ModelAdmin):
     # alphabetically (Pamphlet.Meta.ordering). is_featured still always
     # wins the top slot regardless of this value.
     list_editable = ("display_order", "is_active", "is_featured")
+
+    @display(description="Cover")
+    def cover_thumbnail(self, obj):
+        if not obj.cover_image:
+            return "-"
+        return format_html('<img src="{}" style="height: 40px; border-radius: 4px;" />', obj.cover_image.url)
 
 
 @admin.register(PamphletOrder)
