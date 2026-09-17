@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../data/qr_vault_pin.dart';
@@ -25,7 +26,7 @@ class QrVaultLockGate extends StatefulWidget {
 enum _SetupStep { choose, confirm }
 
 class _QrVaultLockGateState extends State<QrVaultLockGate> {
-  final Future<bool> _hasPinFuture = QrVaultPin.instance.hasPin();
+  Future<bool> _hasPinFuture = QrVaultPin.instance.hasPin();
   bool _unlocked = false;
 
   final _pinController = TextEditingController();
@@ -101,6 +102,31 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
     }
   }
 
+  Future<void> _resetPin(AppLocalizations l10n) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.qrVaultResetPinConfirmTitle),
+        content: Text(l10n.qrVaultResetPinConfirmBody),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.doneLabel)),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(l10n.qrVaultResetPinConfirmAction)),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await QrVaultPin.instance.resetPin();
+    if (!mounted) return;
+    setState(() {
+      _hasPinFuture = QrVaultPin.instance.hasPin();
+      _pinController.clear();
+      _confirmController.clear();
+      _setupStep = _SetupStep.choose;
+      _chosenPin = null;
+      _error = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -122,6 +148,7 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
     required String title,
     required String subtitle,
     required VoidCallback onSubmit,
+    VoidCallback? onReset,
   }) {
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
@@ -155,6 +182,8 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
                   obscureText: true,
                   keyboardType: TextInputType.number,
                   enabled: !_busy,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  maxLength: 4,
                 ),
               ),
               if (_error != null) ...[
@@ -163,6 +192,13 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
               ],
               const SizedBox(height: AppSpacing.space4),
               SpekoohButton(onPressed: _busy ? null : onSubmit, child: Text(_busy ? l10n.processingLabel : l10n.qrVaultContinue)),
+              if (onReset != null) ...[
+                const SizedBox(height: AppSpacing.space2),
+                TextButton(
+                  onPressed: _busy ? null : () => onReset(),
+                  child: Text(l10n.qrVaultResetPin, style: TextStyle(fontFamily: plusJakartaSansFamily, color: AppColors.red500)),
+                ),
+              ],
               const SizedBox(height: AppSpacing.space3),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -190,6 +226,7 @@ class _QrVaultLockGateState extends State<QrVaultLockGate> {
       title: l10n.qrVaultEnterPinTitle,
       subtitle: l10n.qrVaultEnterPinSubtitle,
       onSubmit: () => _submitUnlock(l10n),
+      onReset: () => _resetPin(l10n),
     );
   }
 }

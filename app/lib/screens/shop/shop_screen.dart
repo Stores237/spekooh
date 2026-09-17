@@ -4,12 +4,12 @@ import '../../data/repository_locator.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/pamphlet.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/filter_chip_row.dart';
 import '../../widgets/filter_trigger_button.dart';
+import '../../widgets/pamphlet_cover_image.dart';
 import '../../widgets/search_input.dart';
 import '../../widgets/spekooh_button.dart';
 import '../common/circular_back_button.dart';
@@ -134,7 +134,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(l10n.shopTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
+                        Text(l10n.pamphletShopTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 19, color: AppColors.textPrimary)),
                         Text(l10n.shopHeaderSubtitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
                       ],
                     ),
@@ -179,10 +179,15 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                         const SizedBox(height: AppSpacing.space4),
                         Expanded(
-                          child: ListView.separated(
+                          child: GridView.builder(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: AppSpacing.space3,
+                              mainAxisSpacing: AppSpacing.space3,
+                              childAspectRatio: 0.62,
+                            ),
                             itemCount: items.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.space3),
-                            itemBuilder: (context, i) => _PamphletCard(pamphlet: items[i], onTap: () => widget.onOpenPamphlet?.call(items[i])),
+                            itemBuilder: (context, i) => _PamphletGridTile(pamphlet: items[i], onTap: () => widget.onOpenPamphlet?.call(items[i])),
                           ),
                         ),
                       ],
@@ -198,8 +203,12 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 }
 
-class _PamphletCard extends StatelessWidget {
-  const _PamphletCard({required this.pamphlet, this.onTap});
+/// Owner reference, 2026-09-17 (Kawlo's "Pamphlet Shop" grid): cover image
+/// on top, truncated title + price below, an inline Buy button -- replacing
+/// the previous single-column list card. Cover handling is shared with
+/// FeaturedPamphletCard via PamphletCoverImage.
+class _PamphletGridTile extends StatelessWidget {
+  const _PamphletGridTile({required this.pamphlet, this.onTap});
   final Pamphlet pamphlet;
   final VoidCallback? onTap;
 
@@ -210,36 +219,49 @@ class _PamphletCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
           borderRadius: BorderRadius.circular(18),
           boxShadow: AppShadows.card,
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(gradient: AppGradients.goldDeep, borderRadius: BorderRadius.circular(10)),
+            LayoutBuilder(
+              builder: (context, constraints) => PamphletCoverImage(
+                pamphlet: pamphlet,
+                width: constraints.maxWidth,
+                height: constraints.maxWidth * 1.25,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(pamphlet.title, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                  const SizedBox(height: 2),
-                  Text(l10n.pamphletSoldByQr(pamphlet.partner), style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                  Text(
+                    pamphlet.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary),
+                  ),
                   const SizedBox(height: 6),
-                  RichText(
-                    text: TextSpan(
-                      style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                      children: [
-                        TextSpan(text: pamphlet.priceFcfa),
-                        const TextSpan(text: '  FCFA', style: TextStyle(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.textPrimary),
+                            children: [
+                              TextSpan(text: pamphlet.priceFcfa),
+                              const TextSpan(text: ' FCFA', style: TextStyle(fontSize: 10, color: AppColors.textTertiary, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SpekoohButton(size: SpekoohButtonSize.sm, onPressed: onTap, child: Text(l10n.buy)),
+                    ],
                   ),
                 ],
               ),

@@ -12,20 +12,22 @@ class PamphletOrderError(SafeMessageError):
     pass
 
 
-def place_order(*, user, pamphlet, is_delivery: bool, phone_number: str) -> PamphletOrder:
+def place_order(
+    *, user, pamphlet, is_delivery: bool, phone_number: str, quantity: int = 1, delivery_address: str = ""
+) -> PamphletOrder:
     """
     Per spec (§3.2, step 3): the buyer gets their QR pickup ticket
     immediately after payment — there's no separate ops-approval step in
     the confirmed flow, so the QR is issued right here rather than left for
     a manual issue_qr() call.
     """
-    amount = pamphlet.price_fcfa + (pamphlet.delivery_fee_fcfa if is_delivery else 0)
+    amount = pamphlet.price_fcfa * quantity + (pamphlet.delivery_fee_fcfa if is_delivery else 0)
     transaction = charge(
         user=user,
         purpose=PaymentPurpose.PAMPHLET_ORDER,
         amount_fcfa=amount,
         phone_number=phone_number,
-        description=f"Pamphlet order: {pamphlet.title}",
+        description=f"Pamphlet order: {pamphlet.title} x{quantity}",
     )
     if transaction.status != PaymentTransactionStatus.SUCCESS:
         raise PamphletOrderError(transaction.failure_reason or "Payment failed.")
@@ -34,6 +36,8 @@ def place_order(*, user, pamphlet, is_delivery: bool, phone_number: str) -> Pamp
         user=user,
         pamphlet=pamphlet,
         is_delivery=is_delivery,
+        quantity=quantity,
+        delivery_address=delivery_address,
         amount_paid=amount,
         status=PamphletOrderStatus.PAID_HELD,
         payment_transaction=transaction,

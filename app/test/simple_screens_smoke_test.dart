@@ -50,7 +50,7 @@ void main() {
 
   testWidgets('ShopScreen builds with no exceptions', (tester) async {
     await _pumpAndCheck(tester, ShopScreen(repository: MockShopRepository()));
-    expect(find.text('Shop'), findsOneWidget);
+    expect(find.text('Pamphlet Shop'), findsOneWidget);
     expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
   });
 
@@ -66,8 +66,16 @@ void main() {
   testWidgets('ShopScreen Subject and Academic level filters narrow the list independently', (tester) async {
     await _pumpAndCheck(tester, ShopScreen(repository: MockShopRepository()));
 
-    // All 3 seeded pamphlets show with no filter applied.
+    // All 3 seeded pamphlets show with no filter applied -- the grid (owner
+    // reference, 2026-09-17) is taller per tile than the old single-column
+    // list was, so the 3rd one needs a real scroll to come into view here,
+    // same as any real device with more than a couple of pamphlets would.
     expect(find.text('GCE A Level Further Maths Pack'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Baccalauréat SVT Revision Guide'),
+      200,
+      scrollable: find.descendant(of: find.byType(GridView), matching: find.byType(Scrollable)),
+    );
     expect(find.text('Baccalauréat SVT Revision Guide'), findsOneWidget);
 
     // Filters live in an on-demand sheet behind a trigger button, not two
@@ -248,8 +256,8 @@ void main() {
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
     await LocaleController.instance.setLocale('fr');
     await _pumpAndCheck(tester, ShopScreen(repository: MockShopRepository()));
-    expect(find.text('Boutique'), findsOneWidget);
-    expect(find.text('Shop'), findsNothing);
+    expect(find.text('Boutique de pamphlets'), findsOneWidget);
+    expect(find.text('Pamphlet Shop'), findsNothing);
   });
 
   testWidgets('NotificationsScreen renders in French once that locale is active', (tester) async {

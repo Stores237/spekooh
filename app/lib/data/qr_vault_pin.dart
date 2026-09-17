@@ -97,6 +97,18 @@ class QrVaultPin {
     return max(0, maxAttempts - attempts);
   }
 
+  /// Forgot-PIN escape hatch (owner request, 2026-09-17): clears the stored
+  /// hash/salt/attempts/lockout entirely so the next visit to QR Vault goes
+  /// through first-time setup again. Device-local only -- this never
+  /// touches the real account/auth session, so it's safe to offer without
+  /// re-verifying identity the way a real account-password reset would.
+  Future<void> resetPin() async {
+    await _storage.delete(_hashKey);
+    await _storage.delete(_saltKey);
+    await _storage.delete(_attemptsKey);
+    await _storage.delete(_lockedUntilKey);
+  }
+
   String _generateSalt() {
     final random = Random.secure();
     final bytes = List<int>.generate(16, (_) => random.nextInt(256));

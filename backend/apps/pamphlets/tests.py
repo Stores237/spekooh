@@ -89,6 +89,70 @@ def test_place_order_endpoint_issues_qr_immediately(api_client):
 
 
 @pytest.mark.django_db
+def test_place_order_quantity_multiplies_the_amount_charged():
+    user = UserFactory()
+    pamphlet = PamphletFactory(price_fcfa=3000)
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000", quantity=3)
+    assert order.quantity == 3
+    assert order.amount_paid == 9000
+
+
+@pytest.mark.django_db
+def test_place_order_quantity_defaults_to_one():
+    user = UserFactory()
+    pamphlet = PamphletFactory(price_fcfa=3000)
+    order = place_order(user=user, pamphlet=pamphlet, is_delivery=False, phone_number="670000000")
+    assert order.quantity == 1
+    assert order.amount_paid == 3000
+
+
+@pytest.mark.django_db
+def test_place_order_persists_the_real_delivery_address():
+    user = UserFactory()
+    pamphlet = PamphletFactory(delivery_fee_fcfa=500)
+    order = place_order(
+        user=user, pamphlet=pamphlet, is_delivery=True, phone_number="670000000", delivery_address="Molyko, Buea"
+    )
+    assert order.delivery_address == "Molyko, Buea"
+
+
+@pytest.mark.django_db
+def test_place_order_endpoint_requires_a_delivery_address_for_delivery_orders(api_client):
+    user = UserFactory()
+    pamphlet = PamphletFactory(delivery_available=True, delivery_fee_fcfa=500)
+    api_client.force_authenticate(user=user)
+    response = api_client.post(
+        "/api/pamphlets/orders/place/",
+        {"pamphlet": pamphlet.id, "is_delivery": True, "phone_number": "670000000"},
+        format="json",
+    )
+    assert response.status_code == 400
+    assert "delivery_address" in response.data
+
+
+@pytest.mark.django_db
+def test_place_order_endpoint_accepts_quantity_and_delivery_address(api_client):
+    user = UserFactory()
+    pamphlet = PamphletFactory(price_fcfa=3000, delivery_available=True, delivery_fee_fcfa=500)
+    api_client.force_authenticate(user=user)
+    response = api_client.post(
+        "/api/pamphlets/orders/place/",
+        {
+            "pamphlet": pamphlet.id,
+            "is_delivery": True,
+            "phone_number": "670000000",
+            "quantity": 2,
+            "delivery_address": "Molyko, Buea",
+        },
+        format="json",
+    )
+    assert response.status_code == 201
+    assert response.data["quantity"] == 2
+    assert response.data["delivery_address"] == "Molyko, Buea"
+    assert response.data["amount_paid"] == 3000 * 2 + 500
+
+
+@pytest.mark.django_db
 def test_a_guest_account_cannot_place_an_order(api_client):
     """Hardening (2026-09-06): was plain IsAuthenticated, which a guest JWT
     also satisfies — the app has never actually sent one here, but every

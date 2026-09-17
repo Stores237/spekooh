@@ -16,6 +16,8 @@ abstract class ShopRepository {
     required int pamphletId,
     required bool isDelivery,
     required String phoneNumber,
+    int quantity = 1,
+    String deliveryAddress = '',
   });
 
   /// The requesting student's own past orders, most recent first — backs
@@ -35,6 +37,8 @@ class MockShopRepository implements ShopRepository {
     required int pamphletId,
     required bool isDelivery,
     required String phoneNumber,
+    int quantity = 1,
+    String deliveryAddress = '',
   }) async {
     final token = 'mock-qr-${Random().nextInt(999999)}';
     return PamphletOrderResult(qrToken: token, status: 'QR_ISSUED');

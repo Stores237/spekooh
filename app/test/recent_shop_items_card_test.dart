@@ -26,6 +26,8 @@ class _FakeShopRepository implements ShopRepository {
     required int pamphletId,
     required bool isDelivery,
     required String phoneNumber,
+    int quantity = 1,
+    String deliveryAddress = '',
   }) => throw UnimplementedError();
 }
 
