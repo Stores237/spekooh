@@ -22,8 +22,13 @@ class _FakeShopRepository implements ShopRepository {
   Future<Pamphlet> getFeaturedPamphlet() => throw UnimplementedError();
 
   @override
-  Future<PamphletOrderResult> placeOrder({required int pamphletId, required bool isDelivery, required String phoneNumber}) =>
-      throw UnimplementedError();
+  Future<PamphletOrderResult> placeOrder({
+    required int pamphletId,
+    required bool isDelivery,
+    required String phoneNumber,
+    int quantity = 1,
+    String deliveryAddress = '',
+  }) => throw UnimplementedError();
 }
 
 final _order = PamphletOrder(
@@ -116,5 +121,40 @@ void main() {
     expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
     expect(find.text('Librairie Centrale'), findsOneWidget);
     expect(find.text('Avenue Kennedy, Douala'), findsOneWidget);
+  });
+
+  testWidgets('the PIN field refuses more than 4 digits', (tester) async {
+    final storage = InMemoryTokenStorage();
+    await QrVaultPin(storage: storage).setPin('4321');
+    QrVaultPin.debugSetInstance(QrVaultPin(storage: storage));
+
+    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order]))));
+    await tester.pump();
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField), '432112345');
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text.length, 4);
+  });
+
+  testWidgets('resetting the PIN clears it and returns to first-time setup', (tester) async {
+    final storage = InMemoryTokenStorage();
+    await QrVaultPin(storage: storage).setPin('4321');
+    QrVaultPin.debugSetInstance(QrVaultPin(storage: storage));
+
+    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order]))));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Enter your QR Vault PIN'), findsOneWidget);
+    await tester.tap(find.text('Forgot your PIN? Reset it'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset your QR Vault PIN?'), findsOneWidget);
+    await tester.tap(find.text('Reset PIN'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Set a QR Vault PIN'), findsOneWidget);
+    expect(await QrVaultPin.instance.hasPin(), isFalse);
   });
 }

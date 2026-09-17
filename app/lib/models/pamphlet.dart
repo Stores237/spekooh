@@ -11,6 +11,7 @@ class Pamphlet {
     this.subjectTitle = '',
     this.academicLevel = '',
     this.coverImageUrl,
+    this.partnerLocation = '',
   });
 
   final int id;
@@ -21,6 +22,11 @@ class Pamphlet {
   final String description;
   final bool deliveryAvailable;
   final int deliveryFeeFcfa;
+
+  /// The real pickup address (owner request, 2026-09-17) -- backs the
+  /// "Collect at shop location" map link on PamphletSheet, before the
+  /// buyer has even ordered yet.
+  final String partnerLocation;
 
   /// Backs the Subject/Academic level filter chips on ShopScreen.
   final String subjectTitle;
@@ -49,6 +55,8 @@ class PamphletOrder {
     this.partnerLocation = '',
     this.partnerPhone = '',
     this.partnerWhatsapp = '',
+    this.quantity = 1,
+    this.deliveryAddress = '',
   });
 
   final int id;
@@ -56,6 +64,8 @@ class PamphletOrder {
   final String status;
   final int amountPaid;
   final DateTime createdAt;
+  final int quantity;
+  final String deliveryAddress;
 
   /// Null until the order is QR_ISSUED (always true immediately after
   /// ordering per apps.pamphlets.services.place_order's own docstring, but

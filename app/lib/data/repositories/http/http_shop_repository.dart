@@ -20,6 +20,7 @@ class HttpShopRepository implements ShopRepository {
       subjectTitle: row['subject_title'] as String? ?? '',
       academicLevel: row['academic_level'] as String? ?? '',
       coverImageUrl: row['cover_image_url'] as String?,
+      partnerLocation: row['partner_location'] as String? ?? '',
     );
   }
 
@@ -50,11 +51,15 @@ class HttpShopRepository implements ShopRepository {
     required int pamphletId,
     required bool isDelivery,
     required String phoneNumber,
+    int quantity = 1,
+    String deliveryAddress = '',
   }) async {
     final row = await _client.post('/pamphlets/orders/place/', body: {
       'pamphlet': pamphletId,
       'is_delivery': isDelivery,
       'phone_number': phoneNumber,
+      'quantity': quantity,
+      'delivery_address': deliveryAddress,
     });
     return PamphletOrderResult(qrToken: row['qr_token'] as String, status: row['status'] as String);
   }
@@ -78,6 +83,8 @@ class HttpShopRepository implements ShopRepository {
       partnerLocation: map['partner_location'] as String? ?? '',
       partnerPhone: map['partner_phone'] as String? ?? '',
       partnerWhatsapp: map['partner_whatsapp'] as String? ?? '',
+      quantity: map['quantity'] as int? ?? 1,
+      deliveryAddress: map['delivery_address'] as String? ?? '',
     );
   }
 }

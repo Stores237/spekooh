@@ -89,5 +89,22 @@ void main() {
       expect(await pin.lockedOutForSeconds(), isNull);
       expect(await pin.verifyPin('9999'), QrVaultPinResult.success);
     });
+
+    test('resetPin clears the PIN entirely, including any lockout', () async {
+      await pin.setPin('4321');
+      for (var i = 0; i < QrVaultPin.maxAttempts; i++) {
+        await pin.verifyPin('0000');
+      }
+      expect(await pin.hasPin(), isTrue);
+      expect(await pin.lockedOutForSeconds(), isNotNull);
+
+      await pin.resetPin();
+
+      expect(await pin.hasPin(), isFalse);
+      expect(await pin.lockedOutForSeconds(), isNull);
+      // A brand-new PIN can be set right after, as if starting fresh.
+      await pin.setPin('5678');
+      expect(await pin.verifyPin('5678'), QrVaultPinResult.success);
+    });
   });
 }

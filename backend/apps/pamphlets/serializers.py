@@ -12,6 +12,11 @@ class PartnerBookshopSerializer(serializers.ModelSerializer):
 
 class PamphletSerializer(serializers.ModelSerializer):
     partner_name = serializers.CharField(source="partner.name", read_only=True)
+    # Owner request, 2026-09-17: the "collect at shop" step needs the real
+    # pickup address before the buyer has even ordered yet, not just after
+    # (PamphletOrderSerializer's partner_location already covers the
+    # post-order QR Vault ticket).
+    partner_location = serializers.CharField(source="partner.location", read_only=True)
     cover_image_url = serializers.SerializerMethodField()
 
     def get_cover_image_url(self, obj) -> str | None:
@@ -27,6 +32,7 @@ class PamphletSerializer(serializers.ModelSerializer):
             "id",
             "partner",
             "partner_name",
+            "partner_location",
             "title",
             "description",
             "subject_title",
@@ -71,6 +77,8 @@ class PamphletOrderSerializer(serializers.ModelSerializer):
             "partner_phone",
             "partner_whatsapp",
             "is_delivery",
+            "quantity",
+            "delivery_address",
             "amount_paid",
             "status",
             # Safe to expose: this endpoint is always scoped to the
@@ -90,6 +98,15 @@ class PlaceOrderRequestSerializer(serializers.Serializer):
     pamphlet = serializers.IntegerField()
     is_delivery = serializers.BooleanField(default=False)
     phone_number = serializers.CharField(max_length=20)
+    quantity = serializers.IntegerField(default=1, min_value=1)
+    # Real pre-existing gap (owner request, 2026-09-17): is_delivery was
+    # already a flag with nowhere to actually say where to deliver to.
+    delivery_address = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+
+    def validate(self, attrs):
+        if attrs["is_delivery"] and not attrs.get("delivery_address", "").strip():
+            raise serializers.ValidationError({"delivery_address": "A delivery address is required for delivery orders."})
+        return attrs
 
 
 class DisputeRequestSerializer(serializers.Serializer):

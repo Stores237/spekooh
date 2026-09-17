@@ -614,6 +614,12 @@ abstract class AppLocalizations {
   /// **'Shop'**
   String get shopTitle;
 
+  /// No description provided for @pamphletShopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pamphlet Shop'**
+  String get pamphletShopTitle;
+
   /// No description provided for @shopSubtitle.
   ///
   /// In en, this message translates to:
@@ -2234,6 +2240,30 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get qrVaultContinue;
 
+  /// No description provided for @qrVaultResetPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot your PIN? Reset it'**
+  String get qrVaultResetPin;
+
+  /// No description provided for @qrVaultResetPinConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset your QR Vault PIN?'**
+  String get qrVaultResetPinConfirmTitle;
+
+  /// No description provided for @qrVaultResetPinConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll need to set a new 4-digit PIN before you can open QR Vault again.'**
+  String get qrVaultResetPinConfirmBody;
+
+  /// No description provided for @qrVaultResetPinConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset PIN'**
+  String get qrVaultResetPinConfirmAction;
+
   /// No description provided for @qrVaultSetPinTitle.
   ///
   /// In en, this message translates to:
@@ -2749,6 +2779,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payment failed. Check your connection and try again.'**
   String get paymentFailedGeneric;
+
+  /// No description provided for @pamphletQuantityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of copies'**
+  String get pamphletQuantityLabel;
+
+  /// No description provided for @pamphletPickupOptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect at shop location'**
+  String get pamphletPickupOptionLabel;
+
+  /// No description provided for @pamphletDeliveryOptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery'**
+  String get pamphletDeliveryOptionLabel;
+
+  /// No description provided for @pamphletViewOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'View on map'**
+  String get pamphletViewOnMap;
+
+  /// No description provided for @pamphletDeliveryAddressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery address / Town'**
+  String get pamphletDeliveryAddressLabel;
+
+  /// No description provided for @pamphletDeliveryAddressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Molyko, Buea'**
+  String get pamphletDeliveryAddressHint;
+
+  /// No description provided for @pamphletDeliveryAddressRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'A delivery address is required.'**
+  String get pamphletDeliveryAddressRequired;
 
   /// No description provided for @paywallBlockedMessage.
   ///

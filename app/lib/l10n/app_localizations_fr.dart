@@ -289,6 +289,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get shopTitle => 'Boutique';
 
   @override
+  String get pamphletShopTitle => 'Boutique de pamphlets';
+
+  @override
   String get shopSubtitle => 'Fascicules partenaires, retrait par QR code';
 
   @override
@@ -1231,6 +1234,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get qrVaultContinue => 'Continuer';
 
   @override
+  String get qrVaultResetPin => 'Code oublié ? Réinitialiser';
+
+  @override
+  String get qrVaultResetPinConfirmTitle =>
+      'Réinitialiser votre code du coffre QR ?';
+
+  @override
+  String get qrVaultResetPinConfirmBody =>
+      'Vous devrez définir un nouveau code à 4 chiffres avant de pouvoir rouvrir le coffre QR.';
+
+  @override
+  String get qrVaultResetPinConfirmAction => 'Réinitialiser';
+
+  @override
   String get qrVaultSetPinTitle => 'Définir un code pour le Coffre QR';
 
   @override
@@ -1540,6 +1557,28 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get paymentFailedGeneric =>
       'Échec du paiement. Vérifiez votre connexion et réessayez.';
+
+  @override
+  String get pamphletQuantityLabel => 'Nombre d\'exemplaires';
+
+  @override
+  String get pamphletPickupOptionLabel => 'Retrait en librairie';
+
+  @override
+  String get pamphletDeliveryOptionLabel => 'Livraison';
+
+  @override
+  String get pamphletViewOnMap => 'Voir sur la carte';
+
+  @override
+  String get pamphletDeliveryAddressLabel => 'Adresse de livraison / Ville';
+
+  @override
+  String get pamphletDeliveryAddressHint => 'ex. Molyko, Buea';
+
+  @override
+  String get pamphletDeliveryAddressRequired =>
+      'Une adresse de livraison est requise.';
 
   @override
   String get paywallBlockedMessage =>

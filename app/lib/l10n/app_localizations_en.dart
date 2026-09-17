@@ -287,6 +287,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shopTitle => 'Shop';
 
   @override
+  String get pamphletShopTitle => 'Pamphlet Shop';
+
+  @override
   String get shopSubtitle => 'Partner pamphlets, QR pickup';
 
   @override
@@ -1212,6 +1215,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qrVaultContinue => 'Continue';
 
   @override
+  String get qrVaultResetPin => 'Forgot your PIN? Reset it';
+
+  @override
+  String get qrVaultResetPinConfirmTitle => 'Reset your QR Vault PIN?';
+
+  @override
+  String get qrVaultResetPinConfirmBody =>
+      'You\'ll need to set a new 4-digit PIN before you can open QR Vault again.';
+
+  @override
+  String get qrVaultResetPinConfirmAction => 'Reset PIN';
+
+  @override
   String get qrVaultSetPinTitle => 'Set a QR Vault PIN';
 
   @override
@@ -1516,6 +1532,28 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get paymentFailedGeneric =>
       'Payment failed. Check your connection and try again.';
+
+  @override
+  String get pamphletQuantityLabel => 'Number of copies';
+
+  @override
+  String get pamphletPickupOptionLabel => 'Collect at shop location';
+
+  @override
+  String get pamphletDeliveryOptionLabel => 'Delivery';
+
+  @override
+  String get pamphletViewOnMap => 'View on map';
+
+  @override
+  String get pamphletDeliveryAddressLabel => 'Delivery address / Town';
+
+  @override
+  String get pamphletDeliveryAddressHint => 'e.g. Molyko, Buea';
+
+  @override
+  String get pamphletDeliveryAddressRequired =>
+      'A delivery address is required.';
 
   @override
   String get paywallBlockedMessage =>
