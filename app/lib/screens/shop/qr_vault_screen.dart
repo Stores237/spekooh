@@ -59,6 +59,11 @@ class _QrVaultScreenState extends State<QrVaultScreen> {
     await launchUrl(Uri.parse('https://wa.me/$phone'), mode: LaunchMode.externalApplication);
   }
 
+  Future<void> _viewOnMap(String location) async {
+    final query = Uri.encodeComponent(location);
+    await launchUrl(Uri.parse('https://www.google.com/maps/search/?api=1&query=$query'), mode: LaunchMode.externalApplication);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -221,12 +226,16 @@ class _QrVaultScreenState extends State<QrVaultScreen> {
             Text(order.partnerName, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
             if (order.partnerLocation.isNotEmpty) ...[
               const SizedBox(height: 2),
-              Row(
-                children: [
-                  const Icon(LucideIcons.mapPin, size: 14, color: AppColors.textTertiary),
-                  const SizedBox(width: 4),
-                  Expanded(child: Text(order.partnerLocation, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary))),
-                ],
+              GestureDetector(
+                onTap: () => _viewOnMap(order.partnerLocation),
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.mapPin, size: 14, color: AppColors.gold700),
+                    const SizedBox(width: 4),
+                    Expanded(child: Text(order.partnerLocation, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary))),
+                    Text(l10n.pamphletViewOnMap, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.gold700)),
+                  ],
+                ),
               ),
             ],
             const SizedBox(height: AppSpacing.space3),

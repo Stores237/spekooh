@@ -121,6 +121,23 @@ void main() {
     expect(find.text('Probatoire Philosophy Pamphlet'), findsOneWidget);
     expect(find.text('Librairie Centrale'), findsOneWidget);
     expect(find.text('Avenue Kennedy, Douala'), findsOneWidget);
+    // Owner-reported bug (2026-09-17): the pickup location wasn't tappable
+    // at all -- it must offer a real "View on map" affordance now.
+    expect(find.text('View on map'), findsOneWidget);
+  });
+
+  testWidgets('the enter-PIN screen has no "Done" button -- only Reset', (tester) async {
+    final storage = InMemoryTokenStorage();
+    await QrVaultPin(storage: storage).setPin('4321');
+    QrVaultPin.debugSetInstance(QrVaultPin(storage: storage));
+
+    await tester.pumpWidget(l10nTestApp(QrVaultScreen(repository: _FakeShopRepository([_order]))));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Enter your QR Vault PIN'), findsOneWidget);
+    expect(find.text('Done'), findsNothing);
+    expect(find.text('Forgot your PIN? Reset it'), findsOneWidget);
   });
 
   testWidgets('the PIN field refuses more than 4 digits', (tester) async {
