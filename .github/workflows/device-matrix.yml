@@ -1,0 +1,101 @@
+name: Device matrix (Firebase Test Lab)
+
+# Manual-only (Phase 0 of DEVICE_MATRIX.md): a Robo-test smoke pass across
+# the real Android version/screen-size matrix, run against Google's own
+# physical/virtual device farm -- not on every push, since Test Lab's free
+# tier is capped (10 physical + 5 virtual device tests/day) and this isn't
+# meant to gate ordinary PRs the way flutter.yml does.
+#
+# Requires two repo secrets this workflow does NOT create -- see
+# DEVICE_MATRIX.md's "How to actually get these devices" section for the
+# exact owner steps to create a Firebase project + service account:
+#   FIREBASE_TEST_LAB_SA_KEY  -- a GCP service account JSON key with the
+#                                "Firebase Test Lab" role (Cloud Testing
+#                                API + Cloud Tool Results API access)
+#   FIREBASE_PROJECT_ID       -- that service account's GCP project id
+#
+# Until both secrets exist, this workflow simply fails at the auth step
+# with a clear error -- same "works out of the box, activates once
+# configured" posture as SENTRY_DSN/GEMINI_API_KEY elsewhere in this repo
+# (see TODOS.md), not a broken pipeline.
+on:
+  workflow_dispatch:
+    inputs:
+      matrix_cell:
+        description: "Which DEVICE_MATRIX.md cell to run (1-5; cell 6 is RAM-tier, picked by model not API level -- run it via the manual script instead). 'all' runs 1-5 sequentially."
+        required: true
+        default: "all"
+        type: choice
+        options: ["all", "1", "2", "3", "4", "5"]
+
+permissions:
+  contents: read
+
+jobs:
+  test-lab:
+    name: Firebase Test Lab Robo smoke pass
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: "3.44.9"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Debug build, not release: Robo test only needs the app to install
+      # and run, and the real release keystore isn't (yet) available
+      # outside the machine that holds it -- see SECURITY.md's "App
+      # signing" section on why that's not backed up to CI at all.
+      - name: Build debug APK
+        run: flutter build apk --debug --dart-define=API_BASE_URL=https://spekooh-staging.onrender.com/api
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_TEST_LAB_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+      # DEVICE_MATRIX.md cells 1-5, mapped to real Android API levels.
+      # model=<placeholder> is deliberate -- Firebase Test Lab's device
+      # catalog changes over time and isn't something to hardcode here
+      # without a live `gcloud firebase test android models list` check
+      # (see DEVICE_MATRIX.md's setup steps). Replace each placeholder
+      # with a real, currently-available model id from that list once
+      # the Firebase project exists, matching the API level already
+      # correct on this line.
+      - name: Run Test Lab across the matrix
+        run: |
+          set -e
+          declare -A CELLS=(
+            [1]="model=REPLACE_WITH_REAL_MODEL_ID,version=26"   # cell 1: oldest OS floor (API 24-26)
+            [2]="model=REPLACE_WITH_REAL_MODEL_ID,version=30"   # cell 2: market centroid, low end (API 29-30)
+            [3]="model=REPLACE_WITH_REAL_MODEL_ID,version=33"   # cell 3: market centroid, largest slice (API 31-33)
+            [4]="model=REPLACE_WITH_REAL_MODEL_ID,version=34"   # cell 4: newer/larger screen (API 34)
+            [5]="model=REPLACE_WITH_REAL_MODEL_ID,version=36"   # cell 5: real ceiling, targetSdk 36
+          )
+          CELL="${{ inputs.matrix_cell }}"
+          if [ "$CELL" = "all" ]; then
+            RUN_CELLS="1 2 3 4 5"
+          else
+            RUN_CELLS="$CELL"
+          fi
+          for c in $RUN_CELLS; do
+            echo "=== Matrix cell $c ==="
+            gcloud firebase test android run \
+              --type robo \
+              --app build/app/outputs/flutter-apk/app-debug.apk \
+              --device "${CELLS[$c]}" \
+              --timeout 5m
+          done

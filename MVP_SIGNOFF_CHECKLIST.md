@@ -10,6 +10,10 @@ see `RUNNING_LOCALLY.md`) with a real device where noted. Log any FAIL in
 the Notes column with enough detail to reproduce, and don't check PASS
 until a fix is verified, not just made.
 
+Every "real device pass" row below and in this file's history has been on **one physical Android
+phone** — see `DEVICE_MATRIX.md` for the real OS-version/screen-size spread this needs before
+Play Console setup, and don't read a single-device PASS here as coverage of that spread.
+
 ---
 
 ## Accounts
