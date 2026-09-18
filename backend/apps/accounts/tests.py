@@ -125,6 +125,98 @@ def test_refresh_rotates_the_refresh_token_and_blacklists_the_old_one(api_client
 
 
 @pytest.mark.django_db
+def test_a_second_login_revokes_the_first_devices_session():
+    """Owner-reported security gap (2026-09-18): shared/stolen credentials
+    used to let a second device log in and quietly coexist with the real
+    owner's session forever, undetected. A new login must now boot every
+    other device's refresh token immediately."""
+    UserFactory(email="shared-creds@example.com", password="correcthorse123")
+    device_a = APIClient()
+    device_b = APIClient()
+
+    login_a = device_a.post(
+        "/api/auth/login/", {"email": "shared-creds@example.com", "password": "correcthorse123"}, format="json"
+    )
+    assert login_a.status_code == 200
+    refresh_a = login_a.data["refresh"]
+
+    login_b = device_b.post(
+        "/api/auth/login/", {"email": "shared-creds@example.com", "password": "correcthorse123"}, format="json"
+    )
+    assert login_b.status_code == 200
+    refresh_b = login_b.data["refresh"]
+
+    # Device A's session is dead the moment device B logs in.
+    device_a_refresh = device_a.post("/api/auth/refresh/", {"refresh": refresh_a}, format="json")
+    assert device_a_refresh.status_code == 401
+    assert device_a_refresh.data["detail"] == "Token is blacklisted"
+
+    # Device B, the one that just logged in, is unaffected.
+    device_b_refresh = device_b.post("/api/auth/refresh/", {"refresh": refresh_b}, format="json")
+    assert device_b_refresh.status_code == 200
+
+
+@pytest.mark.django_db
+def test_single_session_enforcement_catches_a_devices_rotated_refresh_token_too():
+    """Not just the token from the original login -- a device that already
+    rotated its refresh token at least once must also get kicked out by a
+    later login elsewhere, since revoke_other_sessions has to look up every
+    OutstandingToken row for the account, not just the newest one."""
+    UserFactory(email="rotated-then-shared@example.com", password="correcthorse123")
+    device_a = APIClient()
+    device_b = APIClient()
+
+    login_a = device_a.post(
+        "/api/auth/login/",
+        {"email": "rotated-then-shared@example.com", "password": "correcthorse123"},
+        format="json",
+    )
+    rotated = device_a.post("/api/auth/refresh/", {"refresh": login_a.data["refresh"]}, format="json")
+    assert rotated.status_code == 200
+    rotated_refresh_a = rotated.data["refresh"]
+
+    login_b = device_b.post(
+        "/api/auth/login/",
+        {"email": "rotated-then-shared@example.com", "password": "correcthorse123"},
+        format="json",
+    )
+    assert login_b.status_code == 200
+
+    device_a_refresh = device_a.post("/api/auth/refresh/", {"refresh": rotated_refresh_a}, format="json")
+    assert device_a_refresh.status_code == 401
+
+
+@pytest.mark.django_db
+def test_password_reset_confirm_revokes_every_existing_session(mailoutbox):
+    """A real password reset must boot out any live session on the
+    account too, not just block future logins with the old password --
+    if someone else already had a valid session, this is exactly the
+    moment that should end it."""
+    user = UserFactory(email="reset-kills-sessions@example.com")
+    user.set_password("OldPass!23")
+    user.save()
+    api_client = APIClient()
+
+    login = api_client.post(
+        "/api/auth/login/", {"email": "reset-kills-sessions@example.com", "password": "OldPass!23"}, format="json"
+    )
+    assert login.status_code == 200
+    old_refresh = login.data["refresh"]
+
+    api_client.post("/api/auth/password-reset/", {"email": "reset-kills-sessions@example.com"}, format="json")
+    code = mailoutbox[0].body.split()[6].rstrip(".")
+    confirm = api_client.post(
+        "/api/auth/password-reset/confirm/",
+        {"email": "reset-kills-sessions@example.com", "code": code, "new_password": "NewPass!456"},
+        format="json",
+    )
+    assert confirm.status_code == 200
+
+    stale_refresh = api_client.post("/api/auth/refresh/", {"refresh": old_refresh}, format="json")
+    assert stale_refresh.status_code == 401
+
+
+@pytest.mark.django_db
 def test_login_is_rate_limited_per_ip(api_client, monkeypatch):
     """Security hardening (2026-09-02): LoginView had no throttle at all —
     nothing stopped a script from brute-forcing/credential-stuffing a real
@@ -956,6 +1048,77 @@ def test_integration_ops_staff_can_view_the_redeemverification_audit_trail():
 
 
 @pytest.mark.django_db
+def test_integration_ops_can_upload_real_cni_and_nui_documents_for_a_partner():
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    client = Client()
+    client.force_login(staff)
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    png_bytes = _tiny_png().read()
+    response = client.post(
+        "/admin/pamphlets/partnerbookshop/add/",
+        {
+            "name": "Real Documents Bookshop",
+            "full_name": "Jean Mbarga",
+            "contact_email": "jean-real@example.com",
+            "contact_phone": "",
+            "whatsapp_number": "",
+            "orange_money_number": "670000000",
+            "momo_number": "",
+            "cni_number": "1234567890",
+            "cni_document": SimpleUploadedFile("cni.png", png_bytes, content_type="image/png"),
+            "nui_number": "P000000000000A",
+            "nui_document": SimpleUploadedFile("nui.png", png_bytes, content_type="image/png"),
+            "location": "Molyko, Buea",
+            "commission_percent": 5,
+        },
+    )
+    assert response.status_code == 302
+    from apps.pamphlets.models import PartnerBookshop
+
+    partner = PartnerBookshop.objects.get(name="Real Documents Bookshop")
+    assert partner.cni_document.name is not None
+    assert partner.nui_document.name is not None
+
+
+@pytest.mark.django_db
+def test_integration_ops_cannot_upload_a_fake_cni_document_disguised_as_an_image():
+    """Security hardening (2026-09-18): a real magic-byte check for these
+    admin-only KYC uploads too, not just the extension -- same gap this
+    app already closed for papers/avatars (apps.papers.validation)."""
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    client = Client()
+    client.force_login(staff)
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    response = client.post(
+        "/admin/pamphlets/partnerbookshop/add/",
+        {
+            "name": "Fake CNI Bookshop",
+            "full_name": "Jean Mbarga",
+            "contact_email": "jean-fake@example.com",
+            "contact_phone": "",
+            "whatsapp_number": "",
+            "orange_money_number": "670000000",
+            "momo_number": "",
+            "cni_number": "1234567890",
+            "cni_document": SimpleUploadedFile("cni.png", b"not a real png at all", content_type="image/png"),
+            "nui_number": "P000000000000A",
+            "location": "Molyko, Buea",
+            "commission_percent": 5,
+        },
+    )
+    assert response.status_code == 200  # re-rendered form with a validation error, not a redirect
+    from apps.pamphlets.models import PartnerBookshop
+
+    assert not PartnerBookshop.objects.filter(name="Fake CNI Bookshop").exists()
+
+
+@pytest.mark.django_db
 def test_integration_ops_staff_can_upload_a_pdf_for_a_note():
     from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -983,6 +1146,36 @@ def test_integration_ops_staff_can_upload_a_pdf_for_a_note():
     note = Note.objects.get(title="Physics Revision Notes")
     assert note.pdf_file.name is not None
     assert "physics-revision" in note.pdf_file.name
+
+
+@pytest.mark.django_db
+def test_integration_ops_cannot_upload_a_fake_pdf_for_a_note():
+    """Security hardening (2026-09-18): a real magic-byte check for
+    Note.pdf_file too -- a file renamed to claim a .pdf extension it
+    isn't is genuinely rejected, not just trusted."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    staff = UserFactory(is_staff=True)
+    staff.groups.add(Group.objects.get(name="Integration Ops"))
+    client = Client()
+    client.force_login(staff)
+
+    fake_pdf = SimpleUploadedFile("notes.pdf", b"just plain text, not a real pdf", content_type="application/pdf")
+    response = client.post(
+        "/admin/notes/note/add/",
+        {
+            "title": "Fake Notes",
+            "subtitle": "",
+            "subject_title": "",
+            "academic_level": "",
+            "sort_order": 0,
+            "pdf_file": fake_pdf,
+        },
+    )
+    assert response.status_code == 200  # re-rendered form with a validation error, not a redirect
+    from apps.notes.models import Note
+
+    assert not Note.objects.filter(title="Fake Notes").exists()
 
 
 @pytest.mark.django_db

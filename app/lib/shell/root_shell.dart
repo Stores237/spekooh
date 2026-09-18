@@ -97,7 +97,32 @@ class RootShellState extends State<RootShell> {
   }
 
   void _onAuthChanged() {
-    if (mounted) setState(() => _isLoggedIn = AuthSession.instance.isLoggedIn);
+    if (!mounted) return;
+    final wasSignedOutElsewhere = AuthSession.instance.consumeSignedOutElsewhere();
+    setState(() => _isLoggedIn = AuthSession.instance.isLoggedIn);
+    if (wasSignedOutElsewhere) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showSignedOutElsewhereDialog());
+    }
+  }
+
+  /// Single-active-session enforcement (owner-reported security gap,
+  /// 2026-09-18): a later login elsewhere revokes this device's session
+  /// immediately (see AuthSession._performRefresh's own comment) -- this is
+  /// the real owner's only way to actually notice it happened, rather than
+  /// silently landing back on a login screen with no explanation.
+  void _showSignedOutElsewhereDialog() {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.signedOutElsewhereTitle),
+        content: Text(l10n.signedOutElsewhereBody),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(l10n.doneLabel)),
+        ],
+      ),
+    );
   }
 
   void goToTab(int index) => setState(() => _activeTab = index);

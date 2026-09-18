@@ -2696,6 +2696,18 @@ abstract class AppLocalizations {
   /// **'Maybe later'**
   String get contributeNudgeDismiss;
 
+  /// No description provided for @signedOutElsewhereTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out'**
+  String get signedOutElsewhereTitle;
+
+  /// No description provided for @signedOutElsewhereBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account was signed in on another device, so you were signed out here. If this wasn\'t you, reset your password as soon as possible.'**
+  String get signedOutElsewhereBody;
+
   /// No description provided for @reasonWrongAnswers.
   ///
   /// In en, this message translates to:

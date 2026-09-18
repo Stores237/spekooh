@@ -87,10 +87,10 @@ void main() {
       expect(session.refreshToken, 'old-refresh');
     });
 
-    test('a blacklisted/expired refresh token fails cleanly, without touching stored tokens', () async {
+    test('a generically invalid/expired refresh token fails cleanly, without touching stored tokens', () async {
       final session = AuthSession(
         storage: InMemoryTokenStorage(),
-        httpClient: MockClient((request) async => http.Response('{"detail": "Token is blacklisted"}', 401)),
+        httpClient: MockClient((request) async => http.Response('{"detail": "Token is invalid or expired", "code": "token_not_valid"}', 401)),
       );
       session.refreshToken = 'stale-refresh';
 
@@ -98,6 +98,34 @@ void main() {
 
       expect(succeeded, isFalse);
       expect(session.refreshToken, 'stale-refresh'); // caller (ApiClient) decides what happens next, e.g. a real logout
+      expect(session.consumeSignedOutElsewhere(), isFalse);
+    });
+
+    test('a blacklisted refresh token (single-active-session enforcement, 2026-09-18) proactively logs out and flags why', () async {
+      // Owner-reported security gap: shared/stolen credentials used to let
+      // a second device log in and quietly coexist with the real owner's
+      // session forever. A later login elsewhere now revokes this
+      // device's refresh token server-side -- the next refresh attempt
+      // gets exactly this response, and the client must react immediately
+      // rather than surfacing a generic, unexplained 401 somewhere else.
+      final storage = InMemoryTokenStorage();
+      await storage.write('spekooh_access_token', 'stale-access');
+      await storage.write('spekooh_refresh_token', 'stale-refresh');
+      final session = AuthSession(
+        storage: storage,
+        httpClient: MockClient((request) async => http.Response('{"detail": "Token is blacklisted", "code": "token_not_valid"}', 401)),
+      );
+      session.accessToken = 'stale-access';
+      session.refreshToken = 'stale-refresh';
+
+      final succeeded = await session.refreshAccessToken();
+
+      expect(succeeded, isFalse);
+      expect(session.isLoggedIn, isFalse); // proactively logged out, not left dangling
+      expect(session.refreshToken, isNull);
+      expect(await storage.read('spekooh_refresh_token'), isNull);
+      expect(session.consumeSignedOutElsewhere(), isTrue);
+      expect(session.consumeSignedOutElsewhere(), isFalse); // one-shot -- doesn't re-fire
     });
 
     test('concurrent callers share one real refresh attempt instead of racing separate ones', () async {

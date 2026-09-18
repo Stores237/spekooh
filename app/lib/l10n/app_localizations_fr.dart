@@ -1505,6 +1505,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get contributeNudgeDismiss => 'Plus tard';
 
   @override
+  String get signedOutElsewhereTitle => 'Déconnecté';
+
+  @override
+  String get signedOutElsewhereBody =>
+      'Votre compte a été connecté sur un autre appareil, vous avez donc été déconnecté ici. Si ce n\'était pas vous, réinitialisez votre mot de passe dès que possible.';
+
+  @override
   String get reasonWrongAnswers => 'Réponses incorrectes ou manquantes';
 
   @override

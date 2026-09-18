@@ -66,6 +66,28 @@ within a few days.
   code itself also has its own attempt cap (`PasswordResetCode`), so
   brute-forcing one specific code is bounded independently of the
   request-rate throttle.
+- **Single-active-session enforcement (owner-reported, 2026-09-18)**: the
+  reported gap was shared/stolen credentials letting a second device log
+  in and quietly coexist with the real owner's session indefinitely,
+  undetected. Every successful login, registration, and guest mint
+  (`apps/accounts/services.py`'s `revoke_other_sessions`, called from
+  `tokens_for_user` and `EmailTokenObtainPairSerializer.validate`) now
+  blacklists every other outstanding refresh token for that account
+  immediately — the real owner is signed out, and can tell something
+  happened, the moment anyone else signs in, rather than both sessions
+  silently coexisting forever. A real password reset
+  (`PasswordResetConfirmSerializer.save`) revokes every session
+  including the caller's own, since that's exactly the moment a
+  compromised session should end too. The Flutter client
+  (`app/lib/data/auth_session.dart`'s `_performRefresh`) detects the
+  specific "Token is blacklisted" response, proactively logs itself out,
+  and flags `RootShell` to explain why rather than surfacing a
+  generic/unexplained 401. Access tokens (5-minute lifetime) aren't
+  individually blacklistable, so a kicked-out device can keep making
+  calls for up to 5 more minutes before its next refresh attempt is
+  rejected — an accepted, bounded window, not an oversight.
+  `apps/accounts/tests.py::test_a_second_login_revokes_the_first_devices_session`
+  and friends prove this end-to-end.
 
 ## Authorization
 
@@ -262,6 +284,47 @@ on. Staging/production never render Django's own debug traceback pages.
   session (an API key, a token) is treated as compromised from that
   moment, regardless of who typed it or how quickly it's replaced —
   rotate it, don't just stop mentioning it.
+- **Standing rotation cadence (added 2026-09-18)**: this was previously
+  reactive only — an AWS key, a database password, `DJANGO_SECRET_KEY`,
+  a task token, and the Spekooh↔S@Learn webhook secret were each rotated
+  this project only after a real trigger (a leak, or a sandbox reset
+  wiping a local copy). Every credential now gets rotated on a real
+  schedule instead of waiting for one of those triggers:
+  - **Every 90 days**: `DJANGO_SECRET_KEY`, the Spekooh↔S@Learn webhook
+    shared secret, `EMAIL_VERIFY_SHARED_SECRET`, any long-lived API key
+    (Twilio, storage provider, payment provider once real).
+  - **Every 180 days, or immediately on team-member offboarding**:
+    database password, Render/hosting-provider account credentials.
+  - **Immediately, every time, regardless of schedule**: anything pasted
+    into a chat/terminal session (see the standing policy above), or
+    anything the app-signing keystore/store password itself would fall
+    under if it could be rotated at all (it can't — see "App signing"
+    below, which is why that one is backed up instead of rotated).
+  - Owner is responsible for actually running this cadence today — no
+    automated reminder exists yet; adding one (a scheduled check, or a
+    calendar-based process) is itself a fair TODOS.md item once this
+    cadence has been followed manually at least once.
+
+## App signing
+
+- Android release builds sign with a single, persistent keystore
+  (`app/android/keystore/upload-keystore.jks`) via one `signingConfig`
+  (`app/android/app/build.gradle.kts`), git-ignored (`app/android/
+  .gitignore`) — never committed, same as any other secret. Falls back to
+  debug signing automatically when `key.properties` isn't present (e.g. a
+  fresh clone, or CI), so a real release keystore is opt-in per machine,
+  not required just to build.
+- **Critical, and currently unmitigated**: this keystore file is the
+  app's permanent signing identity. If the machine holding it is ever
+  lost or reset without a backup, no future release build can ever be
+  installed as an *update* to an existing install signed with the
+  original key again (Android treats a signature mismatch as a different
+  app) — on Google Play specifically, it would permanently block
+  publishing further updates to the existing listing at all. **Action
+  needed, not yet done**: back up `upload-keystore.jks` plus its store/key
+  passwords (from `key.properties`) to the owner's password manager or
+  equivalent secure storage outside this machine — never to the repo,
+  never pasted into chat.
 
 ## Known gaps, stated plainly
 
@@ -280,7 +343,23 @@ on. Staging/production never render Django's own debug traceback pages.
   the actual next step is registering one (e.g. `spekooh.app`), not a
   Cloudflare config step.
 - **Resolved 2026-09-14** (was: no file-content-type validation on
-  uploads beyond size) — see "File uploads" above.
+  uploads beyond size) — see "File uploads" above. **Extended
+  2026-09-18**: the 2026-09-14 fix only covered the papers/avatar
+  upload path. Three admin-only upload fields added 2026-09-17
+  (`Note.pdf_file`, `PartnerBookshop.cni_document`/`nui_document`) went
+  in without it — a gap this session's own review caught rather than a
+  new incident. Same magic-byte check now runs on all three
+  (`apps/papers/validation.py`'s `validate_pdf_file_content`/
+  `validate_document_file_content`, wired as model-field validators).
+- **Decided, not built: self-service account deletion (2026-09-18).**
+  The Privacy Policy promises deletion on request, fulfilled today by a
+  manual, email-a-human process — fine at current scale (tens of users),
+  a real support cost once that volume grows. Deliberately not built now
+  rather than left as a silent scaling problem: revisit when the account
+  base crosses roughly 200 registered users, or actual deletion-request
+  volume exceeds about 2/week, whichever comes first — either signal
+  means the manual process has started costing real time. Owner decides
+  when to schedule the actual build once triggered.
 - **The real payment provider isn't integrated yet** — see "Payments"
   above. No real financial risk today since nothing charges real money,
   but the real provider's own error-handling hasn't been exercised.

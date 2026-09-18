@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.models import TimeStampedModel
+from apps.papers.validation import validate_pdf_file_content
 
 
 class Note(TimeStampedModel):
@@ -28,7 +29,12 @@ class Note(TimeStampedModel):
     # own admin tests) still save without one; the app has no detail view
     # to open it from yet (see the class docstring), just the file itself
     # once a real download/open flow exists.
-    pdf_file = models.FileField(upload_to="notes/%Y/%m/", null=True, blank=True)
+    # Security hardening (2026-09-18): a real magic-byte check, not just
+    # the ".pdf" extension -- same gap this app already closed for
+    # papers/avatars (see apps.papers.validation's own docstring).
+    pdf_file = models.FileField(
+        upload_to="notes/%Y/%m/", null=True, blank=True, validators=[validate_pdf_file_content]
+    )
 
     class Meta:
         ordering = ["sort_order", "title"]

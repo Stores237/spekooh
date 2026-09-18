@@ -1480,6 +1480,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contributeNudgeDismiss => 'Maybe later';
 
   @override
+  String get signedOutElsewhereTitle => 'Signed out';
+
+  @override
+  String get signedOutElsewhereBody =>
+      'Your account was signed in on another device, so you were signed out here. If this wasn\'t you, reset your password as soon as possible.';
+
+  @override
   String get reasonWrongAnswers => 'Wrong or missing answers';
 
   @override

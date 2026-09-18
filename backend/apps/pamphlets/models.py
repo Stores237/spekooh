@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 
 from apps.core.models import TimeStampedModel
+from apps.papers.validation import validate_document_file_content
 from apps.payments.models import PaymentTransaction
 
 
@@ -36,9 +37,25 @@ class PartnerBookshop(TimeStampedModel):
     # document is required too (owner correction, 2026-09-17), same
     # ImageField-on-a-model pattern as Pamphlet.cover_image.
     cni_number = models.CharField("CNI number", max_length=30, default="")
-    cni_document = models.FileField("CNI document", upload_to="partner_kyc/%Y/%m/", null=True, blank=True)
+    # Security hardening (2026-09-18): a real magic-byte check (PDF or a
+    # real photo, not just a claimed extension) -- same gap this app
+    # already closed for papers/avatars, extended to these admin-only
+    # KYC uploads (see apps.papers.validation's own docstring).
+    cni_document = models.FileField(
+        "CNI document",
+        upload_to="partner_kyc/%Y/%m/",
+        null=True,
+        blank=True,
+        validators=[validate_document_file_content],
+    )
     nui_number = models.CharField("NUI number", max_length=30, default="")
-    nui_document = models.FileField("NUI document", upload_to="partner_kyc/%Y/%m/", null=True, blank=True)
+    nui_document = models.FileField(
+        "NUI document",
+        upload_to="partner_kyc/%Y/%m/",
+        null=True,
+        blank=True,
+        validators=[validate_document_file_content],
+    )
     # Free text, same rationale as Pamphlet.subject_title/academic_level:
     # partners are entered one at a time via admin, not picked from a
     # geocoded address taxonomy this app doesn't have.
