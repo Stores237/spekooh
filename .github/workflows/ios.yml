@@ -54,6 +54,17 @@ jobs:
           flutter-version: "3.44.9"
           cache: true
 
+      # Real bug found live on this workflow's first-ever run (2026-09-18):
+      # `flutter pub get` tries to pre-copy plugins that ship a Package.swift
+      # (google_mobile_ads here) into build/ios/SourcePackages/<plugin> via
+      # rsync, which fails with "mkdir ... No such file or directory" when
+      # that directory chain has never existed -- exactly the case for a
+      # genuinely first-ever iOS pub get in this project's history. rsync
+      # doesn't create missing intermediate directories itself, so this has
+      # to exist before pub get runs, not after.
+      - name: Pre-create build/ios (first-ever pub get needs this to exist)
+        run: mkdir -p build/ios/SourcePackages
+
       - name: Install Flutter dependencies
         run: flutter pub get
 
