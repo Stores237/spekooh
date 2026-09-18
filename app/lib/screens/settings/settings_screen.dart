@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flutter/material.dart';
+import '../../data/api_client.dart';
 import '../../data/auth_session.dart';
 import '../../data/locale_controller.dart';
 import '../../data/repositories/profile_repository.dart';
@@ -179,10 +180,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ]),
               _sectionLabel(l10n.aboutSection),
               _card([
-                // No live site yet (owner-confirmed, 2026-08-23) — honest
-                // "not available" subtitle instead of a domain that doesn't
-                // resolve to anything, and no onTap until one exists.
-                ListItemRow(icon: const IconChip(icon: LucideIcons.globe, tint: IconChipTint.blue, size: 38), title: l10n.aboutWebsiteTitle, subtitle: l10n.notAvailableYet),
+                // Live since 2026-09-18 — the marketing site now ships from
+                // the same Django app as the API (backend/apps/core), so it
+                // follows this build's own API_BASE_URL (see
+                // data/api_client.dart's websiteBaseUrl) instead of a
+                // hardcoded domain.
+                ListItemRow(
+                  icon: const IconChip(icon: LucideIcons.globe, tint: IconChipTint.blue, size: 38),
+                  title: l10n.aboutWebsiteTitle,
+                  onTap: () => _launch(Uri.parse(websiteBaseUrl)),
+                ),
                 const Divider(height: 1),
                 ListItemRow(
                   icon: const IconChip(icon: LucideIcons.lock, tint: IconChipTint.blue, size: 38),

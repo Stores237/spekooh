@@ -8,6 +8,26 @@ import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/token_storage.dart';
 
 void main() {
+  group('websiteUrlForApiBase (Settings "Visit our website" link)', () {
+    // The marketing site and API are one Django app (/ vs /api/...), so the
+    // link must follow whichever backend a build is pointed at.
+    test('strips the trailing /api from a staging URL', () {
+      expect(websiteUrlForApiBase('https://spekooh-staging.onrender.com/api'), 'https://spekooh-staging.onrender.com');
+    });
+
+    test('tolerates a trailing slash after /api', () {
+      expect(websiteUrlForApiBase('https://spekooh-staging.onrender.com/api/'), 'https://spekooh-staging.onrender.com');
+    });
+
+    test('works for a local dev URL with a port', () {
+      expect(websiteUrlForApiBase('http://10.0.2.2:8000/api'), 'http://10.0.2.2:8000');
+    });
+
+    test('leaves a base URL that has no /api suffix alone', () {
+      expect(websiteUrlForApiBase('https://example.com'), 'https://example.com');
+    });
+  });
+
   test('postMultipart uses bearerTokenOverride instead of the session\'s own token', () async {
     // The scenario this protects: a guest contributing a paper must never
     // accidentally ride on some other real token this session happens to
