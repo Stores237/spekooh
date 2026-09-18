@@ -478,6 +478,9 @@
   "contributeNudgeCta": "Contribuer maintenant",
   "contributeNudgeDismiss": "Plus tard",
 
+  "signedOutElsewhereTitle": "Déconnecté",
+  "signedOutElsewhereBody": "Votre compte a été connecté sur un autre appareil, vous avez donc été déconnecté ici. Si ce n'était pas vous, réinitialisez votre mot de passe dès que possible.",
+
   "reasonWrongAnswers": "Réponses incorrectes ou manquantes",
   "reasonPoorQuality": "Mauvaise qualité de scan / illisible",
   "reasonWrongSubject": "Mauvaise matière ou type d'examen",

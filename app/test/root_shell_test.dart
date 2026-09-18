@@ -1,6 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/repository_locator.dart';
+import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/main.dart';
 import 'package:spekooh/shell/root_shell.dart';
 import 'package:spekooh/widgets/bottom_nav.dart';
@@ -113,6 +119,51 @@ void main() {
       // inner SafeArea's own automatic inset) — not stranded ~76px above
       // it from a second, manually-added compensation.
       expect((barTopY - lastContentBottomY).abs(), lessThan(1));
+    },
+  );
+
+  testWidgets(
+    'a refresh rejected as blacklisted (single-active-session enforcement, 2026-09-18) logs the app out and explains why',
+    (tester) async {
+      // Owner-reported security gap: shared/stolen credentials used to let
+      // a second device log in and quietly coexist with the real owner's
+      // session. When this device's own refresh token gets revoked by a
+      // later login elsewhere, the real owner needs to actually see that
+      // it happened, not just land back on a login screen unexplained.
+      RepositoryLocator.debugSetInstance(buildMockRepositoryLocator());
+      final session = AuthSession(
+        storage: InMemoryTokenStorage(),
+        httpClient: MockClient(
+          (request) async => http.Response(jsonEncode({'detail': 'Token is blacklisted', 'code': 'token_not_valid'}), 401),
+        ),
+      );
+      AuthSession.debugSetInstance(session);
+      addTearDown(() => AuthSession.debugSetInstance(AuthSession()));
+
+      await tester.pumpWidget(const SpekoohApp());
+      await tester.pump(const Duration(milliseconds: 1300)); // let AuthSession.bootstrap() finish first
+
+      // Set after bootstrap (not before pumpWidget) -- bootstrap() reads
+      // from storage and would otherwise overwrite these back to null.
+      session.accessToken = 'stale-access';
+      session.refreshToken = 'stale-refresh';
+
+      final succeeded = await session.refreshAccessToken();
+      expect(succeeded, isFalse);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Signed out'), findsOneWidget);
+      expect(
+        find.text(
+          "Your account was signed in on another device, so you were signed out here. If this wasn't you, reset your password as soon as possible.",
+        ),
+        findsOneWidget,
+      );
+      expect(session.isLoggedIn, isFalse);
+
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+      expect(find.text('Signed out'), findsNothing);
     },
   );
 }

@@ -3,10 +3,49 @@ import logging
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
+from django.utils import timezone
 
 from .models import EmailVerificationCode, User
 
 logger = logging.getLogger(__name__)
+
+
+def revoke_other_sessions(user: "User", *, keep_jti: str | None = None) -> None:
+    """Single-active-session enforcement (owner-reported, 2026-09-18): the
+    actual reported gap was shared/stolen credentials letting a second
+    device quietly ride alongside the real owner's session, indefinitely
+    and undetected -- not multi-device login by itself. Every successful
+    login (tokens_for_user, EmailTokenObtainPairSerializer) and a real
+    password reset (PasswordResetConfirmSerializer) now revokes every
+    OTHER outstanding refresh token for the account immediately, so the
+    real owner is signed out -- and can tell something happened -- the
+    moment anyone else signs in, rather than both sessions silently
+    coexisting forever.
+
+    keep_jti is the jti of the session that should survive (the one just
+    issued by this same call) -- pass None to revoke every session
+    including the caller's own, which is what a password reset needs
+    (it issues no new token itself; the user must log in fresh
+    afterward).
+
+    Only ever touches refresh tokens already tracked by
+    rest_framework_simplejwt.token_blacklist (ROTATE_REFRESH_TOKENS +
+    BLACKLIST_AFTER_ROTATION are already on, see SIMPLE_JWT settings) --
+    an already-issued access token (ACCESS_TOKEN_LIFETIME=5 minutes)
+    keeps working until it naturally expires, since access tokens aren't
+    individually blacklistable; the next refresh attempt on any other
+    device is what actually gets rejected.
+    """
+    from rest_framework_simplejwt.token_blacklist.models import (
+        BlacklistedToken,
+        OutstandingToken,
+    )
+
+    others = OutstandingToken.objects.filter(user=user, expires_at__gt=timezone.now())
+    if keep_jti is not None:
+        others = others.exclude(jti=keep_jti)
+    for outstanding in others:
+        BlacklistedToken.objects.get_or_create(token=outstanding)
 
 
 def send_verification_email(user: "User") -> EmailVerificationCode:

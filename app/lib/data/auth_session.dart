@@ -68,6 +68,21 @@ class AuthSession extends ChangeNotifier {
 
   bool get isLoggedIn => accessToken != null;
 
+  /// Set true exactly once, right before a proactive [logout] triggered by
+  /// _performRefresh detecting this device's refresh token was blacklisted
+  /// by a later login elsewhere (single-active-session enforcement --
+  /// see apps.accounts.services.revoke_other_sessions's own docstring on
+  /// the backend). Read via [consumeSignedOutElsewhere] so the UI (RootShell)
+  /// surfaces the "signed out because your account was used elsewhere"
+  /// message exactly once, not on every subsequent rebuild.
+  bool _signedOutElsewhere = false;
+
+  bool consumeSignedOutElsewhere() {
+    final value = _signedOutElsewhere;
+    _signedOutElsewhere = false;
+    return value;
+  }
+
   /// Reads persisted tokens on app start so a login survives a restart.
   Future<void> bootstrap() async {
     accessToken = await _storage.read(_accessKey);
@@ -323,7 +338,31 @@ class AuthSession extends ChangeNotifier {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'refresh': refresh}),
       );
-      if (response.statusCode != 200) return false;
+      if (response.statusCode != 200) {
+        // A blacklisted refresh token specifically means single-active-
+        // session enforcement kicked this device out because the account
+        // logged in somewhere else -- it can never succeed again, so
+        // proactively clear local state right now rather than waiting for
+        // some other stray 401 to eventually force it, and let the UI
+        // explain why instead of a silent/generic logout. Matched by exact
+        // string since rest_framework_simplejwt doesn't expose a distinct
+        // machine-readable code for this specific reason (every invalid-
+        // refresh-token case shares "code": "token_not_valid") -- if this
+        // string ever changes in a future simplejwt version, the worst
+        // case is just falling back to the generic "log in again" path
+        // below instead of the specific message, never a security
+        // regression.
+        try {
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          if (body['detail'] == 'Token is blacklisted') {
+            _signedOutElsewhere = true;
+            await logout();
+          }
+        } catch (_) {
+          // Non-JSON error body -- nothing to detect either way.
+        }
+        return false;
+      }
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       accessToken = data['access'] as String;
       await _storage.write(_accessKey, accessToken!);

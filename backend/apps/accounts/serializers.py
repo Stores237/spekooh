@@ -205,12 +205,18 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             # rejection and offer a real "resend code" recovery instead of
             # a dead-end generic error.
             raise serializers.ValidationError({"code": ["email_not_verified"]})
+        # Single-active-session enforcement (see services.revoke_other_
+        # sessions's own docstring) -- deliberately only reached once the
+        # email-verification gate above has already passed, so a rejected
+        # login attempt never revokes the real owner's other sessions.
+        services.revoke_other_sessions(self.user, keep_jti=RefreshToken(data["refresh"])["jti"])
         data["user"] = UserSerializer(self.user).data
         return data
 
 
 def tokens_for_user(user: User) -> dict:
     refresh = RefreshToken.for_user(user)
+    services.revoke_other_sessions(user, keep_jti=refresh["jti"])
     return {"refresh": str(refresh), "access": str(refresh.access_token)}
 
 
@@ -273,6 +279,13 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         user.save(update_fields=["password"])
         reset.used_at = timezone.now()
         reset.save(update_fields=["used_at"])
+        # A real password reset revokes every existing session, not just
+        # future logins -- if someone else had a live session on this
+        # account, resetting the password is exactly the moment that
+        # should boot them out too, not just block their next login
+        # attempt. No keep_jti: this endpoint issues no token of its own,
+        # the user logs in fresh afterward.
+        services.revoke_other_sessions(user)
         return user
 
 
