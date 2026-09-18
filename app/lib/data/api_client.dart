@@ -24,6 +24,23 @@ const String _defaultBaseUrl = kIsWeb ? 'http://localhost:8000/api' : 'http://10
 /// strict improvement even against a normal always-on host.
 const Duration _requestTimeout = Duration(seconds: 90);
 
+/// The marketing site and the API are served by the same Django app (see
+/// backend/config/urls.py: `/` is the site, `/api/...` is the API) — so the
+/// site's URL is always this build's [API_BASE_URL] with the trailing
+/// `/api` stripped. Whatever backend a build is pointed at (local, staging,
+/// production), the "Visit our website" link in Settings follows it
+/// automatically instead of needing its own dart-define.
+String get websiteBaseUrl {
+  const base = String.fromEnvironment('API_BASE_URL', defaultValue: _defaultBaseUrl);
+  return websiteUrlForApiBase(base);
+}
+
+@visibleForTesting
+String websiteUrlForApiBase(String apiBase) {
+  final trimmed = apiBase.endsWith('/') ? apiBase.substring(0, apiBase.length - 1) : apiBase;
+  return trimmed.endsWith('/api') ? trimmed.substring(0, trimmed.length - 4) : trimmed;
+}
+
 class ApiException implements Exception {
   ApiException(this.statusCode, this.body);
   final int statusCode;
