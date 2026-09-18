@@ -1,0 +1,7 @@
+# app/ios/Podfile is CocoaPods configuration (Ruby syntax, no .rb extension), not
+# Ruby source. Without this, GitHub's language detection counts it as Ruby, and
+# CodeQL's default setup then adds an "Analyze (ruby)" job to every push that
+# fails fatally ("no source code for Ruby seen") because there is nothing for
+# the Ruby extractor to analyze. Vendored files are excluded from language
+# stats, which is what default setup keys off.
+app/ios/Podfile linguist-vendored
