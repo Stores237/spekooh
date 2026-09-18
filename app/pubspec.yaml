@@ -63,7 +63,17 @@ dependencies:
 
   # Real native share sheet for the redeem code on Profile.
   share_plus: ^10.1.4
-  google_mobile_ads: ^9.1.0
+  # Pinned to 9.0.0, not the newer 9.1.0, deliberately (2026-09-18): 9.1.0
+  # added FLTAdPreloader.h/FLTAd_Internal.h, which #import a private
+  # GoogleMobileAds header not declared in its own module map -- a real,
+  # confirmed regression that breaks every iOS *release/archive* build
+  # specifically (CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES,
+  # the normal fix for this class of error, is documented to NOT
+  # suppress it for Release builds). This app uses none of 9.1.0's own
+  # additions (Ad Preloading APIs, setConsentSyncId, ageRestrictedTreatment
+  # -- verified: no reference anywhere in lib/), so there's no real
+  # feature cost to staying on the last version without this bug.
+  google_mobile_ads: 9.0.0
   lucide_icons_flutter: ^3.1.19
   path_provider: ^2.1.6
   open_filex: ^4.7.0

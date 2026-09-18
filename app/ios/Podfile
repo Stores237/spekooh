@@ -48,22 +48,5 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
-
-    # Real build failure found live (2026-09-18, this project's
-    # first-ever iOS build): google_mobile_ads 9.1.0 added
-    # FLTAdPreloader.h/FLTAd_Internal.h, which #import
-    # <GoogleMobileAds/GoogleMobileAds_Beta.h> -- a private header not
-    # declared in GoogleMobileAds.framework's own module map. With
-    # use_frameworks! (above) and Xcode's Clang modules on by default,
-    # that's a hard build error ("Include of non-modular header inside
-    # framework module"), not a warning. This is a known, documented
-    # regression in this exact plugin version (confirmed via real
-    # community reports, not guessed), not a misconfiguration on this
-    # project's side -- CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_
-    # MODULES is the standard, official way CocoaPods projects allow a
-    # pod's own private cross-header include like this.
-    target.build_configurations.each do |config|
-      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-    end
   end
 end
