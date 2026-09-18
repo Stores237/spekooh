@@ -78,9 +78,19 @@
 	     because this app's real-device testing has so far been Android-only. -->
 	<key>NSCameraUsageDescription</key>
 	<string>Spekooh uses your camera to scan and submit past papers, academic reports, and your profile photo.</string>
-	<!-- Required for local_auth's Face ID unlock (QR Vault, 2026-09-17) --
+	<!-- Required for local_auth's Face ID unlock (QR Vault, 2026-09-17) —
 	     iOS refuses biometric authentication outright without this key. -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>Spekooh uses Face ID to unlock your QR Vault pickup tickets.</string>
+	<!-- Found 2026-09-18 during this project's first-ever from-scratch iOS
+	     audit (never previously verified on a real device or even a real
+	     build — see ios/Podfile's own history): ProfileScreen's avatar
+	     picker offers ImageSource.gallery as well as .camera
+	     (profile_screen.dart), which needs this key too — without it,
+	     iOS crashes outright the moment a user picks "gallery", not just
+	     shows a permission-denied error. NSCameraUsageDescription alone
+	     never covered this path. -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Spekooh uses your photo library so you can pick a profile photo without using the camera.</string>
 </dict>
 </plist>

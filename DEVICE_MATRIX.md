@@ -8,6 +8,9 @@ a real spread of Android OS versions, screen sizes, and RAM tiers, not the sprea
 is the plan for closing that gap before Play Console setup, using real market data instead of
 guessing which devices "probably" matter.
 
+**iOS is worse than one data point — it's zero.** See "iOS: from-scratch verification" below;
+everything above this section is Android-only.
+
 ## What the app is actually built against
 
 From the release APK itself (`aapt dump badging`), not assumed:
@@ -162,6 +165,81 @@ larger (still invite-only, no public listing yet) closed testing track for real 
 volume — this is where the load-pass numbers from `TODOS.md`'s "Load pass at realistic volume"
 section meet real, varied client behavior instead of a synthetic script. Graduate to a public
 listing only after this phase, as its own separate decision.
+
+## iOS: from-scratch verification (2026-09-18)
+
+Everything above this section is Android. Before today, this project's iOS side had never
+produced a real build, let alone run on a real device or reached TestFlight — `ios/Podfile` (the
+file CocoaPods needs to link any plugin's native code at all) had never existed in this repo's
+history, from the very first commit. Every fix ever made to `ios/Runner/Info.plist`
+(`NSCameraUsageDescription`, `NSFaceIDUsageDescription`) was made by reading each plugin's own
+documentation, not by ever actually triggering the crash they prevent — real, necessary fixes,
+but unverified ones. Treating that gap as a formality would mean the first real signal on whether
+any of it actually works is a rejected TestFlight build or a crash report from an actual iOS user.
+
+**Real audit performed today, not just "should be fine":**
+
+- Cross-checked every installed plugin's own `.podspec` (`~/.pub-cache`, not assumption) against
+  `ios/Runner.xcodeproj`'s real `IPHONEOS_DEPLOYMENT_TARGET` (13.0): `image_picker_ios`,
+  `cunning_document_scanner`, `local_auth_darwin`, and `google_mobile_ads` (`Google-Mobile-Ads-SDK
+  ~> 13.7`) each declare `13.0` as their own minimum; `file_picker`'s `12.0` is already covered.
+  No version conflict that would have failed `pod install` for real.
+- Audited `Info.plist` against every plugin actually used for a permission gap, not just the ones
+  already fixed: **found `NSPhotoLibraryUsageDescription` missing.**
+  `ProfileScreen`'s avatar picker offers `ImageSource.gallery` as well as `.camera`
+  (`profile_screen.dart`) — without this key, iOS crashes outright the moment a real user picks
+  "gallery", not a permission-denied dialog. `NSCameraUsageDescription` never covered this path.
+  Fixed.
+- Found `Info.plist` itself was not well-formed XML — a pre-existing `--` inside an existing
+  comment (`NSFaceIDUsageDescription`'s own), illegal inside an XML comment anywhere except its
+  closing `-->`. CoreFoundation's plist parser tolerates this in practice (which is exactly why it
+  was never caught — nothing in this project's history has ever actually parsed this file with
+  Xcode or `plutil`), but it's real, latent breakage in a file no stricter tool has ever touched.
+  Fixed, along with not repeating the mistake in the new `NSPhotoLibraryUsageDescription` comment.
+
+**Fixed as a result:**
+
+- `ios/Podfile` — created from this exact Flutter SDK version's own template
+  (`flutter/packages/flutter_tools/templates/cocoapods/Podfile-ios`), with `platform :ios, '13.0'`
+  pinned explicitly (uncommented, unlike the bare template) to match the real deployment target
+  verified above, rather than left to CocoaPods' own older implicit default.
+- `Info.plist` — `NSPhotoLibraryUsageDescription` added; the file is now genuinely well-formed XML.
+
+**Automated as a result:** `.github/workflows/ios.yml` — a real macOS runner (`macos-14`, real
+Xcode + CocoaPods), `pod install` then `flutter build ios --release --no-codesign` on every
+push/PR touching `app/`. `--no-codesign` deliberately skips needing an Apple Developer
+certificate (owner-gated, same as Google Play Console — see `TODOS.md`), while still proving the
+Podfile is correct and every plugin's native code actually compiles and links — the two things
+that were previously completely unverified, ever, on any machine.
+
+**Known, documented, deliberately not silently fixed:**
+
+- **`SKAdNetworkItems`** — Apple's ad-attribution requirement for `google_mobile_ads`'s mediation
+  network partners on iOS 14+. Missing this doesn't crash the app, but real ad fill on iOS will be
+  degraded without it. Deliberately not hand-typed here: Google maintains the current, correct
+  list at [Add SKAdNetwork IDs to your iOS apps](https://support.google.com/admob/answer/9905780)
+  because the network partner list changes over time — copying a snapshot into this doc would
+  silently go stale. Add the current list from that page to `Info.plist` before any real iOS ad
+  revenue matters.
+- **App Tracking Transparency**: no `NSUserTrackingUsageDescription`, no ATT prompt requested
+  anywhere in the app. This is a *valid* configuration (Apple doesn't require the ATT prompt,
+  only requires it if the app intends to track) — `google_mobile_ads` will serve non-personalized
+  ads by default without it. Left as an explicit, documented decision rather than an accidental
+  default: revisit only as a deliberate call to trade a real ATT prompt for better ad revenue, not
+  a silent gap to "eventually fix."
+
+**Still genuinely owner-gated, not engineering work:**
+
+- **Apple Developer Program membership** ($99/year) — required for any real code-signed build,
+  TestFlight, or App Store submission. Nothing above needed it; the next real step does.
+- **A physical iPhone, or continued CI-only verification.** `.github/workflows/ios.yml` proves the
+  app compiles; it does not prove the camera, Face ID, or file-picker flows actually work on real
+  iOS hardware. No iOS-equivalent to the Android device matrix above exists yet because there's
+  been no real device to build it from — the first task once a Developer account exists is a
+  genuinely real (not simulator-only) pass through `MVP_SIGNOFF_CHECKLIST.md`'s flows, the same
+  bar the one Android phone already cleared.
+- **TestFlight** — the iOS equivalent of Play Console's Internal testing track (Phase 1 above);
+  same phased approach applies once a Developer account and at least one real device exist.
 
 ## Tracking table
 

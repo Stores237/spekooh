@@ -1,0 +1,65 @@
+name: iOS CI
+
+# This project's iOS side has never actually been built, run, or
+# installed anywhere in its history -- no ios/Podfile existed until
+# 2026-09-18 (see that file's own comment), and every "real device" pass
+# logged in TODOS.md/MVP_SIGNOFF_CHECKLIST.md/DEVICE_MATRIX.md has been
+# Android-only. This is the first real, automated verification that the
+# iOS side actually compiles at all, on a real macOS runner with real
+# Xcode and CocoaPods -- not a formality, a first-ever check.
+#
+# --no-codesign: proves the app builds and every CocoaPod links
+# correctly, without needing an Apple Developer account/signing
+# certificate (an owner-gated step, same posture as Google Play Console
+# -- see TODOS.md's "Owner action items"). This catches real integration
+# bugs (a missing/wrong Podfile, a plugin's native code failing to
+# compile, an Info.plist a stricter toolchain rejects) that no amount of
+# `flutter analyze`/`flutter test` on Linux CI could ever catch, since
+# none of that touches the native iOS build at all.
+#
+# Runs on every push/PR that touches the iOS-relevant paths, same trigger
+# shape as flutter.yml -- unlike device-matrix.yml, this doesn't consume
+# a rate-limited third-party quota, so there's no reason to gate it to
+# manual-only.
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "app/**"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "app/**"
+      - ".github/workflows/ios.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (no codesign)
+    runs-on: macos-14
+
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: "3.44.9"
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Install CocoaPods dependencies
+        working-directory: app/ios
+        run: pod install --repo-update
+
+      - name: Build (no codesign)
+        run: flutter build ios --release --no-codesign --dart-define=API_BASE_URL=https://spekooh-staging.onrender.com/api
