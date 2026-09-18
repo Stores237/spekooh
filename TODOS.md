@@ -53,6 +53,14 @@ I can write unilaterally. Grouped by what each one unblocks.
 - **Firebase project** — only if real push notifications are wanted (current notifications are
   in-app only, which may be enough for v1 per spec).
 - **App store accounts** — Apple Developer + Google Play Console, once a build is ready to ship.
+  See `DEVICE_MATRIX.md` (added 2026-09-18) for the real Android OS-version/screen-size spread to
+  test before that setup, and the beta-testing phases (Firebase Test Lab → Play Console Internal
+  testing → Closed testing) to run through first — every real-device pass so far has been on one
+  physical phone plus emulator/browser, not the real spread. The Apple Developer side is worse:
+  see `DEVICE_MATRIX.md`'s "iOS: from-scratch verification" section — no real iOS build had ever
+  existed until 2026-09-18 (`ios/Podfile` never existed), now fixed and CI-verified
+  (`.github/workflows/ios.yml`, real macOS/Xcode build on every push), but still zero real-device
+  runs and zero TestFlight installs. The $99/year membership is the real next blocker there.
 - **Sentry DSN** (2026-08-26): `sentry-sdk` is fully wired in `config/settings/base.py`
   (Django integration, `send_default_pii=False` — consistent with the admin PII-redaction work),
   but with no `SENTRY_DSN` set it has no transport and never makes a network call, so a fresh

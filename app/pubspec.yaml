@@ -63,7 +63,17 @@ dependencies:
 
   # Real native share sheet for the redeem code on Profile.
   share_plus: ^10.1.4
-  google_mobile_ads: ^9.1.0
+  # Pinned to 9.0.0, not the newer 9.1.0, deliberately (2026-09-18): 9.1.0
+  # added FLTAdPreloader.h/FLTAd_Internal.h, which #import a private
+  # GoogleMobileAds header not declared in its own module map -- a real,
+  # confirmed regression that breaks every iOS *release/archive* build
+  # specifically (CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES,
+  # the normal fix for this class of error, is documented to NOT
+  # suppress it for Release builds). This app uses none of 9.1.0's own
+  # additions (Ad Preloading APIs, setConsentSyncId, ageRestrictedTreatment
+  # -- verified: no reference anywhere in lib/), so there's no real
+  # feature cost to staying on the last version without this bug.
+  google_mobile_ads: 9.0.0
   lucide_icons_flutter: ^3.1.19
   path_provider: ^2.1.6
   open_filex: ^4.7.0
@@ -98,6 +108,22 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+
+  # Real build failure found live (2026-09-18, this project's first-ever
+  # iOS build): with Swift Package Manager enabled (Flutter's own
+  # default), google_mobile_ads gets resolved TWICE -- once via SPM
+  # (Flutter auto-fetches it since the plugin supports SPM) and once via
+  # CocoaPods (ios/Podfile's flutter_install_all_ios_pods, since this
+  # project has never adopted SPM and some other plugins, e.g.
+  # flutter_secure_storage/open_filex, don't support it at all yet) --
+  # producing two conflicting copies of GoogleMobileAds.framework's
+  # headers and a real Xcode parse failure ("Expected ';' after method
+  # prototype" in GADAppOpenAd.h). Disabling SPM per Flutter's own
+  # documented config forces every plugin through the single CocoaPods
+  # path this project's Podfile already assumes, matching what it was
+  # actually built for.
+  config:
+    enable-swift-package-manager: false
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
