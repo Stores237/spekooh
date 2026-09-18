@@ -1,0 +1,251 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Spekooh: past exam papers &amp; marking guides, Cameroon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Spekooh crowdsources past exam papers from students across Cameroon and routes each one to a verified instructor for a real marking guide. Every level from Primary to Concours, GCE, BEPC, Probatoire, Baccalauréat and more, in English and French.">
+  <link rel="icon" href="{% static 'core/site/spekooh-icon.png' %}">
+  <link rel="stylesheet" href="{% static 'core/site/site.css' %}">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <img src="{% static 'core/site/spekooh-icon.png' %}" alt="Spekooh">
+        Spekooh
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="Menu">&#9776;</button>
+      <nav class="site-nav" id="siteNav">
+        <a href="#how-it-works">How it works</a>
+        <a href="#app">The app</a>
+        <a href="#about">About us</a>
+        <a href="#announcements">Announcements</a>
+        <a href="#projects">Our projects</a>
+        <a href="#partners">Partners</a>
+        <a href="#contact" class="nav-cta">Contact us</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <section class="hero">
+      <div class="wrap">
+        <div>
+          <p class="section-label">Exam prep, crowdsourced</p>
+          <h1>Every past paper. A real marking guide. In English or French.</h1>
+          <p class="lede">Spekooh collects past exam papers from students and the public, then routes each one to a verified instructor who writes the marking guide. Every level and sector, Anglophone and Francophone alike.</p>
+          <div class="hero-ctas">
+            <a class="btn-primary" href="https://wa.me/237659802679" target="_blank" rel="noopener">Join our WhatsApp community</a>
+            <a class="btn-outline" href="#contact">Get in touch</a>
+          </div>
+          <div class="hero-stats">
+            <div class="hero-stat"><b>Primary &rarr; Concours</b><span>Every level, one place</span></div>
+            <div class="hero-stat"><b>EN / FR</b><span>Bilingual from day one</span></div>
+            <div class="hero-stat"><b>Cameroon</b><span>v1 launch market</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="phone-frame">
+            <div class="phone-screen">
+              <img src="{% static 'core/site/screens/papers.jpg' %}" alt="Spekooh Past papers screen listing Primary, Secondary, University, Tertiary, Concours and Academic Reports categories">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works">
+      <div class="wrap">
+        <p class="section-label">How Spekooh works</p>
+        <h2 class="section-title">From a photo of a past paper to a verified marking guide</h2>
+        <p class="section-sub">Informal WhatsApp groups and photocopies are unreliable and unverified. Spekooh turns that into a structured, incentivized pipeline, open to every level from Primary school to Concours des Grandes Écoles.</p>
+        <div class="steps">
+          <div class="step">
+            <div class="num">1</div>
+            <h3>Submit a paper</h3>
+            <p>Anyone, student or not, uploads a photo, PDF or scan and tags subject, level, exam board and year.</p>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <h3>A verified instructor reviews it</h3>
+            <p>The paper is routed to a verified instructor on our partner platform, who accepts and writes the marking guide.</p>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <h3>The guide comes back merged</h3>
+            <p>Our review team checks it, finalises the objective/MCQ answer key in-house, and publishes the combined guide.</p>
+          </div>
+          <div class="step">
+            <div class="num">4</div>
+            <h3>Everyone can read and practice</h3>
+            <p>Papers stay open to browse for free; marking guides unlock per-guide or with Spekooh Pro. Contributors earn credits.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="app">
+      <div class="wrap">
+        <p class="section-label">Inside the app</p>
+        <h2 class="section-title">A few of the main screens</h2>
+        <p class="section-sub">Built mobile-first for unreliable data and electricity, so saved papers open even offline. Real screens from the app.</p>
+        <div class="screens-grid">
+          <div>
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img src="{% static 'core/site/screens/home.jpg' %}" alt="Spekooh Home screen with practice mode, free trial, quick links and daily quiz challenge">
+              </div>
+            </div>
+            <div class="screen-caption"><b>Home</b><span>Practice mode, daily challenge, quick links</span></div>
+          </div>
+          <div>
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img src="{% static 'core/site/screens/papers.jpg' %}" alt="Spekooh Past papers screen: every level, every system, from Primary to Concours des Grandes Écoles">
+              </div>
+            </div>
+            <div class="screen-caption"><b>Browse by level</b><span>Primary, Secondary, University, Tertiary, Concours</span></div>
+          </div>
+          <div>
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img src="{% static 'core/site/screens/submit.jpg' %}" alt="Spekooh Contribution screen for submitting an exam paper or academic report">
+              </div>
+            </div>
+            <div class="screen-caption"><b>Submit &amp; earn credits</b><span>Every contribution is rewarded</span></div>
+          </div>
+          <div>
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img src="{% static 'core/site/screens/rewards.jpg' %}" alt="Spekooh rewards screen with bonus credit balance, QR Vault, referral code and badges">
+              </div>
+            </div>
+            <div class="screen-caption"><b>Credits &amp; rewards</b><span>Redeem codes, badges, QR Vault</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="band-dark">
+      <div class="wrap">
+        <p class="section-label">Why we built Spekooh</p>
+        <h2 class="section-title" style="max-width:640px;">The team behind Spekooh</h2>
+        <div class="about-grid">
+          <div>
+            <p>Students across Cameroon, at every level and in both the Anglophone and Francophone systems, have long relied on scattered, informal sources for past exam papers: photocopies passed around, screenshots in WhatsApp groups, papers with no marking guide at all. None of it is verified, and none of it is centralized.</p>
+            <p>We built Spekooh to fix that. One place to find past papers for every level, from Primary school through Secondary (GCE, BEPC, Probatoire, Baccalauréat), University, Tertiary/HND and the Concours des Grandes Écoles, with each paper routed to a verified instructor who writes a real marking guide: not a guess, not a leaked "correction" of unknown origin.</p>
+          </div>
+          <div>
+            <p>Spekooh is bilingual (English/French) from day one, because the exam systems it serves are too. Contributors, students or anyone with a paper to share, earn credits for what they submit; instructors are paid to mark. It's a structured, incentivized pipeline instead of an informal favour economy.</p>
+            <p>Spekooh is one product from a small team that also builds <a href="#projects" style="color:var(--gold-400);">a few other things</a>. We like solving problems that make daily life in Cameroon a little more organised.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="announcements">
+      <div class="wrap">
+        <p class="section-label">What's new</p>
+        <h2 class="section-title">Announcements</h2>
+        <p class="section-sub">Updates, sponsor spotlights and news from the Spekooh team.</p>
+        <div class="announcements">
+          {% for a in announcements %}
+            <div class="announcement-row">
+              <div class="avatar-chip">{{ a.title|slice:":2" }}</div>
+              <div>
+                <div class="announcement-title">{{ a.title }}</div>
+                {% if a.subtitle %}<div class="announcement-sub">{{ a.subtitle }}</div>{% endif %}
+              </div>
+              {% if a.cta_label and a.cta_url %}
+                <a class="announcement-cta" href="{{ a.cta_url }}" target="_blank" rel="noopener">{{ a.cta_label }} &rarr;</a>
+              {% endif %}
+            </div>
+          {% empty %}
+            <div class="announcements-empty">No announcements right now. Check back soon, or follow our <a href="https://wa.me/237659802679" target="_blank" rel="noopener">WhatsApp community</a> for the latest.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section id="projects">
+      <div class="wrap">
+        <p class="section-label">From the same team</p>
+        <h2 class="section-title">Other projects we've built</h2>
+        <p class="section-sub">Spekooh is our flagship, but not the only thing we've shipped.</p>
+        <div class="card-grid">
+          <div class="project-card">
+            <div class="project-mark">Em</div>
+            <h3>Emergensis</h3>
+            <p>One of our other products, built by the same team behind Spekooh.</p>
+            <a class="project-link" href="https://emergensis.vercel.app/" target="_blank" rel="noopener">Visit Emergensis &rarr;</a>
+          </div>
+          <div class="project-card">
+            <div class="project-mark">S@</div>
+            <h3>S@ Learn</h3>
+            <p>Another project from our team, currently in beta.</p>
+            <a class="project-link" href="https://s-learn-beta.vercel.app/" target="_blank" rel="noopener">Visit S@ Learn &rarr;</a>
+          </div>
+          <div class="project-card">
+            <div class="project-mark">St</div>
+            <h3>STORE'S</h3>
+            <p>Another project from our team.</p>
+            <a class="project-link" href="https://store-s.vercel.app/" target="_blank" rel="noopener">Visit STORE'S &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="partners">
+      <div class="wrap">
+        <p class="section-label">Working with us</p>
+        <h2 class="section-title">Our partners</h2>
+        <p class="section-sub">Businesses we work with to bring Spekooh to more students.</p>
+        <div class="partners-row">
+          <span class="partner-badge">Kairos Systems Ltd</span>
+          <span class="partner-badge">Afrikafirst Longrich Dist Ltd</span>
+          <span class="partner-badge">GSC Event Sarl (Généraux Sans Couronne)</span>
+          <span class="partner-badge">EBC Dist Sarl</span>
+          <span class="partner-badge">KC-Commercial Center</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact">
+      <div class="contact-band">
+        <div class="contact-grid">
+          <h2>Questions, partnership ideas, or want a demo? Talk to us directly.</h2>
+          <div class="contact-methods">
+            <a href="mailto:storefix237@gmail.com">storefix237@gmail.com</a>
+            <a href="tel:+237659802679">+237 659 802 679</a>
+            <a href="https://wa.me/237659802679" target="_blank" rel="noopener">Chat on WhatsApp</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="brand" style="font-size:var(--text-body);"><img src="{% static 'core/site/spekooh-icon.png' %}" alt="">Spekooh</div>
+      <div class="footer-links">
+        <a href="{% url 'privacy-policy' %}">Privacy Policy</a>
+        <a href="{% url 'terms-of-service' %}">Terms of Service</a>
+        <a href="mailto:storefix237@gmail.com">storefix237@gmail.com</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('navToggle').addEventListener('click', function(){
+      document.getElementById('siteNav').classList.toggle('open');
+    });
+    document.querySelectorAll('#siteNav a').forEach(function(a){
+      a.addEventListener('click', function(){ document.getElementById('siteNav').classList.remove('open'); });
+    });
+  </script>
+</body>
+</html>

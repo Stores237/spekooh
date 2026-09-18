@@ -16,6 +16,17 @@ def healthz(request):
     return JsonResponse({"status": "ok"})
 
 
+def marketing_home(request):
+    """Public marketing site (2026-09-18, owner request) — replaces the
+    old bare redirect to /api/docs/ at '/'. Announcements reuse the real
+    Promotion model (apps.promotions) that already backs the in-app Home
+    sponsor section, rather than a second content source to keep in sync."""
+    from apps.promotions.models import Promotion
+
+    announcements = Promotion.objects.filter(is_active=True).order_by("sort_order", "-created_at")
+    return render(request, "core/site/home.html", {"announcements": announcements})
+
+
 def privacy_policy_page(request):
     """A real, public URL for the Privacy Policy — 2026-09-14, owner
     request: Play Console's Store Listing requires one (a validated field,
