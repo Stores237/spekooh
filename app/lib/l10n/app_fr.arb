@@ -533,5 +533,9 @@
 
   "submissionRejectedTitle": "Soumission non acceptée",
   "submissionRejectedIntro": "L'équipe de vérification n'a pas accepté cette soumission :",
-  "dismissSubmissionButton": "Compris, masquer"
+  "dismissSubmissionButton": "Compris, masquer",
+  "submissionDeleteTooltip": "Supprimer la soumission",
+  "submissionDeleteTitle": "Supprimer cette soumission ?",
+  "submissionDeleteBody": "Cela la retire seulement de votre liste. Une épreuve publiée reste disponible pour les autres élèves, et vos crédits ne changent pas.",
+  "submissionDeleteAction": "Supprimer"
 }

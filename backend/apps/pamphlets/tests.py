@@ -305,6 +305,25 @@ def test_redeem_qr_releases_payment_minus_commission():
 
 
 @pytest.mark.django_db
+def test_redeeming_a_ticket_clears_its_pickup_ready_notification():
+    """Owner-reported (2026-09-21): the "your pickup ticket is ready" popup
+    kept showing on Home after the ticket had been used, because its
+    PAMPHLET_READY notification stayed unread forever."""
+    from apps.notifications.models import Notification, NotificationKind
+
+    user = UserFactory()
+    order = place_order(user=user, pamphlet=PamphletFactory(), is_delivery=False, phone_number="670000000")
+    other = place_order(user=user, pamphlet=PamphletFactory(), is_delivery=False, phone_number="670000001")
+    assert Notification.objects.filter(user=user, kind=NotificationKind.PAMPHLET_READY, is_read=False).count() == 2
+
+    redeem_qr(order.qr_token)
+
+    assert Notification.objects.get(user=user, link=f"qr-vault/{order.id}").is_read is True
+    # A different, still-unused ticket's notification is untouched.
+    assert Notification.objects.get(user=user, link=f"qr-vault/{other.id}").is_read is False
+
+
+@pytest.mark.django_db
 def test_redeem_qr_rejects_repeat_scan_with_specific_message():
     user = UserFactory()
     pamphlet = PamphletFactory()

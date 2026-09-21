@@ -30,12 +30,18 @@ class MarkingGuideScreen extends StatefulWidget {
     required this.paperTitle,
     PapersRepository? repository,
     ProfileRepository? profileRepository,
+    this.offlineGuide,
   })  : repository = repository ?? RepositoryLocator.instance.papers,
         profileRepository = profileRepository ?? RepositoryLocator.instance.profile;
 
   final int paperId;
   final String paperTitle;
   final PapersRepository repository;
+
+  /// A guide already saved on this device (My Downloads, owner request
+  /// 2026-09-21). When set the screen renders it directly instead of asking
+  /// the backend, so a downloaded correction opens with no connection.
+  final MarkingGuide? offlineGuide;
 
   /// Used only to check isPlusSubscriber for the offline-download slots
   /// cap — see paper_detail_screen's own field of the same name/comment.
@@ -46,7 +52,8 @@ class MarkingGuideScreen extends StatefulWidget {
 }
 
 class _MarkingGuideScreenState extends State<MarkingGuideScreen> {
-  late final Future<MarkingGuide> _future = widget.repository.getMarkingGuide(widget.paperId);
+  late final Future<MarkingGuide> _future =
+      widget.offlineGuide != null ? Future.value(widget.offlineGuide) : widget.repository.getMarkingGuide(widget.paperId);
   bool _saving = false;
 
   /// Toggle, auth gate, and cap check all mirror paper_detail_screen's own

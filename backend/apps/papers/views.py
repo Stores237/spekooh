@@ -217,12 +217,24 @@ class PaperSubmissionViewSet(
         # without this a staff member could clear a rejection out of a
         # *contributor's own* list on their behalf — this is deliberately
         # something only the contributor themselves does.
+        #
+        # Owner request (2026-09-21): a contributor's "submission status"
+        # list only ever grows -- every published paper stays on it forever.
+        # Dismissing is also allowed for a PUBLISHED submission now, i.e.
+        # any finished one (published or rejected). Deliberately still
+        # refused for anything in flight: hiding a submission that's
+        # awaiting review or a marking guide would hide the very status the
+        # list exists to show. Dismissing never unpublishes a paper -- it
+        # only hides the row from this contributor's own list (the flag is
+        # per-submission and read nowhere in the public catalog), so other
+        # students keep the paper and the contributor keeps their credits.
         paper = self.get_object()
         if paper.submitted_by_id != request.user.id:
             return Response(status=status.HTTP_403_FORBIDDEN)
-        if paper.status != PaperStatus.REJECTED:
+        if paper.status not in (PaperStatus.REJECTED, PaperStatus.PUBLISHED):
             return Response(
-                {"detail": "Only a rejected submission can be dismissed."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Only a published or rejected submission can be removed from your list."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         paper.dismissed_by_contributor = True
         paper.save(update_fields=["dismissed_by_contributor", "updated_at"])

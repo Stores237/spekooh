@@ -1684,4 +1684,17 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get dismissSubmissionButton => 'Compris, masquer';
+
+  @override
+  String get submissionDeleteTooltip => 'Supprimer la soumission';
+
+  @override
+  String get submissionDeleteTitle => 'Supprimer cette soumission ?';
+
+  @override
+  String get submissionDeleteBody =>
+      'Cela la retire seulement de votre liste. Une épreuve publiée reste disponible pour les autres élèves, et vos crédits ne changent pas.';
+
+  @override
+  String get submissionDeleteAction => 'Supprimer';
 }

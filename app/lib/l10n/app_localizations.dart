@@ -3001,6 +3001,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Got it, dismiss'**
   String get dismissSubmissionButton;
+
+  /// No description provided for @submissionDeleteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete submission'**
+  String get submissionDeleteTooltip;
+
+  /// No description provided for @submissionDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this submission?'**
+  String get submissionDeleteTitle;
+
+  /// No description provided for @submissionDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This only removes it from your list. A published paper stays available to other students, and your credits aren\'t affected.'**
+  String get submissionDeleteBody;
+
+  /// No description provided for @submissionDeleteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get submissionDeleteAction;
 }
 
 class _AppLocalizationsDelegate

@@ -4,12 +4,25 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:spekooh/data/offline_file_store.dart';
 import 'package:spekooh/data/offline_guides_store.dart';
 import 'package:spekooh/data/offline_papers_store.dart';
+import 'package:spekooh/data/auth_session.dart';
+import 'package:spekooh/data/repositories/assistant_repository.dart';
+import 'package:spekooh/data/repositories/forum_repository.dart';
+import 'package:spekooh/data/repositories/notes_repository.dart';
+import 'package:spekooh/data/repositories/notifications_repository.dart';
+import 'package:spekooh/data/repositories/papers_repository.dart';
 import 'package:spekooh/data/repositories/payments_repository.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
+import 'package:spekooh/data/repositories/promotions_repository.dart';
+import 'package:spekooh/data/repositories/quizzes_repository.dart';
+import 'package:spekooh/data/repositories/shop_repository.dart';
+import 'package:spekooh/data/repository_locator.dart';
 import 'package:spekooh/models/marking_guide.dart';
 import 'package:spekooh/models/spekooh_user.dart';
 import 'package:spekooh/screens/downloads/my_downloads_screen.dart';
+import 'package:spekooh/screens/papers/marking_guide_screen.dart';
+import 'package:spekooh/screens/papers/report_viewer_screen.dart';
 
+import 'support/fake_auth_session.dart';
 import 'support/l10n_test_app.dart';
 
 /// Returns each user in [steps] in order, one per call, then stays on the
@@ -52,6 +65,12 @@ const _plusUser = SpekoohUser(
   isPlusSubscriber: true,
 );
 
+class _MustNotBeCalledPapersRepository implements PapersRepository {
+  @override
+  Never noSuchMethod(Invocation invocation) =>
+      throw StateError('${invocation.memberName} must not be called when opening a saved correction');
+}
+
 final _guide = MarkingGuide(mcqAnswers: const {'1': 'B'}, nonMcqQuestions: const [], publishedAt: DateTime(2026, 9, 1));
 
 void main() {
@@ -87,6 +106,56 @@ void main() {
     expect(find.text('Biology O-Level'), findsNothing);
     expect(find.text('0 OF 3 USED'), findsOneWidget);
     expect(OfflinePapersStore.instance.isSaved(5), isFalse);
+  });
+
+  // Owner-reported (2026-09-21): a downloaded paper couldn't be opened from My
+  // Downloads -- the only thing a row did was delete.
+  testWidgets('tapping a saved paper opens it from device storage, and does not delete it', (tester) async {
+    // A photo (not a PDF), so the in-app viewer needs no PDF platform plugin here.
+    await OfflinePapersStore.instance.save(paperId: 6, title: 'Physics Report', subtitle: 'Report · 2025', fileUrl: 'https://cdn.example.com/p6.png');
+    await tester.pumpWidget(l10nTestApp(MyDownloadsScreen(profileRepository: MockProfileRepository(user: _freeUser))));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.tap(find.byKey(const Key('download-paper-6')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final viewer = tester.widget<ReportViewerScreen>(find.byType(ReportViewerScreen));
+    expect(viewer.title, 'Physics Report');
+    expect(viewer.filePath, '/in-memory/6.png'); // the saved local copy...
+    expect(viewer.fileUrl, isNull); // ...never a network fetch
+    expect(OfflinePapersStore.instance.isSaved(6), isTrue);
+  });
+
+  testWidgets('tapping a saved correction opens it without asking the backend', (tester) async {
+    AuthSession.debugSetInstance(buildFakeAuthSession());
+    // A papers repository that fails the test if the guide screen phones home.
+    RepositoryLocator.debugSetInstance(RepositoryLocator(
+      authSession: AuthSession.instance,
+      papers: _MustNotBeCalledPapersRepository(),
+      notes: MockNotesRepository(),
+      forum: MockForumRepository(),
+      quizzes: MockQuizzesRepository(),
+      notifications: MockNotificationsRepository(),
+      shop: MockShopRepository(),
+      profile: MockProfileRepository(user: _freeUser),
+      promotions: MockPromotionsRepository(),
+      assistant: MockAssistantRepository(),
+    ));
+    await OfflineGuidesStore.instance.save(paperId: 9, title: 'Chemistry corrigé', guide: _guide);
+    await tester.pumpWidget(l10nTestApp(MyDownloadsScreen(profileRepository: MockProfileRepository(user: _freeUser))));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.tap(find.text('Corrections · 1'));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('download-guide-9')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MarkingGuideScreen), findsOneWidget);
+    expect(find.text('1: B'), findsOneWidget); // the saved MCQ answer, straight from the device
+    expect(OfflineGuidesStore.instance.isSaved(9), isTrue);
   });
 
   testWidgets('switching to the Corrections tab shows a real saved guide, not a paper', (tester) async {

@@ -75,6 +75,41 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
     return future;
   }
 
+  // Owner request (2026-09-21): the "submission status" list only ever grew,
+  // one row per paper forever. A finished submission (published or rejected)
+  // can be deleted from the list -- deliberately not one still in flight,
+  // which would hide the very status this list exists to show. The backend
+  // enforces the same rule (PaperSubmissionViewSet.dismiss). "Delete" only
+  // hides the row for this contributor: the paper stays published for
+  // everyone else and their credits are untouched, which the dialog says.
+  bool _canDelete(Submission s) => s.rawStatus == 'PUBLISHED' || s.rawStatus == 'REJECTED';
+
+  Future<void> _confirmDeleteSubmission(Submission submission) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.submissionDeleteTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(submission.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: AppSpacing.space2),
+            Text(l10n.submissionDeleteBody),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.cancelButton)),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(l10n.submissionDeleteAction)),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await widget.repository.dismissSubmission(submission.id);
+    if (mounted) _refresh();
+  }
+
   void _maybeShowRejectionPopup(List<Submission> submissions) {
     final rejected = submissions.where((s) => s.isRejected && !s.dismissedByContributor).toList();
     if (rejected.isEmpty) return;
@@ -542,7 +577,7 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(a.icon, size: 20, color: AppColors.gold600),
+                                    Icon(a.icon, size: 20, color: a.iconColor),
                                     const SizedBox(height: 6),
                                     Text(a.label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                                   ],
@@ -588,7 +623,7 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
               FutureBuilder<List<Submission>>(
                 future: _submissionsFuture,
                 builder: (context, snapshot) {
-                  final items = snapshot.data ?? const [];
+                  final items = (snapshot.data ?? const <Submission>[]).where((s) => !s.dismissedByContributor).toList();
                   return Container(
                     decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -610,6 +645,14 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                                   ),
                                 ),
                                 SpekoohBadge(text: items[i].status, tone: items[i].tone),
+                                if (_canDelete(items[i]))
+                                  IconButton(
+                                    key: Key('deleteSubmission-${items[i].id}'),
+                                    tooltip: l10n.submissionDeleteTooltip,
+                                    visualDensity: VisualDensity.compact,
+                                    onPressed: () => _confirmDeleteSubmission(items[i]),
+                                    icon: const Icon(LucideIcons.trash2, size: 16, color: AppColors.textTertiary),
+                                  ),
                               ],
                             ),
                           ),
