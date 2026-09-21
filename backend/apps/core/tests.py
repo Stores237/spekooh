@@ -479,3 +479,72 @@ def test_legal_pages_require_no_authentication():
     client = Client()
     assert client.get("/legal/privacy-policy/").status_code == 200
     assert client.get("/legal/terms-of-service/").status_code == 200
+
+
+# --- Marketing site accessibility (2026-09-21, from the audit of PR #163) ---
+
+
+def _relative_luminance(hex_color: str) -> float:
+    hex_color = hex_color.lstrip("#")
+    channels = [int(hex_color[i : i + 2], 16) / 255 for i in (0, 2, 4)]
+    linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def _contrast(foreground: str, background: str) -> float:
+    lighter, darker = sorted((_relative_luminance(foreground), _relative_luminance(background)), reverse=True)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _site_css() -> str:
+    from pathlib import Path
+
+    return (Path(__file__).parent / "static" / "core" / "site" / "site.css").read_text()
+
+
+def test_cta_gradient_keeps_white_text_at_wcag_aa_across_its_whole_length():
+    """The design system's own --gradient-primary starts at #E2A52A, where
+    white text is 2.18:1. Every white-on-gradient element on the site now
+    uses --gradient-cta instead; both of its endpoints must clear 4.5:1."""
+    import re
+
+    match = re.search(r"--gradient-cta:linear-gradient\(135deg,(#[0-9A-Fa-f]{6}) 0%,(#[0-9A-Fa-f]{6}) 100%\)", _site_css())
+    assert match, "--gradient-cta token missing from site.css"
+    for endpoint in match.groups():
+        assert _contrast("#FFFFFF", endpoint) >= 4.5, endpoint
+
+
+def test_site_css_never_puts_white_text_back_on_the_low_contrast_gradients():
+    css = _site_css()
+    for rule_start in (".btn-primary{", ".nav-cta{", ".project-mark{", ".contact-band{"):
+        rule = css[css.index(rule_start) :].split("}", 1)[0]
+        assert "gradient-primary" not in rule and "gradient-gold-deep" not in rule, rule_start
+
+
+def test_mobile_menu_leaves_the_tab_order_when_closed():
+    css = _site_css()
+    closed_rule = css[css.index(".site-nav{position:fixed") :].split("}", 1)[0]
+    assert "visibility:hidden" in closed_rule
+    assert "visibility:visible" in css.split(".site-nav.open{", 1)[1].split("}", 1)[0]
+
+
+@pytest.mark.django_db
+def test_marketing_home_has_a_skip_link_and_an_accessible_menu_button():
+    html = Client().get("/").content.decode()
+    assert 'class="skip-link" href="#top"' in html
+    assert '<main id="top"' in html
+    assert 'aria-controls="siteNav"' in html
+    assert 'aria-expanded="false"' in html
+    assert 'id="siteNav"' in html
+
+
+@pytest.mark.django_db
+def test_marketing_home_does_not_repeat_the_brand_name_or_rely_on_color_alone():
+    html = Client().get("/").content.decode()
+    # The header logo sits next to the visible word "Spekooh", so its own alt
+    # would be read twice by a screen reader.
+    assert 'alt="">\n        Spekooh' in html
+    # The inline link on the dark band used to be styled by an inline color
+    # only, with no underline to tell it apart from body text.
+    assert 'style="color:var(--gold-400);"' not in html
+    assert 'class="inline-link"' in html
