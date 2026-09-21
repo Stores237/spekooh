@@ -7,11 +7,19 @@ from apps.papers.models import PaperSubmission
 from apps.papers.serializers import PaperSubmissionDetailSerializer
 
 from .models import InstructorRequest
+from .partner_api import (
+    PaperLinkUnavailableError,
+    PartnerLookupError,
+    earnings_summary,
+    fresh_paper_link,
+)
 from .serializers import (
     InstructorRequestSerializer,
     InstructorResponseWebhookSerializer,
     InstructorWebhookEnvelopeSerializer,
     MarkingGuideSubmissionWebhookSerializer,
+    PartnerEarningsRequestSerializer,
+    PartnerPaperLinkRequestSerializer,
 )
 from .services import (
     GuideFileError,
@@ -116,3 +124,57 @@ class InstructorWebhookView(APIView):
         except GuideFileError as exc:
             return Response({"applied": False, "detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"applied": True}, status=status.HTTP_200_OK)
+
+
+class _PartnerSignedView(APIView):
+    """Base for the partner platform's signed pull endpoints. Same channel and
+    same PartnerCredential as InstructorWebhookView; POST rather than GET so
+    the signed raw body carries the request (the scheme signs the body, and a
+    GET has none to bind the instructor id to)."""
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def verify(self, request):
+        try:
+            verify_webhook_request(
+                partner_id=request.headers.get("X-Spekooh-Partner-Id", ""),
+                raw_body=request.body,
+                signature_header=request.headers.get("X-Spekooh-Signature", ""),
+                timestamp_header=request.headers.get("X-Spekooh-Timestamp", ""),
+            )
+        except WebhookError as exc:
+            return Response({"detail": exc.detail}, status=status.HTTP_401_UNAUTHORIZED)
+        return None
+
+
+class PartnerPaperLinkView(_PartnerSignedView):
+    """A fresh, short-lived link to the paper an instructor was asked to mark."""
+
+    @extend_schema(request=PartnerPaperLinkRequestSerializer, responses=None)
+    def post(self, request):
+        if (rejected := self.verify(request)) is not None:
+            return rejected
+
+        payload = PartnerPaperLinkRequestSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        try:
+            link = fresh_paper_link(**payload.validated_data)
+        except PartnerLookupError as exc:
+            return Response({"detail": exc.detail}, status=status.HTTP_404_NOT_FOUND)
+        except PaperLinkUnavailableError as exc:
+            return Response({"detail": exc.detail}, status=status.HTTP_410_GONE)
+        return Response(link, status=status.HTTP_200_OK)
+
+
+class PartnerEarningsView(_PartnerSignedView):
+    """An instructor's credit balance, credit history and payout status."""
+
+    @extend_schema(request=PartnerEarningsRequestSerializer, responses=None)
+    def post(self, request):
+        if (rejected := self.verify(request)) is not None:
+            return rejected
+
+        payload = PartnerEarningsRequestSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        return Response(earnings_summary(**payload.validated_data), status=status.HTTP_200_OK)

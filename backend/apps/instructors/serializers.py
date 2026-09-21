@@ -43,3 +43,12 @@ class MarkingGuideSubmissionWebhookSerializer(serializers.Serializer):
 
 class InstructorWebhookEnvelopeSerializer(serializers.Serializer):
     event_type = serializers.ChoiceField(choices=["instructor_response", "marking_guide_submission"])
+
+
+class PartnerPaperLinkRequestSerializer(serializers.Serializer):
+    instructor_request_id = serializers.IntegerField()
+    instructor_id = serializers.CharField(max_length=100)
+
+
+class PartnerEarningsRequestSerializer(serializers.Serializer):
+    instructor_id = serializers.CharField(max_length=100)

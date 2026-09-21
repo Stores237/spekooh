@@ -122,6 +122,26 @@ timestamp header checked against a replay window
 comparison (`hmac.compare_digest`, not `==`, which would leak timing
 information about how many leading bytes matched).
 
+The partner also **pulls** two things over the same signed channel
+(`apps/instructors/partner_api.py`, `POST /api/instructors/partner/...`),
+verified by exactly the same function as the webhook:
+
+- **A paper link** (`paper-link/`). A fresh storage link valid for 15
+  minutes, issued each time the instructor opens the paper, only for a
+  request that belongs to that instructor and is still open. A request that
+  is someone else's and one that does not exist return the same `404`, so
+  ids cannot be probed; a closed one returns `410`. This replaces relying on
+  the link pushed inside `new_request`, which is a signed link that expires
+  within the hour, long before an instructor answers.
+- **Earnings** (`earnings/`). The instructor's credit balance, credit
+  history and payout status, computed live from the ledger here, never
+  copied to the partner.
+
+Both are POST so the signed body carries the instructor id: a body changed
+after signing (to read another instructor's data) fails verification. The
+partner platform is trusted to name the right instructor for a signed-in
+user, the same trust the webhook already places in it for accept/reject.
+
 ## Internal operations endpoint
 
 `/internal/tasks/<name>/` (`apps/core/views.py`) exists because Render's
