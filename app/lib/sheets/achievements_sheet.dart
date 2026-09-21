@@ -72,9 +72,15 @@ class AchievementsSheet extends StatelessWidget {
                       child: Container(
                         width: 40,
                         height: 40,
-                        decoration: BoxDecoration(color: AppColors.gold200, borderRadius: BorderRadius.circular(12)),
+                        // White under an earned badge so its colored flame keeps
+                        // its contrast; a locked one sits on the sunken tone.
+                        decoration: BoxDecoration(
+                          color: items[i].earned ? AppColors.surfaceCard : AppColors.surfaceSunken,
+                          border: Border.all(color: AppColors.borderSubtle),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         alignment: Alignment.center,
-                        child: Icon(items[i].icon, size: 18, color: AppColors.gold700),
+                        child: Icon(items[i].icon, size: 18, color: items[i].iconColor),
                       ),
                     ),
                     const SizedBox(width: 12),

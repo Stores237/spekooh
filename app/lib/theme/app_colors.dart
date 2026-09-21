@@ -41,6 +41,14 @@ class AppColors {
   static const red500 = Color(0xFFD1603C);
   static const red100 = Color(0xFFFBE3D8);
 
+  // Streak-badge flames (owner request, 2026-09-21): an earned flame reads
+  // as fire, yellow -> orange -> red with the tier, instead of the same flat
+  // gold as a locked one. Each holds at least ~3:1 against a white card, the
+  // bar for an icon that carries meaning on its own.
+  static const flameSpark = Color(0xFFD08400);
+  static const flameEmber = Color(0xFFE06A1F);
+  static const flameInferno = Color(0xFFD93A2B);
+
   static const white = Color(0xFFFFFFFF);
 
   // Surfaces / borders.

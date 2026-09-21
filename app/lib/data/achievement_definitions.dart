@@ -1,8 +1,9 @@
-import 'package:flutter/widgets.dart' show IconData;
+import 'package:flutter/widgets.dart' show Color, IconData;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../models/achievement.dart';
 import '../models/spekooh_user.dart';
+import '../theme/app_colors.dart';
 
 /// Real badge tiers (owner decision, 2026-08-28) — adapting the badges
 /// design already sketched in this app's own ui_kit mockup
@@ -22,10 +23,17 @@ import '../models/spekooh_user.dart';
 /// module ProfileRepository implementations can use without needing a
 /// BuildContext.
 class AchievementDefinition {
-  const AchievementDefinition({required this.icon, required this.label, this.minSubmissions = 0, this.minQuizzes = 0});
+  const AchievementDefinition({
+    required this.icon,
+    required this.label,
+    this.minSubmissions = 0,
+    this.minQuizzes = 0,
+    this.earnedColor = AppColors.gold600,
+  });
 
   final IconData icon;
   final String label;
+  final Color earnedColor;
   final int minSubmissions;
   final int minQuizzes;
 
@@ -33,11 +41,11 @@ class AchievementDefinition {
 }
 
 const achievementDefinitions = [
-  AchievementDefinition(icon: LucideIcons.flame, label: 'Spark', minSubmissions: 1),
-  AchievementDefinition(icon: LucideIcons.flame, label: 'Ember', minSubmissions: 5),
-  AchievementDefinition(icon: LucideIcons.flame, label: 'Inferno', minSubmissions: 15),
+  AchievementDefinition(icon: LucideIcons.flame, label: 'Spark', minSubmissions: 1, earnedColor: AppColors.flameSpark),
+  AchievementDefinition(icon: LucideIcons.flame, label: 'Ember', minSubmissions: 5, earnedColor: AppColors.flameEmber),
+  AchievementDefinition(icon: LucideIcons.flame, label: 'Inferno', minSubmissions: 15, earnedColor: AppColors.flameInferno),
   AchievementDefinition(icon: LucideIcons.bookOpen, label: 'Scholar I', minQuizzes: 10),
 ];
 
 List<Achievement> computeAchievements(SpekoohUser user) =>
-    achievementDefinitions.map((d) => Achievement(icon: d.icon, label: d.label, earned: d.isEarnedBy(user))).toList();
+    achievementDefinitions.map((d) => Achievement(icon: d.icon, label: d.label, earned: d.isEarnedBy(user), earnedColor: d.earnedColor)).toList();

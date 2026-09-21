@@ -15,6 +15,8 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
+import '../papers/marking_guide_screen.dart';
+import '../papers/report_viewer_screen.dart';
 
 /// My Downloads (owner-provided mockup, 2026-09-11): saved papers and
 /// saved corrections (marking guides) shown as two tabs, each capped at
@@ -54,6 +56,28 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
     } finally {
       if (mounted) setState(() => _redeeming = false);
     }
+  }
+
+  /// Owner-reported (2026-09-21): a downloaded paper couldn't be opened from
+  /// here at all -- the only thing a row did was delete. Opens the saved
+  /// copy straight from device storage, no connection needed.
+  Future<void> _openPaper(OfflinePaper paper) async {
+    final path = await OfflinePapersStore.instance.absolutePathFor(paper.paperId);
+    if (path == null || !mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ReportViewerScreen(title: paper.title, filePath: path)));
+  }
+
+  /// Same for a saved correction: the guide's content is already stored on
+  /// the device (see OfflineGuide), so it renders without asking the backend.
+  Future<void> _openGuide(OfflineGuide guide) {
+    return Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => MarkingGuideScreen(
+        paperId: guide.paperId,
+        paperTitle: guide.title,
+        offlineGuide: guide.toMarkingGuide(),
+        profileRepository: widget.profileRepository,
+      ),
+    ));
   }
 
   @override
@@ -202,7 +226,7 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
     return Column(
       children: [
         for (final paper in papers) ...[
-          _downloadRow(title: paper.title, subtitle: paper.subtitle, onRemove: () => OfflinePapersStore.instance.remove(paper.paperId)),
+          _downloadRow(id: 'paper-${paper.paperId}', title: paper.title, subtitle: paper.subtitle, onOpen: () => _openPaper(paper), onRemove: () => OfflinePapersStore.instance.remove(paper.paperId)),
           const SizedBox(height: AppSpacing.space3),
         ],
       ],
@@ -214,29 +238,50 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
     return Column(
       children: [
         for (final guide in guides) ...[
-          _downloadRow(title: guide.title, subtitle: l10n.markingGuideTitle, onRemove: () => OfflineGuidesStore.instance.remove(guide.paperId)),
+          _downloadRow(id: 'guide-${guide.paperId}', title: guide.title, subtitle: l10n.markingGuideTitle, onOpen: () => _openGuide(guide), onRemove: () => OfflineGuidesStore.instance.remove(guide.paperId)),
           const SizedBox(height: AppSpacing.space3),
         ],
       ],
     );
   }
 
-  Widget _downloadRow({required String title, required String subtitle, required VoidCallback onRemove}) {
+  Widget _downloadRow({required String id, required String title, required String subtitle, required VoidCallback onOpen, required VoidCallback onRemove}) {
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(16), boxShadow: AppShadows.card),
       child: Row(
         children: [
+          // Tapping the row opens the download; the trash icon on its own
+          // deletes it. Two separate targets so opening never risks a delete.
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-                Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-              ],
+            child: InkWell(
+              key: Key('download-$id'),
+              onTap: onOpen,
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                          Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(LucideIcons.chevronRight, size: 18, color: AppColors.textTertiary),
+                  ],
+                ),
+              ),
             ),
           ),
-          GestureDetector(onTap: onRemove, child: const Icon(LucideIcons.trash2, size: 18, color: AppColors.textTertiary)),
+          IconButton(
+            key: Key('download-$id-remove'),
+            onPressed: onRemove,
+            icon: const Icon(LucideIcons.trash2, size: 18, color: AppColors.textTertiary),
+          ),
         ],
       ),
     );

@@ -287,7 +287,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.space2),
-                      child: PickupReadyBanner(repository: notificationsRepository, onTap: onOpenQrVaultOrder),
+                      child: PickupReadyBanner(repository: notificationsRepository, shopRepository: shopRepository, onTap: onOpenQrVaultOrder),
                     ),
                     // Two separate cards (owner decision, 2026-08-28, adapting a
                     // reference design) instead of one dark card split by an

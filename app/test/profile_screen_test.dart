@@ -10,6 +10,7 @@ import 'package:spekooh/models/spekooh_user.dart';
 import 'package:spekooh/models/submission.dart';
 import 'package:spekooh/screens/profile/profile_screen.dart';
 import 'package:spekooh/sheets/achievements_sheet.dart';
+import 'package:spekooh/theme/app_colors.dart';
 import 'package:spekooh/shell/route_observers.dart';
 import 'package:spekooh/widgets/spekooh_badge.dart';
 
@@ -180,6 +181,54 @@ void main() {
       // SpekoohBadge uppercases its label — assert the real rendered text.
       expect(find.descendant(of: sheet, matching: find.text('EARNED')), findsNWidgets(3)); // Spark, Ember, Inferno
       expect(find.descendant(of: sheet, matching: find.text('LOCKED')), findsNWidgets(1)); // Scholar I
+    });
+  });
+
+  group('Badge icon colors (owner request, 2026-09-21)', () {
+    // An earned flame used to be the same flat gold as a locked one -- only
+    // its opacity differed. Now it's fire-colored by tier; locked stays grey.
+    List<Color?> flameColors(WidgetTester tester) => tester
+        .widgetList<Icon>(find.byIcon(LucideIcons.flame))
+        .map((icon) => icon.color)
+        .toList();
+
+    testWidgets('earned flames are colored by tier on the profile card', (tester) async {
+      _fakeLoggedIn();
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: _EditableProfileRepository(_user)))); // 24 submissions: all three earned
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(flameColors(tester), [AppColors.flameSpark, AppColors.flameEmber, AppColors.flameInferno]);
+    });
+
+    testWidgets('a flame that is not earned yet stays grey, not fire-colored', (tester) async {
+      _fakeLoggedIn();
+      final fewSubmissions = SpekoohUser(
+        name: _user.name,
+        joinDate: _user.joinDate,
+        submissionsCount: 1, // clears Spark only
+        quizzesCount: 0,
+        creditBalance: 0,
+        redeemCode: '',
+        redeemCodeSubtitle: '',
+      );
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: _EditableProfileRepository(fewSubmissions))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(flameColors(tester), [AppColors.flameSpark, Achievement.lockedColor, Achievement.lockedColor]);
+    });
+
+    testWidgets('the All badges sheet colors earned flames too', (tester) async {
+      _fakeLoggedIn();
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: _EditableProfileRepository(_user))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('All 4'));
+      await tester.pumpAndSettle();
+
+      final sheetFlames = tester.widgetList<Icon>(find.descendant(of: find.byType(AchievementsSheet), matching: find.byIcon(LucideIcons.flame)));
+      expect(sheetFlames.map((i) => i.color), [AppColors.flameSpark, AppColors.flameEmber, AppColors.flameInferno]);
     });
   });
 
@@ -389,6 +438,72 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('Submission not accepted'), findsNothing);
+    });
+
+    // Owner request (2026-09-21): the submission status list only ever grew.
+    Submission published(int id, String title) => Submission(
+          id: id,
+          title: title,
+          status: 'Published',
+          rawStatus: 'PUBLISHED',
+          tone: SpekoohBadgeTone.green,
+          date: '2026-08-01',
+        );
+    const inReview = Submission(
+      id: 5,
+      title: 'Biology, GCE O Level 2025',
+      status: 'Under review',
+      rawStatus: 'PENDING_REVIEW',
+      tone: SpekoohBadgeTone.amber,
+      date: '2026-09-10',
+    );
+
+    Future<_RejectionProfileRepository> pumpList(WidgetTester tester, List<Submission> items) async {
+      _fakeLoggedIn();
+      final repository = _RejectionProfileRepository()..submissions = items;
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: repository)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      return repository;
+    }
+
+    testWidgets('a published submission can be deleted; one still in review cannot', (tester) async {
+      await pumpList(tester, [published(1, 'Chemistry, GCE O Level 2025'), inReview]);
+      await tester.ensureVisible(find.text('Chemistry, GCE O Level 2025'));
+
+      expect(find.byKey(const Key('deleteSubmission-1')), findsOneWidget);
+      expect(find.byKey(const Key('deleteSubmission-5')), findsNothing);
+    });
+
+    testWidgets('deleting asks first, and cancelling keeps the row', (tester) async {
+      final repository = await pumpList(tester, [published(1, 'Chemistry, GCE O Level 2025')]);
+      await tester.ensureVisible(find.byKey(const Key('deleteSubmission-1')));
+      await tester.tap(find.byKey(const Key('deleteSubmission-1')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete this submission?'), findsOneWidget);
+      // The dialog says what "delete" really does, so nobody thinks they're
+      // unpublishing a paper other students use.
+      expect(find.textContaining('stays available to other students'), findsOneWidget);
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(repository.dismissCallCount, 0);
+      expect(find.text('Chemistry, GCE O Level 2025'), findsOneWidget);
+    });
+
+    testWidgets('confirming deletes it from the list', (tester) async {
+      final repository = await pumpList(tester, [published(1, 'Chemistry, GCE O Level 2025'), published(2, 'Physics, GCE A Level 2025')]);
+      await tester.ensureVisible(find.byKey(const Key('deleteSubmission-1')));
+      await tester.tap(find.byKey(const Key('deleteSubmission-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      expect(repository.lastDismissedId, 1);
+      expect(find.text('Chemistry, GCE O Level 2025'), findsNothing);
+      expect(find.text('Physics, GCE A Level 2025'), findsOneWidget);
     });
 
     testWidgets('a real published submission never triggers a rejection popup', (tester) async {
