@@ -10,13 +10,15 @@
 </head>
 <body>
 
+  <a class="skip-link" href="#top">Skip to main content</a>
+
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="#top">
-        <img src="{% static 'core/site/spekooh-icon.png' %}" alt="Spekooh">
+        <img src="{% static 'core/site/spekooh-icon.png' %}" alt="">
         Spekooh
       </a>
-      <button class="nav-toggle" id="navToggle" aria-label="Menu">&#9776;</button>
+      <button class="nav-toggle" id="navToggle" type="button" aria-label="Menu" aria-controls="siteNav" aria-expanded="false"><span aria-hidden="true">&#9776;</span></button>
       <nav class="site-nav" id="siteNav">
         <a href="#how-it-works">How it works</a>
         <a href="#app">The app</a>
@@ -29,7 +31,7 @@
     </div>
   </header>
 
-  <main id="top">
+  <main id="top" tabindex="-1">
 
     <section class="hero">
       <div class="wrap">
@@ -140,7 +142,7 @@
           </div>
           <div>
             <p>Spekooh is bilingual (English/French) from day one, because the exam systems it serves are too. Contributors, students or anyone with a paper to share, earn credits for what they submit; instructors are paid to mark. It's a structured, incentivized pipeline instead of an informal favour economy.</p>
-            <p>Spekooh is one product from a small team that also builds <a href="#projects" style="color:var(--gold-400);">a few other things</a>. We like solving problems that make daily life in Cameroon a little more organised.</p>
+            <p>Spekooh is one product from a small team that also builds <a class="inline-link" href="#projects">a few other things</a>. We like solving problems that make daily life in Cameroon a little more organised.</p>
           </div>
         </div>
       </div>
@@ -154,7 +156,7 @@
         <div class="announcements">
           {% for a in announcements %}
             <div class="announcement-row">
-              <div class="avatar-chip">{{ a.title|slice:":2" }}</div>
+              <div class="avatar-chip" aria-hidden="true">{{ a.title|slice:":2" }}</div>
               <div>
                 <div class="announcement-title">{{ a.title }}</div>
                 {% if a.subtitle %}<div class="announcement-sub">{{ a.subtitle }}</div>{% endif %}
@@ -240,12 +242,21 @@
   </footer>
 
   <script>
-    document.getElementById('navToggle').addEventListener('click', function(){
-      document.getElementById('siteNav').classList.toggle('open');
-    });
-    document.querySelectorAll('#siteNav a').forEach(function(a){
-      a.addEventListener('click', function(){ document.getElementById('siteNav').classList.remove('open'); });
-    });
+    (function(){
+      var toggle = document.getElementById('navToggle');
+      var nav = document.getElementById('siteNav');
+      function setOpen(open){
+        nav.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      toggle.addEventListener('click', function(){ setOpen(!nav.classList.contains('open')); });
+      nav.querySelectorAll('a').forEach(function(a){
+        a.addEventListener('click', function(){ setOpen(false); });
+      });
+      document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape' && nav.classList.contains('open')) { setOpen(false); toggle.focus(); }
+      });
+    })();
   </script>
 </body>
 </html>
