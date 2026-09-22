@@ -73,7 +73,7 @@ dependencies:
   # additions (Ad Preloading APIs, setConsentSyncId, ageRestrictedTreatment
   # -- verified: no reference anywhere in lib/), so there's no real
   # feature cost to staying on the last version without this bug.
-  google_mobile_ads: 9.0.0
+  google_mobile_ads: 9.1.0
   lucide_icons_flutter: ^3.1.20
   path_provider: ^2.1.6
   open_filex: ^4.7.0
