@@ -32,15 +32,25 @@ WITHDRAWAL_STATUS_LABELS = {
 
 @admin.register(InstructorProfileCache)
 class InstructorProfileCacheAdmin(ModelAdmin):
-    list_display = ("instructor_id", "display_name", "email")
+    list_display = ("instructor_id", "display_name", "email", "qualified_categories")
     search_fields = ("instructor_id", "display_name", "email")
 
 
 @admin.register(InstructorSubjectQueue)
 class InstructorSubjectQueueAdmin(ModelAdmin):
-    list_display = ("subject", "instructor_id", "priority_order", "active")
+    list_display = ("subject", "instructor_id", "priority_order", "active", "qualified_for")
     list_filter = ("subject", "active")
     ordering = ("subject", "priority_order")
+
+    @display(description="Qualified for")
+    def qualified_for(self, obj):
+        # A loose lookup by instructor_id, not a DB FK — InstructorProfileCache
+        # is partner-pushed and can arrive after ops adds a queue row, so the
+        # two are deliberately never required to reference each other.
+        profile = InstructorProfileCache.objects.filter(instructor_id=obj.instructor_id).first()
+        if profile is None:
+            return "No profile on file yet"
+        return ", ".join(profile.qualified_categories) or "Nothing on file"
 
 
 @admin.register(InstructorRequest)

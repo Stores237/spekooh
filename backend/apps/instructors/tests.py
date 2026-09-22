@@ -24,20 +24,24 @@ from .factories import InstructorSubjectQueueFactory, PartnerCredentialFactory
 from .models import (
     InstructorCreditLedger,
     InstructorMarkingGuide,
+    InstructorProfileCache,
     InstructorRequest,
     InstructorRequestStatus,
+    InstructorSubjectQueue,
     WithdrawalRequest,
 )
 from .services import (
     GUIDE_REMINDER_DAYS,
     GuideFileError,
     MergeError,
+    ProfileUpdateError,
     RoutingError,
     handle_instructor_response,
     handle_marking_guide_submission,
     merge_and_publish,
     request_withdrawal,
     route_next_instructor,
+    upsert_instructor_profile,
 )
 from .webhook import sign_payload, verify_webhook_request
 
@@ -643,8 +647,10 @@ def test_notify_new_request_includes_the_real_question_paper_file_url(settings, 
     settings.INSTRUCTOR_PARTNER_ID = "s-learn"
 
     subject = SubjectFactory(key="notify_new_request_file_subject")
-    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-a", priority_order=1)
     category = ExamCategoryFactory(key="notify_new_request_file_category")
+    InstructorSubjectQueueFactory(
+        subject=subject, instructor_id="instructor-a", priority_order=1, qualified_categories=[category.key]
+    )
     exam_type = ExamTypeFactory(category=category, name="O Level file test")
     paper = PaperSubmissionFactory(
         category=category,
@@ -731,3 +737,447 @@ def test_request_withdrawal_creates_request_and_approval_ticket():
     ticket = AdminFlagQueue.objects.get(category=FlagCategory.WITHDRAWAL_APPROVAL)
     assert ticket.subject == withdrawal
     assert "instructor-a" in ticket.reason and "15000" in ticket.reason
+
+
+# --- Partner pull API: fresh paper link + earnings ---
+
+
+def _post_signed(api_client, credential, path: str, payload: dict):
+    body = json.dumps(payload).encode()
+    timestamp = str(int(timezone.now().timestamp()))
+    signature = sign_payload(secret=credential.hmac_secret, timestamp=timestamp, raw_body=body)
+    return api_client.post(
+        path,
+        data=body,
+        content_type="application/json",
+        HTTP_X_SPEKOOH_PARTNER_ID=credential.partner_id,
+        HTTP_X_SPEKOOH_SIGNATURE=signature,
+        HTTP_X_SPEKOOH_TIMESTAMP=timestamp,
+    )
+
+
+def _routed_request(key: str, *, instructor_id: str = "instructor-a", with_file: bool = True):
+    subject = SubjectFactory(key=key)
+    InstructorSubjectQueueFactory(subject=subject, instructor_id=instructor_id, priority_order=1)
+    paper = _routable_paper(subject=subject)
+    if with_file:
+        paper.uploaded_file = "paper_submissions/2026/09/exam.pdf"
+        paper.save(update_fields=["uploaded_file"])
+    return route_next_instructor(paper)
+
+
+PAPER_LINK_PATH = "/api/instructors/partner/paper-link/"
+EARNINGS_PATH = "/api/instructors/partner/earnings/"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("path", [PAPER_LINK_PATH, EARNINGS_PATH])
+def test_partner_pull_endpoints_reject_an_unsigned_call(api_client, path):
+    PartnerCredentialFactory()
+    response = api_client.post(path, data=json.dumps({"instructor_id": "x"}), content_type="application/json")
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_partner_pull_endpoint_rejects_a_body_tampered_after_signing(api_client):
+    credential = PartnerCredentialFactory()
+    request = _routed_request("pull_subject_tamper")
+    signed_body = json.dumps({"instructor_request_id": request.id, "instructor_id": "instructor-a"}).encode()
+    timestamp = str(int(timezone.now().timestamp()))
+    signature = sign_payload(secret=credential.hmac_secret, timestamp=timestamp, raw_body=signed_body)
+    # Signature covers instructor-a's body; the caller swaps in someone else's id.
+    forged_body = json.dumps({"instructor_request_id": request.id, "instructor_id": "instructor-b"}).encode()
+
+    response = api_client.post(
+        PAPER_LINK_PATH,
+        data=forged_body,
+        content_type="application/json",
+        HTTP_X_SPEKOOH_PARTNER_ID=credential.partner_id,
+        HTTP_X_SPEKOOH_SIGNATURE=signature,
+        HTTP_X_SPEKOOH_TIMESTAMP=timestamp,
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_paper_link_returns_a_fresh_link_for_a_pending_request(api_client):
+    credential = PartnerCredentialFactory()
+    request = _routed_request("pull_subject_pending")
+
+    response = _post_signed(
+        api_client, credential, PAPER_LINK_PATH, {"instructor_request_id": request.id, "instructor_id": "instructor-a"}
+    )
+
+    assert response.status_code == 200
+    assert response.data["url"].endswith("exam.pdf")
+    assert response.data["file_name"] == "exam.pdf"
+    assert response.data["content_type"] == "application/pdf"
+    assert response.data["request_status"] == "PENDING"
+    assert response.data["expires_in"] > 0
+
+
+@pytest.mark.django_db
+def test_paper_link_is_still_served_once_the_request_is_accepted(api_client):
+    credential = PartnerCredentialFactory()
+    request = _routed_request("pull_subject_accepted")
+    handle_instructor_response(instructor_request_id=request.id, decision="ACCEPTED")
+
+    response = _post_signed(
+        api_client, credential, PAPER_LINK_PATH, {"instructor_request_id": request.id, "instructor_id": "instructor-a"}
+    )
+
+    assert response.status_code == 200
+    assert response.data["request_status"] == "ACCEPTED"
+
+
+@pytest.mark.django_db
+def test_paper_link_refuses_another_instructors_request(api_client):
+    credential = PartnerCredentialFactory()
+    request = _routed_request("pull_subject_other")
+
+    response = _post_signed(
+        api_client, credential, PAPER_LINK_PATH, {"instructor_request_id": request.id, "instructor_id": "instructor-b"}
+    )
+
+    # Same answer as for an id that does not exist, so ids cannot be probed.
+    assert response.status_code == 404
+    missing = _post_signed(
+        api_client, credential, PAPER_LINK_PATH, {"instructor_request_id": 999999, "instructor_id": "instructor-a"}
+    )
+    assert missing.status_code == 404
+    assert missing.data == response.data
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("decision", ["REJECTED"])
+def test_paper_link_is_gone_once_the_request_is_closed(api_client, decision):
+    credential = PartnerCredentialFactory()
+    request = _routed_request("pull_subject_closed")
+    handle_instructor_response(instructor_request_id=request.id, decision=decision)
+
+    response = _post_signed(
+        api_client, credential, PAPER_LINK_PATH, {"instructor_request_id": request.id, "instructor_id": "instructor-a"}
+    )
+
+    assert response.status_code == 410
+
+
+@pytest.mark.django_db
+def test_paper_link_is_gone_once_the_guide_is_submitted(api_client):
+    credential = PartnerCredentialFactory()
+    request = _routed_request("pull_subject_submitted")
+    handle_instructor_response(instructor_request_id=request.id, decision="ACCEPTED")
+    handle_marking_guide_submission(instructor_request_id=request.id, content=[{"question_type": "ESSAY"}])
+
+    response = _post_signed(
+        api_client, credential, PAPER_LINK_PATH, {"instructor_request_id": request.id, "instructor_id": "instructor-a"}
+    )
+
+    assert response.status_code == 410
+
+
+@pytest.mark.django_db
+def test_paper_link_is_gone_when_the_paper_has_no_file(api_client):
+    credential = PartnerCredentialFactory()
+    request = _routed_request("pull_subject_nofile", with_file=False)
+
+    response = _post_signed(
+        api_client, credential, PAPER_LINK_PATH, {"instructor_request_id": request.id, "instructor_id": "instructor-a"}
+    )
+
+    assert response.status_code == 410
+
+
+def test_signed_url_asks_the_storage_for_a_short_lived_link():
+    from .partner_api import _signed_url
+
+    class _SigningStorage:
+        def url(self, name, expire=None):
+            return f"https://storage.example/{name}?expires={expire}"
+
+    class _File:
+        name = "papers/a.pdf"
+        storage = _SigningStorage()
+
+    assert _signed_url(_File(), 900) == "https://storage.example/papers/a.pdf?expires=900"
+
+
+def test_signed_url_falls_back_for_storage_that_cannot_expire_links():
+    from .partner_api import _signed_url
+
+    class _PlainStorage:
+        def url(self, name):
+            return f"/media/{name}"
+
+    class _File:
+        name = "papers/a.pdf"
+        storage = _PlainStorage()
+
+    assert _signed_url(_File(), 900) == "/media/papers/a.pdf"
+
+
+@pytest.mark.django_db
+def test_new_request_payload_carries_the_paper_context_and_keeps_the_old_keys(settings, monkeypatch):
+    from .outbound import notify_new_request
+
+    request = _routed_request("pull_subject_payload")
+    paper = request.paper
+    paper.year = 2022
+    paper.track = "Science"
+    paper.exam_board = "GCE Board"
+    paper.save(update_fields=["year", "track", "exam_board"])
+
+    sent = {}
+    monkeypatch.setattr(
+        "apps.instructors.outbound.send_partner_webhook",
+        lambda *, event_type, payload: sent.update(event_type=event_type, payload=payload) or True,
+    )
+
+    notify_new_request(request)
+
+    payload = sent["payload"]
+    # Original contract, unchanged.
+    assert payload["instructor_request_id"] == request.id
+    assert payload["subject"] == paper.subject.title
+    assert payload["paper_file_url"]
+    # New context an instructor needs before agreeing to mark it.
+    assert payload["exam_type"] == "O Level"
+    assert payload["category"] == "secondary"
+    assert payload["year"] == 2022
+    assert payload["track"] == "Science"
+    assert payload["exam_board"] == "GCE Board"
+    assert payload["language"] == "en"
+    assert payload["report_title"] is None
+
+
+@pytest.mark.django_db
+def test_earnings_sums_credits_and_reserves_withdrawals(api_client):
+    credential = PartnerCredentialFactory()
+    paper = _routable_paper(subject=SubjectFactory(key="pull_subject_earn"))
+    InstructorCreditLedger.objects.create(instructor_id="instructor-a", paper=paper, amount=3000)
+    InstructorCreditLedger.objects.create(instructor_id="instructor-a", paper=paper, amount=2000)
+    # Someone else's earnings never leak into this instructor's totals.
+    InstructorCreditLedger.objects.create(instructor_id="instructor-b", paper=paper, amount=9999)
+    WithdrawalRequest.objects.create(instructor_id="instructor-a", amount=1000, payout_method="mtn", status="PAID")
+    WithdrawalRequest.objects.create(instructor_id="instructor-a", amount=500, payout_method="mtn", status="PENDING")
+    WithdrawalRequest.objects.create(instructor_id="instructor-a", amount=700, payout_method="mtn", status="APPROVED")
+
+    response = _post_signed(api_client, credential, EARNINGS_PATH, {"instructor_id": "instructor-a"})
+
+    assert response.status_code == 200
+    assert response.data["currency"] == "XAF"
+    assert response.data["total_earned"] == 5000
+    assert response.data["paid_out"] == 1000
+    assert response.data["in_review"] == 1200
+    assert response.data["available"] == 2800
+    assert len(response.data["ledger"]) == 2
+    assert {row["status"] for row in response.data["withdrawals"]} == {"PAID", "PENDING", "APPROVED"}
+    assert all(row["subject"] == paper.subject.title for row in response.data["ledger"])
+
+
+@pytest.mark.django_db
+def test_earnings_for_an_instructor_with_no_activity_is_all_zero(api_client):
+    credential = PartnerCredentialFactory()
+
+    response = _post_signed(api_client, credential, EARNINGS_PATH, {"instructor_id": "brand-new"})
+
+    assert response.status_code == 200
+    assert response.data["total_earned"] == 0
+    assert response.data["available"] == 0
+    assert response.data["ledger"] == []
+    assert response.data["withdrawals"] == []
+
+
+# --- Instructor qualification: route by category, not just subject ---
+# 2026-09-22 owner report: a secondary-level instructor was reachable for a
+# university paper, because routing only ever matched on subject.
+
+
+@pytest.mark.django_db
+def test_upsert_instructor_profile_creates_then_updates_the_same_row():
+    created = upsert_instructor_profile(
+        instructor_id="instructor-x", email="x@example.com", display_name="X", qualified_categories=["secondary"]
+    )
+    assert created.email == "x@example.com"
+    assert created.qualified_categories == ["secondary"]
+
+    ExamCategoryFactory(key="qual_test_university")
+    updated = upsert_instructor_profile(
+        instructor_id="instructor-x",
+        email="x-new@example.com",
+        qualified_categories=["secondary", "qual_test_university"],
+    )
+
+    assert updated.id == created.id
+    assert InstructorProfileCache.objects.count() == 1
+    assert updated.email == "x-new@example.com"
+    # A field the second call omits (display_name) is not left at its old
+    # value -- the payload is always the whole profile, never a patch.
+    assert updated.display_name == ""
+    assert updated.qualified_categories == ["secondary", "qual_test_university"]
+
+
+@pytest.mark.django_db
+def test_upsert_instructor_profile_rejects_an_unknown_category_key():
+    with pytest.raises(ProfileUpdateError):
+        upsert_instructor_profile(instructor_id="instructor-x", email="x@example.com", qualified_categories=["not-a-real-key"])
+    assert not InstructorProfileCache.objects.filter(instructor_id="instructor-x").exists()
+
+
+@pytest.mark.django_db
+def test_route_next_instructor_skips_an_unqualified_instructor_for_the_next_in_queue():
+    subject = SubjectFactory(key="qual_subject_skip")
+    InstructorSubjectQueueFactory(
+        subject=subject, instructor_id="instructor-a", priority_order=1, qualified_categories=["university"]
+    )
+    InstructorSubjectQueueFactory(
+        subject=subject, instructor_id="instructor-b", priority_order=2, qualified_categories=["secondary"]
+    )
+    paper = _routable_paper(subject=subject)  # category "secondary"
+
+    request = route_next_instructor(paper)
+
+    assert request.instructor_id == "instructor-b"
+
+
+@pytest.mark.django_db
+def test_route_next_instructor_skips_an_instructor_with_no_profile_on_file():
+    subject = SubjectFactory(key="qual_subject_no_profile")
+    # A queue row with no matching InstructorProfileCache at all -- ops added
+    # it, but the partner has never pushed a profile for this instructor_id.
+    InstructorSubjectQueue.objects.create(subject=subject, instructor_id="instructor-ghost", priority_order=1)
+    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-b", priority_order=2)
+    paper = _routable_paper(subject=subject)
+
+    request = route_next_instructor(paper)
+
+    assert request.instructor_id == "instructor-b"
+
+
+@pytest.mark.django_db
+def test_route_next_instructor_flags_unassigned_when_everyone_is_unqualified():
+    subject = SubjectFactory(key="qual_subject_none_qualified")
+    InstructorSubjectQueueFactory(
+        subject=subject, instructor_id="instructor-a", priority_order=1, qualified_categories=["university"]
+    )
+    paper = _routable_paper(subject=subject)  # category "secondary"
+
+    request = route_next_instructor(paper)
+
+    assert request is None
+    paper.refresh_from_db()
+    assert paper.status == PaperStatus.UNASSIGNED_ADMIN_QUEUE
+    ticket = AdminFlagQueue.objects.get(category=FlagCategory.UNASSIGNED_PAPER)
+    assert "unqualified for 'secondary'" in ticket.reason
+
+
+@pytest.mark.django_db
+def test_route_next_instructor_still_reports_a_genuinely_empty_queue_as_before():
+    subject = SubjectFactory(key="qual_subject_truly_empty")
+    paper = _routable_paper(subject=subject)
+
+    request = route_next_instructor(paper)
+
+    assert request is None
+    ticket = AdminFlagQueue.objects.get(category=FlagCategory.UNASSIGNED_PAPER)
+    assert ticket.reason == "No instructor in the subject queue accepted this paper."
+
+
+@pytest.mark.django_db
+def test_route_next_instructor_never_creates_a_request_for_a_skipped_unqualified_instructor():
+    subject = SubjectFactory(key="qual_subject_no_leak")
+    InstructorSubjectQueueFactory(
+        subject=subject, instructor_id="instructor-unqualified", priority_order=1, qualified_categories=["university"]
+    )
+    InstructorSubjectQueueFactory(subject=subject, instructor_id="instructor-b", priority_order=2)
+    paper = _routable_paper(subject=subject)
+
+    route_next_instructor(paper)
+
+    assert not InstructorRequest.objects.filter(instructor_id="instructor-unqualified").exists()
+
+
+# --- Webhook: instructor_profile_update ---
+
+
+@pytest.mark.django_db
+def test_webhook_instructor_profile_update_end_to_end(api_client):
+    credential = PartnerCredentialFactory()
+    ExamCategoryFactory(key="webhook_profile_category")
+
+    response = _post_webhook(
+        api_client,
+        credential,
+        {
+            "event_type": "instructor_profile_update",
+            "instructor_id": "instructor-new",
+            "email": "new@example.com",
+            "display_name": "New Instructor",
+            "qualified_categories": ["webhook_profile_category"],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.data["applied"] is True
+    profile = InstructorProfileCache.objects.get(instructor_id="instructor-new")
+    assert profile.email == "new@example.com"
+    assert profile.qualified_categories == ["webhook_profile_category"]
+
+
+@pytest.mark.django_db
+def test_webhook_instructor_profile_update_rejects_an_unknown_category(api_client):
+    credential = PartnerCredentialFactory()
+
+    response = _post_webhook(
+        api_client,
+        credential,
+        {
+            "event_type": "instructor_profile_update",
+            "instructor_id": "instructor-new",
+            "email": "new@example.com",
+            "qualified_categories": ["not-a-real-key"],
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.data["applied"] is False
+    assert not InstructorProfileCache.objects.filter(instructor_id="instructor-new").exists()
+
+
+@pytest.mark.django_db
+def test_webhook_instructor_profile_update_rejects_an_unsigned_call(api_client):
+    PartnerCredentialFactory()
+    response = api_client.post(
+        "/api/instructors/webhook/",
+        data=json.dumps({"event_type": "instructor_profile_update", "instructor_id": "x", "email": "x@example.com"}),
+        content_type="application/json",
+    )
+    assert response.status_code == 401
+
+
+# --- Partner pull API: categories ---
+
+CATEGORIES_PATH = "/api/instructors/partner/categories/"
+
+
+@pytest.mark.django_db
+def test_partner_categories_lists_real_categories(api_client):
+    credential = PartnerCredentialFactory()
+    ExamCategoryFactory(key="cat_list_a", title="Category A", sort_order=1)
+    ExamCategoryFactory(key="cat_list_b", title="Category B", sort_order=2)
+
+    response = _post_signed(api_client, credential, CATEGORIES_PATH, {})
+
+    keys = [row["key"] for row in response.data["categories"]]
+    assert response.status_code == 200
+    assert "cat_list_a" in keys
+    assert "cat_list_b" in keys
+    assert keys.index("cat_list_a") < keys.index("cat_list_b")
+
+
+@pytest.mark.django_db
+def test_partner_categories_rejects_an_unsigned_call(api_client):
+    PartnerCredentialFactory()
+    response = api_client.post(CATEGORIES_PATH, data=json.dumps({}), content_type="application/json")
+    assert response.status_code == 401

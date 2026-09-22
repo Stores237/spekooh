@@ -60,6 +60,29 @@ def send_partner_webhook(*, event_type: str, payload: dict) -> bool:
         return False
 
 
+def paper_context(paper) -> dict:
+    """What an instructor needs to know about a paper before agreeing to mark
+    it -- previously the push carried only the subject's name. Everything here
+    is additive to the original payload keys, so a partner that has not
+    deployed a reader for these fields yet keeps working."""
+    language = paper.subject.language if paper.subject_id else paper.exam_type.subject_language
+    return {
+        "category": paper.category.key,
+        "category_title": paper.category.title,
+        "exam_type": paper.exam_type.name,
+        "system": paper.system or None,
+        "track": paper.track or None,
+        "exam_board": paper.exam_board or None,
+        "year": paper.year,
+        "language": language,
+        # Only reports (internship / memoire / these / PFE) carry these; they
+        # have no subject, so without them the request has no identity at all.
+        "report_title": paper.title or None,
+        "report_institution": paper.institution or None,
+        "report_discipline": paper.discipline or None,
+    }
+
+
 def notify_new_request(instructor_request) -> bool:
     paper = instructor_request.paper
     return send_partner_webhook(
@@ -69,10 +92,12 @@ def notify_new_request(instructor_request) -> bool:
             "instructor_id": instructor_request.instructor_id,
             "paper_id": instructor_request.paper_id,
             "subject": paper.subject.title if paper.subject_id else None,
-            # The actual question paper the instructor is meant to produce a
-            # marking guide for -- previously this push carried no way to
-            # even see what they were being asked to mark.
+            # Kept for partners that have not moved to the on-demand link yet.
+            # It is a signed storage link that expires within the hour, far
+            # sooner than an instructor answers, so the partner should ask
+            # for a fresh one instead (see apps.instructors.partner_api).
             "paper_file_url": paper.uploaded_file.url if paper.uploaded_file else None,
+            **paper_context(paper),
             "sent_at": instructor_request.sent_at.isoformat(),
             "responds_by": instructor_request.responds_by.isoformat(),
         },

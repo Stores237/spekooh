@@ -16,13 +16,19 @@ from apps.credits.rules_engine import (
 from apps.credits.services import award_contributor_bonus
 from apps.notifications.models import NotificationKind
 from apps.notifications.services import notify
-from apps.papers.models import PaperStatus, PaperSubmission, PublishedGuide
+from apps.papers.models import (
+    ExamCategory,
+    PaperStatus,
+    PaperSubmission,
+    PublishedGuide,
+)
 from apps.papers.validation import sniff_content_type
 from apps.xp.services import award_contribution_xp
 
 from .models import (
     InstructorCreditLedger,
     InstructorMarkingGuide,
+    InstructorProfileCache,
     InstructorRequest,
     InstructorRequestStatus,
     InstructorSubjectQueue,
@@ -68,6 +74,33 @@ class RoutingError(SafeMessageError):
     pass
 
 
+class ProfileUpdateError(SafeMessageError):
+    pass
+
+
+def upsert_instructor_profile(
+    *, instructor_id: str, email: str, display_name: str = "", qualified_categories: list[str] | None = None
+) -> InstructorProfileCache:
+    """Applies a partner-pushed `instructor_profile_update` webhook event
+    (see apps.instructors.webhook, InstructorProfileUpdateWebhookSerializer).
+    Idempotent — the partner is expected to resend this whenever an
+    instructor's own details or qualifications change, not just once at
+    approval, and each call replaces the whole cached profile rather than
+    patching it.
+    """
+    categories = qualified_categories or []
+    known = set(ExamCategory.objects.filter(key__in=categories).values_list("key", flat=True))
+    unknown = set(categories) - known
+    if unknown:
+        raise ProfileUpdateError(f"Unknown category key(s): {', '.join(sorted(unknown))}.")
+
+    profile, _ = InstructorProfileCache.objects.update_or_create(
+        instructor_id=instructor_id,
+        defaults={"email": email, "display_name": display_name, "qualified_categories": categories},
+    )
+    return profile
+
+
 def _tried_instructor_ids(paper) -> set[str]:
     return set(
         InstructorRequest.objects.filter(paper=paper)
@@ -76,33 +109,59 @@ def _tried_instructor_ids(paper) -> set[str]:
     )
 
 
+def _is_qualified(instructor_id: str, category_key: str) -> bool:
+    """Fail closed (2026-09-22 owner report: a secondary-level instructor was
+    reachable for a university paper because routing only ever matched on
+    subject). An instructor the partner has never sent a profile for, or
+    whose qualified_categories doesn't list this paper's category, is
+    treated as not qualified — an empty/missing profile is never read as
+    "qualified for everything."
+    """
+    profile = InstructorProfileCache.objects.filter(instructor_id=instructor_id).first()
+    return profile is not None and category_key in profile.qualified_categories
+
+
 @transaction.atomic
 def route_next_instructor(paper: PaperSubmission) -> InstructorRequest | None:
     """
-    Sends the request to the next untried instructor in the paper's subject
-    queue (spec §4.3: strictly sequential). If the queue is exhausted, flags
-    the paper for admin review rather than leaving it unassigned forever.
+    Sends the request to the next untried, qualified instructor in the
+    paper's subject queue (spec §4.3: strictly sequential). "Qualified"
+    means the partner's own InstructorProfileCache.qualified_categories
+    includes this paper's category — an instructor in the queue who isn't
+    (or who the partner has never sent a profile for) is skipped without
+    ever being sent a request. If nobody left is both untried and
+    qualified, flags the paper for admin review rather than leaving it
+    unassigned forever.
     """
     if paper.subject_id is None:
         raise RoutingError("Paper has no subject, cannot route to an instructor.")
 
     already_tried = _tried_instructor_ids(paper)
-    next_entry = (
+    candidates = (
         InstructorSubjectQueue.objects.select_for_update()
         .filter(subject_id=paper.subject_id, active=True)
         .exclude(instructor_id__in=already_tried)
         .order_by("priority_order")
-        .first()
     )
+
+    next_entry = None
+    saw_unqualified_candidate = False
+    for candidate in candidates:
+        if _is_qualified(candidate.instructor_id, paper.category.key):
+            next_entry = candidate
+            break
+        saw_unqualified_candidate = True
 
     if next_entry is None:
         paper.status = PaperStatus.UNASSIGNED_ADMIN_QUEUE
         paper.save(update_fields=["status", "updated_at"])
-        flag(
-            subject=paper,
-            category=FlagCategory.UNASSIGNED_PAPER,
-            reason="No instructor in the subject queue accepted this paper.",
+        reason = (
+            f"Every remaining instructor in the subject queue is unqualified for "
+            f"'{paper.category.key}' papers, or has no qualification on file."
+            if saw_unqualified_candidate
+            else "No instructor in the subject queue accepted this paper."
         )
+        flag(subject=paper, category=FlagCategory.UNASSIGNED_PAPER, reason=reason)
         return None
 
     now = timezone.now()
