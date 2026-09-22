@@ -24,7 +24,7 @@ factory_boy==3.3.3
 Faker==40.38.0
 filelock==3.32.4
 gunicorn==26.2.0
-idna==3.19
+idna==3.20
 inflection==0.5.1
 iniconfig==2.3.0
 jmespath==1.1.0
