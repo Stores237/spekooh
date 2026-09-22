@@ -4,15 +4,18 @@ from unittest import mock
 import pytest
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import Group
+from django.contrib.auth.tokens import default_token_generator
 from django.core.management import call_command
 from django.db import IntegrityError
-from django.test import Client, override_settings
+from django.test import Client, RequestFactory, override_settings
 from django.utils import timezone
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from rest_framework.test import APIClient
 
-from .admin import UserAdmin
+from .admin import StaffAccountAddForm, StaffAccountAdmin, UserAdmin
 from .factories import UserFactory
-from .models import AccountType, User
+from .models import AccountType, StaffAccount, User
 
 
 @pytest.fixture
@@ -1691,3 +1694,222 @@ def test_keeping_the_same_phone_number_does_not_reset_verification(api_client):
     assert response.data["phone_verified"] is True
     user.refresh_from_db()
     assert user.phone_verified_at is not None
+
+
+# --- Staff onboarding: StaffAccount, IT Helpdesk, and the set-password link ---
+
+
+def _it_helpdesk_user(**kwargs):
+    user = User.objects.create_user(
+        email=kwargs.pop("email", "helpdesk@example.com"), password="testpass123", is_staff=True, **kwargs
+    )
+    helpdesk_group, _ = Group.objects.get_or_create(name="IT Helpdesk")
+    user.groups.add(helpdesk_group)
+    return user
+
+
+@pytest.mark.django_db
+def test_it_helpdesk_group_exists_and_carries_no_permissions():
+    """StaffAccountAdmin gates access with a hardcoded group check, not
+    Django's permission system -- membership in the group is what matters,
+    not any Permission object attached to it."""
+    helpdesk = Group.objects.get(name="IT Helpdesk")
+    assert helpdesk.permissions.count() == 0
+
+
+@pytest.mark.django_db
+def test_group_model_is_relabeled_for_clarity():
+    assert Group._meta.verbose_name == "Staff role"
+    assert Group._meta.verbose_name_plural == "Staff roles"
+
+
+@pytest.mark.django_db
+def test_it_helpdesk_can_onboard_a_new_staff_member_end_to_end(mailoutbox):
+    helpdesk = _it_helpdesk_user()
+    client = Client()
+    client.force_login(helpdesk)
+
+    response = client.post(
+        "/admin/accounts/staffaccount/add/",
+        {"email": "new-reviewer@example.com", "name": "New Reviewer", "role": Group.objects.get(name="Reviewer").pk},
+    )
+
+    assert response.status_code == 302
+    created = User.objects.get(email="new-reviewer@example.com")
+    assert created.is_staff is True
+    assert created.is_active is True
+    assert created.has_usable_password() is False
+    assert list(created.groups.values_list("name", flat=True)) == ["Reviewer"]
+
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].to == ["new-reviewer@example.com"]
+    assert "/staff/set-password/" in mailoutbox[0].body
+
+
+@pytest.mark.django_db
+def test_it_helpdesk_can_change_an_existing_staff_members_role():
+    helpdesk = _it_helpdesk_user()
+    staffer = User.objects.create_user(email="existing@example.com", password="x", is_staff=True)
+    staffer.groups.add(Group.objects.get(name="Support"))
+    client = Client()
+    client.force_login(helpdesk)
+
+    response = client.post(
+        f"/admin/accounts/staffaccount/{staffer.pk}/change/",
+        {"name": "Existing Person", "is_active": "on", "role": Group.objects.get(name="Integration Ops").pk},
+    )
+
+    assert response.status_code == 302
+    staffer.refresh_from_db()
+    assert list(staffer.groups.values_list("name", flat=True)) == ["Integration Ops"]
+
+
+@pytest.mark.django_db
+def test_it_helpdesk_cannot_reach_the_staff_onboarding_screen_without_membership():
+    plain_staff = User.objects.create_user(email="plain-staff@example.com", password="x", is_staff=True)
+    client = Client()
+    client.force_login(plain_staff)
+
+    response = client.get("/admin/accounts/staffaccount/add/")
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_it_helpdesk_cannot_change_a_superusers_account():
+    helpdesk = _it_helpdesk_user()
+    owner = User.objects.create_superuser(email="owner@example.com", password="x")
+    client = Client()
+    client.force_login(helpdesk)
+
+    response = client.get(f"/admin/accounts/staffaccount/{owner.pk}/change/")
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_staff_account_add_form_never_exposes_a_way_to_grant_superuser():
+    admin_instance = StaffAccountAdmin(StaffAccount, AdminSite())
+    request = RequestFactory().get("/")
+    request.user = User.objects.create_superuser(email="owner2@example.com", password="x")
+    form_class = admin_instance.get_form(request, obj=None)
+    assert "is_superuser" not in form_class.base_fields
+    assert "is_staff" not in form_class.base_fields
+
+
+@pytest.mark.django_db
+def test_staff_account_add_form_creates_with_no_usable_password_and_assigns_role():
+    role = Group.objects.get(name="Support")
+    form = StaffAccountAddForm(data={"email": "formtest@example.com", "name": "Form Test", "role": role.pk})
+    assert form.is_valid(), form.errors
+
+    user = form.save()
+
+    assert user.pk is not None
+    assert user.is_staff is True
+    assert user.has_usable_password() is False
+    assert list(user.groups.all()) == [role]
+
+
+@pytest.mark.django_db
+def test_staff_account_admin_lists_only_staff_and_shows_their_role():
+    helpdesk = _it_helpdesk_user()
+    UserFactory(email="student@example.com")  # a plain app user, not staff
+    admin_instance = StaffAccountAdmin(StaffAccount, AdminSite())
+    request = RequestFactory().get("/")
+    request.user = helpdesk
+
+    listed_emails = set(admin_instance.get_queryset(request).values_list("email", flat=True))
+
+    assert "student@example.com" not in listed_emails
+    assert helpdesk.email in listed_emails
+    assert admin_instance.role_display(helpdesk) == "IT Helpdesk"
+
+
+@pytest.mark.django_db
+def test_staff_set_password_link_sets_password_once_then_refuses_reuse():
+    helpdesk_group = Group.objects.get(name="IT Helpdesk")
+    user = User.objects.create_user(email="invited@example.com", is_staff=True)
+    user.set_unusable_password()
+    user.save()
+    user.groups.add(helpdesk_group)
+    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    url = f"/staff/set-password/{uidb64}/{token}/"
+    client = Client()
+
+    get_response = client.get(url)
+    assert get_response.status_code == 200
+    assert "invalid" not in get_response.context
+
+    post_response = client.post(url, {"new_password1": "GenuinelyStr0ng!", "new_password2": "GenuinelyStr0ng!"})
+    assert post_response.status_code == 200
+    assert post_response.context["done"] is True
+    user.refresh_from_db()
+    assert user.check_password("GenuinelyStr0ng!") is True
+
+    # The token is bound to the password hash -- reusing the same link
+    # after it's already been used must fail, not silently work twice.
+    reuse = client.get(url)
+    assert reuse.context["invalid"] is True
+
+
+@pytest.mark.django_db
+def test_staff_set_password_rejects_mismatched_passwords():
+    user = User.objects.create_user(email="mismatch@example.com", is_staff=True)
+    user.set_unusable_password()
+    user.save()
+    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    client = Client()
+
+    response = client.post(
+        f"/staff/set-password/{uidb64}/{token}/", {"new_password1": "GenuinelyStr0ng!", "new_password2": "Different!23"}
+    )
+
+    assert response.status_code == 200
+    assert "match" in response.context["error"]
+    user.refresh_from_db()
+    assert user.has_usable_password() is False
+
+
+@pytest.mark.django_db
+def test_staff_set_password_rejects_a_weak_password():
+    user = User.objects.create_user(email="weak@example.com", is_staff=True)
+    user.set_unusable_password()
+    user.save()
+    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    client = Client()
+
+    response = client.post(f"/staff/set-password/{uidb64}/{token}/", {"new_password1": "password", "new_password2": "password"})
+
+    assert response.status_code == 200
+    assert response.context["error"]
+    user.refresh_from_db()
+    assert user.has_usable_password() is False
+
+
+@pytest.mark.django_db
+def test_staff_set_password_link_rejects_a_tampered_token():
+    user = User.objects.create_user(email="tampered@example.com", is_staff=True)
+    user.set_unusable_password()
+    user.save()
+    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+    client = Client()
+
+    response = client.get(f"/staff/set-password/{uidb64}/not-a-real-token/")
+
+    assert response.context["invalid"] is True
+
+
+@pytest.mark.django_db
+def test_staff_set_password_link_never_works_for_a_non_staff_account():
+    user = UserFactory(email="regular-app-user@example.com")  # is_staff=False by default
+    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    client = Client()
+
+    response = client.get(f"/staff/set-password/{uidb64}/{token}/")
+
+    assert response.context["invalid"] is True

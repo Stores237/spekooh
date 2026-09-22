@@ -239,3 +239,24 @@ class EmailVerificationCode(TimeStampedModel):
     @property
     def is_usable(self) -> bool:
         return self.used_at is None and not self.is_expired and self.attempts < self.EMAIL_VERIFICATION_MAX_ATTEMPTS
+
+
+class StaffAccount(User):
+    """A proxy over the same User table, admin-only, for onboarding and
+    managing staff logins — separate from UserAdmin, which is the general
+    app-user screen with its own PII-redaction rules that make no sense
+    here (staff *are* the people looking things up; showing a colleague's
+    own work email is normal). Every row here is is_staff=True.
+
+    Owner request (2026-09-22): the built-in "Groups" page gave IT
+    helpdesk nowhere to actually create a staff login against an
+    already-provided work email, and the page's own name didn't say what
+    it was for. This proxy is that missing screen — see
+    apps.accounts.admin.StaffAccountAdmin for the onboarding form and the
+    IT-Helpdesk-only, role-limited permission checks.
+    """
+
+    class Meta:
+        proxy = True
+        verbose_name = "Staff account"
+        verbose_name_plural = "Staff accounts"

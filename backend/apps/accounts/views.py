@@ -1,3 +1,9 @@
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.shortcuts import render
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -119,6 +125,44 @@ class PasswordResetConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "Password reset. Log in with your new password."})
+
+
+def staff_set_password_view(request, uidb64, token):
+    """Plain HTML page (not DRF/JSON), same reasoning as
+    apps.pamphlets.views.redeem_page: whoever clicks this link isn't
+    logged in yet, so there's no JWT to key a DRF view off. Scoped to
+    is_staff=True on purpose — this token mechanism only ever exists for
+    accounts StaffAccountAdmin created with set_unusable_password(), never
+    for an app user's own password reset (that's PasswordResetCode,
+    a different, code-based flow — see its own docstring)."""
+    try:
+        user = User.objects.get(pk=force_str(urlsafe_base64_decode(uidb64)), is_staff=True)
+    except (User.DoesNotExist, ValueError, TypeError, OverflowError):
+        user = None
+
+    if user is None or not default_token_generator.check_token(user, token):
+        return render(request, "accounts/staff_set_password.html", {"invalid": True})
+
+    if request.method == "POST":
+        password = request.POST.get("new_password1", "")
+        confirm = request.POST.get("new_password2", "")
+        error = None
+        if password != confirm:
+            error = "Those two passwords don't match."
+        else:
+            try:
+                validate_password(password, user)
+            except DjangoValidationError as exc:
+                error = " ".join(exc.messages)
+
+        if error:
+            return render(request, "accounts/staff_set_password.html", {"error": error})
+
+        user.set_password(password)
+        user.save(update_fields=["password"])
+        return render(request, "accounts/staff_set_password.html", {"done": True})
+
+    return render(request, "accounts/staff_set_password.html", {})
 
 
 class EmailVerificationConfirmView(APIView):
