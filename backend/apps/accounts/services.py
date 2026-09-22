@@ -2,8 +2,11 @@ import logging
 
 import requests
 from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.utils import timezone
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from .models import EmailVerificationCode, User
 
@@ -63,6 +66,32 @@ def send_verification_email(user: "User") -> EmailVerificationCode:
         recipient_list=[user.email],
     )
     return verification
+
+
+def send_staff_set_password_email(user: "User", *, request) -> None:
+    """A brand-new staff account (StaffAccountAdmin) is created with
+    set_unusable_password() -- nobody, including whoever onboarded them,
+    ever knows a password for it. This emails a one-time link to the staff
+    email already on file, using Django's own battle-tested
+    token+uidb64 web-reset primitives (the mobile app's own reset flow
+    deliberately doesn't use these -- see PasswordResetCode's docstring --
+    but staff use a browser, so the standard clickable-link flow is the
+    right fit here, not a code to retype).
+    """
+    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    link = request.build_absolute_uri(f"/staff/set-password/{uidb64}/{token}/")
+    send_mail(
+        subject="Set your Spekooh admin password",
+        message=(
+            f"An admin account has been created for you at Spekooh ({user.email}).\n\n"
+            f"Set your password here: {link}\n\n"
+            "This link expires in a few days and can only be used once. If you weren't "
+            "expecting this, you can ignore it."
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+    )
 
 
 def email_domain_is_verifiable(email: str) -> bool:

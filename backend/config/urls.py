@@ -20,6 +20,7 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from apps.accounts.views import staff_set_password_view
 from apps.core.views import (
     healthz,
     marketing_home,
@@ -34,6 +35,11 @@ urlpatterns = [
     # api/docs/; that's still reachable directly for API consumers.
     path('', marketing_home, name='marketing-home'),
     path('admin/', admin.site.urls),
+    # Plain HTML, not under api/auth/ — same reasoning as redeem/<token>/
+    # below: whoever opens this link isn't logged in yet, so it's not an
+    # API endpoint. See StaffAccountAdmin (apps.accounts.admin) for where
+    # the link is generated and emailed.
+    path('staff/set-password/<str:uidb64>/<str:token>/', staff_set_password_view, name='staff-set-password'),
     path('healthz/', healthz, name='healthz'),
     path('internal/tasks/<str:name>/', run_task, name='internal-task'),
     path('redeem/<str:token>/', redeem_page, name='pamphlet-redeem'),

@@ -111,6 +111,39 @@ within a few days.
   `DJANGO_SUPERUSER_EMAIL`/`DJANGO_SUPERUSER_PASSWORD` env vars
   (`apps/accounts/management/commands/ensure_superuser.py`, run on every
   deploy) — no hardcoded credentials anywhere in the codebase.
+- **Staff onboarding** (owner request, 2026-09-22: IT Helpdesk had no
+  screen to create a login against an already-provided staff email, and
+  the built-in "Groups" page didn't say what it was for — relabeled to
+  "Staff Roles", `apps/accounts/apps.py`). `apps/accounts/models.py`'s
+  `StaffAccount` (a proxy over `User`) and `apps/accounts/admin.py`'s
+  `StaffAccountAdmin` are a deliberately narrower onboarding screen,
+  separate from the Owner's own `UserAdmin`:
+  - Every permission check is a hardcoded superuser-or-"IT Helpdesk"-group
+    test (`_is_authorized`), not Django's generic permission system — same
+    defense-in-depth as the pamphlet support-override action. The "IT
+    Helpdesk" group (seeded empty in `0015_seed_it_helpdesk_role.py`)
+    carries no Django `Permission` rows at all; membership is what's
+    checked, directly.
+  - The add/change forms never expose `is_superuser` or `is_staff` as
+    fields at all, and `_is_authorized` separately refuses IT Helpdesk
+    access to any row where `obj.is_superuser` is true — a superuser's own
+    account can't be seen or edited from this screen, not even read-only,
+    regardless of what the form would otherwise allow.
+  - A new account is created with `set_unusable_password()` — nobody,
+    including whoever filled in the form, ever knows a password for it.
+    `services.send_staff_set_password_email` emails a one-time link
+    (Django's own `default_token_generator` + `uidb64`, the same
+    battle-tested primitives Django's own password-reset view uses,
+    single-use because the token is bound to the password hash) to the
+    address on file. `staff_set_password_view`
+    (`apps/accounts/views.py`, plain HTML at `/staff/set-password/
+    <uidb64>/<token>/`, not under `/api/`) is scoped to `is_staff=True`
+    accounts only — this mechanism never applies to an app user's own
+    password reset, which stays the separate, code-based `PasswordResetCode`
+    flow (see Authentication above).
+  - No delete — deactivate (`is_active`) instead, same rule as partner
+    bookshops, so a departing staffer's audit history (who reviewed what,
+    who resolved which ticket) stays intact.
 
 ## Webhooks
 
