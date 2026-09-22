@@ -9,6 +9,17 @@ updates:
     directory: "/app"
     schedule:
       interval: "weekly"
+    ignore:
+      # 9.1.0+ ships a Release-build header regression (confirmed live,
+      # 2026-09-22, PR #177's own iOS CI run: "Include of non-modular
+      # header inside framework module 'google_mobile_ads.FLTAd_Internal'"
+      # against GoogleMobileAds_Beta.h) -- this isn't fixable from our
+      # side (CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES does
+      # NOT fix Release builds, already tried). Pinned to 9.0.0 in
+      # pubspec.yaml; without this, Dependabot re-proposes the same
+      # broken bump every week. Remove once a fixed version ships.
+      - dependency-name: "google_mobile_ads"
+        versions: [">= 9.1.0"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
