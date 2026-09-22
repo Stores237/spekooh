@@ -74,7 +74,7 @@ dependencies:
   # -- verified: no reference anywhere in lib/), so there's no real
   # feature cost to staying on the last version without this bug.
   google_mobile_ads: 9.0.0
-  lucide_icons_flutter: ^3.1.19
+  lucide_icons_flutter: ^3.1.20
   path_provider: ^2.1.6
   open_filex: ^4.7.0
   pdfx: ^2.11.0
