@@ -20,7 +20,7 @@ import os
 from django.db.models import Sum
 
 from apps.core.exceptions import SafeMessageError
-from apps.papers.models import PaperStatus
+from apps.papers.models import ExamCategory, PaperStatus
 
 from .models import (
     ACTIVE_INSTRUCTOR_REQUEST_STATUSES,
@@ -85,6 +85,17 @@ def fresh_paper_link(*, instructor_request_id: int, instructor_id: str) -> dict:
         "content_type": content_type,
         "request_status": request.status,
     }
+
+
+def available_categories() -> list[dict]:
+    """The real ExamCategory keys a partner can register an instructor's
+    qualifications against (see apps.instructors.services.
+    upsert_instructor_profile) — read from the same table
+    route_next_instructor checks, so the two can never disagree."""
+    return [
+        {"key": category.key, "title": category.title}
+        for category in ExamCategory.objects.order_by("sort_order", "title")
+    ]
 
 
 def earnings_summary(*, instructor_id: str) -> dict:

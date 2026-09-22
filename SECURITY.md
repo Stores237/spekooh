@@ -136,11 +136,31 @@ verified by exactly the same function as the webhook:
 - **Earnings** (`earnings/`). The instructor's credit balance, credit
   history and payout status, computed live from the ledger here, never
   copied to the partner.
+- **Categories** (`categories/`). The real, current `ExamCategory.key`/`title`
+  list, so a partner-side qualification picker can never hardcode a category
+  that has drifted out of sync with what routing actually checks.
 
-Both are POST so the signed body carries the instructor id: a body changed
-after signing (to read another instructor's data) fails verification. The
-partner platform is trusted to name the right instructor for a signed-in
-user, the same trust the webhook already places in it for accept/reject.
+A third inbound webhook event, `instructor_profile_update`
+(`apps/instructors/serializers.py::InstructorProfileUpdateWebhookSerializer`),
+lets the partner state an instructor's email and which ExamCategory keys
+they're qualified to mark (`InstructorProfileCache.qualified_categories`,
+2026-09-22 owner report: routing by subject alone let a secondary-level
+instructor be offered a university paper). `route_next_instructor`
+(`apps/instructors/services.py`) now fails closed on this: a queued
+instructor whose cached profile doesn't list the paper's category — or who
+has no cached profile at all — is skipped without ever being sent a
+request, same as an already-tried one. If the whole queue is unqualified,
+the paper is flagged `UNASSIGNED_PAPER` exactly as an empty queue would be,
+with a reason that says which category the queue is unqualified for.
+
+All three pull endpoints are POST, even `categories/` (whose body is just
+`{}`) — one consistent shape rather than a GET for the one endpoint that
+happens not to need a body. For the two that do carry data, the signed body
+is what names the instructor: a body changed after signing (to read another
+instructor's data) fails verification. The partner platform is trusted to
+name the right instructor for a signed-in user, the same trust the webhook
+already places in it for accept/reject/guide-submission and now for
+`instructor_profile_update`.
 
 ## Internal operations endpoint
 

@@ -5,6 +5,7 @@ from .views import (
     InstructorRequestViewSet,
     InstructorWebhookView,
     MergeAndPublishView,
+    PartnerCategoryListView,
     PartnerEarningsView,
     PartnerPaperLinkView,
     RouteToInstructorView,
@@ -21,5 +22,6 @@ urlpatterns = [
     path("webhook/", InstructorWebhookView.as_view(), name="webhook"),
     path("partner/paper-link/", PartnerPaperLinkView.as_view(), name="partner-paper-link"),
     path("partner/earnings/", PartnerEarningsView.as_view(), name="partner-earnings"),
+    path("partner/categories/", PartnerCategoryListView.as_view(), name="partner-categories"),
     path("", include(router.urls)),
 ]

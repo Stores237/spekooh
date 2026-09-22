@@ -8,12 +8,22 @@ from apps.core.models import TimeStampedModel
 
 
 class InstructorProfileCache(TimeStampedModel):
-    """Denormalized, non-authoritative — refreshed from webhook payloads, for admin-UI readability only."""
+    """Denormalized, non-authoritative — refreshed from webhook payloads, for admin-UI readability only.
+
+    qualified_categories (2026-09-22 owner report: a secondary-level
+    instructor was reachable for a university paper) — ExamCategory.key
+    values the partner platform says this instructor is qualified to mark,
+    e.g. ["secondary", "university"]. Sent by the partner, not entered by
+    ops, so route_next_instructor treats a category missing here the same
+    as an unqualified one (fail closed) rather than trusting an empty list
+    to mean "qualified for everything."
+    """
 
     instructor_id = models.CharField(max_length=100, unique=True, db_index=True)
     display_name = models.CharField(max_length=150, blank=True)
     email = models.EmailField(blank=True)
     subjects = models.JSONField(default=list, blank=True)
+    qualified_categories = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return self.display_name or self.instructor_id

@@ -10,25 +10,30 @@ from .models import InstructorRequest
 from .partner_api import (
     PaperLinkUnavailableError,
     PartnerLookupError,
+    available_categories,
     earnings_summary,
     fresh_paper_link,
 )
 from .serializers import (
+    InstructorProfileUpdateWebhookSerializer,
     InstructorRequestSerializer,
     InstructorResponseWebhookSerializer,
     InstructorWebhookEnvelopeSerializer,
     MarkingGuideSubmissionWebhookSerializer,
+    PartnerCategoryListRequestSerializer,
     PartnerEarningsRequestSerializer,
     PartnerPaperLinkRequestSerializer,
 )
 from .services import (
     GuideFileError,
     MergeError,
+    ProfileUpdateError,
     RoutingError,
     handle_instructor_response,
     handle_marking_guide_submission,
     merge_and_publish,
     route_next_instructor,
+    upsert_instructor_profile,
 )
 from .webhook import WebhookError, verify_webhook_request
 
@@ -111,6 +116,15 @@ class InstructorWebhookView(APIView):
             result = handle_instructor_response(**payload.validated_data)
             return Response({"applied": result.applied, "detail": result.detail}, status=status.HTTP_200_OK)
 
+        if event_type == "instructor_profile_update":
+            payload = InstructorProfileUpdateWebhookSerializer(data=request.data)
+            payload.is_valid(raise_exception=True)
+            try:
+                upsert_instructor_profile(**payload.validated_data)
+            except ProfileUpdateError as exc:
+                return Response({"applied": False, "detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"applied": True}, status=status.HTTP_200_OK)
+
         payload = MarkingGuideSubmissionWebhookSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         try:
@@ -178,3 +192,19 @@ class PartnerEarningsView(_PartnerSignedView):
         payload = PartnerEarningsRequestSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         return Response(earnings_summary(**payload.validated_data), status=status.HTTP_200_OK)
+
+
+class PartnerCategoryListView(_PartnerSignedView):
+    """The real, current list of ExamCategory keys the partner can offer an
+    instructor to pick qualifications from — kept live here rather than
+    hardcoded on the partner side, so it can never drift out of sync with
+    what route_next_instructor actually checks against."""
+
+    @extend_schema(request=PartnerCategoryListRequestSerializer, responses=None)
+    def post(self, request):
+        if (rejected := self.verify(request)) is not None:
+            return rejected
+
+        payload = PartnerCategoryListRequestSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        return Response({"categories": available_categories()}, status=status.HTTP_200_OK)
