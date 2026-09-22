@@ -15,6 +15,7 @@ from apps.core.sms import (
     check_verification_code,
     send_verification_code,
 )
+from apps.notifications.models import Notification
 
 from .models import (
     PamphletOrder,
@@ -49,6 +50,13 @@ def release_order(order: PamphletOrder) -> PamphletOrder:
     order.status = PamphletOrderStatus.RELEASED
     order.released_at = timezone.now()
     order.save(update_fields=["payout_amount", "status", "released_at", "updated_at"])
+    # Owner-reported (2026-09-21): the "your pickup ticket is ready" popup on
+    # Home kept showing after the ticket had been used, because the
+    # PAMPHLET_READY notification (place_order) stayed unread forever. Once
+    # the order is released there's nothing left to pick up, so clear it --
+    # here, not in redeem_qr, so every release path (partner scan, admin
+    # dispute resolution, the delivery auto-release cron) is covered.
+    Notification.objects.filter(user_id=order.user_id, link=f"qr-vault/{order.id}", is_read=False).update(is_read=True)
     return order
 
 

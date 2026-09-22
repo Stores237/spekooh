@@ -672,5 +672,9 @@
 
   "submissionRejectedTitle": "Submission not accepted",
   "submissionRejectedIntro": "The Review Team didn't accept this submission:",
-  "dismissSubmissionButton": "Got it, dismiss"
+  "dismissSubmissionButton": "Got it, dismiss",
+  "submissionDeleteTooltip": "Delete submission",
+  "submissionDeleteTitle": "Delete this submission?",
+  "submissionDeleteBody": "This only removes it from your list. A published paper stays available to other students, and your credits aren't affected.",
+  "submissionDeleteAction": "Delete"
 }

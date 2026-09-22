@@ -1654,4 +1654,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dismissSubmissionButton => 'Got it, dismiss';
+
+  @override
+  String get submissionDeleteTooltip => 'Delete submission';
+
+  @override
+  String get submissionDeleteTitle => 'Delete this submission?';
+
+  @override
+  String get submissionDeleteBody =>
+      'This only removes it from your list. A published paper stays available to other students, and your credits aren\'t affected.';
+
+  @override
+  String get submissionDeleteAction => 'Delete';
 }

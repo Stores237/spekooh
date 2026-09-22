@@ -1459,6 +1459,49 @@ def test_owner_can_dismiss_their_own_rejected_submission(authed_client):
 
 
 @pytest.mark.django_db
+def test_owner_can_remove_their_own_published_submission_from_their_list(authed_client):
+    """Owner request (2026-09-21): the "submission status" list only ever
+    grew. Removing a published submission only hides it from the
+    contributor's own list -- the paper stays published for everyone else."""
+    client, user = authed_client
+    paper = PaperSubmissionFactory(submitted_by=user, status=PaperStatus.PUBLISHED)
+
+    response = client.post(f"/api/papers/submissions/{paper.id}/dismiss/")
+
+    assert response.status_code == 200
+    paper.refresh_from_db()
+    assert paper.dismissed_by_contributor is True
+    assert paper.status == PaperStatus.PUBLISHED  # never unpublished
+
+
+@pytest.mark.django_db
+def test_cannot_remove_a_published_submission_that_isnt_yours(authed_client):
+    client, staff_user = authed_client
+    staff_user.is_staff = True
+    staff_user.save(update_fields=["is_staff"])
+    someone_else = UserFactory()
+    paper = PaperSubmissionFactory(submitted_by=someone_else, status=PaperStatus.PUBLISHED)
+
+    response = client.post(f"/api/papers/submissions/{paper.id}/dismiss/")
+
+    assert response.status_code == 403
+    paper.refresh_from_db()
+    assert paper.dismissed_by_contributor is False
+
+
+@pytest.mark.django_db
+def test_cannot_remove_a_submission_still_in_review_or_awaiting_a_guide(authed_client):
+    """Hiding one in flight would hide the very status the list is for."""
+    client, user = authed_client
+    for in_flight in (PaperStatus.PENDING_REVIEW, PaperStatus.AWAITING_MARKING_GUIDE, PaperStatus.MERGED):
+        paper = PaperSubmissionFactory(submitted_by=user, status=in_flight)
+        response = client.post(f"/api/papers/submissions/{paper.id}/dismiss/")
+        assert response.status_code == 400, in_flight
+        paper.refresh_from_db()
+        assert paper.dismissed_by_contributor is False
+
+
+@pytest.mark.django_db
 def test_cannot_dismiss_a_submission_that_isnt_rejected(authed_client):
     client, user = authed_client
     paper = PaperSubmissionFactory(submitted_by=user, status=PaperStatus.PENDING_REVIEW)
