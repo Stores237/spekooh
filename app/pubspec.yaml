@@ -56,7 +56,7 @@ dependencies:
   # whatever's in frame around it. Real ML Kit (Android) / VisionKit (iOS)
   # detection, not a fake overlay — falls back to a manual-crop scanner on
   # Android devices without Google Play Services.
-  cunning_document_scanner: ^3.0.2
+  cunning_document_scanner: ^3.0.3
 
   # Opens a submitted paper's real uploaded file in a new tab/viewer.
   url_launcher: ^6.3.1
