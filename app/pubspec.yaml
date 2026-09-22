@@ -79,7 +79,7 @@ dependencies:
   open_filex: ^4.7.0
   pdfx: ^2.11.0
   photo_view: ^0.15.0
-  pdf: ^3.13.0
+  pdf: ^3.13.1
 
   # Real Markdown rendering for AI chat replies (2026-09-14) — Groq/Gemini
   # both format responses with **bold**/numbered lists, which a plain Text
