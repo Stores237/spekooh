@@ -5,6 +5,7 @@ import pytest
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import Client, RequestFactory, override_settings
@@ -1706,6 +1707,22 @@ def _it_helpdesk_user(**kwargs):
     helpdesk_group, _ = Group.objects.get_or_create(name="IT Helpdesk")
     user.groups.add(helpdesk_group)
     return user
+
+
+@pytest.fixture(autouse=True)
+def _clear_content_type_cache_for_accounts_tests():
+    """Django's ContentType manager caches get_for_model() lookups in a
+    process-global dict that a rolled-back test transaction never
+    invalidates. A StaffAccount admin action resolves (and, on a cache
+    miss, creates) its proxy model's ContentType the first time any test
+    in the process needs one -- if that happens inside a test whose
+    transaction then rolls back, a *later* test can silently inherit the
+    now-stale id and fail django_admin_log's FK check at teardown
+    (confirmed live: the add-staff-member test passing before the
+    change-role test, in file order, is exactly this). Clearing the cache
+    before every test in this file keeps each one's ContentType lookups
+    honest against its own transaction's database state."""
+    ContentType.objects.clear_cache()
 
 
 @pytest.mark.django_db
