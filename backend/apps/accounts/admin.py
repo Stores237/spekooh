@@ -45,6 +45,18 @@ class UserAdmin(DjangoUserAdmin):
         "terms_accepted_at",
     )
 
+    def has_delete_permission(self, request, obj=None):
+        # Owner decision (2026-09-25): nobody deletes an account from the
+        # admin, the Owner included -- deactivate (is_active) instead. A
+        # delete cascades to the person's paper submissions and pamphlet
+        # orders and takes their payment history with it, and a staff
+        # account carries audit history (what they reviewed, what they
+        # resolved). Returning False also removes the bulk "delete
+        # selected" action. Scheduled clean-ups of stale guest accounts
+        # and staging test accounts are management commands, not this
+        # screen, and are unaffected.
+        return False
+
 
 # The one group IT Helpdesk itself belongs to is included here too, on
 # purpose: onboarding a peer (e.g. covering for someone on leave) isn't a
@@ -127,7 +139,7 @@ class StaffAccountAdmin(ModelAdmin):
     list_display = ("name", "email", "role_display", "is_active", "last_login")
     search_fields = ("name", "email")
     ordering = ("-created_at",)
-    actions = None  # onboarding is one deliberate account at a time, not a bulk action
+    actions = ["resend_set_password_link"]
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(is_staff=True)
@@ -159,6 +171,24 @@ class StaffAccountAdmin(ModelAdmin):
         # partner bookshops: a staff account may have real audit history
         # (who reviewed what, who resolved which ticket) attached to it.
         return False
+
+    @admin.action(description="Resend set-password link", permissions=["change"])
+    def resend_set_password_link(self, request, queryset):
+        """A set-password link expires after a few days. With delete blocked,
+        this is how someone whose link lapsed gets a fresh one. Only ever
+        sent to an active account that still has no password -- one that
+        already set theirs has nothing to resend."""
+        sent = 0
+        for user in queryset.filter(is_active=True):
+            if user.has_usable_password():
+                continue
+            services.send_staff_set_password_email(user, request=request)
+            sent += 1
+        skipped = queryset.count() - sent
+        message = f"Sent a new set-password link to {sent} account(s)."
+        if skipped:
+            message += f" Skipped {skipped}: already set a password, or deactivated."
+        self.message_user(request, message)
 
     def get_form(self, request, obj=None, **kwargs):
         kwargs["form"] = StaffAccountChangeForm if obj else StaffAccountAddForm
