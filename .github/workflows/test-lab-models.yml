@@ -10,6 +10,10 @@ name: Test Lab device catalog
 # Manual only. Reads the same two secrets as device-matrix.yml.
 on:
   workflow_dispatch:
+  # TEMPORARY: lets this run from its own branch before it exists on main.
+  # Removed before the PR is opened.
+  push:
+    branches: [ci/test-lab-models]
 
 permissions:
   contents: read
