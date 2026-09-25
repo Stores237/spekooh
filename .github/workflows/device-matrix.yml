@@ -67,23 +67,21 @@ jobs:
         with:
           project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
 
-      # DEVICE_MATRIX.md cells 1-5, mapped to real Android API levels.
-      # model=<placeholder> is deliberate -- Firebase Test Lab's device
-      # catalog changes over time and isn't something to hardcode here
-      # without a live `gcloud firebase test android models list` check
-      # (see DEVICE_MATRIX.md's setup steps). Replace each placeholder
-      # with a real, currently-available model id from that list once
-      # the Firebase project exists, matching the API level already
-      # correct on this line.
+      # DEVICE_MATRIX.md cells 1-5, mapped to real Android API levels and to
+      # real models from the live Test Lab catalog (2026-09-25, via
+      # test-lab-models.yml). Chosen to look like the actual audience --
+      # budget Tecno/Motorola/Samsung phones -- rather than flagships. The
+      # catalog changes over time: re-run test-lab-models.yml and update
+      # these if a run reports a model as unavailable or deprecated.
       - name: Run Test Lab across the matrix
         run: |
           set -e
           declare -A CELLS=(
-            [1]="model=REPLACE_WITH_REAL_MODEL_ID,version=26"   # cell 1: oldest OS floor (API 24-26)
-            [2]="model=REPLACE_WITH_REAL_MODEL_ID,version=30"   # cell 2: market centroid, low end (API 29-30)
-            [3]="model=REPLACE_WITH_REAL_MODEL_ID,version=33"   # cell 3: market centroid, largest slice (API 31-33)
-            [4]="model=REPLACE_WITH_REAL_MODEL_ID,version=34"   # cell 4: newer/larger screen (API 34)
-            [5]="model=REPLACE_WITH_REAL_MODEL_ID,version=36"   # cell 5: real ceiling, targetSdk 36
+            [1]="model=SmallPhone.arm,version=26"   # cell 1: oldest OS floor, virtual (no physical device exists at API 26), 1280x720
+            [2]="model=java,version=30"             # cell 2: Motorola G20, low-end market centroid
+            [3]="model=TECNO-BG6,version=33"        # cell 3: Tecno SPARK Go 2024, largest slice (API 31-33)
+            [4]="model=dm3q,version=34"             # cell 4: Galaxy S23 Ultra, large high-res screen
+            [5]="model=tokay,version=36"            # cell 5: Pixel 9, real ceiling / targetSdk 36
           )
           CELL="${{ inputs.matrix_cell }}"
           if [ "$CELL" = "all" ]; then

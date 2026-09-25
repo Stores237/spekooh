@@ -57,7 +57,7 @@ case "$CELL" in
 esac
 
 echo "Real device catalog for API $API (pick a model id from this output, then re-run with it):"
-gcloud firebase test android models list --filter="supportedVersionIds=$API" 2>&1 | head -20
+gcloud firebase test android models list --filter="supportedVersionIds:$API" 2>&1 | head -20
 
 echo
 echo "Once you've picked a real model id, run the actual test yourself:"

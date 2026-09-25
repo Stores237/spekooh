@@ -1,0 +1,53 @@
+name: Test Lab device catalog
+
+# Prints the real, currently-available Firebase Test Lab Android models per
+# API level -- the list DEVICE_MATRIX.md and device-matrix.yml need real model
+# ids from instead of guesses (Test Lab's catalog changes over time). Doubles
+# as the cheapest possible check that FIREBASE_TEST_LAB_SA_KEY and
+# FIREBASE_PROJECT_ID authenticate and that the service account's role can
+# reach Test Lab at all, without running (or spending quota on) a test.
+#
+# Manual only. Reads the same two secrets as device-matrix.yml.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  list-models:
+    name: List Test Lab models
+    runs-on: ubuntu-latest
+    steps:
+      - id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FIREBASE_TEST_LAB_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+      - name: Show the quota and who we are
+        run: |
+          gcloud auth list
+          gcloud config get-value project
+
+      - name: Catalog per DEVICE_MATRIX.md API level (physical)
+        run: |
+          for api in 26 30 33 34 36; do
+            echo "=================== API $api (physical) ==================="
+            gcloud firebase test android models list \
+              --filter="supportedVersionIds:$api AND form=PHYSICAL" || true
+          done
+
+      - name: Catalog per API level (virtual)
+        run: |
+          for api in 26 30 33 34 36; do
+            echo "=================== API $api (virtual) ==================="
+            gcloud firebase test android models list \
+              --filter="supportedVersionIds:$api AND form=VIRTUAL" || true
+          done
+
+      - name: All physical models (to hand-pick a low-RAM one for cell 6)
+        run: gcloud firebase test android models list --filter="form=PHYSICAL"
