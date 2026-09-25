@@ -265,9 +265,17 @@ person's hands.
 
 | Cell | Device / OS / Screen | Method | Pass | Fail | Tester / Date | Notes |
 |---|---|---|:-:|:-:|---|---|
-| 1 | Android 7–8, 360×640-class | | ☐ | ☐ | | |
-| 2 | Android 10–11, 360×800-class | | ☐ | ☐ | | |
-| 3 | Android 12–13, 360×806/820-class | | ☐ | ☐ | | |
-| 4 | Android 14, 414×896-class | | ☐ | ☐ | | |
-| 5 | Android 16, current mid/large phone | | ☐ | ☐ | | |
+| 1 | Android 7–8, 360×640-class | Firebase Test Lab console, Robo, virtual: Small Phone (Arm), Android 8 / API 26, 1280×720 | ☑ | ☐ | Owner, 2026-09-25 | Owner-reported pass; run logs not archived. |
+| 2 | Android 10–11, 360×800-class | Firebase Test Lab console, Robo, physical: Motorola G20, Android 11 / API 30, 1600×720 | ☑ | ☐ | Owner, 2026-09-25 | Owner-reported pass; run logs not archived. |
+| 3 | Android 12–13, 360×806/820-class | Firebase Test Lab console, Robo, physical: TECNO SPARK Go 2024, Android 13 / API 33, 1612×720 | ☑ | ☐ | Owner, 2026-09-25 | Owner-reported pass; run logs not archived. |
+| 4 | Android 14, 414×896-class | Firebase Test Lab console, Robo, physical: Galaxy S23 Ultra, Android 14 / API 34, 3088×1440 | ☑ | ☐ | Owner, 2026-09-25 | Owner-reported pass; run logs not archived. |
+| 5 | Android 16, current mid/large phone | Firebase Test Lab console, Robo, physical: Pixel 9, Android 16 / API 36, 2424×1080 | ☑ | ☐ | Owner, 2026-09-25 | Owner-reported pass; run logs not archived. |
 | 6 | Any OS, ≤2GB RAM | | ☐ | ☐ | | |
+
+Cells 1–5 were run 2026-09-25 as one manual Robo run in the Firebase console (the automated path
+is blocked on Cloud Storage billing; see "How to actually get these devices"). Read the passes
+for what a Robo test actually shows: the app installed, launched and was crawled on each device
+without crashing. Robo cannot log in unless given test credentials, so unless the run supplied
+them, the post-login screens (submitting a paper, My Downloads, the QR vault) were **not**
+exercised and still need a real pass. Cell 6 (≤2GB RAM) has not been run.
+
