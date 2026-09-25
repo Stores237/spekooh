@@ -1930,3 +1930,94 @@ def test_staff_set_password_link_never_works_for_a_non_staff_account():
     response = client.get(f"/staff/set-password/{uidb64}/{token}/")
 
     assert response.context["invalid"] is True
+
+
+# --- Nobody deletes an account from the admin, the Owner included ---
+
+
+@pytest.mark.django_db
+def test_owner_cannot_delete_a_user_account():
+    owner = User.objects.create_superuser(email="owner-del@example.com", password="x")
+    victim = UserFactory(email="victim@example.com")
+    client = Client()
+    client.force_login(owner)
+
+    page = client.get(f"/admin/accounts/user/{victim.pk}/delete/")
+    posted = client.post(f"/admin/accounts/user/{victim.pk}/delete/", {"post": "yes"})
+
+    assert page.status_code == 403
+    assert posted.status_code == 403
+    assert User.objects.filter(pk=victim.pk).exists()
+
+
+@pytest.mark.django_db
+def test_owner_cannot_delete_a_staff_account():
+    owner = User.objects.create_superuser(email="owner-del2@example.com", password="x")
+    staffer = User.objects.create_user(email="staffer-del@example.com", password="x", is_staff=True)
+    client = Client()
+    client.force_login(owner)
+
+    posted = client.post(f"/admin/accounts/staffaccount/{staffer.pk}/delete/", {"post": "yes"})
+
+    assert posted.status_code == 403
+    assert User.objects.filter(pk=staffer.pk).exists()
+
+
+@pytest.mark.django_db
+def test_bulk_delete_is_not_offered_or_applied_on_either_screen():
+    owner = User.objects.create_superuser(email="owner-bulk@example.com", password="x")
+    victim = UserFactory(email="bulk-victim@example.com")
+    staffer = User.objects.create_user(email="bulk-staffer@example.com", password="x", is_staff=True)
+    client = Client()
+    client.force_login(owner)
+
+    for path, target in (("/admin/accounts/user/", victim), ("/admin/accounts/staffaccount/", staffer)):
+        client.post(path, {"action": "delete_selected", "_selected_action": [str(target.pk)], "post": "yes"})
+        assert User.objects.filter(pk=target.pk).exists()
+
+
+# --- Resending a set-password link (delete is blocked, so this is the way) ---
+
+
+@pytest.mark.django_db
+def test_resend_set_password_link_emails_an_account_that_has_no_password_yet(mailoutbox):
+    helpdesk = _it_helpdesk_user()
+    invited = User.objects.create_user(email="lapsed@example.com", is_staff=True)
+    invited.set_unusable_password()
+    invited.save()
+    client = Client()
+    client.force_login(helpdesk)
+
+    client.post(
+        "/admin/accounts/staffaccount/", {"action": "resend_set_password_link", "_selected_action": [str(invited.pk)]}
+    )
+
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].to == ["lapsed@example.com"]
+    assert "/staff/set-password/" in mailoutbox[0].body
+
+
+@pytest.mark.django_db
+def test_resend_set_password_link_skips_an_account_that_already_set_a_password(mailoutbox):
+    helpdesk = _it_helpdesk_user()
+    done = User.objects.create_user(email="already-set@example.com", password="GenuinelyStr0ng!", is_staff=True)
+    client = Client()
+    client.force_login(helpdesk)
+
+    client.post("/admin/accounts/staffaccount/", {"action": "resend_set_password_link", "_selected_action": [str(done.pk)]})
+
+    assert mailoutbox == []
+
+
+@pytest.mark.django_db
+def test_resend_set_password_link_skips_a_deactivated_account(mailoutbox):
+    helpdesk = _it_helpdesk_user()
+    gone = User.objects.create_user(email="deactivated@example.com", is_staff=True, is_active=False)
+    gone.set_unusable_password()
+    gone.save()
+    client = Client()
+    client.force_login(helpdesk)
+
+    client.post("/admin/accounts/staffaccount/", {"action": "resend_set_password_link", "_selected_action": [str(gone.pk)]})
+
+    assert mailoutbox == []

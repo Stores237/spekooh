@@ -144,6 +144,16 @@ within a few days.
   - No delete — deactivate (`is_active`) instead, same rule as partner
     bookshops, so a departing staffer's audit history (who reviewed what,
     who resolved which ticket) stays intact.
+  - **No account is deleted from the admin, the Owner included** (owner
+    decision, 2026-09-25). `StaffAccountAdmin` and the regular `UserAdmin`
+    both return `False` from `has_delete_permission`, which also removes
+    the bulk "delete selected" action. A user delete cascades to their
+    paper submissions and pamphlet orders and takes their payment history
+    with it. Scheduled clean-ups of stale guest accounts and staging test
+    accounts are management commands, not the admin, and are unaffected.
+  - A set-password link that lapses unused is re-sent with the **Resend
+    set-password link** action on Staff Accounts (only to an active account
+    that still has no password) — there's no delete-and-re-add path.
 
 ## Webhooks
 
