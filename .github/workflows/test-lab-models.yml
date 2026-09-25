@@ -10,6 +10,9 @@ name: Test Lab device catalog
 # Manual only. Reads the same two secrets as device-matrix.yml.
 on:
   workflow_dispatch:
+  # TEMPORARY (storage probe): removed before the PR.
+  push:
+    branches: [ci/test-lab-models]
 
 permissions:
   contents: read
@@ -51,3 +54,20 @@ jobs:
 
       - name: All physical models (to hand-pick a low-RAM one for cell 6)
         run: gcloud firebase test android models list --filter="form=PHYSICAL"
+
+      # TEMPORARY: why can the service account not write to Test Lab's
+      # results bucket? Prints who owns the bucket and tries a 1-byte write.
+      - name: Probe results bucket
+        continue-on-error: true
+        run: |
+          B=test-lab-10v629d88y5cs-ni0bb06p4thdu
+          echo "--- our project number"
+          gcloud projects describe "$(gcloud config get-value project 2>/dev/null)" --format="value(projectNumber)" || true
+          echo "--- bucket metadata"
+          gcloud storage buckets describe "gs://$B" --format="value(name,project_number,location,storage_class,uniform_bucket_level_access)" || true
+          echo "--- list"
+          gcloud storage ls "gs://$B/" 2>&1 | head -5 || true
+          echo "--- 1-byte write"
+          echo probe > /tmp/probe.txt
+          gcloud storage cp /tmp/probe.txt "gs://$B/probe/probe.txt" && gcloud storage rm "gs://$B/probe/probe.txt"
+
