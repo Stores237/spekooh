@@ -11,6 +11,9 @@ string). `render.yaml` now has a real `spekooh-production` web service plus
 five Cron Job services. Nothing has actually been deployed yet — this is
 the setup, not a "status: live" doc like `RENDER_STAGING.md`'s.
 
+**Before routing any real paper**, follow `INSTRUCTOR_ROLLOUT.md`: routing fails closed
+until every queued instructor has saved their qualifications in S@Learn.
+
 ---
 
 ## 0. The one rule this whole doc follows
