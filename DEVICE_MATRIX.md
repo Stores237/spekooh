@@ -116,26 +116,37 @@ practical paths, roughly in the order to reach for them:
    (`workflow_dispatch`, run per cell or all of cells 1–5 at once) and
    `app/scripts/run_device_matrix.sh` (same thing, run locally — also the way to fill cell 6,
    since that one needs a real low-RAM model picked from the live catalog, not an API level).
-   **Set up 2026-09-25** on the existing Google AI Studio project
-   (`gen-lang-client-0360788209`, Spark plan, no billing). What exists, and what to redo if it
-   ever breaks:
-   - A service account `test-lab-ci` with the **Firebase Test Lab Admin** role. The role must be
-     on the *same* account the key belongs to: an early attempt created a second account with the
+   **Status 2026-09-25: the automated path is set up but blocked; the manual console path is
+   the one in use.** Set up on the existing Google AI Studio project
+   (`gen-lang-client-0360788209`, Spark plan, no billing):
+   - A service account `test-lab-ci` with **Firebase Test Lab Admin**. The role must be on the
+     *same* account the key belongs to: an early attempt created a second account with the
      role while the key came from one without it, and every catalog call failed with
-     `403 Not authorized for project`.
-   - Two **repository** secrets (not Environment secrets): `FIREBASE_TEST_LAB_SA_KEY` (the JSON
-     key, which must be created as type **JSON** — a P12 key is binary and fails with
-     `failed to parse service account key JSON`) and `FIREBASE_PROJECT_ID`.
+     `403 Not authorized for project`. The key must be type **JSON** (a P12 key is binary and
+     fails with `failed to parse service account key JSON`).
+   - Two **repository** secrets (not Environment secrets): `FIREBASE_TEST_LAB_SA_KEY` and
+     `FIREBASE_PROJECT_ID`.
    - `.github/workflows/test-lab-models.yml` — a manual job that prints the live device catalog
-     per API level. It is also the cheapest health check for this whole setup (auth + role)
-     because it spends no test quota. Run it first whenever a matrix run fails.
-   - Real model ids in `device-matrix.yml` (chosen to resemble the actual audience: budget Tecno,
-     Motorola and Samsung phones, plus one small virtual screen at API 26, where no physical
-     device exists). Test Lab's catalog changes, so if a run reports a model unavailable or
-     deprecated, re-run `test-lab-models.yml` and swap it.
-   - The service account key should be rotated every 90 days (see SECURITY.md).
-   The free-tier daily limits are set by Google and shown on the Test Lab page in the Firebase
-   console; check them there rather than trusting a number written in this file.
+     per API level. It authenticates and lists devices fine, and spends no test quota.
+   - Real model ids in `device-matrix.yml`, chosen to resemble the audience (budget Tecno,
+     Motorola and Samsung phones; one small virtual screen at API 26, where no physical device
+     exists).
+
+   **What blocks `device-matrix.yml` itself:** `gcloud firebase test android run` uploads the
+   APK to a Cloud Storage results bucket, and every storage operation against it is denied
+   (list, read, write) even with **Storage Object Admin** granted. Cloud Storage is not
+   activated on a project with no billing account (the Cloud Console shows "Sign up for the free
+   trial to start using Cloud Storage"), so no IAM role can fix it. Unblocking it means linking
+   a billing account (the Blaze plan). That was deliberately not done: it trades the Spark plan's
+   hard $0 ceiling for pay-as-you-go. If it's ever done, add a budget alert first, then
+   `device-matrix.yml` should run unchanged.
+
+   **Until then, run the matrix by hand** in the Firebase console (Test Lab → Run a test →
+   Robo test): upload a debug APK built with
+   `flutter build apk --debug --dart-define=API_BASE_URL=https://spekooh-staging.onrender.com/api`
+   and pick one device per cell from the table in `device-matrix.yml`.
+   The key in GitHub is unused while this is the case; delete it if billing isn't coming soon,
+   and rotate it every 90 days if it stays (see SECURITY.md).
 2. **Google Play Console's Pre-launch report.** The moment a build is uploaded to *any* testing
    track (Internal testing is the lightest — no review, live in minutes), Play Console
    automatically runs it across a real matrix of physical devices in Google's own lab and reports
