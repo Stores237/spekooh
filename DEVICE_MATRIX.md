@@ -105,7 +105,7 @@ device-specific failure mode a browser/emulator pass can't exercise:
 Owning six physical phones spanning API 24–36 isn't realistic for this project. Three real,
 practical paths, roughly in the order to reach for them:
 
-1. **Firebase Test Lab** (free tier: 10 physical/virtual device tests + 5 virtual per day). Real
+1. **Firebase Test Lab** (free tier with a small daily quota — see the Test Lab page in the Firebase console). Real
    Google-hosted physical devices, selectable by exact OS version and model — this is the direct
    way to fill cells 1–5 above without owning the hardware. Upload the release APK, pick device
    models matching the matrix, run Robo test (automatic crawl) at minimum, a real instrumented
@@ -116,21 +116,26 @@ practical paths, roughly in the order to reach for them:
    (`workflow_dispatch`, run per cell or all of cells 1–5 at once) and
    `app/scripts/run_device_matrix.sh` (same thing, run locally — also the way to fill cell 6,
    since that one needs a real low-RAM model picked from the live catalog, not an API level).
-   Both need real setup before they'll actually run anything, owner action, not engineering work:
-   1. Create a Firebase project (console.firebase.google.com) — reuse an existing GCP project if
-      one's already around (e.g. wherever `GEMINI_API_KEY`/`GROQ_API_KEY` live), or a fresh one.
-      Firebase Test Lab enables the underlying Cloud Testing API automatically.
-   2. Create a service account with the **Firebase Test Lab Admin** (or **Cloud Testing Service
-      Agent**) role in that project's IAM settings, and download its JSON key.
-   3. In this repo's GitHub Settings → Secrets and variables → Actions, add:
-      - `FIREBASE_TEST_LAB_SA_KEY` — the full contents of that JSON key file.
-      - `FIREBASE_PROJECT_ID` — that project's id.
-   4. Once those two secrets exist, replace the `REPLACE_WITH_REAL_MODEL_ID` placeholders in
-      `device-matrix.yml` with real, currently-available model ids — run
-      `gcloud firebase test android models list --filter="supportedVersionIds=<api-level>"`
-      (or trigger the workflow once with a placeholder to get a clear "model not found" error
-      listing valid options) rather than trusting any model id written down here, since Test
-      Lab's real device catalog changes over time and this doc can't stay current with it.
+   **Set up 2026-09-25** on the existing Google AI Studio project
+   (`gen-lang-client-0360788209`, Spark plan, no billing). What exists, and what to redo if it
+   ever breaks:
+   - A service account `test-lab-ci` with the **Firebase Test Lab Admin** role. The role must be
+     on the *same* account the key belongs to: an early attempt created a second account with the
+     role while the key came from one without it, and every catalog call failed with
+     `403 Not authorized for project`.
+   - Two **repository** secrets (not Environment secrets): `FIREBASE_TEST_LAB_SA_KEY` (the JSON
+     key, which must be created as type **JSON** — a P12 key is binary and fails with
+     `failed to parse service account key JSON`) and `FIREBASE_PROJECT_ID`.
+   - `.github/workflows/test-lab-models.yml` — a manual job that prints the live device catalog
+     per API level. It is also the cheapest health check for this whole setup (auth + role)
+     because it spends no test quota. Run it first whenever a matrix run fails.
+   - Real model ids in `device-matrix.yml` (chosen to resemble the actual audience: budget Tecno,
+     Motorola and Samsung phones, plus one small virtual screen at API 26, where no physical
+     device exists). Test Lab's catalog changes, so if a run reports a model unavailable or
+     deprecated, re-run `test-lab-models.yml` and swap it.
+   - The service account key should be rotated every 90 days (see SECURITY.md).
+   The free-tier daily limits are set by Google and shown on the Test Lab page in the Firebase
+   console; check them there rather than trusting a number written in this file.
 2. **Google Play Console's Pre-launch report.** The moment a build is uploaded to *any* testing
    track (Internal testing is the lightest — no review, live in minutes), Play Console
    automatically runs it across a real matrix of physical devices in Google's own lab and reports
