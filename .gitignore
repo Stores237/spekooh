@@ -11,4 +11,9 @@
 /tools/
 *.log
 
+# Root-level secrets (e.g. SUPABASE_ACCESS_TOKEN for the S@Learn CLI).
+# Was previously excluded only in .git/info/exclude, which is local to one
+# clone and not shared with anyone else who checks this repo out.
+/.env
+
 # app/ and backend/ have their own .gitignore for their toolchains.
