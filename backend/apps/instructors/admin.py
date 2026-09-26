@@ -55,10 +55,21 @@ class InstructorSubjectQueueAdmin(ModelAdmin):
 
 @admin.register(InstructorRequest)
 class InstructorRequestAdmin(ModelAdmin):
+    """Created only by services.route_next_instructor -- it sets sent_at and
+    responds_by itself and fires the partner webhook via transaction.on_commit.
+    The generic admin "Add" form can't do either (sent_at has no default and
+    is readonly here), so it used to insert a NULL sent_at and crash with an
+    IntegrityError (Sentry: null value in column "sent_at" violates not-null
+    constraint) -- disabled outright, same as RedeemVerification in
+    apps.pamphlets.admin for the same "created elsewhere" reason."""
+
     list_display = ("paper", "instructor_id", "status_badge", "sla_countdown", "sent_at")
     list_filter = ("status",)
     readonly_fields = ("sent_at", "responded_at")
     ordering = ("status", "responds_by")
+
+    def has_add_permission(self, request):
+        return False
 
     @display(description="Status", label=REQUEST_STATUS_LABELS, ordering="status")
     def status_badge(self, obj):
