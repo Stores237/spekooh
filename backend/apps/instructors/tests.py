@@ -90,6 +90,21 @@ def test_route_next_instructor_skips_already_tried_instructors():
     assert second.instructor_id == "instructor-b"
 
 
+def test_instructor_request_admin_disallows_manual_add():
+    """Regression: InstructorRequest.sent_at has no default and is readonly
+    in the admin, so the generic "Add" form used to insert it as NULL and
+    crash the request with an IntegrityError (Sentry: null value in column
+    "sent_at" violates not-null constraint). This row must only ever be
+    created by services.route_next_instructor."""
+    from django.contrib.admin.sites import site
+
+    from .admin import InstructorRequestAdmin
+
+    model_admin = site._registry[InstructorRequest]
+    assert isinstance(model_admin, InstructorRequestAdmin)
+    assert model_admin.has_add_permission(request=None) is False
+
+
 @pytest.mark.django_db
 def test_route_next_instructor_flags_admin_when_queue_exhausted():
     subject = SubjectFactory(key="routing_subject_3")
