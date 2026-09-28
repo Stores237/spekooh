@@ -222,7 +222,6 @@ void main() {
       joinDate: 'Joined Jul 2026',
       submissionsCount: 0,
       quizzesCount: 0,
-      creditBalance: 0,
       redeemCode: '',
       redeemCodeSubtitle: '',
     );

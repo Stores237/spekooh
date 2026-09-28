@@ -11,7 +11,6 @@ const _freeUser = SpekoohUser(
   joinDate: 'Joined Aug 2026',
   submissionsCount: 0,
   quizzesCount: 0,
-  creditBalance: 0,
   redeemCode: '',
   redeemCodeSubtitle: '',
 );
@@ -21,7 +20,6 @@ const _plusUser = SpekoohUser(
   joinDate: 'Joined Aug 2026',
   submissionsCount: 0,
   quizzesCount: 0,
-  creditBalance: 0,
   redeemCode: '',
   redeemCodeSubtitle: '',
   isPlusSubscriber: true,

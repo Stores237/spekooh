@@ -49,7 +49,6 @@ const _freeUser = SpekoohUser(
   joinDate: 'Joined Aug 2026',
   submissionsCount: 0,
   quizzesCount: 0,
-  creditBalance: 0,
   redeemCode: '',
   redeemCodeSubtitle: '',
 );
@@ -59,7 +58,6 @@ const _plusUser = SpekoohUser(
   joinDate: 'Joined Aug 2026',
   submissionsCount: 0,
   quizzesCount: 0,
-  creditBalance: 0,
   redeemCode: '',
   redeemCodeSubtitle: '',
   isPlusSubscriber: true,
@@ -178,13 +176,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('+1 slot for 3 days'), findsOneWidget);
-    expect(find.text('You have 0 XP'), findsOneWidget);
+    expect(find.text('You have 0 points'), findsOneWidget);
     expect(find.text('Redeem'), findsOneWidget);
 
     await tester.tap(find.text('Redeem'));
     await tester.pump();
     // Disabled (0 XP < 500) — no call was made, no SnackBar, still 0 XP shown.
-    expect(find.text('You have 0 XP'), findsOneWidget);
+    expect(find.text('You have 0 points'), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
   });
 
@@ -194,7 +192,6 @@ void main() {
       joinDate: 'Joined Aug 2026',
       submissionsCount: 0,
       quizzesCount: 0,
-      creditBalance: 0,
       redeemCode: '',
       redeemCodeSubtitle: '',
       xpBalance: 500,
@@ -204,7 +201,6 @@ void main() {
       joinDate: 'Joined Aug 2026',
       submissionsCount: 0,
       quizzesCount: 0,
-      creditBalance: 0,
       redeemCode: '',
       redeemCodeSubtitle: '',
       xpBalance: 0,
@@ -217,7 +213,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('You have 500 XP'), findsOneWidget);
+    expect(find.text('You have 500 points'), findsOneWidget);
 
     await tester.tap(find.text('Redeem'));
     await tester.pump();
@@ -234,7 +230,6 @@ void main() {
       joinDate: 'Joined Aug 2026',
       submissionsCount: 0,
       quizzesCount: 0,
-      creditBalance: 0,
       redeemCode: '',
       redeemCodeSubtitle: '',
       xpBalance: 500,

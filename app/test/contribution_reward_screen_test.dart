@@ -6,10 +6,11 @@ import 'package:spekooh/screens/submit/contribution_reward_screen.dart';
 import 'support/l10n_test_app.dart';
 
 /// Adapted from a reference rewards-explainer design (owner-provided,
-/// 2026-08-30) — real facts only: Spekooh has exactly one currency, bonus
-/// credit, plus a real submission-count-based redeem-code tier. No
-/// invented points/XP/levels, and no claim that credit has already been
-/// earned (it's only awarded once a submission is verified and published).
+/// 2026-08-30) — real facts only: Spekooh has exactly one currency, Points
+/// (credits and XP were merged, 2026-09-28), plus a real submission-count-
+/// based redeem-code tier. No invented levels, and no claim that points have
+/// already been earned (they're only awarded once a submission is verified
+/// and published).
 void main() {
   tearDown(() {
     LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
@@ -22,7 +23,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Contribution received'), findsOneWidget);
-    expect(find.text('Bonus credit'), findsOneWidget);
+    expect(find.text('Points'), findsOneWidget);
     expect(find.text('A real discount code'), findsOneWidget);
     expect(find.text('A quick check first'), findsOneWidget);
 
@@ -39,7 +40,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Contribution reçue'), findsOneWidget);
-    expect(find.text('Bonus de crédit'), findsOneWidget);
+    expect(find.text('Des points'), findsOneWidget);
     expect(find.text('Contribution received'), findsNothing);
   });
 }

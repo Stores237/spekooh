@@ -229,35 +229,25 @@ def test_unlock_paper_does_not_stack_trial_waiver_with_a_redeem_code():
 
 
 @pytest.mark.django_db
-def test_unlock_paper_credits_the_referrer_on_first_unlock():
-    from apps.credits.models import CreditLedgerEntry
+def test_unlock_paper_pays_the_referrer_points_on_first_unlock():
+    """One balance (credits and XP merged, 2026-09-28): the referrer gets the
+    configured referral amount once, into the same Points balance quizzes and
+    papers pay into -- not a credit entry plus a separate XP entry."""
+    from apps.credits.models import ReferralBonusConfig
+    from apps.xp.services import xp_balance
 
     referrer = UserFactory()
     referred = UserFactory(referred_by=referrer)
     paper = PaperSubmissionFactory()
     unlock_paper(user=referred, paper_submission=paper, phone_number="670000000")
-    assert CreditLedgerEntry.objects.filter(user=referrer).exists()
+    assert xp_balance(referrer) == ReferralBonusConfig.objects.first().amount == 200
     referred.refresh_from_db()
     assert referred.referral_bonus_awarded_at is not None
 
 
 @pytest.mark.django_db
-def test_unlock_paper_also_awards_real_xp_to_the_referrer_on_first_unlock():
-    """Owner request (2026-09-17): a referral should feed the same
-    spendable XP balance "Get more slots" reads from, alongside the
-    separate credits-based reward -- not just credits."""
-    from apps.xp.services import XP_PER_REFERRAL, xp_balance
-
-    referrer = UserFactory()
-    referred = UserFactory(referred_by=referrer)
-    paper = PaperSubmissionFactory()
-    unlock_paper(user=referred, paper_submission=paper, phone_number="670000000")
-    assert xp_balance(referrer) == XP_PER_REFERRAL
-
-
-@pytest.mark.django_db
 def test_unlock_paper_does_not_credit_referrer_again_on_a_second_unlock():
-    from apps.credits.models import CreditLedgerEntry
+    from apps.xp.services import xp_balance
 
     referrer = UserFactory()
     referred = UserFactory(referred_by=referrer)
@@ -265,7 +255,7 @@ def test_unlock_paper_does_not_credit_referrer_again_on_a_second_unlock():
     second_paper = PaperSubmissionFactory()
     unlock_paper(user=referred, paper_submission=first_paper, phone_number="670000000")
     unlock_paper(user=referred, paper_submission=second_paper, phone_number="670000000")
-    assert CreditLedgerEntry.objects.filter(user=referrer).count() == 1
+    assert xp_balance(referrer) == 200
 
 
 @pytest.mark.django_db

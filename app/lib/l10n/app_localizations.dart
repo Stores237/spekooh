@@ -581,7 +581,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeContributionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Contribution: earn credit'**
+  /// **'Contribution: earn points'**
   String get homeContributionTitle;
 
   /// No description provided for @homeContributionPrompt.
@@ -593,7 +593,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeContributionSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Snap a photo, tag it, and earn bonus credit once it\'s verified. First contribution counts.'**
+  /// **'Snap a photo, tag it, and earn points once it\'s verified. First contribution counts.'**
   String get homeContributionSubtitle;
 
   /// No description provided for @notesTitle.
@@ -659,7 +659,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeLockedCredits.
   ///
   /// In en, this message translates to:
-  /// **'Earn & redeem contributor credits'**
+  /// **'Earn and spend points'**
   String get homeLockedCredits;
 
   /// No description provided for @homeLockedTrackContributions.
@@ -1121,7 +1121,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributionBonusBanner.
   ///
   /// In en, this message translates to:
-  /// **'New, verified submissions earn bonus credit, redeemable toward marking-guide unlocks.'**
+  /// **'New, verified submissions earn points and unlock discount codes for marking guides.'**
   String get contributionBonusBanner;
 
   /// No description provided for @submitPaperButton.
@@ -1205,7 +1205,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributionBenefitCreditTitle.
   ///
   /// In en, this message translates to:
-  /// **'Bonus credit'**
+  /// **'Points'**
   String get contributionBenefitCreditTitle;
 
   /// No description provided for @contributionBenefitDiscountTitle.
@@ -1625,7 +1625,7 @@ abstract class AppLocalizations {
   /// No description provided for @bonusCreditBalanceLabel.
   ///
   /// In en, this message translates to:
-  /// **'BONUS CREDIT BALANCE'**
+  /// **'YOUR POINTS'**
   String get bonusCreditBalanceLabel;
 
   /// No description provided for @ptsLabel.
@@ -1646,11 +1646,11 @@ abstract class AppLocalizations {
   /// **'Spekooh Pro member'**
   String get proBadgeSemantics;
 
-  /// No description provided for @submissionsScaleNote.
+  /// No description provided for @pointsBalanceHint.
   ///
   /// In en, this message translates to:
-  /// **'{count} papers submitted · redeem code value scales with your contributions'**
-  String submissionsScaleNote(int count);
+  /// **'Earn points from quizzes, verified papers and referrals. 500 points = +1 offline slot for 3 days.'**
+  String get pointsBalanceHint;
 
   /// No description provided for @redeemCodeNotActive.
   ///
@@ -1697,7 +1697,7 @@ abstract class AppLocalizations {
   /// No description provided for @inviteAFriendSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'You earn bonus credit once they unlock their first paper.'**
+  /// **'You earn points once they unlock their first paper.'**
   String get inviteAFriendSubtitle;
 
   /// No description provided for @shareReferralMessage.
@@ -1733,7 +1733,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileLoginPromptSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your submissions, credit balance, and badges show up here once you have an account.'**
+  /// **'Your submissions, points, and badges show up here once you have an account.'**
   String get profileLoginPromptSubtitle;
 
   /// No description provided for @shopHeaderSubtitle.
@@ -2087,7 +2087,7 @@ abstract class AppLocalizations {
   /// No description provided for @xpYouHaveLabel.
   ///
   /// In en, this message translates to:
-  /// **'You have {xp} XP'**
+  /// **'You have {xp} points'**
   String xpYouHaveLabel(int xp);
 
   /// No description provided for @xpRedeemButton.
@@ -3029,7 +3029,7 @@ abstract class AppLocalizations {
   /// No description provided for @submissionDeleteBody.
   ///
   /// In en, this message translates to:
-  /// **'This only removes it from your list. A published paper stays available to other students, and your credits aren\'t affected.'**
+  /// **'This only removes it from your list. A published paper stays available to other students, and your points aren\'t affected.'**
   String get submissionDeleteBody;
 
   /// No description provided for @submissionDeleteAction.

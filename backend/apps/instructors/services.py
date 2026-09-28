@@ -23,7 +23,6 @@ from apps.papers.models import (
     PublishedGuide,
 )
 from apps.papers.validation import sniff_content_type
-from apps.xp.services import award_contribution_xp
 
 from .models import (
     InstructorCreditLedger,
@@ -334,8 +333,6 @@ def merge_and_publish(paper: PaperSubmission) -> PublishedGuide:
     paper.status = PaperStatus.PUBLISHED
     paper.save(update_fields=["status", "updated_at"])
     bonus_entry = award_contributor_bonus(paper)
-    if bonus_entry:
-        award_contribution_xp(paper.submitted_by)
 
     notify(
         user=paper.submitted_by,
@@ -343,7 +340,7 @@ def merge_and_publish(paper: PaperSubmission) -> PublishedGuide:
         title="Your paper is published!",
         body=(
             "Your submission's marking guide is live"
-            + (f", and you earned {bonus_entry.amount} credits" if bonus_entry else "")
+            + (f", and you earned {bonus_entry.amount} points" if bonus_entry else "")
             + "."
         ),
     )
