@@ -2882,6 +2882,12 @@ abstract class AppLocalizations {
   /// **'Pay 500 FCFA'**
   String get payButton;
 
+  /// No description provided for @paymentsTestModeNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Test mode: payments aren\'t live yet. This works like the real thing, but no money is charged.'**
+  String get paymentsTestModeNotice;
+
   /// No description provided for @paywallDisclaimer.
   ///
   /// In en, this message translates to:

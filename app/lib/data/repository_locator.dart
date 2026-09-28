@@ -6,6 +6,8 @@ import 'repositories/assistant_repository.dart';
 import 'repositories/forum_repository.dart';
 import 'repositories/http/http_assistant_repository.dart';
 import 'repositories/http/http_forum_repository.dart';
+import 'repositories/feature_status_repository.dart';
+import 'repositories/http/http_feature_status_repository.dart';
 import 'repositories/http/http_notes_repository.dart';
 import 'repositories/http/http_notifications_repository.dart';
 import 'repositories/http/http_papers_repository.dart';
@@ -44,6 +46,7 @@ class RepositoryLocator {
     PaymentsRepository? payments,
     PromotionsRepository? promotions,
     AssistantRepository? assistant,
+    FeatureStatusRepository? featureStatus,
   })  : authSession = authSession ?? AuthSession.instance,
         apiClient = apiClient ?? ApiClient(authSession: authSession ?? AuthSession.instance) {
     this.papers = papers ?? HttpPapersRepository(this.apiClient);
@@ -56,6 +59,7 @@ class RepositoryLocator {
     this.payments = payments ?? HttpPaymentsRepository(this.apiClient);
     this.promotions = promotions ?? HttpPromotionsRepository(this.apiClient);
     this.assistant = assistant ?? HttpAssistantRepository(this.apiClient);
+    this.featureStatus = featureStatus ?? HttpFeatureStatusRepository(this.apiClient);
   }
 
   static RepositoryLocator instance = RepositoryLocator();
@@ -76,4 +80,5 @@ class RepositoryLocator {
   late final PaymentsRepository payments;
   late final PromotionsRepository promotions;
   late final AssistantRepository assistant;
+  late final FeatureStatusRepository featureStatus;
 }

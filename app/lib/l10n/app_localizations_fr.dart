@@ -1618,6 +1618,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get payButton => 'Payer 500 FCFA';
 
   @override
+  String get paymentsTestModeNotice =>
+      'Mode test : les paiements ne sont pas encore actifs. Tout fonctionne comme en vrai, mais aucun argent n\'est débité.';
+
+  @override
   String get paywallDisclaimer =>
       'Marchand officiel Spekooh · nous ne demandons jamais votre code PIN · reçu + SMS sous 2 min';
 

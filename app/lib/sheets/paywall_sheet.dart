@@ -8,6 +8,7 @@ import '../theme/app_gradients.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
+import '../widgets/payments_test_mode_notice.dart';
 import '../widgets/phone_number_field.dart';
 import '../widgets/spekooh_button.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -110,6 +111,9 @@ class _PaywallSheetState extends State<PaywallSheet> {
                 textAlign: TextAlign.center,
                 style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 13, color: AppColors.textSecondary),
               ),
+            // Shown in both states: a subscription taken now is a simulated one.
+            const SizedBox(height: AppSpacing.space3),
+            const PaymentsTestModeNotice(),
             const SizedBox(height: AppSpacing.space4),
             if (_renewsAt == null) ...[
               Container(

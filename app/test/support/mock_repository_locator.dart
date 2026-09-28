@@ -1,5 +1,6 @@
 import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/repositories/assistant_repository.dart';
+import 'package:spekooh/data/repositories/feature_status_repository.dart';
 import 'package:spekooh/data/repositories/forum_repository.dart';
 import 'package:spekooh/data/repositories/notes_repository.dart';
 import 'package:spekooh/data/repositories/notifications_repository.dart';
@@ -18,7 +19,11 @@ import 'fake_auth_session.dart';
 /// mocking stay consistent without two separate setup calls. [profile]
 /// lets a test override just the user shape (e.g. isPlusSubscriber) without
 /// having to reconstruct every other repository by hand.
-RepositoryLocator buildMockRepositoryLocator({ProfileRepository? profile, AssistantRepository? assistant}) {
+RepositoryLocator buildMockRepositoryLocator({
+  ProfileRepository? profile,
+  AssistantRepository? assistant,
+  FeatureStatusRepository? featureStatus,
+}) {
   final fakeSession = buildFakeAuthSession();
   AuthSession.debugSetInstance(fakeSession);
   return RepositoryLocator(
@@ -32,5 +37,6 @@ RepositoryLocator buildMockRepositoryLocator({ProfileRepository? profile, Assist
     profile: profile ?? MockProfileRepository(),
     promotions: MockPromotionsRepository(),
     assistant: assistant ?? MockAssistantRepository(),
+    featureStatus: featureStatus ?? MockFeatureStatusRepository(),
   );
 }

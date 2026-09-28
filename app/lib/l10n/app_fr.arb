@@ -514,6 +514,7 @@
   "spekoohProCaps": "SPEKOOH PRO",
   "momoOrangeLabel": "NUMÉRO MTN MOMO OU ORANGE MONEY",
   "payButton": "Payer 500 FCFA",
+  "paymentsTestModeNotice": "Mode test : les paiements ne sont pas encore actifs. Tout fonctionne comme en vrai, mais aucun argent n'est débité.",
   "paywallDisclaimer": "Marchand officiel Spekooh · nous ne demandons jamais votre code PIN · reçu + SMS sous 2 min",
 
   "pamphletSoldBy": "Vendu par {partner}",

@@ -10,6 +10,7 @@ import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_form_field.dart';
+import '../widgets/payments_test_mode_notice.dart';
 import '../widgets/phone_number_field.dart';
 import '../widgets/spekooh_button.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -217,6 +218,7 @@ class _PamphletSheetState extends State<PamphletSheet> {
         ),
       ),
       const SizedBox(height: AppSpacing.space4),
+      const PaymentsTestModeNotice(),
       PhoneNumberField(controller: _phoneController, error: _error),
       const SizedBox(height: AppSpacing.space4),
       SizedBox(
