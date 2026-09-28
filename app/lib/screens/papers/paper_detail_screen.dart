@@ -20,6 +20,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/report_covers.dart';
 import '../../widgets/paper_summary_card.dart';
+import '../../widgets/payments_test_mode_notice.dart';
 import '../../widgets/phone_number_field.dart';
 import '../../widgets/spekooh_badge.dart';
 import '../../widgets/spekooh_button.dart';
@@ -522,6 +523,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                       Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          const PaymentsTestModeNotice(),
                                           PhoneNumberField(controller: _downloadPhoneController, error: _downloadPhoneError),
                                           const SizedBox(height: AppSpacing.space2),
                                           SpekoohButton(
@@ -696,6 +698,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                                   ),
                                 ],
                               ] else ...[
+                                const PaymentsTestModeNotice(),
                                 PhoneNumberField(controller: _guidePhoneController, error: _guidePhoneError),
                                 const SizedBox(height: 10),
                                 Row(

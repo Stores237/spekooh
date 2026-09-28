@@ -1591,6 +1591,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get payButton => 'Pay 500 FCFA';
 
   @override
+  String get paymentsTestModeNotice =>
+      'Test mode: payments aren\'t live yet. This works like the real thing, but no money is charged.';
+
+  @override
   String get paywallDisclaimer =>
       'Official Spekooh merchant · we never ask for your PIN · receipt + SMS within 2 min';
 

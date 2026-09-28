@@ -615,6 +615,7 @@ void main() {
       // actually charge anything (owner-reported, 2026-09-11 — this used
       // to send a fake '000000000' with no field asking for a real one).
       await tester.enterText(find.byType(TextField).first, '670123456');
+      await tester.ensureVisible(find.text('Unlock: 500 FCFA')); // the payments notice above pushes it below the fold
       await tester.tap(find.text('Unlock: 500 FCFA'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
@@ -645,6 +646,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
+      await tester.ensureVisible(find.text('Unlock: 500 FCFA')); // the payments notice above pushes it below the fold
       await tester.tap(find.text('Unlock: 500 FCFA'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
@@ -725,6 +727,7 @@ void main() {
 
       expect(find.textContaining("isn't ready yet"), findsNothing);
       expect(find.text('Unlock: 500 FCFA'), findsOneWidget);
+      expect(find.textContaining("payments aren't live yet"), findsOneWidget); // simulated payments say so
     });
   });
 
@@ -768,6 +771,7 @@ void main() {
 
       expect(find.text('Save offline'), findsNothing);
       expect(find.text('Unlock download: 75 FCFA'), findsOneWidget);
+      expect(find.textContaining("payments aren't live yet"), findsOneWidget); // simulated payments say so
     });
 
     testWidgets('paying unlocks Save offline immediately, without reopening the screen', (tester) async {

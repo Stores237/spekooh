@@ -22,6 +22,7 @@ Every change made in this stretch of work, why it was made, where it lives, how 
 | 8 | Terms of Service rewritten for Points and Pro | Backend + app | #199 and #200 | No |
 | 9 | Automatic, accumulating discount codes | Backend + app + docs | #200 | **Yes** (codes created) |
 | 10 | Terms versioning and a re-accept prompt | Backend + app + docs | #201 | Adds a table; every existing registered user is asked to accept once |
+| 12 | "Test mode" notice wherever money changes hands | Backend + app + docs | #203 | No |
 | 13 | AI assistant chat history, on the phone | App + docs | #202 | No |
 
 ---
@@ -133,6 +134,20 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 **To require re-acceptance later.** Change the Terms text in both copies (the drift test keeps them equal), set `TERMS_OF_SERVICE_LAST_UPDATED`, and bump `TERMS_OF_SERVICE_VERSION`. Every registered user is asked again on their next launch.
 
 **Verify on staging.** Sign in as a registered user: the prompt appears once; tick and accept; sign out and in again: no prompt. In the admin, that user's page shows the acceptance.
+
+## 12. "Test mode" notices where money changes hands
+
+**Why.** Payments are simulated: `MockPaymentProvider` approves every charge and moves no money, yet the Pro subscription, marking-guide and download unlocks, and pamphlet purchases all behave exactly like real ones. Anyone using the app, testers and you included, could take that for live.
+
+**What.** A small notice, "Test mode: payments aren't live yet. This works like the real thing, but no money is charged." (English and French), shown right above the payment field in all four places: the Pro paywall (before and after subscribing), unlocking a marking guide, unlocking a paper download, and reserving a pamphlet. The flows still work as before; they are just honest.
+
+**The server decides, so the notice removes itself.** A public endpoint `GET /api/status/features/` returns `{"payments_live": false}`. It is computed from the payment provider actually wired in (`apps.payments.services.payments_are_live`), not a flag someone must remember to flip, so the day a real provider replaces the mock the notice disappears with **no app release**. The app caches a good answer for 10 minutes, and if it cannot reach the server it shows the notice (the cautious answer: a missing warning on a fake payment is worse than one that lingers). The endpoint is public, rate-limited (300/hour per IP) and returns nothing but that boolean.
+
+**What is deliberately not covered.** Things already labelled in the app ("coming soon" quizzes, past-paper practice, the Friday arena, academic-report submission) keep their own message. Text-message verification has no screen in the app yet, so there was nothing to label.
+
+**Adding the next one.** If another feature can look live while not being so, add a key in `apps/core/feature_status.py`, a field on the app's `FeatureStatus`, and a notice widget beside it.
+
+**Verify.** Open the Pro paywall on staging: the notice is there; it is also above the phone field when you unlock a guide or reserve a pamphlet. `curl https://spekooh-staging.onrender.com/api/status/features/` returns `{"payments_live": false}`.
 
 ## 13. AI assistant chat history (on the phone)
 
