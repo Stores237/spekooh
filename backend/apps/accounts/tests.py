@@ -2156,3 +2156,61 @@ def test_the_user_admin_page_shows_the_consent_record_read_only():
     assert response.status_code == 200
     assert "Terms acceptance" in response.content.decode()
     assert "2026-09-28" in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_the_terms_accept_endpoint_is_rate_limited_per_user(api_client, monkeypatch):
+    """Like every other account write endpoint, it opts in to a throttle so a
+    buggy or scripted client cannot hammer it. Per-user, since it needs a login."""
+    from rest_framework.throttling import SimpleRateThrottle
+
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "terms_accept", "2/hour")
+    api_client.force_authenticate(UserFactory())
+    payload = {"version": _current_terms_version()}
+
+    first = api_client.post("/api/auth/terms/accept/", payload, format="json")
+    second = api_client.post("/api/auth/terms/accept/", payload, format="json")
+    third = api_client.post("/api/auth/terms/accept/", payload, format="json")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert third.status_code == 429
+
+
+@pytest.mark.django_db
+def test_repeating_an_acceptance_does_not_rewrite_the_user_row(api_client):
+    user = UserFactory()
+    api_client.force_authenticate(user)
+    api_client.post("/api/auth/terms/accept/", {"version": _current_terms_version()}, format="json")
+    long_ago = timezone.now() - datetime.timedelta(days=90)
+    User.objects.filter(pk=user.pk).update(terms_accepted_at=long_ago)
+
+    api_client.post("/api/auth/terms/accept/", {"version": _current_terms_version()}, format="json")
+
+    user.refresh_from_db()
+    assert user.terms_accepted_at == long_ago  # a repeat call changed nothing
+
+
+@pytest.mark.django_db
+def test_recording_an_acceptance_with_an_empty_version_is_an_error_not_the_current_version():
+    from . import services
+
+    user = UserFactory()
+
+    with pytest.raises(ValueError):
+        services.record_terms_acceptance(user, "")
+
+    assert not TermsAcceptance.objects.filter(user=user).exists()
+
+
+@pytest.mark.django_db
+def test_registration_stamps_the_acceptance_time_once_through_the_service(api_client):
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "stamp@example.com", "name": "Stamp", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+    assert response.status_code == 201
+    user = User.objects.get(email="stamp@example.com")
+    assert user.terms_accepted_at is not None
+    assert user.terms_acceptances.count() == 1

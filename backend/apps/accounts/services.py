@@ -155,8 +155,19 @@ def needs_terms_acceptance(user) -> bool:
 
 def record_terms_acceptance(user, version: str | None = None) -> TermsAcceptance:
     """Records (idempotently) that `user` agreed to `version`, defaulting to the
-    current one, and refreshes User.terms_accepted_at to the latest time."""
-    acceptance, _ = TermsAcceptance.objects.get_or_create(user=user, version=version or current_terms_version())
-    user.terms_accepted_at = timezone.now()
-    user.save(update_fields=["terms_accepted_at"])
+    current one. The single place that writes User.terms_accepted_at (the
+    latest acceptance time): it is only touched when a new acceptance is
+    recorded, so repeating the call, or retrying a request, writes nothing.
+
+    An explicitly empty version is an error rather than quietly becoming the
+    current one, which would record consent to text the caller never named.
+    """
+    if version is None:
+        version = current_terms_version()
+    elif not version:
+        raise ValueError("A Terms version is required to record an acceptance.")
+    acceptance, created = TermsAcceptance.objects.get_or_create(user=user, version=version)
+    if created:
+        user.terms_accepted_at = timezone.now()
+        user.save(update_fields=["terms_accepted_at"])
     return acceptance

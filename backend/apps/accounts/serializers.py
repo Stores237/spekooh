@@ -204,7 +204,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(
             account_type=AccountType.REGISTERED,
             referred_by=referred_by,
-            terms_accepted_at=timezone.now(),
             **validated_data,
         )
         user.set_password(password)

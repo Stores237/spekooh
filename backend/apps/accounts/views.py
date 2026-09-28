@@ -258,6 +258,8 @@ class TermsAcceptView(APIView):
     have no account to agree for and are refused."""
 
     permission_classes = [IsAuthenticatedNotGuest]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "terms_accept"
 
     @extend_schema(request=TermsAcceptSerializer, responses=UserSerializer)
     def post(self, request):
