@@ -14,7 +14,6 @@ import 'package:spekooh/theme/app_colors.dart';
 import 'package:spekooh/shell/route_observers.dart';
 import 'package:spekooh/widgets/pro_badge.dart';
 import 'package:spekooh/widgets/spekooh_badge.dart';
-import 'package:spekooh/data/locale_controller.dart';
 
 import 'support/l10n_test_app.dart';
 
@@ -169,8 +168,6 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
-      await tester.ensureVisible(find.text('All 4')); // the credits/XP card above pushes it below the fold
-      await tester.pumpAndSettle();
       await tester.tap(find.text('All 4'));
       await tester.pumpAndSettle();
 
@@ -228,8 +225,6 @@ void main() {
       await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: _EditableProfileRepository(_user))));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
-      await tester.ensureVisible(find.text('All 4')); // the credits/XP card above pushes it below the fold
-      await tester.pumpAndSettle();
       await tester.tap(find.text('All 4'));
       await tester.pumpAndSettle();
 
@@ -575,7 +570,7 @@ void main() {
     });
   });
 
-  group('Spekooh Pro badge and Credits vs XP (beta feedback)', () {
+  group('Spekooh Pro badge (beta feedback)', () {
     const proUser = SpekoohUser(
       name: 'Lucien',
       joinDate: 'Joined Aug 2026',
@@ -629,27 +624,6 @@ void main() {
       await pumpProfile(tester, freeUser);
 
       expect(find.text('Unlimited paper views · no ads', skipOffstage: false), findsOneWidget);
-    });
-
-    testWidgets('credits and XP sit side by side, each with its own balance, and the card says they do not convert', (tester) async {
-      await pumpProfile(tester, freeUser);
-
-      expect(find.text('Credits and XP'), findsOneWidget);
-      expect(find.text('2150 pts'), findsOneWidget);
-      expect(find.text('480 XP'), findsOneWidget);
-      expect(find.text('Earned from verified contributions and referrals.'), findsOneWidget);
-      expect(find.text('Earned from quizzes, contributions and referrals.'), findsOneWidget);
-      expect(find.text('Spend 500 XP on +1 offline download slot for 3 days.'), findsOneWidget);
-      expect(find.textContaining("don't convert into XP"), findsOneWidget);
-    });
-
-    testWidgets('the credits/XP card is translated', (tester) async {
-      LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
-      await LocaleController.instance.setLocale('fr');
-      await pumpProfile(tester, freeUser);
-
-      expect(find.text('Crédits et XP'), findsOneWidget);
-      expect(find.textContaining('ne se convertissent pas en XP'), findsOneWidget);
     });
   });
 }

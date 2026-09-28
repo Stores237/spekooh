@@ -869,33 +869,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proBadgeSemantics => 'Spekooh Pro member';
 
   @override
-  String get creditsAndXpTitle => 'Credits and XP';
-
-  @override
-  String get creditsAndXpSeparateNote =>
-      'They are separate: credits don\'t convert into XP, and XP doesn\'t convert into credits.';
-
-  @override
-  String get creditsColumnLabel => 'CREDITS';
-
-  @override
-  String get creditsColumnHow =>
-      'Earned from verified contributions and referrals.';
-
-  @override
-  String get creditsColumnUse => 'Unlock discount codes and marking guides.';
-
-  @override
-  String get xpColumnLabel => 'XP';
-
-  @override
-  String get xpColumnHow => 'Earned from quizzes, contributions and referrals.';
-
-  @override
-  String get xpColumnUse =>
-      'Spend 500 XP on +1 offline download slot for 3 days.';
-
-  @override
   String submissionsScaleNote(int count) {
     return '$count papers submitted · redeem code value scales with your contributions';
   }
