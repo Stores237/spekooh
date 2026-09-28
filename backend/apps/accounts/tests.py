@@ -786,11 +786,15 @@ def test_reviewer_staff_cannot_delete_a_partner_bookshop():
 
 
 @pytest.mark.django_db
-def test_support_group_is_read_only_with_no_moderation_access():
+def test_support_group_is_read_only_except_for_authoring_notes():
     support = Group.objects.get(name="Support")
     codenames = set(support.permissions.values_list("codename", flat=True))
     assert {"view_user", "view_papersubmission", "view_paymenttransaction"} <= codenames
-    assert not any(c.startswith(("change_", "add_", "delete_")) for c in codenames)
+    # The one deliberate exception (owner request, 2026-09-28, migration
+    # 0016): Support authors study notes. Nothing else is writable, and even
+    # Note can't be deleted.
+    writes = {c for c in codenames if c.startswith(("change_", "add_", "delete_"))}
+    assert writes == {"add_note", "change_note"}
 
 
 @pytest.mark.django_db
