@@ -1695,6 +1695,54 @@ class AppLocalizationsFr extends AppLocalizations {
   String get aiAssistantTitle => 'Assistant Spekooh';
 
   @override
+  String get assistantHistoryTitle => 'Historique des discussions';
+
+  @override
+  String get assistantHistoryButton => 'Historique des discussions';
+
+  @override
+  String get assistantNewChat => 'Nouvelle discussion';
+
+  @override
+  String get assistantHistoryEmpty =>
+      'Aucune discussion enregistrée pour l\'instant. Vos échanges avec l\'assistant sont enregistrés uniquement sur ce téléphone.';
+
+  @override
+  String assistantHistoryMessageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages',
+      one: '1 message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get assistantHistoryDeleteTitle => 'Supprimer cette discussion ?';
+
+  @override
+  String get assistantHistoryDeleteBody =>
+      'Elle sera retirée de ce téléphone. Cette action est irréversible.';
+
+  @override
+  String get assistantHistoryClearAll => 'Tout effacer';
+
+  @override
+  String get assistantHistoryClearTitle =>
+      'Supprimer toutes les discussions enregistrées ?';
+
+  @override
+  String get assistantHistoryClearBody =>
+      'Toutes les discussions enregistrées seront retirées de ce téléphone. Cette action est irréversible.';
+
+  @override
+  String get assistantHistoryConfirmDelete => 'Supprimer';
+
+  @override
+  String get assistantHistoryCancel => 'Annuler';
+
+  @override
   String get aiAssistantSubtitle =>
       'Explique des notions à partir de vraies épreuves';
 

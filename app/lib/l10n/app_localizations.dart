@@ -3008,6 +3008,78 @@ abstract class AppLocalizations {
   /// **'Spekooh Assistant'**
   String get aiAssistantTitle;
 
+  /// No description provided for @assistantHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat history'**
+  String get assistantHistoryTitle;
+
+  /// No description provided for @assistantHistoryButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat history'**
+  String get assistantHistoryButton;
+
+  /// No description provided for @assistantNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get assistantNewChat;
+
+  /// No description provided for @assistantHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved chats yet. Your conversations with the assistant are saved on this phone only.'**
+  String get assistantHistoryEmpty;
+
+  /// No description provided for @assistantHistoryMessageCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 message} other{{count} messages}}'**
+  String assistantHistoryMessageCount(int count);
+
+  /// No description provided for @assistantHistoryDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this chat?'**
+  String get assistantHistoryDeleteTitle;
+
+  /// No description provided for @assistantHistoryDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be removed from this phone. This can\'t be undone.'**
+  String get assistantHistoryDeleteBody;
+
+  /// No description provided for @assistantHistoryClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get assistantHistoryClearAll;
+
+  /// No description provided for @assistantHistoryClearTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all saved chats?'**
+  String get assistantHistoryClearTitle;
+
+  /// No description provided for @assistantHistoryClearBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every saved chat will be removed from this phone. This can\'t be undone.'**
+  String get assistantHistoryClearBody;
+
+  /// No description provided for @assistantHistoryConfirmDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get assistantHistoryConfirmDelete;
+
+  /// No description provided for @assistantHistoryCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get assistantHistoryCancel;
+
   /// No description provided for @aiAssistantSubtitle.
   ///
   /// In en, this message translates to:
