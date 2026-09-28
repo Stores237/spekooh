@@ -19,8 +19,8 @@ Every change made in this stretch of work, why it was made, where it lives, how 
 | 5 | Support staff can create and update notes; demo-notes seed command | Backend | #196 | **Yes** (Support permissions) |
 | 6 | `DESIGN.md` created; `CLAUDE.md` points at it | Docs | #197 | No |
 | 7 | Credits and XP merged into one **Points** balance | Backend + app + docs | #199 (replaces #198) | **Yes** (balances) |
-| 8 | Terms of Service rewritten for Points and Pro | Backend + app | #199 and the discount-code PR | No |
-| 9 | Automatic, accumulating discount codes | Backend + app + docs | the discount-code PR | **Yes** (codes created) |
+| 8 | Terms of Service rewritten for Points and Pro | Backend + app | #199 and #200 | No |
+| 9 | Automatic, accumulating discount codes | Backend + app + docs | #200 | **Yes** (codes created) |
 
 ---
 
@@ -127,7 +127,7 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 
 ## Rollout order
 
-1. Merge the discount-code PR **after** #199 (it is built on `main` as it stands now).
+1. Merge #200 **after** #199 (already merged) (it is built on `main` as it stands now).
 2. Staging deploys and migrates automatically. Expect: `accounts/0016`, `xp/0002–0003`, `credits/0006–0008`.
 3. Check the admin: points carry-over rows, one code per contributor, the tier table, and a Support account editing (but not deleting) a note.
 4. Optionally run `seed_demo_notes` on staging.
@@ -148,7 +148,7 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 
 ## Open items
 
-- Merge the discount-code PR; run the S@Learn follow-ups (section 1).
+- Merge #200; run the S@Learn follow-ups (section 1).
 - Decide whether the Terms change needs a user notice (no re-acceptance flow exists).
 - Revoke the exposed Supabase token; delete the pasted API key; remove the unused `test-lab-ci-751` service account.
 - Firebase Test Lab is still manual (billing blocked); cell 6 (≤2 GB RAM) has not been run.
