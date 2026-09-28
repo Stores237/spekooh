@@ -48,10 +48,17 @@ class HttpProfileRepository implements ProfileRepository {
     final quizStats = await _client.get('/quizzes/my_stats/') as Map<String, dynamic>;
     final redeemCodes = await _client.get('/credits/redeem-codes/') as List;
 
+    // A code's status only flips to EXPIRED when someone tries to apply it, so
+    // an ACTIVE row can already be past its expiry: never show that as usable.
+    final now = DateTime.now();
     final activeCode = redeemCodes.cast<Map<String, dynamic>>().firstWhere(
-          (c) => c['status'] == 'ACTIVE',
-          orElse: () => const {},
-        );
+      (c) {
+        if (c['status'] != 'ACTIVE') return false;
+        final expiresAt = DateTime.tryParse(c['expires_at'] as String? ?? '');
+        return expiresAt == null || expiresAt.isAfter(now);
+      },
+      orElse: () => const {},
+    );
 
     final joinDate = DateTime.tryParse(me['created_at'] as String? ?? '');
 
@@ -61,6 +68,7 @@ class HttpProfileRepository implements ProfileRepository {
       submissionsCount: submissions.length,
       quizzesCount: quizStats['quizzes_played'] as int? ?? 0,
       redeemCode: activeCode['code'] as String? ?? '',
+      redeemCodeExpiresAt: DateTime.tryParse(activeCode['expires_at'] as String? ?? '')?.toLocal(),
       redeemCodeSubtitle: activeCode.isEmpty
           ? ''
           : '${activeCode['value_percent']}% off your next marking guide unlock',

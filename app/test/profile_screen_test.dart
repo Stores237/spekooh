@@ -154,6 +154,8 @@ const _user = SpekoohUser(
 void main() {
   tearDown(() {
     AuthSession.debugSetInstance(AuthSession(storage: InMemoryTokenStorage()));
+    // A test that switches to French must not leak that into the next one.
+    LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
   });
 
   group('Badges — real, honest state (owner decision, 2026-08-28)', () {
@@ -661,6 +663,61 @@ void main() {
 
       expect(find.text('VOS POINTS'), findsOneWidget);
       expect(find.textContaining('500 points = +1 place hors ligne'), findsOneWidget);
+    });
+  });
+
+  group('Automatic discount code on Profile (2026-09-28)', () {
+    SpekoohUser userWithCode({DateTime? expiresAt, String code = 'ABC123XYZ0'}) => SpekoohUser(
+          name: 'Lucien',
+          joinDate: 'Joined Aug 2026',
+          submissionsCount: 3,
+          quizzesCount: 2,
+          redeemCode: code,
+          redeemCodeSubtitle: '10% off your next marking guide unlock',
+          redeemCodeExpiresAt: expiresAt,
+        );
+
+    Future<void> pumpProfile(WidgetTester tester, SpekoohUser user) async {
+      _fakeLoggedIn();
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: _EditableProfileRepository(user))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    testWidgets('shows the one code with its discount and how long it lasts', (tester) async {
+      await pumpProfile(tester, userWithCode(expiresAt: DateTime.now().add(const Duration(days: 12, hours: 2))));
+
+      expect(find.text('Redeem code ready'), findsOneWidget);
+      expect(find.text('ABC123XYZ0'), findsOneWidget);
+      expect(find.text('10% off your next marking guide unlock'), findsOneWidget);
+      expect(find.text('Expires in 12 days'), findsOneWidget);
+    });
+
+    testWidgets('says so plainly when the code runs out today or tomorrow', (tester) async {
+      await pumpProfile(tester, userWithCode(expiresAt: DateTime.now().add(const Duration(hours: 5))));
+      expect(find.text('Expires today'), findsOneWidget);
+    });
+
+    testWidgets('a code with no known expiry shows no expiry line rather than a made-up one', (tester) async {
+      await pumpProfile(tester, userWithCode());
+
+      expect(find.text('ABC123XYZ0'), findsOneWidget);
+      expect(find.textContaining('Expires'), findsNothing);
+    });
+
+    testWidgets('without a code, it explains the code arrives automatically, not on request', (tester) async {
+      await pumpProfile(tester, _user);
+
+      expect(find.text('No active redeem code'), findsOneWidget);
+      expect(find.text("You'll get one automatically once a paper of yours is verified and published."), findsOneWidget);
+    });
+
+    testWidgets('the expiry line and hint are translated', (tester) async {
+      LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+      await LocaleController.instance.setLocale('fr');
+      await pumpProfile(tester, userWithCode(expiresAt: DateTime.now().add(const Duration(days: 12, hours: 2))));
+
+      expect(find.text('Expire dans 12 jours'), findsOneWidget);
     });
   });
 }

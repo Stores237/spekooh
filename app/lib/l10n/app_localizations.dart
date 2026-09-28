@@ -1667,8 +1667,14 @@ abstract class AppLocalizations {
   /// No description provided for @redeemCodeEarnHint.
   ///
   /// In en, this message translates to:
-  /// **'You\'ll get one once a verified submission earns a bonus tier.'**
+  /// **'You\'ll get one automatically once a paper of yours is verified and published.'**
   String get redeemCodeEarnHint;
+
+  /// No description provided for @redeemCodeExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =0{Expires today} =1{Expires tomorrow} other{Expires in {days} days}}'**
+  String redeemCodeExpires(int days);
 
   /// No description provided for @shareLabel.
   ///

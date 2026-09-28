@@ -87,7 +87,28 @@ class SubjectDemandFactorAdmin(ModelAdmin):
 
 @admin.register(RedeemCodeTierConfig)
 class RedeemCodeTierConfigAdmin(ModelAdmin):
-    list_display = ("min_submissions", "value_percent", "expiry_days")
+    """The discount table: how many accepted papers earn which discount, and
+    for how long. Contributors never see this table, only the code they earn;
+    editing a row here changes what the next accepted paper grants.
+
+    A code exists only once a paper has been accepted, so the first band is
+    shown from 1 paper even when its `min_submissions` is 0."""
+
+    list_display = ("papers_range", "value_percent", "expiry_days", "min_submissions")
+
+    @display(description="Accepted papers")
+    def papers_range(self, obj):
+        following = (
+            RedeemCodeTierConfig.objects.filter(min_submissions__gt=obj.min_submissions)
+            .order_by("min_submissions")
+            .values_list("min_submissions", flat=True)
+            .first()
+        )
+        start = max(obj.min_submissions, 1)
+        if following is None:
+            return f"{start} or more"
+        end = following - 1
+        return f"{start}–{end}" if end > start else f"{start}"
 
 
 @admin.register(ContributorBonusConfig)

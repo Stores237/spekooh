@@ -6,6 +6,7 @@ class SpekoohUser {
     required this.quizzesCount,
     required this.redeemCode,
     required this.redeemCodeSubtitle,
+    this.redeemCodeExpiresAt,
     this.trialDaysRemaining = 0,
     this.firstUnlockFreeEligible = false,
     this.isPlusSubscriber = false,
@@ -29,6 +30,11 @@ class SpekoohUser {
   final int quizzesCount;
   final String redeemCode;
   final String redeemCodeSubtitle;
+
+  /// When the active code stops working (null when there is no active code).
+  /// A contributor's one code is upgraded and extended by each newly accepted
+  /// paper (apps.credits.services.grant_redeem_code), so this moves.
+  final DateTime? redeemCodeExpiresAt;
   final int trialDaysRemaining;
   final bool firstUnlockFreeEligible;
 

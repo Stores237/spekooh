@@ -420,11 +420,11 @@ def mark_published(paper: PaperSubmission) -> PaperSubmission:
     same transition instead of duplicating the logic. Shared by the DRF
     action and the admin dashboard action so the two never diverge.
     """
-    from apps.credits.services import award_contributor_bonus
+    from apps.credits.services import award_contribution_rewards
 
     paper.status = PaperStatus.PUBLISHED
     paper.save(update_fields=["status", "updated_at"])
-    award_contributor_bonus(paper)
+    award_contribution_rewards(paper)
     return paper
 
 

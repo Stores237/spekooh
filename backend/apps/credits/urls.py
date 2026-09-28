@@ -4,7 +4,6 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     CreditLedgerEntryViewSet,
     RedeemCodeApplyView,
-    RedeemCodeIssueView,
     RedeemCodeViewSet,
 )
 
@@ -16,6 +15,5 @@ router.register("redeem-codes", RedeemCodeViewSet, basename="redeemcode")
 
 urlpatterns = [
     path("redeem-codes/apply/", RedeemCodeApplyView.as_view(), name="redeemcode-apply"),
-    path("redeem-codes/issue/", RedeemCodeIssueView.as_view(), name="redeemcode-issue"),
     path("", include(router.urls)),
 ]

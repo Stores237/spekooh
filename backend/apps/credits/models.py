@@ -42,9 +42,15 @@ class RedeemCodeStatus(models.TextChoices):
 
 class RedeemCode(TimeStampedModel):
     """
-    Issued to a contributor (owner) based on their accepted-submission tier,
-    but shareable: whoever applies the code at checkout consumes it, not
+    Earned by a contributor (owner) from their accepted papers, and
+    shareable: whoever applies the code at checkout consumes it, not
     necessarily the owner.
+
+    Issued automatically when a paper is accepted (see
+    apps.credits.services.grant_redeem_code) -- there is no way to request
+    one. A contributor holds at most one active code at a time: each further
+    accepted paper upgrades that same code in place (higher discount if a new
+    tier is reached, later expiry) instead of minting another.
     """
 
     code = models.CharField(max_length=20, unique=True, default=generate_redeem_code)
@@ -68,6 +74,22 @@ class RedeemCode(TimeStampedModel):
 
     def __str__(self):
         return f"{self.code} ({self.status})"
+
+
+class RedeemCodeContribution(TimeStampedModel):
+    """
+    Records that one accepted paper has been counted towards a redeem code.
+    The paper is unique, so a paper can only ever earn or upgrade a code once
+    -- republishing it, or re-running a publish step, cannot pay it twice.
+    """
+
+    code = models.ForeignKey(RedeemCode, on_delete=models.CASCADE, related_name="contributions")
+    paper_submission = models.OneToOneField(
+        "papers.PaperSubmission", on_delete=models.CASCADE, related_name="redeem_code_contribution"
+    )
+
+    def __str__(self):
+        return f"{self.code.code} <- paper {self.paper_submission_id}"
 
 
 # --- Instructor credit rules engine config (spec §5.2) ---

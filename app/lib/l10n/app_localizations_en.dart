@@ -880,7 +880,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get redeemCodeEarnHint =>
-      'You\'ll get one once a verified submission earns a bonus tier.';
+      'You\'ll get one automatically once a paper of yours is verified and published.';
+
+  @override
+  String redeemCodeExpires(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Expires in $days days',
+      one: 'Expires tomorrow',
+      zero: 'Expires today',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get shareLabel => 'Share';

@@ -11,7 +11,7 @@ from .serializers import (
     RedeemCodeApplySerializer,
     RedeemCodeSerializer,
 )
-from .services import CreditEngineError, RedeemCodeError, RedeemCodeIssuer, redeem_code
+from .services import RedeemCodeError, redeem_code
 
 
 class CreditLedgerEntryViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -46,22 +46,3 @@ class RedeemCodeApplyView(APIView):
         except RedeemCodeError as exc:
             return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
         return Response(RedeemCodeSerializer(redeemed).data)
-
-
-class RedeemCodeIssueView(APIView):
-    """Request a new redeem code sized to the caller's own accepted-submission tier."""
-
-    permission_classes = [IsAuthenticatedNotGuest]
-
-    @extend_schema(request=None, responses=RedeemCodeSerializer)
-    def post(self, request):
-        from apps.papers.models import PaperStatus, PaperSubmission
-
-        accepted_count = PaperSubmission.objects.filter(
-            submitted_by=request.user, status=PaperStatus.PUBLISHED
-        ).count()
-        try:
-            issued = RedeemCodeIssuer().issue_for(owner=request.user, accepted_submission_count=accepted_count)
-        except CreditEngineError as exc:
-            return Response({"detail": exc.detail}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(RedeemCodeSerializer(issued).data, status=status.HTTP_201_CREATED)

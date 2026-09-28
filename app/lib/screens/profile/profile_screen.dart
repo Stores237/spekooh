@@ -457,6 +457,11 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                                             : user.redeemCodeSubtitle,
                                         style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary),
                                       ),
+                                      if (user.redeemCode.isNotEmpty && user.redeemCodeExpiresAt != null)
+                                        Text(
+                                          l10n.redeemCodeExpires(user.redeemCodeExpiresAt!.difference(DateTime.now()).inDays.clamp(0, 9999)),
+                                          style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.gold700),
+                                        ),
                                     ],
                                   ),
                                 ),
