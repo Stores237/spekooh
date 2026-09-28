@@ -47,7 +47,7 @@ class RegisterView(generics.CreateAPIView):
             user=user,
             kind=NotificationKind.ONBOARDING,
             title="Welcome to Spekooh 🎉",
-            body="Browse past papers, join the forum, and start earning credits for what you contribute.",
+            body="Browse past papers, join the forum, and start earning points for what you contribute.",
         )
         # Real verification code, sent for real (console backend today —
         # see TODOS.md) — this is what makes "verify your email" an actual

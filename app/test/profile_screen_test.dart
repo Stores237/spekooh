@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:spekooh/data/achievement_definitions.dart';
 import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
+import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/models/achievement.dart';
 import 'package:spekooh/models/spekooh_user.dart';
@@ -43,7 +44,6 @@ class _EditableProfileRepository implements ProfileRepository {
       joinDate: _user.joinDate,
       submissionsCount: _user.submissionsCount,
       quizzesCount: _user.quizzesCount,
-      creditBalance: _user.creditBalance,
       redeemCode: _user.redeemCode,
       redeemCodeSubtitle: _user.redeemCodeSubtitle,
       referralCode: _user.referralCode,
@@ -70,7 +70,6 @@ class _RefreshingProfileRepository implements ProfileRepository {
         joinDate: 'Joined Jul 2026',
         submissionsCount: submissionsCount,
         quizzesCount: 0,
-        creditBalance: 0,
         redeemCode: '',
         redeemCodeSubtitle: '',
       );
@@ -99,7 +98,6 @@ class _RejectionProfileRepository implements ProfileRepository {
         joinDate: 'Joined Jul 2026',
         submissionsCount: 1,
         quizzesCount: 0,
-        creditBalance: 0,
         redeemCode: '',
         redeemCodeSubtitle: '',
       );
@@ -147,7 +145,6 @@ const _user = SpekoohUser(
   joinDate: 'Joined Jul 2026',
   submissionsCount: 24,
   quizzesCount: 4,
-  creditBalance: 2150,
   redeemCode: '',
   redeemCodeSubtitle: '',
   email: 'original@example.com',
@@ -209,7 +206,6 @@ void main() {
         joinDate: _user.joinDate,
         submissionsCount: 1, // clears Spark only
         quizzesCount: 0,
-        creditBalance: 0,
         redeemCode: '',
         redeemCodeSubtitle: '',
       );
@@ -551,7 +547,6 @@ void main() {
           joinDate: 'Joined Aug 2026',
           submissionsCount: 0,
           quizzesCount: 0,
-          creditBalance: 0,
           redeemCode: '',
           redeemCodeSubtitle: '',
           avatarUrl: 'https://example.com/avatar.jpg',
@@ -576,7 +571,6 @@ void main() {
       joinDate: 'Joined Aug 2026',
       submissionsCount: 3,
       quizzesCount: 2,
-      creditBalance: 2150,
       xpBalance: 480,
       redeemCode: '',
       redeemCodeSubtitle: '',
@@ -587,7 +581,6 @@ void main() {
       joinDate: 'Joined Aug 2026',
       submissionsCount: 3,
       quizzesCount: 2,
-      creditBalance: 2150,
       xpBalance: 480,
       redeemCode: '',
       redeemCodeSubtitle: '',
@@ -624,6 +617,50 @@ void main() {
       await pumpProfile(tester, freeUser);
 
       expect(find.text('Unlimited paper views · no ads', skipOffstage: false), findsOneWidget);
+    });
+  });
+
+  group('One Points balance (credits and XP merged, 2026-09-28)', () {
+    const user = SpekoohUser(
+      name: 'Lucien',
+      joinDate: 'Joined Aug 2026',
+      submissionsCount: 3,
+      quizzesCount: 2,
+      xpBalance: 480,
+      redeemCode: '',
+      redeemCodeSubtitle: '',
+    );
+
+    Future<void> pumpProfile(WidgetTester tester) async {
+      _fakeLoggedIn();
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: _EditableProfileRepository(user))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    testWidgets('Profile shows the one balance as points, with how to earn and spend it', (tester) async {
+      await pumpProfile(tester);
+
+      expect(find.text('YOUR POINTS'), findsOneWidget);
+      expect(find.textContaining('480 pts', findRichText: true), findsOneWidget); // drawn as a rich-text span
+      expect(find.text('Earn points from quizzes, verified papers and referrals. 500 points = +1 offline slot for 3 days.'), findsOneWidget);
+    });
+
+    testWidgets('nothing on Profile still talks about credits or XP as a separate balance', (tester) async {
+      await pumpProfile(tester);
+
+      expect(find.textContaining('CREDIT'), findsNothing);
+      expect(find.textContaining('credit balance'), findsNothing);
+      expect(find.textContaining(' XP', skipOffstage: false), findsNothing);
+    });
+
+    testWidgets('the points label and hint are translated', (tester) async {
+      LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+      await LocaleController.instance.setLocale('fr');
+      await pumpProfile(tester);
+
+      expect(find.text('VOS POINTS'), findsOneWidget);
+      expect(find.textContaining('500 points = +1 place hors ligne'), findsOneWidget);
     });
   });
 }

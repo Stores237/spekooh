@@ -8,7 +8,7 @@ const mockSubmissions = [
     status: 'Live',
     rawStatus: 'PUBLISHED',
     tone: SpekoohBadgeTone.green,
-    date: 'Published · earned 150 credits',
+    date: 'Published · earned 50 points',
   ),
   Submission(
     id: 2,

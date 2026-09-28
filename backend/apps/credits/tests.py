@@ -190,15 +190,18 @@ def test_mark_published_endpoint_awards_bonus(api_client):
     response = api_client.post(f"/api/papers/submissions/{paper.id}/mark_published/")
     assert response.status_code == 200
     assert response.data["status"] == PaperStatus.PUBLISHED
-    assert CreditLedgerEntry.objects.filter(user=submitter).exists()
+    from apps.xp.services import xp_balance
+
+    assert xp_balance(submitter) == ContributorBonusConfig.objects.first().amount
 
 
 @pytest.mark.django_db
-def test_mark_published_endpoint_also_awards_real_xp(api_client):
-    """Owner request (2026-09-17): a real paper/report contribution should
-    feed the same spendable XP balance "Get more slots" reads from,
-    alongside the separate credits-based reward -- not just credits."""
-    from apps.xp.services import XP_PER_CONTRIBUTION, xp_balance
+def test_mark_published_pays_one_balance_once_and_nothing_into_the_retired_credit_ledger(api_client):
+    """Owner decision (2026-09-28): credits and XP are one "Points" balance.
+    A published paper used to pay 50 credits AND 15 XP into two ledgers; it
+    now pays the configured amount, once, into the single one."""
+    from apps.xp.models import XPLedgerEntry
+    from apps.xp.services import xp_balance
 
     admin_user = UserFactory(is_staff=True)
     submitter = UserFactory()
@@ -206,7 +209,9 @@ def test_mark_published_endpoint_also_awards_real_xp(api_client):
     api_client.force_authenticate(user=admin_user)
     response = api_client.post(f"/api/papers/submissions/{paper.id}/mark_published/")
     assert response.status_code == 200
-    assert xp_balance(submitter) == XP_PER_CONTRIBUTION
+    assert xp_balance(submitter) == 50  # ContributorBonusConfig's default, not 50 + 15
+    assert XPLedgerEntry.objects.filter(user=submitter).count() == 1
+    assert not CreditLedgerEntry.objects.filter(user=submitter).exists()
 
 
 @pytest.mark.django_db
@@ -221,7 +226,7 @@ def test_issue_redeem_code_endpoint_counts_published_submissions(api_client):
 
 
 @pytest.mark.django_db
-def test_award_referral_bonus_credits_the_referrer():
+def test_award_referral_bonus_pays_the_referrer_points():
     referrer = UserFactory()
     referred = UserFactory(referred_by=referrer)
     entry = award_referral_bonus(referred)
@@ -247,4 +252,7 @@ def test_award_referral_bonus_fires_only_once():
     second = award_referral_bonus(referred)
     assert first is not None
     assert second is None
-    assert CreditLedgerEntry.objects.filter(user=referrer).count() == 1
+    from apps.xp.models import XPLedgerEntry
+
+    assert XPLedgerEntry.objects.filter(user=referrer).count() == 1
+    assert not CreditLedgerEntry.objects.filter(user=referrer).exists()

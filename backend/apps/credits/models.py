@@ -11,7 +11,13 @@ def generate_redeem_code():
 
 
 class CreditLedgerEntry(TimeStampedModel):
-    """Contributor bonus credits — redeemable as discount codes, NOT cash."""
+    """RETIRED (owner decision, 2026-09-28): contributor bonus credits and XP
+    were merged into one "Points" balance, so nothing writes here any more --
+    apps.credits.services now pays contributions and referrals into
+    apps.xp.XPLedgerEntry. Kept, read-only, as the audit trail of what each
+    user had earned before the merge; every user's total was carried over
+    into the points ledger by apps.xp migration 0003.
+    """
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="credit_ledger_entries")
     paper_submission = models.ForeignKey(
@@ -22,6 +28,7 @@ class CreditLedgerEntry(TimeStampedModel):
 
     class Meta:
         ordering = ["-created_at"]
+        verbose_name_plural = "credit ledger entries (retired)"
 
     def __str__(self):
         return f"{self.user} +{self.amount} ({self.reason})"
@@ -128,23 +135,23 @@ class RedeemCodeTierConfig(TimeStampedModel):
 
 
 class ContributorBonusConfig(TimeStampedModel):
-    """Singleton: the flat bonus-credit amount awarded per accepted, non-duplicate submission."""
+    """Singleton: the flat points awarded per accepted, non-duplicate submission."""
 
     amount = models.PositiveIntegerField(default=50)
 
     def __str__(self):
-        return f"{self.amount} credits per accepted submission"
+        return f"{self.amount} points per accepted submission"
 
 
 class ReferralBonusConfig(TimeStampedModel):
-    """Singleton: flat credit awarded to a referrer once their referred user
+    """Singleton: flat points awarded to a referrer once their referred user
     completes a real first action (first paper unlock) — not bare signup,
     to resist fake-account abuse. See apps.credits.services.award_referral_bonus."""
 
     amount = models.PositiveIntegerField(default=200)
 
     def __str__(self):
-        return f"{self.amount} credits per successful referral"
+        return f"{self.amount} points per successful referral"
 
 
 class CreditCeilingConfig(TimeStampedModel):

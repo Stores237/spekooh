@@ -4,10 +4,10 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.core.exceptions import SafeMessageError
+from apps.xp.models import XPLedgerEntry
 
 from .models import (
     ContributorBonusConfig,
-    CreditLedgerEntry,
     RedeemCode,
     RedeemCodeStatus,
     RedeemCodeTierConfig,
@@ -46,21 +46,24 @@ def redeem_code(code: str, redeemed_by) -> RedeemCode:
     return redeem
 
 
-def award_contributor_bonus(paper_submission) -> CreditLedgerEntry | None:
-    """Bonus credit per accepted, non-duplicate submission (spec §5.1). No credit for duplicates."""
+def award_contributor_bonus(paper_submission) -> XPLedgerEntry | None:
+    """Points per accepted, non-duplicate submission (spec §5.1). No points for duplicates.
+
+    Paid into the single Points balance (apps.xp.XPLedgerEntry) -- credits and
+    XP were merged on 2026-09-28 (owner decision: one simple reward balance).
+    The amount is still ops-editable via ContributorBonusConfig."""
     if paper_submission.is_duplicate:
         return None
     config = ContributorBonusConfig.objects.first() or ContributorBonusConfig.objects.create()
-    return CreditLedgerEntry.objects.create(
+    return XPLedgerEntry.objects.create(
         user=paper_submission.submitted_by,
-        paper_submission=paper_submission,
         amount=config.amount,
         reason="Paper accepted and published",
     )
 
 
-def award_referral_bonus(referred_user) -> CreditLedgerEntry | None:
-    """Credits the referrer once, the first time their referred user
+def award_referral_bonus(referred_user) -> XPLedgerEntry | None:
+    """Pays the referrer points once, the first time their referred user
     completes a real first action (currently: their first paper unlock —
     see apps.payments.services.unlock_paper). referral_bonus_awarded_at is
     the idempotency guard, claimed via a conditional UPDATE (not a Python
@@ -77,7 +80,7 @@ def award_referral_bonus(referred_user) -> CreditLedgerEntry | None:
         return None
     referred_user.referral_bonus_awarded_at = now
     config = ReferralBonusConfig.objects.first() or ReferralBonusConfig.objects.create()
-    return CreditLedgerEntry.objects.create(
+    return XPLedgerEntry.objects.create(
         user=referrer,
         amount=config.amount,
         reason=f"Referral bonus: {referred_user.name or referred_user.email} unlocked their first paper",
