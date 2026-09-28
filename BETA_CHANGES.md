@@ -21,6 +21,7 @@ Every change made in this stretch of work, why it was made, where it lives, how 
 | 7 | Credits and XP merged into one **Points** balance | Backend + app + docs | #199 (replaces #198) | **Yes** (balances) |
 | 8 | Terms of Service rewritten for Points and Pro | Backend + app | #199 and #200 | No |
 | 9 | Automatic, accumulating discount codes | Backend + app + docs | #200 | **Yes** (codes created) |
+| 10 | Terms versioning and a re-accept prompt | Backend + app + docs | #201 | Adds a table; every existing registered user is asked to accept once |
 
 ---
 
@@ -113,6 +114,25 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 
 **Verify on staging.** Publish a test paper for a user with no code → +50 points and a 5% code on their Profile; publish a second one → same code, later expiry; a user's 5th accepted paper → the same code becomes 10%.
 
+## 10. Terms versioning and re-acceptance
+
+**Why.** The Terms had a "last updated" date but no version and no way to ask users to agree again, although section 14 promises that "a material change will be flagged in the app, not just posted silently". `terms_accepted_at` only ever held the latest time, so it could not show what anyone had agreed to earlier.
+
+**How it works**
+- **One version, in one place.** `TERMS_OF_SERVICE_VERSION` in `backend/apps/core/legal_content.py` (currently `2026-09-28`); the app reads it from the server, so it is never duplicated. **Bump it only for a material change** (takes a benefit away, adds an obligation, or changes payment, refund, liability or data-use terms). A wording fix only changes the "last updated" date.
+- **Append-only history.** `accounts.TermsAcceptance` (user, version, time; unique per user and version; migration `accounts/0017`). Rows are never edited or deleted, and each user's admin page lists them read-only, so a bump leaves the earlier consent intact as evidence.
+- **The API.** `GET /auth/me/` now returns `terms_version` and `needs_terms_acceptance`. `POST /auth/terms/accept/` (body `{"version": …}`) records the acceptance; it refuses any version that is not the current one (400) and refuses guests (403). Registration records the current version.
+- **The prompt.** After every sign-in and app start, the shell asks `/auth/me/` (one request). If the account still has to accept, a blocking dialog appears: "We've updated our Terms of Service", **Read the Terms**, a tick box, **Accept and continue** (disabled until ticked) and **Log out instead**. No barrier tap, no back gesture. A failed check never blocks the app; the next sign-in asks again. English and French.
+- **Who is asked.** Registered accounts with no acceptance of the current version, **including every existing account**, since none has agreed to a specific version yet. So **each existing tester sees the prompt once** after this deploys; that also gives you a clean consent record for the current text. Guests are never asked. (If you would rather grandfather existing users, that is a one-line data migration that records the current version for them; say so.)
+
+**Limits.** Enforcement is in the app: the API does not refuse requests from an account that has not accepted, so an old app build that has no prompt keeps working. Add server-side blocking later only if you decide it is needed.
+
+**A bug found on the way.** Signing in notifies the shell while the login sheet is still open, and the sheet then pops itself with `Navigator.pop`, which pops whatever is on top, so a fast check could show the dialog and have the sheet's own pop close it. The prompt now waits until the shell is the visible screen. A test signs in through the real sheet to cover it.
+
+**To require re-acceptance later.** Change the Terms text in both copies (the drift test keeps them equal), set `TERMS_OF_SERVICE_LAST_UPDATED`, and bump `TERMS_OF_SERVICE_VERSION`. Every registered user is asked again on their next launch.
+
+**Verify on staging.** Sign in as a registered user: the prompt appears once; tick and accept; sign out and in again: no prompt. In the admin, that user's page shows the acceptance.
+
 ---
 
 ## Owner decisions recorded in this stretch
@@ -123,13 +143,14 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 | Contribution / referral amounts | 50 / 200; quizzes 10 / 25 |
 | Discount code rules | Automatic; one accumulating code; sharing stays; table hidden from the app |
 | Support and notes | Support may create and update notes, not delete |
+| Terms consent | Versioned, with a blocking re-accept prompt; existing users are asked once |
 | The "Pro" name | Replaces "Plus" everywhere users read |
 
 ## Rollout order
 
 1. Merge #200. It is built on `main` after #199, which has already landed.
 2. Staging deploys and migrates automatically. Expect: `accounts/0016`, `xp/0002–0003`, `credits/0006–0008`.
-3. Check the admin: points carry-over rows, one code per contributor, the tier table, and a Support account editing (but not deleting) a note.
+3. Check the admin: points carry-over rows, a user's Terms acceptance, one code per contributor, the tier table, and a Support account editing (but not deleting) a note.
 4. Optionally run `seed_demo_notes` on staging.
 5. Finish S@Learn's open items (section 1).
 
@@ -143,7 +164,8 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 |---|---|
 | Points carry-over | `migrate xp 0002` removes only the "Carried over from bonus credits" entries |
 | Discount-code backfill | `migrate credits 0007` removes the counted-paper records (codes stay; delete by hand if needed) |
-| Support notes permission | `migrate accounts 0015` |
+| Support notes permission | `migrate accounts 0015` (this also undoes the Terms table below, which depends on it) |
+| Terms versioning only | `migrate accounts 0016` drops the acceptance table (the prompt then never appears) |
 | Anything else | It is code only: revert the PR |
 
 ## Open items

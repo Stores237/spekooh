@@ -14,6 +14,7 @@ from .views import (
     PhoneVerificationRequestView,
     RefreshView,
     RegisterView,
+    TermsAcceptView,
 )
 
 app_name = "accounts"
@@ -24,6 +25,7 @@ urlpatterns = [
     path("refresh/", RefreshView.as_view(), name="refresh"),
     path("guest/", GuestView.as_view(), name="guest"),
     path("me/", MeView.as_view(), name="me"),
+    path("terms/accept/", TermsAcceptView.as_view(), name="terms-accept"),
     path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset"),
     path("password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
     path("verify-email/", EmailVerificationConfirmView.as_view(), name="verify-email"),

@@ -112,6 +112,19 @@ within a few days.
   change a `Note`, but not delete one, and nothing else is writable.
   `test_support_group_is_read_only_except_for_authoring_notes` pins that
   exact set, so widening it again fails a test instead of passing quietly.
+- **Terms of Service consent is versioned and auditable** (2026-09-28).
+  `apps.core.legal_content.TERMS_OF_SERVICE_VERSION` is the one place the
+  version lives (the app reads it from the server). Each acceptance is an
+  append-only `accounts.TermsAcceptance` row (user, version, time; one per
+  user and version), so bumping the version never erases what someone agreed
+  to earlier; the user's admin page lists them read-only. `POST
+  /auth/terms/accept/` records the version the client was shown and refuses
+  any other, so an acceptance can never be recorded against text the user did
+  not see; guests cannot accept. Bump the version only for a material change;
+  every registered account without an acceptance of the current version
+  (including accounts that predate versioning) is then blocked by an in-app
+  prompt until it accepts or logs out. This is client-side enforcement: the
+  API itself does not refuse requests from an account that has not accepted.
 - Django admin superuser creation is idempotent from
   `DJANGO_SUPERUSER_EMAIL`/`DJANGO_SUPERUSER_PASSWORD` env vars
   (`apps/accounts/management/commands/ensure_superuser.py`, run on every

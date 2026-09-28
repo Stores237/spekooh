@@ -135,6 +135,16 @@ PRIVACY_POLICY_SECTIONS = [
 
 TERMS_OF_SERVICE_LAST_UPDATED = "September 28, 2026"
 
+# The version users agree to. Bump it ONLY for a material change that users
+# must accept again -- something that takes a benefit away, adds an
+# obligation, or changes payment/refund/liability/data-use terms. Every
+# signed-in account whose latest recorded acceptance is a different version
+# is asked to accept again the next time the app opens (see
+# apps.accounts.models.TermsAcceptance and the /auth/terms/accept/ endpoint).
+# A wording fix or clarification only changes TERMS_OF_SERVICE_LAST_UPDATED.
+# The app reads this from the server; it is deliberately not duplicated there.
+TERMS_OF_SERVICE_VERSION = "2026-09-28"
+
 TERMS_OF_SERVICE_INTRO = (
     'These Terms of Service ("Terms") govern your use of the Spekooh mobile app and any related services '
     '(together, "Spekooh", "we", "us", "our"). By creating an account or using Spekooh, you agree to these '

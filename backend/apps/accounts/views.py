@@ -16,6 +16,7 @@ from apps.notifications.services import notify
 
 from . import services
 from .models import User
+from .permissions import IsAuthenticatedNotGuest
 from .serializers import (
     EmailTokenObtainPairSerializer,
     EmailVerificationConfirmByEmailSerializer,
@@ -26,6 +27,7 @@ from .serializers import (
     PhoneVerificationConfirmSerializer,
     PhoneVerificationRequestSerializer,
     RegisterSerializer,
+    TermsAcceptSerializer,
     UserSerializer,
     tokens_for_user,
 )
@@ -248,6 +250,23 @@ class PhoneVerificationConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(UserSerializer(user).data)
+
+
+class TermsAcceptView(APIView):
+    """Records that the signed-in account agreed to the current Terms version
+    (TermsAcceptance is append-only, so earlier acceptances are kept). Guests
+    have no account to agree for and are refused."""
+
+    permission_classes = [IsAuthenticatedNotGuest]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "terms_accept"
+
+    @extend_schema(request=TermsAcceptSerializer, responses=UserSerializer)
+    def post(self, request):
+        serializer = TermsAcceptSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.record_terms_acceptance(request.user, serializer.validated_data["version"])
+        return Response(UserSerializer(request.user, context={"request": request}).data)
 
 
 class MeView(generics.RetrieveUpdateAPIView):

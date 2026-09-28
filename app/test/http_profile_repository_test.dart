@@ -73,4 +73,60 @@ void main() {
 
     expect(user.xpBalance, 480);
   });
+
+  group('Terms acceptance', () {
+    HttpProfileRepository repoFor(http.Client client) =>
+        HttpProfileRepository(ApiClient(authSession: AuthSession(storage: InMemoryTokenStorage()), httpClient: client));
+
+    test('the status comes from GET /auth/me/ alone, not the four requests a full profile load makes', () async {
+      final paths = <String>[];
+      final repo = repoFor(MockClient((request) async {
+        paths.add(request.url.path);
+        return http.Response(jsonEncode({'id': 'u1', 'needs_terms_acceptance': true, 'terms_version': '2099-01-01'}), 200,
+            headers: {'content-type': 'application/json'});
+      }));
+
+      final status = await repo.getTermsStatus();
+
+      expect(status.needsAcceptance, isTrue);
+      expect(status.version, '2099-01-01');
+      expect(paths, hasLength(1));
+      expect(paths.single, endsWith('/auth/me/'));
+    });
+
+    test('a server that predates the feature is treated as "nothing to accept", never as a prompt', () async {
+      final repo = repoFor(MockClient((request) async =>
+          http.Response(jsonEncode({'id': 'u1'}), 200, headers: {'content-type': 'application/json'})));
+
+      final status = await repo.getTermsStatus();
+
+      expect(status.needsAcceptance, isFalse);
+    });
+
+    test('accepting POSTs the version it was shown to /auth/terms/accept/', () async {
+      String? method;
+      String? path;
+      Map<String, dynamic>? body;
+      final repo = repoFor(MockClient((request) async {
+        method = request.method;
+        path = request.url.path;
+        body = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(jsonEncode({'id': 'u1', 'needs_terms_acceptance': false}), 200,
+            headers: {'content-type': 'application/json'});
+      }));
+
+      await repo.acceptTerms('2099-01-01');
+
+      expect(method, 'POST');
+      expect(path, endsWith('/auth/terms/accept/'));
+      expect(body, {'version': '2099-01-01'});
+    });
+
+    test('a refused acceptance (the version moved on) surfaces as an error so the prompt can say so', () async {
+      final repo = repoFor(MockClient((request) async => http.Response(
+          jsonEncode({'version': ['These Terms were updated again.']}), 400, headers: {'content-type': 'application/json'})));
+
+      expect(() => repo.acceptTerms('1999-01-01'), throwsA(anything));
+    });
+  });
 }

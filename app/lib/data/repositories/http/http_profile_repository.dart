@@ -1,5 +1,6 @@
 import '../../../models/achievement.dart';
 import '../../../models/spekooh_user.dart';
+import '../../../models/terms_status.dart';
 import '../../../models/submission.dart';
 import '../../../widgets/spekooh_badge.dart';
 import '../../achievement_definitions.dart';
@@ -82,6 +83,20 @@ class HttpProfileRepository implements ProfileRepository {
       email: me['email'] as String? ?? '',
       phoneNumber: me['phone_number'] as String? ?? '',
     );
+  }
+
+  @override
+  Future<TermsStatus> getTermsStatus() async {
+    final me = await _client.get('/auth/me/') as Map<String, dynamic>;
+    return TermsStatus(
+      needsAcceptance: me['needs_terms_acceptance'] as bool? ?? false,
+      version: me['terms_version'] as String? ?? '',
+    );
+  }
+
+  @override
+  Future<void> acceptTerms(String version) async {
+    await _client.post('/auth/terms/accept/', body: {'version': version});
   }
 
   @override

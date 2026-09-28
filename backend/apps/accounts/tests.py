@@ -7,7 +7,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.test import Client, RequestFactory, override_settings
 from django.utils import timezone
 from django.utils.encoding import force_bytes
@@ -16,7 +16,7 @@ from rest_framework.test import APIClient
 
 from .admin import StaffAccountAddForm, StaffAccountAdmin, UserAdmin
 from .factories import UserFactory
-from .models import AccountType, StaffAccount, User
+from .models import AccountType, StaffAccount, TermsAcceptance, User
 
 
 @pytest.fixture
@@ -2025,3 +2025,192 @@ def test_resend_set_password_link_skips_a_deactivated_account(mailoutbox):
     client.post("/admin/accounts/staffaccount/", {"action": "resend_set_password_link", "_selected_action": [str(gone.pk)]})
 
     assert mailoutbox == []
+
+
+# --- Terms versioning and re-acceptance (2026-09-28) -----------------------
+
+
+def _current_terms_version():
+    from apps.core import legal_content
+
+    return legal_content.TERMS_OF_SERVICE_VERSION
+
+
+@pytest.mark.django_db
+def test_registering_records_acceptance_of_the_current_terms_version(api_client):
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "versioned@example.com", "name": "Versioned", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+    assert response.status_code == 201
+    user = User.objects.get(email="versioned@example.com")
+    assert list(user.terms_acceptances.values_list("version", flat=True)) == [_current_terms_version()]
+    assert response.data["user"]["terms_version"] == _current_terms_version()
+    assert response.data["user"]["needs_terms_acceptance"] is False
+
+
+@pytest.mark.django_db
+def test_an_account_that_predates_versioning_is_asked_to_accept_once(api_client):
+    """It never agreed to any specific text, so it has no acceptance row."""
+    user = UserFactory()
+    api_client.force_authenticate(user)
+
+    me = api_client.get("/api/auth/me/").data
+
+    assert me["needs_terms_acceptance"] is True
+    assert me["terms_version"] == _current_terms_version()
+
+
+@pytest.mark.django_db
+def test_accepting_clears_the_prompt_and_is_recorded(api_client):
+    user = UserFactory()
+    User.objects.filter(pk=user.pk).update(terms_accepted_at=timezone.now() - datetime.timedelta(days=30))
+    api_client.force_authenticate(user)
+
+    response = api_client.post("/api/auth/terms/accept/", {"version": _current_terms_version()}, format="json")
+
+    assert response.status_code == 200
+    assert response.data["needs_terms_acceptance"] is False
+    assert TermsAcceptance.objects.filter(user=user, version=_current_terms_version()).exists()
+    user.refresh_from_db()
+    assert user.terms_accepted_at > timezone.now() - datetime.timedelta(minutes=1)  # the latest time is refreshed
+
+
+@pytest.mark.django_db
+def test_accepting_twice_is_recorded_once(api_client):
+    user = UserFactory()
+    api_client.force_authenticate(user)
+
+    for _ in range(2):
+        assert api_client.post("/api/auth/terms/accept/", {"version": _current_terms_version()}, format="json").status_code == 200
+
+    assert TermsAcceptance.objects.filter(user=user).count() == 1
+
+
+@pytest.mark.django_db
+def test_a_new_version_asks_again_and_keeps_the_earlier_acceptance(api_client, monkeypatch):
+    user = UserFactory()
+    api_client.force_authenticate(user)
+    api_client.post("/api/auth/terms/accept/", {"version": _current_terms_version()}, format="json")
+    first_version = _current_terms_version()
+
+    monkeypatch.setattr("apps.core.legal_content.TERMS_OF_SERVICE_VERSION", "2099-01-01")
+
+    assert api_client.get("/api/auth/me/").data["needs_terms_acceptance"] is True
+    assert api_client.post("/api/auth/terms/accept/", {"version": "2099-01-01"}, format="json").status_code == 200
+    assert api_client.get("/api/auth/me/").data["needs_terms_acceptance"] is False
+    # Both agreements are on record: bumping the version never erases the earlier evidence.
+    assert set(user.terms_acceptances.values_list("version", flat=True)) == {first_version, "2099-01-01"}
+
+
+@pytest.mark.django_db
+def test_accepting_a_stale_or_unknown_version_is_refused_and_records_nothing(api_client):
+    user = UserFactory()
+    api_client.force_authenticate(user)
+
+    for version in ("1999-01-01", "", "not-a-version"):
+        response = api_client.post("/api/auth/terms/accept/", {"version": version}, format="json")
+        assert response.status_code == 400, version
+
+    assert not TermsAcceptance.objects.filter(user=user).exists()
+
+
+@pytest.mark.django_db
+def test_guests_are_never_asked_and_cannot_accept(api_client):
+    guest = UserFactory(account_type=AccountType.GUEST)
+    api_client.force_authenticate(guest)
+
+    assert api_client.get("/api/auth/me/").data["needs_terms_acceptance"] is False
+    response = api_client.post("/api/auth/terms/accept/", {"version": _current_terms_version()}, format="json")
+    assert response.status_code == 403
+    assert not TermsAcceptance.objects.filter(user=guest).exists()
+
+
+@pytest.mark.django_db
+def test_accepting_requires_being_signed_in(api_client):
+    response = api_client.post("/api/auth/terms/accept/", {"version": _current_terms_version()}, format="json")
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_the_database_allows_one_acceptance_per_user_and_version():
+    user = UserFactory()
+    TermsAcceptance.objects.create(user=user, version="2026-09-28")
+
+    with pytest.raises(IntegrityError), transaction.atomic():
+        TermsAcceptance.objects.create(user=user, version="2026-09-28")
+
+
+@pytest.mark.django_db
+def test_the_user_admin_page_shows_the_consent_record_read_only():
+    user = UserFactory()
+    TermsAcceptance.objects.create(user=user, version="2026-09-28")
+    owner = UserFactory(is_staff=True, is_superuser=True)
+    client = Client()
+    client.force_login(owner)
+
+    response = client.get(f"/admin/accounts/user/{user.pk}/change/")
+
+    assert response.status_code == 200
+    assert "Terms acceptance" in response.content.decode()
+    assert "2026-09-28" in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_the_terms_accept_endpoint_is_rate_limited_per_user(api_client, monkeypatch):
+    """Like every other account write endpoint, it opts in to a throttle so a
+    buggy or scripted client cannot hammer it. Per-user, since it needs a login."""
+    from rest_framework.throttling import SimpleRateThrottle
+
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "terms_accept", "2/hour")
+    api_client.force_authenticate(UserFactory())
+    payload = {"version": _current_terms_version()}
+
+    first = api_client.post("/api/auth/terms/accept/", payload, format="json")
+    second = api_client.post("/api/auth/terms/accept/", payload, format="json")
+    third = api_client.post("/api/auth/terms/accept/", payload, format="json")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert third.status_code == 429
+
+
+@pytest.mark.django_db
+def test_repeating_an_acceptance_does_not_rewrite_the_user_row(api_client):
+    user = UserFactory()
+    api_client.force_authenticate(user)
+    api_client.post("/api/auth/terms/accept/", {"version": _current_terms_version()}, format="json")
+    long_ago = timezone.now() - datetime.timedelta(days=90)
+    User.objects.filter(pk=user.pk).update(terms_accepted_at=long_ago)
+
+    api_client.post("/api/auth/terms/accept/", {"version": _current_terms_version()}, format="json")
+
+    user.refresh_from_db()
+    assert user.terms_accepted_at == long_ago  # a repeat call changed nothing
+
+
+@pytest.mark.django_db
+def test_recording_an_acceptance_with_an_empty_version_is_an_error_not_the_current_version():
+    from . import services
+
+    user = UserFactory()
+
+    with pytest.raises(ValueError):
+        services.record_terms_acceptance(user, "")
+
+    assert not TermsAcceptance.objects.filter(user=user).exists()
+
+
+@pytest.mark.django_db
+def test_registration_stamps_the_acceptance_time_once_through_the_service(api_client):
+    response = api_client.post(
+        "/api/auth/register/",
+        {"email": "stamp@example.com", "name": "Stamp", "password": "S0mePass!23", "terms_accepted": True},
+        format="json",
+    )
+    assert response.status_code == 201
+    user = User.objects.get(email="stamp@example.com")
+    assert user.terms_accepted_at is not None
+    assert user.terms_acceptances.count() == 1

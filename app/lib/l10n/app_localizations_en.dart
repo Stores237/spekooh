@@ -1497,6 +1497,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contributeNudgeDismiss => 'Maybe later';
 
   @override
+  String get termsUpdateTitle => 'We\'ve updated our Terms of Service';
+
+  @override
+  String get termsUpdateBody =>
+      'To keep using your account, please read the updated Terms and accept them.';
+
+  @override
+  String get termsUpdateRead => 'Read the Terms of Service';
+
+  @override
+  String get termsUpdateAgree =>
+      'I have read and agree to the updated Terms of Service';
+
+  @override
+  String get termsUpdateAccept => 'Accept and continue';
+
+  @override
+  String get termsUpdateLogout => 'Log out instead';
+
+  @override
+  String get termsUpdateFailed =>
+      'Couldn\'t save your choice. Check your connection and try again.';
+
+  @override
   String get signedOutElsewhereTitle => 'Signed out';
 
   @override

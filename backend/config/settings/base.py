@@ -248,6 +248,10 @@ REST_FRAMEWORK = {
         # fresh code a couple times while typing is normal; unlimited resends
         # would just be a way to spam their own inbox.
         "email_verification_resend": "5/hour",
+        # Per-user (authenticated). A person accepts the Terms once; the rest
+        # is retries after a failed save, so this is generous, and stops a
+        # buggy or scripted client from hammering the endpoint.
+        "terms_accept": "30/hour",
         # Per-IP, same reasoning as password_reset_request/confirm — the
         # unauthenticated recovery path, so the same enumeration concern
         # applies here that doesn't apply to the authenticated pair above.
