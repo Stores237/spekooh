@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/api_client.dart';
+import '../../data/assistant_history_store.dart';
 import '../../data/repositories/assistant_repository.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/assistant_session.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_gradients.dart';
 import '../../theme/app_shadows.dart';
@@ -12,6 +14,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/chat_message_text.dart';
 import '../../widgets/spekooh_banner.dart';
 import '../common/circular_back_button.dart';
+import 'assistant_history_screen.dart';
 
 /// "Spekooh Assistant" — the real, general-purpose counterpart to
 /// PapersScreen's per-paper ChatScreen (apps.ai.views.AssistantChatView,
@@ -28,10 +31,13 @@ import '../common/circular_back_button.dart';
 /// only the missing paper context and the suggested-prompts empty state
 /// (carried over from the old dead sheet, now real) are different.
 class AssistantChatScreen extends StatefulWidget {
-  const AssistantChatScreen({super.key, required this.repository, this.onOpenPaywall});
+  const AssistantChatScreen({super.key, required this.repository, this.onOpenPaywall, this.historyStore});
 
   final AssistantRepository repository;
   final VoidCallback? onOpenPaywall;
+
+  /// Where chats are saved on this phone; defaults to the shared store.
+  final AssistantHistoryStore? historyStore;
 
   @override
   State<AssistantChatScreen> createState() => _AssistantChatScreenState();
@@ -44,6 +50,16 @@ class _AssistantChatScreenState extends State<AssistantChatScreen> {
   bool _sending = false;
   int? _quotaRemaining;
   bool _quotaExceeded = false;
+
+  // The chat on screen is one saved session, identified by [_sessionId];
+  // [_saved] is true once it has been written to the history.
+  String _sessionId = _newSessionId();
+  DateTime _createdAt = DateTime.now();
+  bool _saved = false;
+
+  AssistantHistoryStore get _store => widget.historyStore ?? AssistantHistoryStore.instance;
+
+  static String _newSessionId() => DateTime.now().microsecondsSinceEpoch.toString();
 
   static List<String> _suggestedPrompts(AppLocalizations l10n) => [
         l10n.aiPromptExplainPhysics,
@@ -115,6 +131,62 @@ class _AssistantChatScreenState extends State<AssistantChatScreen> {
       }
     } finally {
       if (mounted) setState(() => _sending = false);
+      await _saveSession();
+    }
+  }
+
+  /// Saves the chat on screen to the on-device history (best effort: the
+  /// store swallows storage failures, so this can never break chatting).
+  Future<void> _saveSession() async {
+    if (_messages.isEmpty) return;
+    await _store.save(AssistantSession(
+      id: _sessionId,
+      title: AssistantSession.titleFor(_messages),
+      createdAt: _createdAt,
+      updatedAt: DateTime.now(),
+      messages: List.of(_messages),
+    ));
+    _saved = true;
+  }
+
+  void _startNewChat() {
+    setState(() {
+      _messages.clear();
+      _inputController.clear();
+      _sessionId = _newSessionId();
+      _createdAt = DateTime.now();
+      _saved = false;
+    });
+  }
+
+  void _resume(AssistantSession session) {
+    setState(() {
+      _messages
+        ..clear()
+        ..addAll(session.messages);
+      _sessionId = session.id;
+      _createdAt = session.createdAt;
+      _saved = true;
+    });
+    _scrollToBottom();
+  }
+
+  Future<void> _openHistory() async {
+    final store = _store;
+    final picked = await Navigator.of(context).push<AssistantSession>(
+      MaterialPageRoute(builder: (_) => AssistantHistoryScreen(store: store)),
+    );
+    if (!mounted) return;
+    if (picked != null) {
+      _resume(picked);
+      return;
+    }
+    // If the chat on screen was deleted from the history, don't leave it here
+    // looking saved: start a fresh one instead.
+    if (_saved) {
+      final remaining = await store.list();
+      if (!mounted) return;
+      if (!remaining.any((session) => session.id == _sessionId)) _startNewChat();
     }
   }
 
@@ -149,6 +221,18 @@ class _AssistantChatScreenState extends State<AssistantChatScreen> {
                         Text(l10n.aiAssistantSubtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 11, color: AppColors.textSecondary)),
                       ],
                     ),
+                  ),
+                  IconButton(
+                    tooltip: l10n.assistantHistoryButton,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _sending ? null : _openHistory,
+                    icon: const Icon(LucideIcons.history, size: 20, color: AppColors.textSecondary),
+                  ),
+                  IconButton(
+                    tooltip: l10n.assistantNewChat,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: (_sending || _messages.isEmpty) ? null : _startNewChat,
+                    icon: const Icon(LucideIcons.squarePen, size: 20, color: AppColors.textSecondary),
                   ),
                   if (_quotaRemaining != null)
                     Padding(

@@ -1668,6 +1668,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiAssistantTitle => 'Spekooh Assistant';
 
   @override
+  String get assistantHistoryTitle => 'Chat history';
+
+  @override
+  String get assistantHistoryButton => 'Chat history';
+
+  @override
+  String get assistantNewChat => 'New chat';
+
+  @override
+  String get assistantHistoryEmpty =>
+      'No saved chats yet. Your conversations with the assistant are saved on this phone only.';
+
+  @override
+  String assistantHistoryMessageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages',
+      one: '1 message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get assistantHistoryDeleteTitle => 'Delete this chat?';
+
+  @override
+  String get assistantHistoryDeleteBody =>
+      'It will be removed from this phone. This can\'t be undone.';
+
+  @override
+  String get assistantHistoryClearAll => 'Clear all';
+
+  @override
+  String get assistantHistoryClearTitle => 'Delete all saved chats?';
+
+  @override
+  String get assistantHistoryClearBody =>
+      'Every saved chat will be removed from this phone. This can\'t be undone.';
+
+  @override
+  String get assistantHistoryConfirmDelete => 'Delete';
+
+  @override
+  String get assistantHistoryCancel => 'Cancel';
+
+  @override
   String get aiAssistantSubtitle => 'Explains topics using real past papers';
 
   @override

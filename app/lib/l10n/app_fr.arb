@@ -537,6 +537,21 @@
   "alreadyReportedMessage": "Vous avez déjà signalé cette épreuve.",
 
   "aiAssistantTitle": "Assistant Spekooh",
+  "assistantHistoryTitle": "Historique des discussions",
+  "assistantHistoryButton": "Historique des discussions",
+  "assistantNewChat": "Nouvelle discussion",
+  "assistantHistoryEmpty": "Aucune discussion enregistrée pour l'instant. Vos échanges avec l'assistant sont enregistrés uniquement sur ce téléphone.",
+  "assistantHistoryMessageCount": "{count, plural, =1{1 message} other{{count} messages}}",
+  "@assistantHistoryMessageCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "assistantHistoryDeleteTitle": "Supprimer cette discussion ?",
+  "assistantHistoryDeleteBody": "Elle sera retirée de ce téléphone. Cette action est irréversible.",
+  "assistantHistoryClearAll": "Tout effacer",
+  "assistantHistoryClearTitle": "Supprimer toutes les discussions enregistrées ?",
+  "assistantHistoryClearBody": "Toutes les discussions enregistrées seront retirées de ce téléphone. Cette action est irréversible.",
+  "assistantHistoryConfirmDelete": "Supprimer",
+  "assistantHistoryCancel": "Annuler",
   "aiAssistantSubtitle": "Explique des notions à partir de vraies épreuves",
   "aiPromptExplainPhysics": "Expliquer une notion difficile de Physique",
   "aiPromptMathsQuestions": "Donne-moi 5 questions d'entraînement en Maths",

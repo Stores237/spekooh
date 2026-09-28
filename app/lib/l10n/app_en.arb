@@ -673,6 +673,21 @@
   "alreadyReportedMessage": "You've already reported this paper.",
 
   "aiAssistantTitle": "Spekooh Assistant",
+  "assistantHistoryTitle": "Chat history",
+  "assistantHistoryButton": "Chat history",
+  "assistantNewChat": "New chat",
+  "assistantHistoryEmpty": "No saved chats yet. Your conversations with the assistant are saved on this phone only.",
+  "assistantHistoryMessageCount": "{count, plural, =1{1 message} other{{count} messages}}",
+  "@assistantHistoryMessageCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "assistantHistoryDeleteTitle": "Delete this chat?",
+  "assistantHistoryDeleteBody": "It will be removed from this phone. This can't be undone.",
+  "assistantHistoryClearAll": "Clear all",
+  "assistantHistoryClearTitle": "Delete all saved chats?",
+  "assistantHistoryClearBody": "Every saved chat will be removed from this phone. This can't be undone.",
+  "assistantHistoryConfirmDelete": "Delete",
+  "assistantHistoryCancel": "Cancel",
   "aiAssistantSubtitle": "Explains topics using real past papers",
   "aiPromptExplainPhysics": "Explain a hard Physics topic",
   "aiPromptMathsQuestions": "Give me 5 Maths practice questions",
