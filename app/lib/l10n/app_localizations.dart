@@ -2714,6 +2714,48 @@ abstract class AppLocalizations {
   /// **'Maybe later'**
   String get contributeNudgeDismiss;
 
+  /// No description provided for @termsUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ve updated our Terms of Service'**
+  String get termsUpdateTitle;
+
+  /// No description provided for @termsUpdateBody.
+  ///
+  /// In en, this message translates to:
+  /// **'To keep using your account, please read the updated Terms and accept them.'**
+  String get termsUpdateBody;
+
+  /// No description provided for @termsUpdateRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the Terms of Service'**
+  String get termsUpdateRead;
+
+  /// No description provided for @termsUpdateAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I have read and agree to the updated Terms of Service'**
+  String get termsUpdateAgree;
+
+  /// No description provided for @termsUpdateAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept and continue'**
+  String get termsUpdateAccept;
+
+  /// No description provided for @termsUpdateLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out instead'**
+  String get termsUpdateLogout;
+
+  /// No description provided for @termsUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save your choice. Check your connection and try again.'**
+  String get termsUpdateFailed;
+
   /// No description provided for @signedOutElsewhereTitle.
   ///
   /// In en, this message translates to:

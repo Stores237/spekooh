@@ -2,11 +2,33 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
 
 from . import services
-from .models import StaffAccount, User
+from .models import StaffAccount, TermsAcceptance, User
+
+
+class TermsAcceptanceInline(TabularInline):
+    """Which Terms version this account agreed to, and when. Read-only: it is
+    the consent record, so nobody edits or removes a row from here."""
+
+    model = TermsAcceptance
+    fields = ("version", "created_at")
+    readonly_fields = ("version", "created_at")
+    extra = 0
+    can_delete = False
+    verbose_name = "Terms acceptance"
+    verbose_name_plural = "Terms acceptances"
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(User)
@@ -44,6 +66,7 @@ class UserAdmin(DjangoUserAdmin):
         "referral_bonus_awarded_at",
         "terms_accepted_at",
     )
+    inlines = [TermsAcceptanceInline]
 
     def has_delete_permission(self, request, obj=None):
         # Owner decision (2026-09-25): nobody deletes an account from the

@@ -8,7 +8,9 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from .models import EmailVerificationCode, User
+from apps.core import legal_content
+
+from .models import AccountType, EmailVerificationCode, TermsAcceptance, User
 
 logger = logging.getLogger(__name__)
 
@@ -133,3 +135,28 @@ def email_domain_is_verifiable(email: str) -> bool:
         # should ever be able to block a real registration.
         logger.warning("verify-email-domain call failed; letting registration through.", exc_info=True)
         return True
+
+
+def current_terms_version() -> str:
+    """Read at call time so a version bump (or a test override) takes effect
+    without restarting anything that imported this module."""
+    return legal_content.TERMS_OF_SERVICE_VERSION
+
+
+def needs_terms_acceptance(user) -> bool:
+    """A registered account must accept the Terms whenever it has no recorded
+    acceptance of the current version -- including an account that predates
+    versioning, which has never agreed to any specific text. Guests are never
+    asked: they have no account to agree on behalf of."""
+    if user.account_type != AccountType.REGISTERED:
+        return False
+    return not TermsAcceptance.objects.filter(user=user, version=current_terms_version()).exists()
+
+
+def record_terms_acceptance(user, version: str | None = None) -> TermsAcceptance:
+    """Records (idempotently) that `user` agreed to `version`, defaulting to the
+    current one, and refreshes User.terms_accepted_at to the latest time."""
+    acceptance, _ = TermsAcceptance.objects.get_or_create(user=user, version=version or current_terms_version())
+    user.terms_accepted_at = timezone.now()
+    user.save(update_fields=["terms_accepted_at"])
+    return acceptance

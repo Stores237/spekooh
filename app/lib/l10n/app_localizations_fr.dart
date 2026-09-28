@@ -1522,6 +1522,31 @@ class AppLocalizationsFr extends AppLocalizations {
   String get contributeNudgeDismiss => 'Plus tard';
 
   @override
+  String get termsUpdateTitle =>
+      'Nous avons mis à jour nos conditions d\'utilisation';
+
+  @override
+  String get termsUpdateBody =>
+      'Pour continuer à utiliser votre compte, lisez les conditions mises à jour et acceptez-les.';
+
+  @override
+  String get termsUpdateRead => 'Lire les conditions d\'utilisation';
+
+  @override
+  String get termsUpdateAgree =>
+      'J\'ai lu et j\'accepte les conditions d\'utilisation mises à jour';
+
+  @override
+  String get termsUpdateAccept => 'Accepter et continuer';
+
+  @override
+  String get termsUpdateLogout => 'Me déconnecter';
+
+  @override
+  String get termsUpdateFailed =>
+      'Impossible d\'enregistrer votre choix. Vérifiez votre connexion et réessayez.';
+
+  @override
   String get signedOutElsewhereTitle => 'Déconnecté';
 
   @override

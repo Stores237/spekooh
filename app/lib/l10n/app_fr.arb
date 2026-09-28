@@ -483,6 +483,13 @@
   "contributeNudgeBody": "Si vous avez une ancienne épreuve ou un rapport académique, le soumettre avec précision et dès que possible aide d'autres étudiants qui en ont besoin maintenant. Chaque contribution fait une vraie différence.",
   "contributeNudgeCta": "Contribuer maintenant",
   "contributeNudgeDismiss": "Plus tard",
+  "termsUpdateTitle": "Nous avons mis à jour nos conditions d'utilisation",
+  "termsUpdateBody": "Pour continuer à utiliser votre compte, lisez les conditions mises à jour et acceptez-les.",
+  "termsUpdateRead": "Lire les conditions d'utilisation",
+  "termsUpdateAgree": "J'ai lu et j'accepte les conditions d'utilisation mises à jour",
+  "termsUpdateAccept": "Accepter et continuer",
+  "termsUpdateLogout": "Me déconnecter",
+  "termsUpdateFailed": "Impossible d'enregistrer votre choix. Vérifiez votre connexion et réessayez.",
 
   "signedOutElsewhereTitle": "Déconnecté",
   "signedOutElsewhereBody": "Votre compte a été connecté sur un autre appareil, vous avez donc été déconnecté ici. Si ce n'était pas vous, réinitialisez votre mot de passe dès que possible.",

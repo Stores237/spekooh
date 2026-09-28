@@ -24,6 +24,10 @@ class UserSerializer(serializers.ModelSerializer):
     is_plus_subscriber = serializers.SerializerMethodField()
     # Real XP economy (owner request, 2026-09-11) — see apps.xp.services.
     xp_balance = serializers.SerializerMethodField()
+    # Which Terms version is current, and whether this account still has to
+    # accept it (see services.needs_terms_acceptance): the app prompts on this.
+    terms_version = serializers.SerializerMethodField()
+    needs_terms_acceptance = serializers.SerializerMethodField()
     has_active_slot_bonus = serializers.SerializerMethodField()
     email_verified = serializers.SerializerMethodField()
     phone_verified = serializers.SerializerMethodField()
@@ -50,6 +54,8 @@ class UserSerializer(serializers.ModelSerializer):
             "first_unlock_free_eligible",
             "is_plus_subscriber",
             "xp_balance",
+            "terms_version",
+            "needs_terms_acceptance",
             "has_active_slot_bonus",
             "referral_code",
             "email_verified",
@@ -65,6 +71,8 @@ class UserSerializer(serializers.ModelSerializer):
             "first_unlock_free_eligible",
             "is_plus_subscriber",
             "xp_balance",
+            "terms_version",
+            "needs_terms_acceptance",
             "has_active_slot_bonus",
             "referral_code",
             "email_verified",
@@ -80,6 +88,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_xp_balance(self, obj) -> int:
         return xp_balance(obj)
+
+    def get_terms_version(self, obj) -> str:
+        return services.current_terms_version()
+
+    def get_needs_terms_acceptance(self, obj) -> bool:
+        return services.needs_terms_acceptance(obj)
 
     def get_has_active_slot_bonus(self, obj) -> bool:
         return obj.bonus_offline_slot_until is not None and obj.bonus_offline_slot_until > timezone.now()
@@ -126,6 +140,19 @@ class UserSerializer(serializers.ModelSerializer):
             user.phone_verified_at = None
             user.save(update_fields=["phone_verified_at"])
         return user
+
+
+class TermsAcceptSerializer(serializers.Serializer):
+    """The client sends back the version it showed, so an acceptance can never
+    be recorded against text the user did not see (e.g. the Terms were bumped
+    again while their dialog was open)."""
+
+    version = serializers.CharField(max_length=20)
+
+    def validate_version(self, value):
+        if value != services.current_terms_version():
+            raise serializers.ValidationError("These Terms were updated again. Reopen the app to see the latest version.")
+        return value
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -182,6 +209,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         user.set_password(password)
         user.save(update_fields=["password"])
+        services.record_terms_acceptance(user)
         return user
 
 

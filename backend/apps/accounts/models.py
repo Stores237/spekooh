@@ -260,3 +260,27 @@ class StaffAccount(User):
         proxy = True
         verbose_name = "Staff account"
         verbose_name_plural = "Staff accounts"
+
+
+class TermsAcceptance(TimeStampedModel):
+    """
+    Append-only record that an account agreed to a specific version of the
+    Terms of Service, and when. `User.terms_accepted_at` only ever holds the
+    latest time, so it cannot show what someone agreed to earlier; this can.
+
+    "Does this account still need to accept?" is answered from here: it does
+    if it has no row for the current apps.core.legal_content
+    .TERMS_OF_SERVICE_VERSION. Rows are never edited or deleted (the admin
+    shows them read-only), so bumping the version leaves the earlier
+    acceptances intact as evidence.
+    """
+
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="terms_acceptances")
+    version = models.CharField(max_length=20)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [models.UniqueConstraint(fields=["user", "version"], name="one_acceptance_per_user_and_version")]
+
+    def __str__(self):
+        return f"{self.user_id} accepted Terms {self.version}"

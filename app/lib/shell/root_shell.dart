@@ -6,6 +6,7 @@ import '../models/pamphlet.dart';
 import '../sheets/auth_sheet.dart';
 import '../sheets/pamphlet_sheet.dart';
 import '../sheets/paywall_sheet.dart';
+import '../sheets/terms_update_dialog.dart';
 import '../theme/app_colors.dart';
 import '../widgets/account_required_view.dart';
 import '../widgets/ai_assistant_fab.dart';
@@ -41,6 +42,12 @@ class RootShell extends StatefulWidget {
 class RootShellState extends State<RootShell> {
   int _activeTab = 0;
   bool _isLoggedIn = false;
+
+  // Terms re-acceptance (see _checkTermsAcceptance): true once this signed-in
+  // account is known to have accepted the current version, so the check runs
+  // once per sign-in rather than on every auth notification.
+  bool _termsSatisfied = false;
+  bool _termsCheckRunning = false;
 
   bool get isLoggedIn => _isLoggedIn;
 
@@ -100,8 +107,62 @@ class RootShellState extends State<RootShell> {
     if (!mounted) return;
     final wasSignedOutElsewhere = AuthSession.instance.consumeSignedOutElsewhere();
     setState(() => _isLoggedIn = AuthSession.instance.isLoggedIn);
+    if (AuthSession.instance.isLoggedIn) {
+      _checkTermsAcceptance();
+    } else {
+      _termsSatisfied = false; // the next account to sign in gets its own check
+    }
     if (wasSignedOutElsewhere) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showSignedOutElsewhereDialog());
+    }
+  }
+
+  /// Asks the server whether this account has accepted the current Terms of
+  /// Service, and if not, blocks with [TermsUpdateDialog] until it accepts or
+  /// logs out. The server decides (a bumped TERMS_OF_SERVICE_VERSION makes
+  /// every account outstanding again); a failed check never blocks the app,
+  /// the next sign-in or launch simply asks again.
+  Future<void> _checkTermsAcceptance() async {
+    if (_termsSatisfied || _termsCheckRunning) return;
+    _termsCheckRunning = true;
+    try {
+      final repository = RepositoryLocator.instance.profile;
+      final status = await repository.getTermsStatus();
+      if (!mounted || !AuthSession.instance.isLoggedIn) return;
+      if (!status.needsAcceptance) {
+        _termsSatisfied = true;
+        return;
+      }
+      await _waitUntilShellIsVisible();
+      if (!mounted || !AuthSession.instance.isLoggedIn) return;
+      final accepted = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => TermsUpdateDialog(
+          version: status.version,
+          repository: repository,
+          onLogout: () => AuthSession.instance.logout(),
+        ),
+      );
+      if (accepted == true) _termsSatisfied = true;
+    } catch (_) {
+      // Leave _termsSatisfied false so the next auth change tries again.
+    } finally {
+      _termsCheckRunning = false;
+    }
+  }
+
+  /// Signing in notifies listeners while the login sheet is still open, and
+  /// the sheet (and any Settings/Profile screen it was opened from) then pops
+  /// itself with Navigator.pop, which pops whatever route is on top. A dialog
+  /// pushed in between would be the one dismissed, so hold it back until the
+  /// shell is the visible route again. Bounded (about 3 s) so an unusual
+  /// navigation state can never stop the prompt from appearing.
+  Future<void> _waitUntilShellIsVisible() async {
+    for (var attempt = 0; attempt < 30; attempt++) {
+      if (!mounted) return;
+      if (ModalRoute.of(context)?.isCurrent ?? true) return;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
     }
   }
 

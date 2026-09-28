@@ -601,6 +601,13 @@
   "contributeNudgeBody": "If you have a past paper or academic report, submitting it accurately and as soon as you can helps other students who need it right now. Every contribution makes a real difference.",
   "contributeNudgeCta": "Contribute now",
   "contributeNudgeDismiss": "Maybe later",
+  "termsUpdateTitle": "We've updated our Terms of Service",
+  "termsUpdateBody": "To keep using your account, please read the updated Terms and accept them.",
+  "termsUpdateRead": "Read the Terms of Service",
+  "termsUpdateAgree": "I have read and agree to the updated Terms of Service",
+  "termsUpdateAccept": "Accept and continue",
+  "termsUpdateLogout": "Log out instead",
+  "termsUpdateFailed": "Couldn't save your choice. Check your connection and try again.",
 
   "signedOutElsewhereTitle": "Signed out",
   "signedOutElsewhereBody": "Your account was signed in on another device, so you were signed out here. If this wasn't you, reset your password as soon as possible.",

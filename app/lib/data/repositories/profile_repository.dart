@@ -1,5 +1,6 @@
 import '../../models/achievement.dart';
 import '../../models/spekooh_user.dart';
+import '../../models/terms_status.dart';
 import '../../models/submission.dart';
 import '../achievement_definitions.dart';
 import '../mock/mock_submissions.dart';
@@ -39,12 +40,27 @@ abstract class ProfileRepository {
   /// fresh code (see UserSerializer.update on the backend) — an unverified
   /// email is never silently left looking verified.
   Future<void> updateProfile({required String name, required String email, required String phoneNumber});
+
+  /// Whether this account must (re-)accept the Terms of Service, from
+  /// GET /auth/me/ alone: cheap enough to run on every login and app start,
+  /// unlike [getUser], which makes four requests.
+  Future<TermsStatus> getTermsStatus();
+
+  /// Records agreement to [version] (POST /auth/terms/accept/). The server
+  /// refuses a version that is no longer the current one.
+  Future<void> acceptTerms(String version);
 }
 
 class MockProfileRepository implements ProfileRepository {
-  MockProfileRepository({SpekoohUser? user}) : _user = user ?? mockGuestUser;
+  MockProfileRepository({SpekoohUser? user, this.termsStatus = const TermsStatus.accepted()}) : _user = user ?? mockGuestUser;
 
   final SpekoohUser _user;
+
+  /// What [getTermsStatus] reports; [acceptTerms] flips it to accepted.
+  TermsStatus termsStatus;
+
+  /// Every version passed to [acceptTerms], so a test can assert what was recorded.
+  final List<String> acceptedTermsVersions = [];
   // Own mutable copy per instance — dismissSubmission below mutates this,
   // and reusing the shared `mockSubmissions` const list directly would leak
   // state between tests/instances.
@@ -52,6 +68,15 @@ class MockProfileRepository implements ProfileRepository {
 
   @override
   Future<SpekoohUser> getUser() => Future.value(_user);
+
+  @override
+  Future<TermsStatus> getTermsStatus() => Future.value(termsStatus);
+
+  @override
+  Future<void> acceptTerms(String version) async {
+    acceptedTermsVersions.add(version);
+    termsStatus = const TermsStatus.accepted();
+  }
 
   @override
   Future<List<Achievement>> getAchievements(SpekoohUser user) => Future.value(computeAchievements(user));
