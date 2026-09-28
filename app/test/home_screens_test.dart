@@ -18,6 +18,8 @@ import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/screens/downloads/my_downloads_screen.dart';
 import 'package:spekooh/screens/home/home_screen.dart';
 import 'package:spekooh/screens/home/logged_in_home_screen.dart';
+import 'package:spekooh/data/repositories/notes_repository.dart';
+import 'package:spekooh/screens/notes/notes_screen.dart';
 import 'package:spekooh/main.dart';
 import 'package:spekooh/shell/root_shell.dart';
 import 'package:spekooh/widgets/heritage_pattern_strip.dart';
@@ -372,5 +374,77 @@ void main() {
     expect(find.text('DÉFI DU JOUR'), findsOneWidget);
     expect(find.text('COMMENCER UNE SÉRIE'), findsOneWidget);
     expect(find.text('DAILY CHALLENGE'), findsNothing);
+  });
+  group('Practice mode card (beta: learn without countdown pressure = summary notes)', () {
+    Future<void> pumpHome(WidgetTester tester, {VoidCallback? onOpenPapers, VoidCallback? onOpenNotes}) async {
+      await tester.pumpWidget(l10nTestApp(
+        LoggedInHomeScreen(
+          profileRepository: MockProfileRepository(),
+          quizzesRepository: MockQuizzesRepository(),
+          onOpenPapers: onOpenPapers,
+          onOpenNotes: onOpenNotes,
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    testWidgets('its copy promises summary notes, not past papers', (tester) async {
+      await pumpHome(tester);
+
+      expect(find.text('PRACTICE MODE'), findsOneWidget);
+      expect(find.text('Learn without countdown pressure'), findsOneWidget);
+      expect(find.text('Browse real summary notes by subject and level.'), findsOneWidget);
+      expect(find.text('Browse real past papers by subject and year.'), findsNothing);
+    });
+
+    testWidgets('its copy is translated too', (tester) async {
+      LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
+      await LocaleController.instance.setLocale('fr');
+      await pumpHome(tester);
+
+      expect(find.text('Parcourez de vrais résumés de cours par matière et niveau.'), findsOneWidget);
+      expect(find.text('Parcourez de vraies épreuves par matière et année.'), findsNothing);
+    });
+
+    testWidgets('tapping it opens Notes, not Papers', (tester) async {
+      var openedNotes = 0;
+      var openedPapers = 0;
+      await pumpHome(tester, onOpenNotes: () => openedNotes++, onOpenPapers: () => openedPapers++);
+
+      await tester.tap(find.text('Learn without countdown pressure'));
+      await tester.pump();
+
+      expect(openedNotes, 1);
+      expect(openedPapers, 0);
+    });
+
+    testWidgets('tapping it lands on a Notes page listing the mock notes, including the new levels', (tester) async {
+      await tester.pumpWidget(l10nTestApp(
+        Builder(
+          builder: (context) => LoggedInHomeScreen(
+            profileRepository: MockProfileRepository(),
+            quizzesRepository: MockQuizzesRepository(),
+            onOpenNotes: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => NotesScreen(repository: MockNotesRepository())),
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.tap(find.text('Learn without countdown pressure'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NotesScreen), findsOneWidget);
+      expect(find.text('Mechanics: Newton’s Laws'), findsOneWidget);
+      // One from each of the levels the first five notes didn't cover.
+      final notesList = find.descendant(of: find.byType(NotesScreen), matching: find.byType(Scrollable)).first;
+      await tester.scrollUntilVisible(find.text('Fractions & Decimals Made Simple'), 200, scrollable: notesList);
+      expect(find.text('Fractions & Decimals Made Simple'), findsOneWidget); // Primary
+      await tester.scrollUntilVisible(find.text('Introduction to Algorithms & Complexity'), 200, scrollable: notesList);
+      expect(find.text('Introduction to Algorithms & Complexity'), findsOneWidget); // University
+    });
   });
 }

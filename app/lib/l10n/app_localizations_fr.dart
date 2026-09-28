@@ -342,7 +342,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get practiceModeSubtitle =>
-      'Parcourez de vraies épreuves par matière et année.';
+      'Parcourez de vrais résumés de cours par matière et niveau.';
 
   @override
   String get trialLabel => 'VOTRE ESSAI GRATUIT';
@@ -875,6 +875,41 @@ class AppLocalizationsFr extends AppLocalizations {
   String get ptsLabel => 'pts';
 
   @override
+  String get proBadgeLabel => 'PRO';
+
+  @override
+  String get proBadgeSemantics => 'Membre Spekooh Pro';
+
+  @override
+  String get creditsAndXpTitle => 'Crédits et XP';
+
+  @override
+  String get creditsAndXpSeparateNote =>
+      'Ils sont distincts : les crédits ne se convertissent pas en XP, et l\'XP ne se convertit pas en crédits.';
+
+  @override
+  String get creditsColumnLabel => 'CRÉDITS';
+
+  @override
+  String get creditsColumnHow =>
+      'Gagnés grâce aux contributions vérifiées et aux parrainages.';
+
+  @override
+  String get creditsColumnUse =>
+      'Débloquent des codes de réduction et des corrigés.';
+
+  @override
+  String get xpColumnLabel => 'XP';
+
+  @override
+  String get xpColumnHow =>
+      'Gagnés grâce aux quiz, aux contributions et aux parrainages.';
+
+  @override
+  String get xpColumnUse =>
+      'Dépensez 500 XP pour +1 place de téléchargement hors ligne pendant 3 jours.';
+
+  @override
   String submissionsScaleNote(int count) {
     return '$count épreuves soumises · la valeur du code de réduction augmente avec vos contributions';
   }
@@ -1153,7 +1188,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get spekoohPlusUnlimitedTitle =>
-      'Spekooh Plus : téléchargements illimités';
+      'Spekooh Pro : téléchargements illimités';
 
   @override
   String get spekoohPlusUnlimitedSubtitle =>

@@ -212,7 +212,10 @@ class LoggedInHomeScreen extends StatelessWidget {
                     Transform.translate(
                       offset: const Offset(0, -24),
                       child: InkWell(
-                        onTap: onOpenPapers,
+                        // Practice mode is "learn without countdown pressure" —
+                        // that's the summary notes, not the papers list (owner
+                        // beta feedback), so it opens Notes rather than Papers.
+                        onTap: onOpenNotes,
                         borderRadius: BorderRadius.circular(18),
                         child: Container(
                           padding: const EdgeInsets.all(16),
@@ -224,7 +227,7 @@ class LoggedInHomeScreen extends StatelessWidget {
                                 height: 48,
                                 decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.green500, width: 3)),
                                 alignment: Alignment.center,
-                                child: const Icon(LucideIcons.target, size: 20, color: AppColors.green500),
+                                child: const Icon(LucideIcons.bookOpen, size: 20, color: AppColors.green500),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
