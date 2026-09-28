@@ -22,6 +22,7 @@ Every change made in this stretch of work, why it was made, where it lives, how 
 | 8 | Terms of Service rewritten for Points and Pro | Backend + app | #199 and #200 | No |
 | 9 | Automatic, accumulating discount codes | Backend + app + docs | #200 | **Yes** (codes created) |
 | 10 | Terms versioning and a re-accept prompt | Backend + app + docs | #201 | Adds a table; every existing registered user is asked to accept once |
+| 13 | AI assistant chat history, on the phone | App + docs | the chat-history PR | No |
 
 ---
 
@@ -132,6 +133,20 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 **To require re-acceptance later.** Change the Terms text in both copies (the drift test keeps them equal), set `TERMS_OF_SERVICE_LAST_UPDATED`, and bump `TERMS_OF_SERVICE_VERSION`. Every registered user is asked again on their next launch.
 
 **Verify on staging.** Sign in as a registered user: the prompt appears once; tick and accept; sign out and in again: no prompt. In the admin, that user's page shows the acceptance.
+
+## 13. AI assistant chat history (on the phone)
+
+**What.** The Spekooh Assistant used to forget everything when you left the screen. Now every chat saves itself once the assistant has replied. Two new buttons in the assistant's header: **Chat history** (a list of saved chats, newest first, each with its first question as the title, message count and date; tap one to reopen it and carry on in the same chat) and **New chat** (starts a blank one and keeps the old one). In the history you can delete a chat, or **Clear all**; both ask first. English and French.
+
+**Decision, and why: on the phone only, per account.** Chats are stored in a file on the device (one per signed-in account, so a second account on the same phone never sees them), not on your servers. Saving students' typed messages server-side would be new data collection: it changes your privacy promises, needs a Privacy Policy update and a way to delete it on request. The trade-off is that history does not follow a student to a new phone. Server-side history with sync can come later, as its own decision.
+
+**Limits and behaviour.** The 30 most recent chats are kept; a single chat keeps its last 200 messages. Saving is best effort: any storage failure (full disk, damaged file) looks like an empty history and never interrupts chatting. A damaged entry is skipped without losing the others. Uninstalling the app, or **Clear all**, removes everything; logging out does not (it is per account).
+
+**Not changed:** the chat itself, the daily quota, and what is sent to the AI provider (each reply still needs the conversation sent to it, as before).
+
+**⚠️ Privacy Policy gap to look at (not changed here).** The Privacy Policy does not mention the AI assistant at all. It should say that what a student types into the assistant is sent to an outside AI provider to produce the reply, and that the chat history is kept on their phone only. Worth a legal review; it is a text change plus a bump of `TERMS_OF_SERVICE_VERSION` only if you decide it is material.
+
+**Verify.** Sign in, open the assistant, ask something; leave and come back; open **Chat history**: the chat is there. Tap it, ask a follow-up, check it is still one chat. Delete it and check the assistant starts blank.
 
 ---
 
