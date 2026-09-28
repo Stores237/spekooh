@@ -6,8 +6,30 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from drf_spectacular.utils import extend_schema
+from rest_framework import permissions
+from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.views import APIView
 
 from . import legal_content
+from .feature_status import current_feature_status
+
+
+class FeatureStatusView(APIView):
+    """Public: which features are really switched on (see feature_status).
+    The app reads it to show a "not fully functional yet" notice next to
+    anything that looks live but is not, so the notice goes away by itself
+    once the feature is real. No account needed: it is shown before sign-in
+    too, and it exposes nothing but a boolean."""
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "feature_status"
+
+    @extend_schema(responses={200: {"type": "object", "properties": {"payments_live": {"type": "boolean"}}}})
+    def get(self, request):
+        return Response(current_feature_status())
 
 
 def healthz(request):

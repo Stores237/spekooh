@@ -22,6 +22,14 @@ from .models import (
 _provider: PaymentProvider = MockPaymentProvider()
 
 
+def payments_are_live() -> bool:
+    """False while the mock provider is wired in: it reports success for every
+    charge without moving any money. Derived from the provider actually in
+    use, so the app's "test mode" notice disappears by itself the moment a
+    real provider replaces it, with nothing to remember to switch."""
+    return not isinstance(_provider, MockPaymentProvider)
+
+
 def charge(*, user, purpose: str, amount_fcfa: int, phone_number: str, description: str) -> PaymentTransaction:
     result = _provider.charge(amount_fcfa=amount_fcfa, phone_number=phone_number, description=description)
     return PaymentTransaction.objects.create(

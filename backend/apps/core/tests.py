@@ -593,3 +593,37 @@ def test_marketing_home_does_not_repeat_the_brand_name_or_rely_on_color_alone():
     # only, with no underline to tell it apart from body text.
     assert 'style="color:var(--gold-400);"' not in html
     assert 'class="inline-link"' in html
+
+
+# --- feature status: what is really switched on (2026-09-28) ------------------
+
+
+def test_feature_status_is_public_and_says_payments_are_not_live_while_the_mock_is_wired_in():
+    response = Client().get("/api/status/features/")
+
+    assert response.status_code == 200
+    assert response.json() == {"payments_live": False}  # MockPaymentProvider approves every charge for free
+
+
+def test_payments_become_live_by_themselves_once_a_real_provider_replaces_the_mock(monkeypatch):
+    from apps.core.payment_provider import PaymentProvider, PaymentResult
+    from apps.payments import services
+
+    class RealProvider(PaymentProvider):
+        def charge(self, *, amount_fcfa, phone_number, description):
+            return PaymentResult(success=True, provider_reference="real-1")
+
+    monkeypatch.setattr(services, "_provider", RealProvider())
+
+    assert Client().get("/api/status/features/").json()["payments_live"] is True
+
+
+def test_feature_status_is_rate_limited_per_ip(monkeypatch):
+    from rest_framework.throttling import SimpleRateThrottle
+
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "feature_status", "2/hour")
+    client = Client(REMOTE_ADDR="10.9.8.7")  # its own address, so other tests' requests are not counted
+
+    codes = [client.get("/api/status/features/").status_code for _ in range(3)]
+
+    assert codes == [200, 200, 429]

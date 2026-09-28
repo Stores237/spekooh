@@ -252,6 +252,9 @@ REST_FRAMEWORK = {
         # is retries after a failed save, so this is generous, and stops a
         # buggy or scripted client from hammering the endpoint.
         "terms_accept": "30/hour",
+        # Per-IP, public and cheap (one boolean); the app reads it a few
+        # times per session, so this is generous and only stops a script.
+        "feature_status": "300/hour",
         # Per-IP, same reasoning as password_reset_request/confirm — the
         # unauthenticated recovery path, so the same enumeration concern
         # applies here that doesn't apply to the authenticated pair above.

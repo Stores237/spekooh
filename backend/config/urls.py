@@ -22,6 +22,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.accounts.views import staff_set_password_view
 from apps.core.views import (
+    FeatureStatusView,
     healthz,
     marketing_home,
     privacy_policy_page,
@@ -49,6 +50,7 @@ urlpatterns = [
     # screens with no URL at all. See apps.core.legal_content's docstring.
     path('legal/privacy-policy/', privacy_policy_page, name='privacy-policy'),
     path('legal/terms-of-service/', terms_of_service_page, name='terms-of-service'),
+    path('api/status/features/', FeatureStatusView.as_view(), name='feature-status'),
     path('api/auth/', include('apps.accounts.urls')),
     path('api/papers/', include('apps.papers.urls')),
     path('api/credits/', include('apps.credits.urls')),
