@@ -107,6 +107,11 @@ within a few days.
   admin dashboard (`apps/core/admin_dashboard.py`) shows/hides whole
   sections per role — a Support agent's admin homepage never even queries
   Credits/Instructors data, not just hides it in the template.
+  `Support` is read-only everywhere **except study notes** (owner request,
+  2026-09-28, `0016_support_notes_permissions.py`): it can view, add and
+  change a `Note`, but not delete one, and nothing else is writable.
+  `test_support_group_is_read_only_except_for_authoring_notes` pins that
+  exact set, so widening it again fails a test instead of passing quietly.
 - Django admin superuser creation is idempotent from
   `DJANGO_SUPERUSER_EMAIL`/`DJANGO_SUPERUSER_PASSWORD` env vars
   (`apps/accounts/management/commands/ensure_superuser.py`, run on every
