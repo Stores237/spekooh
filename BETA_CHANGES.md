@@ -22,7 +22,7 @@ Every change made in this stretch of work, why it was made, where it lives, how 
 | 8 | Terms of Service rewritten for Points and Pro | Backend + app | #199 and #200 | No |
 | 9 | Automatic, accumulating discount codes | Backend + app + docs | #200 | **Yes** (codes created) |
 | 10 | Terms versioning and a re-accept prompt | Backend + app + docs | #201 | Adds a table; every existing registered user is asked to accept once |
-| 13 | AI assistant chat history, on the phone | App + docs | the chat-history PR | No |
+| 13 | AI assistant chat history, on the phone | App + docs | #202 | No |
 
 ---
 
