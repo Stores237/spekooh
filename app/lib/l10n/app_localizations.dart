@@ -1646,54 +1646,6 @@ abstract class AppLocalizations {
   /// **'Spekooh Pro member'**
   String get proBadgeSemantics;
 
-  /// No description provided for @creditsAndXpTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Credits and XP'**
-  String get creditsAndXpTitle;
-
-  /// No description provided for @creditsAndXpSeparateNote.
-  ///
-  /// In en, this message translates to:
-  /// **'They are separate: credits don\'t convert into XP, and XP doesn\'t convert into credits.'**
-  String get creditsAndXpSeparateNote;
-
-  /// No description provided for @creditsColumnLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'CREDITS'**
-  String get creditsColumnLabel;
-
-  /// No description provided for @creditsColumnHow.
-  ///
-  /// In en, this message translates to:
-  /// **'Earned from verified contributions and referrals.'**
-  String get creditsColumnHow;
-
-  /// No description provided for @creditsColumnUse.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlock discount codes and marking guides.'**
-  String get creditsColumnUse;
-
-  /// No description provided for @xpColumnLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'XP'**
-  String get xpColumnLabel;
-
-  /// No description provided for @xpColumnHow.
-  ///
-  /// In en, this message translates to:
-  /// **'Earned from quizzes, contributions and referrals.'**
-  String get xpColumnHow;
-
-  /// No description provided for @xpColumnUse.
-  ///
-  /// In en, this message translates to:
-  /// **'Spend 500 XP on +1 offline download slot for 3 days.'**
-  String get xpColumnUse;
-
   /// No description provided for @submissionsScaleNote.
   ///
   /// In en, this message translates to:

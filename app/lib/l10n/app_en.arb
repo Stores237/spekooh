@@ -344,14 +344,6 @@
   "ptsLabel": "pts",
   "proBadgeLabel": "PRO",
   "proBadgeSemantics": "Spekooh Pro member",
-  "creditsAndXpTitle": "Credits and XP",
-  "creditsAndXpSeparateNote": "They are separate: credits don't convert into XP, and XP doesn't convert into credits.",
-  "creditsColumnLabel": "CREDITS",
-  "creditsColumnHow": "Earned from verified contributions and referrals.",
-  "creditsColumnUse": "Unlock discount codes and marking guides.",
-  "xpColumnLabel": "XP",
-  "xpColumnHow": "Earned from quizzes, contributions and referrals.",
-  "xpColumnUse": "Spend 500 XP on +1 offline download slot for 3 days.",
   "submissionsScaleNote": "{count} papers submitted · redeem code value scales with your contributions",
   "@submissionsScaleNote": {
     "placeholders": {"count": {"type": "int"}}
