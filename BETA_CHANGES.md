@@ -22,6 +22,7 @@ Every change made in this stretch of work, why it was made, where it lives, how 
 | 8 | Terms of Service rewritten for Points and Pro | Backend + app | #199 and #200 | No |
 | 9 | Automatic, accumulating discount codes | Backend + app + docs | #200 | **Yes** (codes created) |
 | 10 | Terms versioning and a re-accept prompt | Backend + app + docs | #201 | Adds a table; every existing registered user is asked to accept once |
+| 11 | Summary notes: text, assignment to support staff, dashboard card | Backend + app + docs | #204 | No |
 | 12 | "Test mode" notice wherever money changes hands | Backend + app + docs | #203 | No |
 | 13 | AI assistant chat history, on the phone | App + docs | #202 | No |
 
@@ -135,6 +136,22 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 
 **Verify on staging.** Sign in as a registered user: the prompt appears once; tick and accept; sign out and in again: no prompt. In the admin, that user's page shows the acceptance.
 
+## 11. Summary notes: text, assignment and a dashboard card
+
+**Why the earlier notes change was invisible.** #196 only changed *permissions* (the Owner already had them) and quietly filled blank subtitles. The Notes admin was also the one admin still using plain Django styling instead of the project's Unfold theme, the dashboard had no place for notes, and in the app a note was only a title: its chevron did nothing, and the model had nowhere to store the actual summary.
+
+**What changed**
+- **A note now has text.** `Note.body` (plain text: a blank line is a new paragraph, `## ` a heading, `- ` a bullet). The app opens a note on tap and shows it; a note with no text yet says so instead of showing an empty page. New public endpoint `GET /api/notes/<id>/`; the list stays text-free and light.
+- **Assignment to support staff.** `Note.assigned_to`: only people in the Support group can be picked, shown **by name only, never an email** (a staff member with no name shows as "Staff member N"). It is internal and never sent to the app. In the admin: an *Assigned to* column you can edit straight from the list, a filter (*Assigned to me*, *Unassigned*, or one person), and two bulk actions, **Assign selected notes to me** (Support members only) and **Remove the assignment**.
+- **Add, update, delete.** Owner, Reviewer and Integration Ops can do all three; Support can add and update but **not delete** (unchanged decision from #196).
+- **Dashboard card "Summary notes":** total notes, still to write, unassigned, assigned to me, each a link to the filtered list, plus an **Add a note** button. Shown only to roles that may view notes.
+- **A "Summary text" filter** (*Still to write* / *Written*) and a search that also searches the text. The admin model is now called "Summary notes" and uses the Unfold theme like the rest.
+- **Real demo content for every level.** `python manage.py seed_demo_notes` now creates 17 notes with real, readable summaries (Primary, BEPC, Seconde, O Level, A Level, Probatoire, Terminale, Baccalauréat, HND, University; English or French to match the level) and gives text to the five older notes that had none. It never overwrites anything staff wrote, and `--remove` deletes only demo notes that are still untouched. **Not run on any database yet.**
+
+**Data.** Migration `notes/0007` adds two nullable/blank columns; nothing existing changes. Rollback: `migrate notes 0006`.
+
+**Verify on staging.** Run `seed_demo_notes`; open the admin dashboard (the Summary notes card); open Summary notes, assign one to a Support member, filter by *Assigned to me*; then in the app, Practice mode, tap a note and read it.
+
 ## 12. "Test mode" notices where money changes hands
 
 **Why.** Payments are simulated: `MockPaymentProvider` approves every charge and moves no money, yet the Pro subscription, marking-guide and download unlocks, and pamphlet purchases all behave exactly like real ones. Anyone using the app, testers and you included, could take that for live.
@@ -174,6 +191,7 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 | Discount code rules | Automatic; one accumulating code; sharing stays; table hidden from the app |
 | Support and notes | Support may create and update notes, not delete |
 | Terms consent | Versioned, with a blocking re-accept prompt; existing users are asked once |
+| Summary notes | Real text, assignable to support staff, a dashboard card; demo notes for every level |
 | The "Pro" name | Replaces "Plus" everywhere users read |
 
 ## Rollout order

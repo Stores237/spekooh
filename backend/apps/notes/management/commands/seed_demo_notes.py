@@ -1,65 +1,74 @@
 """
-Seeds the demo study notes the Flutter app's mock data shows (app/lib/data/
-mock/mock_notes.dart), so beta testers see a populated Notes page on a fresh
-or staging database.
+Seeds demo summary notes (apps.notes.demo_notes) across every level, each with
+real text, so beta testers see a populated Notes page they can actually open.
 
-Safe to re-run: notes are matched by title and only *created* when missing,
-never updated -- a subtitle or level an admin has since edited is left alone.
-The first five already exist on every database (seeded by migration 0002 and
-fixed up by 0004), so this really adds the four newer ones (Primary, O Level,
-Seconde, University) and is a no-op for the rest.
+Safe to re-run, and it never overwrites anything staff have written:
+- a note is matched by title and only *created* when missing;
+- an existing note gets the demo text only if its text is still blank (the
+  first five exist on every database from migrations 0002/0004 with no text);
+- anything else about an existing note (subtitle, level, assignment, edited
+  text) is left alone.
 
-    python manage.py seed_demo_notes            # create any that are missing
-    python manage.py seed_demo_notes --remove   # delete only the four this command adds
+    python manage.py seed_demo_notes            # create/fill whatever is missing
+    python manage.py seed_demo_notes --remove   # delete demo notes that are still untouched
 """
 
 from django.core.management.base import BaseCommand
 
+from apps.notes.demo_notes import DEMO_NOTES, TITLES_FROM_MIGRATIONS
 from apps.notes.models import Note
-
-# (title, subject_title, academic_level) -- subtitle is always "Subject · Level".
-ALREADY_SEEDED_BY_MIGRATIONS = [
-    ("Mechanics: Newton’s Laws", "Physics", "A Level"),
-    ("Cell Structure & Function", "Biology", "O Level"),
-    ("La Dissertation Philosophique", "Philosophie", "Baccalauréat"),
-    ("Acids, Bases & Salts", "Chemistry", "O Level"),
-    ("Les Nombres Complexes", "Mathématiques", "Terminale"),
-]
-ADDED_BY_THIS_COMMAND = [
-    ("Fractions & Decimals Made Simple", "Mathematics", "Primary"),
-    ("Rivers, Relief & Climate of Cameroon", "Geography", "O Level"),
-    ("La Photosynthèse en Bref", "SVT", "Seconde"),
-    ("Introduction to Algorithms & Complexity", "Computer Science", "University"),
-]
 
 
 class Command(BaseCommand):
-    help = "Create the demo study notes shown in the app's mock data (idempotent; never overwrites edits)."
+    help = "Create the demo summary notes, or fill in their text (idempotent; never overwrites staff edits)."
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--remove",
             action="store_true",
-            help="Delete only the demo notes this command adds (never the five from the migrations, never admin-authored notes).",
+            help="Delete the demo notes this command added, but only those whose text is still the demo text. "
+            "Never touches the five from the migrations or any note staff wrote or edited.",
         )
 
     def handle(self, *args, **options):
         if options["remove"]:
-            deleted, _ = Note.objects.filter(title__in=[title for title, _, _ in ADDED_BY_THIS_COMMAND]).delete()
-            self.stdout.write(self.style.SUCCESS(f"Removed {deleted} demo note(s)."))
+            self._remove()
             return
 
-        created = 0
-        for index, (title, subject_title, academic_level) in enumerate(ALREADY_SEEDED_BY_MIGRATIONS + ADDED_BY_THIS_COMMAND):
-            _, was_created = Note.objects.get_or_create(
+        created = filled = 0
+        for index, (title, subject_title, academic_level, body) in enumerate(DEMO_NOTES):
+            note, was_created = Note.objects.get_or_create(
                 title=title,
                 defaults={
                     "subtitle": f"{subject_title} · {academic_level}",
                     "subject_title": subject_title,
                     "academic_level": academic_level,
+                    "body": body,
                     "sort_order": index,
                 },
             )
-            created += was_created
-        total = len(ALREADY_SEEDED_BY_MIGRATIONS) + len(ADDED_BY_THIS_COMMAND)
-        self.stdout.write(self.style.SUCCESS(f"{created} created, {total - created} already present."))
+            if was_created:
+                created += 1
+            elif not note.body.strip():
+                note.body = body
+                note.save(update_fields=["body", "updated_at"])
+                filled += 1
+        untouched = len(DEMO_NOTES) - created - filled
+        self.stdout.write(
+            self.style.SUCCESS(f"{created} created, {filled} given their text, {untouched} already complete.")
+        )
+
+    def _remove(self):
+        removed = kept = 0
+        for title, _subject, _level, body in DEMO_NOTES:
+            if title in TITLES_FROM_MIGRATIONS:
+                continue
+            note = Note.objects.filter(title=title).first()
+            if note is None:
+                continue
+            if note.body == body:
+                note.delete()
+                removed += 1
+            else:
+                kept += 1
+        self.stdout.write(self.style.SUCCESS(f"Removed {removed} demo note(s); kept {kept} that staff had edited."))

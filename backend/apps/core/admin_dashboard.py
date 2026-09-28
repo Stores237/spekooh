@@ -54,6 +54,7 @@ def dashboard_callback(request, context):
     can_view_credits = user.has_perm("credits.view_redeemcode")
     can_view_transactions = user.has_perm("payments.view_paymenttransaction")
     can_view_subscriptions = user.has_perm("payments.view_subscription")
+    can_view_notes = user.has_perm("notes.view_note")
 
     dashboard = {
         "can_view_papers": can_view_papers,
@@ -63,6 +64,7 @@ def dashboard_callback(request, context):
         "can_view_credits": can_view_credits,
         "can_view_transactions": can_view_transactions,
         "can_view_subscriptions": can_view_subscriptions,
+        "can_view_notes": can_view_notes,
     }
 
     if can_view_papers:
@@ -128,6 +130,20 @@ def dashboard_callback(request, context):
             status=SubscriptionStatus.ACTIVE, renews_at__lte=now + timedelta(days=7)
         ).count()
         dashboard["subscriptions_url"] = _changelist_url(Subscription, status=SubscriptionStatus.ACTIVE)
+
+    if can_view_notes:
+        from apps.notes.models import Note
+
+        notes = Note.objects.all()
+        dashboard["notes_total"] = notes.count()
+        dashboard["notes_unassigned"] = notes.filter(assigned_to__isnull=True).count()
+        dashboard["notes_to_write"] = notes.filter(body="").count()
+        dashboard["notes_mine"] = notes.filter(assigned_to=user).count()
+        dashboard["notes_url"] = _changelist_url(Note)
+        dashboard["notes_unassigned_url"] = _changelist_url(Note, assigned="none")
+        dashboard["notes_to_write_url"] = _changelist_url(Note, text="missing")
+        dashboard["notes_mine_url"] = _changelist_url(Note, assigned="me")
+        dashboard["notes_add_url"] = reverse("admin:notes_note_add") if user.has_perm("notes.add_note") else None
 
     context["spekooh_dashboard"] = dashboard
     return context

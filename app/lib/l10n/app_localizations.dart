@@ -602,6 +602,24 @@ abstract class AppLocalizations {
   /// **'Notes'**
   String get notesTitle;
 
+  /// No description provided for @noteNoTextYet.
+  ///
+  /// In en, this message translates to:
+  /// **'The text for this note isn\'t available yet.'**
+  String get noteNoTextYet;
+
+  /// No description provided for @noteLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open this note. Check your connection and try again.'**
+  String get noteLoadError;
+
+  /// No description provided for @noteTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get noteTryAgain;
+
   /// No description provided for @notesSubtitle.
   ///
   /// In en, this message translates to:

@@ -283,6 +283,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get notesTitle => 'Notes';
 
   @override
+  String get noteNoTextYet =>
+      'Le texte de cette note n\'est pas encore disponible.';
+
+  @override
+  String get noteLoadError =>
+      'Impossible d\'ouvrir cette note. Vérifiez votre connexion et réessayez.';
+
+  @override
+  String get noteTryAgain => 'Réessayer';
+
+  @override
   String get notesSubtitle => 'Fiches de révision par matière';
 
   @override

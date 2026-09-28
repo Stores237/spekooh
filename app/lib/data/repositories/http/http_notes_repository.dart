@@ -9,20 +9,27 @@ class HttpNotesRepository implements NotesRepository {
   HttpNotesRepository(this._client);
   final ApiClient _client;
 
-  @override
-  Future<List<Note>> getNotes() async {
-    final rows = await _client.get('/notes/') as List;
-    return rows.map((row) {
-      return Note(
+  // The backend note has no icon or tint (cosmetic-only), so every note gets
+  // the same placeholder.
+  Note _fromRow(Map<String, dynamic> row) => Note(
         id: row['id'] as int,
         title: row['title'] as String,
         subtitle: row['subtitle'] as String? ?? '',
-        // The backend note model carries no icon/tint (cosmetic-only, spec §-unconfirmed feature) — fixed placeholder.
         tint: IconChipTint.blue,
         icon: LucideIcons.fileText,
         subjectTitle: row['subject_title'] as String? ?? '',
         academicLevel: row['academic_level'] as String? ?? '',
+        body: row['body'] as String? ?? '',
       );
-    }).toList();
+
+  @override
+  Future<List<Note>> getNotes() async {
+    final rows = await _client.get('/notes/') as List;
+    return rows.map((row) => _fromRow(row as Map<String, dynamic>)).toList();
+  }
+
+  @override
+  Future<Note> getNote(int id) async {
+    return _fromRow(await _client.get('/notes/$id/') as Map<String, dynamic>);
   }
 }
