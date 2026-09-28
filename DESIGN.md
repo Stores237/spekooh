@@ -100,7 +100,7 @@ Section labels are **uppercase, tracked caps** at caption size ("LANGUAGE", "PRA
 - **Bilingual, always.** Every user-visible string goes in **both** `app/lib/l10n/app_en.arb` and `app_fr.arb`, then run `flutter gen-l10n` (the generated `app_localizations*.dart` are committed). Tests cover both languages for anything new.
 - **Money is explicit and local:** FCFA amounts and MTN MoMo / Orange Money named directly on the button or row, with a plain trust line under payment CTAs.
 - **The paid tier is called "Pro"** ("Spekooh Pro", badge "PRO"). The code flag `isPlusSubscriber` is a legacy name — never show "Plus" to a user.
-- **Credits and XP are two separate systems; never imply one converts to the other.** Credits (shown as **pts**) come from verified contributions and referrals and unlock discount codes and marking guides. XP comes from quizzes, contributions and referrals and buys offline download slots (500 XP = +1 slot for 3 days). Anywhere both appear, keep them visually distinct and label what each is for.
+- **There is one reward balance, and it is called Points.** Users never see "credits", "bonus credit" or "XP". It is earned from quizzes (10, or 25 for the daily challenge), an accepted paper (50) and a referral (200) — the last two are editable by ops in the admin — and spent at 500 points for +1 offline download slot for 3 days. Discount codes are a **separate milestone reward** issued by how many papers a contributor has had accepted; they are not bought with points, so don't describe them as if they were. Internal names keep `xp` (the `XPLedgerEntry` table, the `xp_balance` API field) so older app builds keep working; only what users read says "points". Instructor payouts are a different, cash-based economy and keep the word "credits".
 - **Practice mode is the summary notes,** not the papers list: it opens Notes, and its copy says "summary notes".
 
 ## Motion and states
@@ -126,9 +126,10 @@ The admin wears the same brand: site title "Spekooh Admin", subheader "Review & 
 | Date | Decision |
 |---|---|
 | 2026-09-14 | Floating AI button clearance constants added after it covered a sponsor card and the Forum "Ask" pill at 390px. |
-| 2026-09-16 | QR Vault is its own card beside the bonus-credit card on Profile, not a badge on top of it. |
+| 2026-09-16 | QR Vault is its own card beside the points card on Profile, not a badge on top of it. |
 | 2026-09-21 | Earned streak flames colored yellow → orange → red by tier; locked flames stay grey. |
-| 2026-09-28 | Practice mode opens Notes; Profile gets a "Credits and XP" card stating they don't convert; Pro members get a PRO badge and no upsell row; the tier is named "Pro" everywhere. |
+| 2026-09-28 | Practice mode opens Notes; Pro members get a PRO badge and no upsell row; the paid tier is named "Pro" everywhere. |
+| 2026-09-28 | Credits and XP merged into one balance, **Points**: one ledger, 50 per accepted paper, 200 per referral, quizzes unchanged; existing credit balances carried over 1:1. Chosen over explaining two currencies because credits had nothing to spend them on and two balances hurt the app's "simple for every level" goal. |
 | 2026-09-28 | This file created; the repo had referenced a `DESIGN.md` that didn't exist. |
 
 ## Known gaps
