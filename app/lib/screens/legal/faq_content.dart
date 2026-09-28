@@ -45,11 +45,11 @@ const faqEntries = [
   FaqEntry(
     'Do I need an account to submit a paper?',
     'No. You can submit as a guest. Creating a real account is only required to report/flag a paper, track your '
-        'submissions over time on Profile, or earn bonus credit and badges.',
+        'submissions over time on Profile, or earn points and badges.',
   ),
   FaqEntry(
     'What happens to my submission after I send it?',
-    'It goes to the Review Team for verification. If it\'s accepted and published, you earn bonus credit. If it\'s '
+    'It goes to the Review Team for verification. If it\'s accepted and published, you earn points. If it\'s '
         'rejected, you\'ll see a real popup on Profile with the Review Team\'s actual reason; dismiss it once '
         'you\'ve read it, then submit a corrected version.',
   ),
@@ -82,15 +82,15 @@ const faqEntries = [
         'limit or rewarded ads.',
   ),
   FaqEntry(
-    'How do I earn bonus credit?',
-    'Every submission that\'s accepted and published (and isn\'t a duplicate) earns you real bonus credit, shown '
-        'on your Profile. Enough contributions unlock a real discount code you can apply toward your next '
+    'How do I earn points?',
+    'Every submission that\'s accepted and published (and isn\'t a duplicate) earns you points, shown '
+        'on your Profile (quizzes and referrals earn them too, and 500 points buy an extra offline slot). Enough contributions unlock a real discount code you can apply toward your next '
         'marking-guide unlock.',
   ),
   FaqEntry(
     'How does the referral program work?',
     'Share your referral code from Profile → Invite a friend. The first time the person you referred unlocks '
-        'their first paper, you earn a bonus credit, once per referred friend, not repeatedly.',
+        'their first paper, you earn points, once per referred friend, not repeatedly.',
   ),
   FaqEntry(
     'Can I change the app\'s language?',

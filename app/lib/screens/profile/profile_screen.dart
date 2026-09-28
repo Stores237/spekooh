@@ -409,14 +409,14 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                                       text: TextSpan(
                                         style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 28, color: AppColors.white),
                                         children: [
-                                          TextSpan(text: '${user.creditBalance} '),
+                                          TextSpan(text: '${user.xpBalance} '),
                                           TextSpan(text: l10n.ptsLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                         ],
                                       ),
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      l10n.submissionsScaleNote(user.submissionsCount),
+                                      l10n.pointsBalanceHint,
                                       style: const TextStyle(color: Colors.white70, fontSize: 12),
                                     ),
                                   ],

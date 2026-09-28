@@ -7,12 +7,8 @@ from .factories import XPLedgerEntryFactory
 from .models import XPLedgerEntry
 from .services import (
     SLOT_BONUS_COST_XP,
-    XP_PER_CONTRIBUTION,
-    XP_PER_REFERRAL,
     InsufficientXPError,
-    award_contribution_xp,
     award_quiz_attempt_xp,
-    award_referral_xp,
     redeem_slot_bonus,
     xp_balance,
 )
@@ -106,19 +102,64 @@ def test_redeem_slot_bonus_endpoint_succeeds_with_enough_real_xp():
     assert response.data["bonus_offline_slot_until"] is not None
 
 
-@pytest.mark.django_db
-def test_award_contribution_xp_awards_the_real_flat_amount():
-    user = UserFactory()
-    amount = award_contribution_xp(user)
-    assert amount == XP_PER_CONTRIBUTION
-    assert xp_balance(user) == XP_PER_CONTRIBUTION
-    assert XPLedgerEntry.objects.get(user=user).reason == "Paper/report contribution accepted"
+# --- credits -> points carry-over (migration 0003) ---------------------------
+
+
+def _carry_over_migration():
+    import importlib
+
+    return importlib.import_module("apps.xp.migrations.0003_carry_over_credit_balances")
 
 
 @pytest.mark.django_db
-def test_award_referral_xp_awards_the_real_flat_amount():
+def test_carry_over_adds_each_users_total_credit_balance_to_the_points_ledger():
+    from django.apps import apps
+
+    from apps.credits.factories import CreditLedgerEntryFactory
+    from apps.credits.models import CreditLedgerEntry
+
+    migration = _carry_over_migration()
+    earner, no_credits = UserFactory(), UserFactory()
+    CreditLedgerEntryFactory(user=earner, amount=50)
+    CreditLedgerEntryFactory(user=earner, amount=200)
+    XPLedgerEntryFactory(user=earner, amount=30)  # existing XP is kept, credits are added on top
+
+    migration.carry_over(apps, None)
+
+    assert xp_balance(earner) == 280
+    assert xp_balance(no_credits) == 0
+    assert not XPLedgerEntry.objects.filter(user=no_credits).exists()
+    assert CreditLedgerEntry.objects.filter(user=earner).count() == 2  # audit trail untouched
+
+
+@pytest.mark.django_db
+def test_carry_over_is_idempotent():
+    from django.apps import apps
+
+    from apps.credits.factories import CreditLedgerEntryFactory
+
+    migration = _carry_over_migration()
     user = UserFactory()
-    amount = award_referral_xp(user)
-    assert amount == XP_PER_REFERRAL
-    assert xp_balance(user) == XP_PER_REFERRAL
-    assert XPLedgerEntry.objects.get(user=user).reason == "Referral bonus"
+    CreditLedgerEntryFactory(user=user, amount=120)
+
+    migration.carry_over(apps, None)
+    migration.carry_over(apps, None)
+
+    assert xp_balance(user) == 120
+
+
+@pytest.mark.django_db
+def test_undoing_the_carry_over_removes_only_the_carry_over_entries():
+    from django.apps import apps
+
+    from apps.credits.factories import CreditLedgerEntryFactory
+
+    migration = _carry_over_migration()
+    user = UserFactory()
+    CreditLedgerEntryFactory(user=user, amount=120)
+    XPLedgerEntryFactory(user=user, amount=40)
+    migration.carry_over(apps, None)
+
+    migration.undo_carry_over(apps, None)
+
+    assert xp_balance(user) == 40

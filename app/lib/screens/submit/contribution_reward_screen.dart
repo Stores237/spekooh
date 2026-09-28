@@ -15,12 +15,12 @@ import '../../widgets/spekooh_button.dart';
 /// contribution is actually worth. Adapted from a reference
 /// rewards-explainer design (owner-provided, 2026-08-30): a decorative
 /// badge, a headline, then real facts about Spekooh's actual reward
-/// mechanics — no invented points/XP/levels; Spekooh has exactly one
-/// currency, bonus credit, plus a real submission-count-based redeem-code
-/// tier (see apps.credits.services / apps.payments.services.unlock_paper).
-/// Credit is only ever awarded once a submission is verified and published
-/// (mark_published) — never claimed as already earned here, since nothing
-/// has been credited yet at submission time.
+/// mechanics — no invented levels; Spekooh has exactly one currency, Points
+/// (credits and XP were merged, 2026-09-28), plus a real submission-count-
+/// based redeem-code tier (see apps.credits.services /
+/// apps.payments.services.unlock_paper). Points are only ever awarded once a
+/// submission is verified and published (mark_published) — never claimed as
+/// already earned here, since nothing has been paid yet at submission time.
 class ContributionRewardScreen extends StatelessWidget {
   const ContributionRewardScreen({super.key, required this.onSubmitAnother});
 

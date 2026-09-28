@@ -267,7 +267,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Viewing and downloading real past papers and reports requires a free account.';
 
   @override
-  String get homeContributionTitle => 'Contribution: earn credit';
+  String get homeContributionTitle => 'Contribution: earn points';
 
   @override
   String get homeContributionPrompt =>
@@ -275,7 +275,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeContributionSubtitle =>
-      'Snap a photo, tag it, and earn bonus credit once it\'s verified. First contribution counts.';
+      'Snap a photo, tag it, and earn points once it\'s verified. First contribution counts.';
 
   @override
   String get notesTitle => 'Notes';
@@ -310,7 +310,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeSignUpPrompt => 'SIGN UP ONLY WHEN YOU WANT TO…';
 
   @override
-  String get homeLockedCredits => 'Earn & redeem contributor credits';
+  String get homeLockedCredits => 'Earn and spend points';
 
   @override
   String get homeLockedTrackContributions => 'Track your contributions';
@@ -573,7 +573,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contributionBonusBanner =>
-      'New, verified submissions earn bonus credit, redeemable toward marking-guide unlocks.';
+      'New, verified submissions earn points and unlock discount codes for marking guides.';
 
   @override
   String get submitPaperButton => 'Submit paper';
@@ -617,7 +617,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Real contributions earn real rewards. Here\'s how it works:';
 
   @override
-  String get contributionBenefitCreditTitle => 'Bonus credit';
+  String get contributionBenefitCreditTitle => 'Points';
 
   @override
   String get contributionBenefitDiscountTitle => 'A real discount code';
@@ -857,7 +857,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get bonusCreditBalanceLabel => 'BONUS CREDIT BALANCE';
+  String get bonusCreditBalanceLabel => 'YOUR POINTS';
 
   @override
   String get ptsLabel => 'pts';
@@ -869,9 +869,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proBadgeSemantics => 'Spekooh Pro member';
 
   @override
-  String submissionsScaleNote(int count) {
-    return '$count papers submitted · redeem code value scales with your contributions';
-  }
+  String get pointsBalanceHint =>
+      'Earn points from quizzes, verified papers and referrals. 500 points = +1 offline slot for 3 days.';
 
   @override
   String get redeemCodeNotActive => 'No active redeem code';
@@ -899,7 +898,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inviteAFriendSubtitle =>
-      'You earn bonus credit once they unlock their first paper.';
+      'You earn points once they unlock their first paper.';
 
   @override
   String shareReferralMessage(String code) {
@@ -920,7 +919,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileLoginPromptSubtitle =>
-      'Your submissions, credit balance, and badges show up here once you have an account.';
+      'Your submissions, points, and badges show up here once you have an account.';
 
   @override
   String get shopHeaderSubtitle =>
@@ -1132,7 +1131,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String xpYouHaveLabel(int xp) {
-    return 'You have $xp XP';
+    return 'You have $xp points';
   }
 
   @override
@@ -1669,7 +1668,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get submissionDeleteBody =>
-      'This only removes it from your list. A published paper stays available to other students, and your credits aren\'t affected.';
+      'This only removes it from your list. A published paper stays available to other students, and your points aren\'t affected.';
 
   @override
   String get submissionDeleteAction => 'Delete';

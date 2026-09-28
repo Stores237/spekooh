@@ -4,7 +4,6 @@ class SpekoohUser {
     required this.joinDate,
     required this.submissionsCount,
     required this.quizzesCount,
-    required this.creditBalance,
     required this.redeemCode,
     required this.redeemCodeSubtitle,
     this.trialDaysRemaining = 0,
@@ -28,7 +27,6 @@ class SpekoohUser {
   final String phoneNumber;
   final int submissionsCount;
   final int quizzesCount;
-  final int creditBalance;
   final String redeemCode;
   final String redeemCodeSubtitle;
   final int trialDaysRemaining;
