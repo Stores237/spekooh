@@ -13,9 +13,9 @@ from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
 from apps.credits.models import ContributorBonusConfig
-from apps.xp.services import xp_balance
 from apps.payments.factories import SubscriptionFactory
 from apps.payments.models import PaperUnlock
+from apps.xp.services import xp_balance
 
 from .admin import (
     AcademicReportSubmissionAdmin,

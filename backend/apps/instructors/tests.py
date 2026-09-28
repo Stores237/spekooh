@@ -12,7 +12,6 @@ from rest_framework.test import APIClient
 from apps.accounts.factories import UserFactory
 from apps.admin_queue.models import AdminFlagQueue, FlagCategory
 from apps.credits.models import ContributorBonusConfig
-from apps.xp.services import xp_balance
 from apps.papers.factories import (
     ExamCategoryFactory,
     ExamTypeFactory,
@@ -20,6 +19,7 @@ from apps.papers.factories import (
     SubjectFactory,
 )
 from apps.papers.models import MCQAnswerKey, PaperStatus
+from apps.xp.services import xp_balance
 
 from .factories import InstructorSubjectQueueFactory, PartnerCredentialFactory
 from .models import (
