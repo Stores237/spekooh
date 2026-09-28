@@ -473,6 +473,49 @@ def test_terms_of_service_page_is_public_and_real():
     assert "16. Contact us" in content
 
 
+def test_terms_of_service_describe_the_single_points_economy():
+    """Credits and XP were merged into one Points balance (2026-09-28); the
+    Terms used to promise 'bonus credits' and a separate 'XP'. Also pins the
+    paid tier's user-facing name (Pro, not Plus)."""
+    content = Client().get("/legal/terms-of-service/").content.decode()
+    assert "5. Points, rewards, and redeem codes" in content
+    assert "one reward balance, called points" in content
+    assert "bonus credit" not in content
+    assert "Spekooh Plus" not in content
+    assert "Spekooh Pro" in content
+
+
+def test_the_backend_and_app_copies_of_the_terms_are_identical():
+    """apps/core/legal_content.py is a deliberate duplicate of the Flutter
+    file (see its own docstring: 'if you edit one, edit both'). Nothing
+    enforced that until now, so this compares every section's title and text,
+    plus the last-updated date, and fails the moment the two drift."""
+    import re
+    from pathlib import Path
+
+    from . import legal_content
+
+    dart_path = Path(__file__).resolve().parents[3] / "app/lib/screens/legal/terms_of_service_content.dart"
+    if not dart_path.exists():
+        pytest.skip("Flutter app sources are not checked out next to the backend")
+    dart = dart_path.read_text(encoding="utf-8")
+
+    def unquote(text):
+        return text.replace("\\'", "'").replace('\\"', '"')
+
+    dart_sections = {}
+    for match in re.finditer(r"TermsSection\(\s*'((?:[^'\\]|\\.)*)',\s*((?:'(?:[^'\\]|\\.)*'\s*)+),?\s*\)", dart):
+        body = "".join(re.findall(r"'((?:[^'\\]|\\.)*)'", match.group(2)))
+        dart_sections[unquote(match.group(1))] = unquote(body)
+
+    python_sections = dict(legal_content.TERMS_OF_SERVICE_SECTIONS)
+    assert len(python_sections) == len(dart_sections) == 16
+    assert {t: b for t, b in dart_sections.items()} == python_sections
+
+    dart_date = re.search(r"const termsOfServiceLastUpdated = '([^']+)';", dart).group(1)
+    assert dart_date == legal_content.TERMS_OF_SERVICE_LAST_UPDATED
+
+
 def test_legal_pages_require_no_authentication():
     """The whole point — Google/Apple's own review process, and any real
     user, must be able to open these with no login at all."""

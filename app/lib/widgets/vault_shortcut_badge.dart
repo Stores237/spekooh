@@ -5,7 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_theme.dart';
 
-/// The "QR Vault" shortcut card on Profile, sitting beside the bonus credit
+/// The "QR Vault" shortcut card on Profile, sitting beside the points
 /// balance card as its own separate pink card (owner correction, 2026-09-16
 /// — an earlier version overlaid this as a small badge on top of the bonus
 /// card; the owner asked for two distinct cards instead, same row layout as

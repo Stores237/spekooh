@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
 from apps.admin_queue.models import AdminFlagQueue, FlagCategory
-from apps.credits.models import CreditLedgerEntry
+from apps.credits.models import ContributorBonusConfig
 from apps.papers.factories import (
     ExamCategoryFactory,
     ExamTypeFactory,
@@ -19,6 +19,7 @@ from apps.papers.factories import (
     SubjectFactory,
 )
 from apps.papers.models import MCQAnswerKey, PaperStatus
+from apps.xp.services import xp_balance
 
 from .factories import InstructorSubjectQueueFactory, PartnerCredentialFactory
 from .models import (
@@ -318,15 +319,19 @@ def test_merge_and_publish_combines_mcq_and_instructor_guide_then_pays_bonus():
     assert published.content["guide_file_url"] is None
     paper.refresh_from_db()
     assert paper.status == PaperStatus.PUBLISHED
-    assert CreditLedgerEntry.objects.filter(user=paper.submitted_by, paper_submission=paper).exists()
 
-    # Owner request (2026-09-17): the merge-and-publish pipeline is the
-    # other real place a paper gets accepted -- it must feed the same
-    # spendable XP balance "Get more slots" reads from too, not just the
-    # mark_published admin action.
-    from apps.xp.services import XP_PER_CONTRIBUTION, xp_balance
+    # The merge-and-publish pipeline is the other real place a paper gets
+    # accepted: it pays the same single Points balance as the mark_published
+    # admin action (credits and XP were merged, 2026-09-28).
+    assert xp_balance(paper.submitted_by) == ContributorBonusConfig.objects.first().amount
 
-    assert xp_balance(paper.submitted_by) == XP_PER_CONTRIBUTION
+    # ...and the "your paper is published" notification tells them in the one
+    # unit they now see everywhere, not "credits".
+    from apps.notifications.models import Notification
+
+    published_note = Notification.objects.get(user=paper.submitted_by, title="Your paper is published!")
+    assert f"you earned {ContributorBonusConfig.objects.first().amount} points" in published_note.body
+    assert "credit" not in published_note.body.lower()
 
 
 @pytest.mark.django_db

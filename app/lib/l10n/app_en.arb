@@ -88,9 +88,9 @@
   "homeBrowsePapersLabel": "PAPERS & REPORTS",
   "homeBrowsePapersTitle": "Log in to browse papers",
   "homeBrowsePapersHint": "Viewing and downloading real past papers and reports requires a free account.",
-  "homeContributionTitle": "Contribution: earn credit",
+  "homeContributionTitle": "Contribution: earn points",
   "homeContributionPrompt": "Got a past paper or report we don't have?",
-  "homeContributionSubtitle": "Snap a photo, tag it, and earn bonus credit once it's verified. First contribution counts.",
+  "homeContributionSubtitle": "Snap a photo, tag it, and earn points once it's verified. First contribution counts.",
   "notesTitle": "Notes",
   "notesSubtitle": "Topic study notes by subject",
   "shopTitle": "Shop",
@@ -104,7 +104,7 @@
   },
   "buy": "Buy",
   "homeSignUpPrompt": "SIGN UP ONLY WHEN YOU WANT TO…",
-  "homeLockedCredits": "Earn & redeem contributor credits",
+  "homeLockedCredits": "Earn and spend points",
   "homeLockedTrackContributions": "Track your contributions",
   "homeLockedInstructorAlerts": "Get instructor status alerts",
   "homeReadingOpenNote": "Contributing a paper stays open to everyone, no account needed — reading requires a free account.",
@@ -217,7 +217,7 @@
   "contributorNameRequiredForSubjectError": "Enter your name above first, so we know who to credit.",
   "yearLabel": "Year",
   "examBoardHint": "Exam board / school (optional)",
-  "contributionBonusBanner": "New, verified submissions earn bonus credit, redeemable toward marking-guide unlocks.",
+  "contributionBonusBanner": "New, verified submissions earn points and unlock discount codes for marking guides.",
   "submitPaperButton": "Submit paper",
   "reportTypeLabel": "Report type",
   "reportTitleLabel": "Document title",
@@ -231,7 +231,7 @@
   "contributionReceivedTitle": "Contribution received",
   "contributionReceivedBody": "We'll check it against existing papers first. If it's new, it moves to instructor review. Track it under Profile.",
   "contributionRewardsSubtitle": "Real contributions earn real rewards. Here's how it works:",
-  "contributionBenefitCreditTitle": "Bonus credit",
+  "contributionBenefitCreditTitle": "Points",
   "contributionBenefitDiscountTitle": "A real discount code",
   "contributionBenefitCheckTitle": "A quick check first",
   "submissionFailed": "Submission failed: {error}",
@@ -340,22 +340,11 @@
   "@quizzesCountBadge": {
     "placeholders": {"count": {"type": "int"}}
   },
-  "bonusCreditBalanceLabel": "BONUS CREDIT BALANCE",
+  "bonusCreditBalanceLabel": "YOUR POINTS",
   "ptsLabel": "pts",
   "proBadgeLabel": "PRO",
   "proBadgeSemantics": "Spekooh Pro member",
-  "creditsAndXpTitle": "Credits and XP",
-  "creditsAndXpSeparateNote": "They are separate: credits don't convert into XP, and XP doesn't convert into credits.",
-  "creditsColumnLabel": "CREDITS",
-  "creditsColumnHow": "Earned from verified contributions and referrals.",
-  "creditsColumnUse": "Unlock discount codes and marking guides.",
-  "xpColumnLabel": "XP",
-  "xpColumnHow": "Earned from quizzes, contributions and referrals.",
-  "xpColumnUse": "Spend 500 XP on +1 offline download slot for 3 days.",
-  "submissionsScaleNote": "{count} papers submitted · redeem code value scales with your contributions",
-  "@submissionsScaleNote": {
-    "placeholders": {"count": {"type": "int"}}
-  },
+  "pointsBalanceHint": "Earn points from quizzes, verified papers and referrals. 500 points = +1 offline slot for 3 days.",
   "redeemCodeNotActive": "No active redeem code",
   "redeemCodeReady": "Redeem code ready",
   "redeemCodeEarnHint": "You'll get one once a verified submission earns a bonus tier.",
@@ -366,7 +355,7 @@
   },
   "shareRedeemCodeSubject": "Spekooh redeem code",
   "inviteAFriendTitle": "Invite a friend",
-  "inviteAFriendSubtitle": "You earn bonus credit once they unlock their first paper.",
+  "inviteAFriendSubtitle": "You earn points once they unlock their first paper.",
   "shareReferralMessage": "Join me on Spekooh. Sign up with my referral code {code}.",
   "@shareReferralMessage": {
     "placeholders": {"code": {"type": "String"}}
@@ -375,7 +364,7 @@
   "badgesSectionLabel": "Badges",
   "submissionStatusSectionLabel": "Submission status",
   "profileLoginPrompt": "Log in to see your profile",
-  "profileLoginPromptSubtitle": "Your submissions, credit balance, and badges show up here once you have an account.",
+  "profileLoginPromptSubtitle": "Your submissions, points, and badges show up here once you have an account.",
 
   "shopHeaderSubtitle": "Partner pamphlets · pay in-app, pick up with a QR code",
   "searchPamphlets": "Search pamphlets...",
@@ -476,7 +465,7 @@
   "noDownloadsYetGuides": "No downloads yet. Open a paper's marking guide and tap Save to read it offline.",
   "getMoreSlotsTitle": "GET MORE SLOTS",
   "xpRedeemSlotTitle": "+1 slot for 3 days",
-  "xpYouHaveLabel": "You have {xp} XP",
+  "xpYouHaveLabel": "You have {xp} points",
   "@xpYouHaveLabel": {
     "placeholders": {"xp": {"type": "int"}}
   },
@@ -685,6 +674,6 @@
   "dismissSubmissionButton": "Got it, dismiss",
   "submissionDeleteTooltip": "Delete submission",
   "submissionDeleteTitle": "Delete this submission?",
-  "submissionDeleteBody": "This only removes it from your list. A published paper stays available to other students, and your credits aren't affected.",
+  "submissionDeleteBody": "This only removes it from your list. A published paper stays available to other students, and your points aren't affected.",
   "submissionDeleteAction": "Delete"
 }

@@ -409,14 +409,14 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                                       text: TextSpan(
                                         style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 28, color: AppColors.white),
                                         children: [
-                                          TextSpan(text: '${user.creditBalance} '),
+                                          TextSpan(text: '${user.xpBalance} '),
                                           TextSpan(text: l10n.ptsLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                         ],
                                       ),
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      l10n.submissionsScaleNote(user.submissionsCount),
+                                      l10n.pointsBalanceHint,
                                       style: const TextStyle(color: Colors.white70, fontSize: 12),
                                     ),
                                   ],
@@ -435,7 +435,6 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.space4),
-                      _creditsAndXpCard(l10n, user),
                       const SizedBox(height: AppSpacing.space4),
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -706,79 +705,6 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
   // Every underlying repository call needs auth (/auth/me/, /credits/...,
   // /papers/submissions/?submitted_by=me), so this avoids firing requests
   // guaranteed to 401 and shows an honest prompt instead.
-  /// Credits and XP are two independent economies (see backend apps.credits
-  /// and apps.xp) — nothing converts one into the other. Profile used to show
-  /// only the credit balance and XP lived on My Downloads alone, so users
-  /// assumed one turned into the other (owner beta feedback). This lays the two
-  /// side by side with how each is earned and what it buys, and says outright
-  /// that they don't convert.
-  Widget _creditsAndXpCard(AppLocalizations l10n, SpekoohUser user) {
-    Widget column({required String label, required String value, required String how, required String use, required Color accent}) {
-      return Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
-            const SizedBox(height: 2),
-            Text(value, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w800, fontSize: 22, color: AppColors.textPrimary)),
-            const SizedBox(height: 6),
-            Text(how, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-            const SizedBox(height: 4),
-            Text(use, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.surfaceCard, borderRadius: BorderRadius.circular(18), boxShadow: AppShadows.card),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(l10n.creditsAndXpTitle, style: TextStyle(fontFamily: plusJakartaSansFamily, fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
-          const SizedBox(height: 12),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                column(
-                  label: l10n.creditsColumnLabel,
-                  value: '${user.creditBalance} ${l10n.ptsLabel}',
-                  how: l10n.creditsColumnHow,
-                  use: l10n.creditsColumnUse,
-                  accent: AppColors.gold700,
-                ),
-                const VerticalDivider(width: 24, thickness: 1, color: AppColors.borderSubtle),
-                column(
-                  label: l10n.xpColumnLabel,
-                  value: '${user.xpBalance} XP',
-                  how: l10n.xpColumnHow,
-                  use: l10n.xpColumnUse,
-                  accent: AppColors.green600,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 1),
-                child: Icon(LucideIcons.info, size: 14, color: AppColors.textTertiary),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(l10n.creditsAndXpSeparateNote, style: TextStyle(fontFamily: plusJakartaSansFamily, fontSize: 12, color: AppColors.textSecondary)),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _signedOutPrompt(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),

@@ -25,8 +25,21 @@ REDEEM_STATUS_LABELS = {
 
 @admin.register(CreditLedgerEntry)
 class CreditLedgerEntryAdmin(ModelAdmin):
+    """Retired 2026-09-28 (credits merged into the Points balance, see
+    apps.xp.XPLedgerEntry): history only. Adding or editing a row here would
+    change nothing anyone can see, so it is not allowed."""
+
     list_display = ("user", "amount", "reason", "created_at")
     search_fields = ("user__name", "reason")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(RedeemCode)

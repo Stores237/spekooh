@@ -46,10 +46,8 @@ class HttpProfileRepository implements ProfileRepository {
 
     final submissions = await _client.get('/papers/submissions/', query: {'submitted_by': userId}) as List;
     final quizStats = await _client.get('/quizzes/my_stats/') as Map<String, dynamic>;
-    final ledger = await _client.get('/credits/ledger/') as List;
     final redeemCodes = await _client.get('/credits/redeem-codes/') as List;
 
-    final creditBalance = ledger.fold<int>(0, (sum, entry) => sum + (entry['amount'] as int));
     final activeCode = redeemCodes.cast<Map<String, dynamic>>().firstWhere(
           (c) => c['status'] == 'ACTIVE',
           orElse: () => const {},
@@ -62,7 +60,6 @@ class HttpProfileRepository implements ProfileRepository {
       joinDate: joinDate == null ? '' : '${joinDate.year}-${joinDate.month.toString().padLeft(2, '0')}',
       submissionsCount: submissions.length,
       quizzesCount: quizStats['quizzes_played'] as int? ?? 0,
-      creditBalance: creditBalance,
       redeemCode: activeCode['code'] as String? ?? '',
       redeemCodeSubtitle: activeCode.isEmpty
           ? ''

@@ -421,13 +421,10 @@ def mark_published(paper: PaperSubmission) -> PaperSubmission:
     action and the admin dashboard action so the two never diverge.
     """
     from apps.credits.services import award_contributor_bonus
-    from apps.xp.services import award_contribution_xp
 
     paper.status = PaperStatus.PUBLISHED
     paper.save(update_fields=["status", "updated_at"])
-    bonus_entry = award_contributor_bonus(paper)
-    if bonus_entry:
-        award_contribution_xp(paper.submitted_by)
+    award_contributor_bonus(paper)
     return paper
 
 

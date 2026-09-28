@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:spekooh/data/achievement_definitions.dart';
 import 'package:spekooh/data/auth_session.dart';
 import 'package:spekooh/data/repositories/profile_repository.dart';
+import 'package:spekooh/data/locale_controller.dart';
 import 'package:spekooh/data/token_storage.dart';
 import 'package:spekooh/models/achievement.dart';
 import 'package:spekooh/models/spekooh_user.dart';
@@ -14,7 +15,6 @@ import 'package:spekooh/theme/app_colors.dart';
 import 'package:spekooh/shell/route_observers.dart';
 import 'package:spekooh/widgets/pro_badge.dart';
 import 'package:spekooh/widgets/spekooh_badge.dart';
-import 'package:spekooh/data/locale_controller.dart';
 
 import 'support/l10n_test_app.dart';
 
@@ -44,7 +44,6 @@ class _EditableProfileRepository implements ProfileRepository {
       joinDate: _user.joinDate,
       submissionsCount: _user.submissionsCount,
       quizzesCount: _user.quizzesCount,
-      creditBalance: _user.creditBalance,
       redeemCode: _user.redeemCode,
       redeemCodeSubtitle: _user.redeemCodeSubtitle,
       referralCode: _user.referralCode,
@@ -71,7 +70,6 @@ class _RefreshingProfileRepository implements ProfileRepository {
         joinDate: 'Joined Jul 2026',
         submissionsCount: submissionsCount,
         quizzesCount: 0,
-        creditBalance: 0,
         redeemCode: '',
         redeemCodeSubtitle: '',
       );
@@ -100,7 +98,6 @@ class _RejectionProfileRepository implements ProfileRepository {
         joinDate: 'Joined Jul 2026',
         submissionsCount: 1,
         quizzesCount: 0,
-        creditBalance: 0,
         redeemCode: '',
         redeemCodeSubtitle: '',
       );
@@ -148,7 +145,6 @@ const _user = SpekoohUser(
   joinDate: 'Joined Jul 2026',
   submissionsCount: 24,
   quizzesCount: 4,
-  creditBalance: 2150,
   redeemCode: '',
   redeemCodeSubtitle: '',
   email: 'original@example.com',
@@ -169,8 +165,6 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
-      await tester.ensureVisible(find.text('All 4')); // the credits/XP card above pushes it below the fold
-      await tester.pumpAndSettle();
       await tester.tap(find.text('All 4'));
       await tester.pumpAndSettle();
 
@@ -212,7 +206,6 @@ void main() {
         joinDate: _user.joinDate,
         submissionsCount: 1, // clears Spark only
         quizzesCount: 0,
-        creditBalance: 0,
         redeemCode: '',
         redeemCodeSubtitle: '',
       );
@@ -228,8 +221,6 @@ void main() {
       await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: _EditableProfileRepository(_user))));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
-      await tester.ensureVisible(find.text('All 4')); // the credits/XP card above pushes it below the fold
-      await tester.pumpAndSettle();
       await tester.tap(find.text('All 4'));
       await tester.pumpAndSettle();
 
@@ -556,7 +547,6 @@ void main() {
           joinDate: 'Joined Aug 2026',
           submissionsCount: 0,
           quizzesCount: 0,
-          creditBalance: 0,
           redeemCode: '',
           redeemCodeSubtitle: '',
           avatarUrl: 'https://example.com/avatar.jpg',
@@ -575,13 +565,12 @@ void main() {
     });
   });
 
-  group('Spekooh Pro badge and Credits vs XP (beta feedback)', () {
+  group('Spekooh Pro badge (beta feedback)', () {
     const proUser = SpekoohUser(
       name: 'Lucien',
       joinDate: 'Joined Aug 2026',
       submissionsCount: 3,
       quizzesCount: 2,
-      creditBalance: 2150,
       xpBalance: 480,
       redeemCode: '',
       redeemCodeSubtitle: '',
@@ -592,7 +581,6 @@ void main() {
       joinDate: 'Joined Aug 2026',
       submissionsCount: 3,
       quizzesCount: 2,
-      creditBalance: 2150,
       xpBalance: 480,
       redeemCode: '',
       redeemCodeSubtitle: '',
@@ -630,26 +618,49 @@ void main() {
 
       expect(find.text('Unlimited paper views · no ads', skipOffstage: false), findsOneWidget);
     });
+  });
 
-    testWidgets('credits and XP sit side by side, each with its own balance, and the card says they do not convert', (tester) async {
-      await pumpProfile(tester, freeUser);
+  group('One Points balance (credits and XP merged, 2026-09-28)', () {
+    const user = SpekoohUser(
+      name: 'Lucien',
+      joinDate: 'Joined Aug 2026',
+      submissionsCount: 3,
+      quizzesCount: 2,
+      xpBalance: 480,
+      redeemCode: '',
+      redeemCodeSubtitle: '',
+    );
 
-      expect(find.text('Credits and XP'), findsOneWidget);
-      expect(find.text('2150 pts'), findsOneWidget);
-      expect(find.text('480 XP'), findsOneWidget);
-      expect(find.text('Earned from verified contributions and referrals.'), findsOneWidget);
-      expect(find.text('Earned from quizzes, contributions and referrals.'), findsOneWidget);
-      expect(find.text('Spend 500 XP on +1 offline download slot for 3 days.'), findsOneWidget);
-      expect(find.textContaining("don't convert into XP"), findsOneWidget);
+    Future<void> pumpProfile(WidgetTester tester) async {
+      _fakeLoggedIn();
+      await tester.pumpWidget(l10nTestApp(ProfileScreen(repository: _EditableProfileRepository(user))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    testWidgets('Profile shows the one balance as points, with how to earn and spend it', (tester) async {
+      await pumpProfile(tester);
+
+      expect(find.text('YOUR POINTS'), findsOneWidget);
+      expect(find.textContaining('480 pts', findRichText: true), findsOneWidget); // drawn as a rich-text span
+      expect(find.text('Earn points from quizzes, verified papers and referrals. 500 points = +1 offline slot for 3 days.'), findsOneWidget);
     });
 
-    testWidgets('the credits/XP card is translated', (tester) async {
+    testWidgets('nothing on Profile still talks about credits or XP as a separate balance', (tester) async {
+      await pumpProfile(tester);
+
+      expect(find.textContaining('CREDIT'), findsNothing);
+      expect(find.textContaining('credit balance'), findsNothing);
+      expect(find.textContaining(' XP', skipOffstage: false), findsNothing);
+    });
+
+    testWidgets('the points label and hint are translated', (tester) async {
       LocaleController.debugSetInstance(LocaleController(storage: InMemoryTokenStorage()));
       await LocaleController.instance.setLocale('fr');
-      await pumpProfile(tester, freeUser);
+      await pumpProfile(tester);
 
-      expect(find.text('Crédits et XP'), findsOneWidget);
-      expect(find.textContaining('ne se convertissent pas en XP'), findsOneWidget);
+      expect(find.text('VOS POINTS'), findsOneWidget);
+      expect(find.textContaining('500 points = +1 place hors ligne'), findsOneWidget);
     });
   });
 }

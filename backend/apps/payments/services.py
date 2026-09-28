@@ -6,7 +6,6 @@ from apps.core.exceptions import SafeMessageError
 from apps.core.payment_provider import MockPaymentProvider, PaymentProvider
 from apps.credits.services import RedeemCodeError, award_referral_bonus, redeem_code
 from apps.papers.services import paper_download_price_fcfa, report_download_is_free
-from apps.xp.services import award_referral_xp
 
 from .models import (
     PaperDownloadUnlock,
@@ -49,7 +48,7 @@ def subscribe(*, user, phone_number: str) -> Subscription:
         purpose=PaymentPurpose.SUBSCRIPTION,
         amount_fcfa=PRO_MONTHLY_FCFA,
         phone_number=phone_number,
-        description="Spekooh Plus: monthly subscription",
+        description="Spekooh Pro: monthly subscription",
     )
     if transaction.status != PaymentTransactionStatus.SUCCESS:
         raise SubscriptionError(transaction.failure_reason or "Payment failed.")
@@ -104,9 +103,7 @@ def unlock_paper(*, user, paper_submission, phone_number: str, redeem_code_str: 
         unlock = PaperUnlock.objects.create(
             user=user, paper_submission=paper_submission, amount_paid=0, payment_transaction=None
         )
-        referral_entry = award_referral_bonus(user)
-        if referral_entry:
-            award_referral_xp(referral_entry.user)
+        award_referral_bonus(user)
         return unlock
 
     amount = PAPER_UNLOCK_PRICE_FCFA
@@ -130,9 +127,7 @@ def unlock_paper(*, user, paper_submission, phone_number: str, redeem_code_str: 
         redeem_code_applied=applied_code,
         payment_transaction=transaction,
     )
-    referral_entry = award_referral_bonus(user)
-    if referral_entry:
-        award_referral_xp(referral_entry.user)
+    award_referral_bonus(user)
     return unlock
 
 

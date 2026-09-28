@@ -12,9 +12,10 @@ from reportlab.pdfgen import canvas
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
-from apps.credits.models import CreditLedgerEntry
+from apps.credits.models import ContributorBonusConfig
 from apps.payments.factories import SubscriptionFactory
 from apps.payments.models import PaperUnlock
+from apps.xp.services import xp_balance
 
 from .admin import (
     AcademicReportSubmissionAdmin,
@@ -1257,7 +1258,7 @@ def test_admin_publish_selected_publishes_reports_regardless_of_guide_status():
 
     report.refresh_from_db()
     assert report.status == PaperStatus.PUBLISHED
-    assert CreditLedgerEntry.objects.filter(paper_submission=report).exists()
+    assert xp_balance(report.submitted_by) == ContributorBonusConfig.objects.first().amount
 
 
 @pytest.mark.django_db
@@ -1274,7 +1275,7 @@ def test_admin_publish_selected_no_longer_requires_a_marking_guide_for_exam_pape
 
     paper.refresh_from_db()
     assert paper.status == PaperStatus.PUBLISHED
-    assert CreditLedgerEntry.objects.filter(paper_submission=paper).exists()
+    assert xp_balance(paper.submitted_by) == ContributorBonusConfig.objects.first().amount
 
     from .serializers import PaperSubmissionDetailSerializer
 
@@ -1365,7 +1366,7 @@ def test_admin_publish_selected_does_not_republish_an_already_published_report()
     admin_instance = PaperSubmissionAdmin(PaperSubmission, AdminSite())
     admin_instance.publish_selected(_admin_action_request(), PaperSubmission.objects.filter(id=report.id))
 
-    assert CreditLedgerEntry.objects.filter(paper_submission=report).count() == 0
+    assert xp_balance(report.submitted_by) == 0
 
 
 # --- Real Review Team rejection verdict + contributor-side dismiss (2026-09-01) ---

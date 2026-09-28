@@ -269,7 +269,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Consulter et télécharger de vraies épreuves et rapports nécessite un compte gratuit.';
 
   @override
-  String get homeContributionTitle => 'Contribution : gagnez des crédits';
+  String get homeContributionTitle => 'Contribution : gagnez des points';
 
   @override
   String get homeContributionPrompt =>
@@ -277,7 +277,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get homeContributionSubtitle =>
-      'Prenez une photo, identifiez-la, et gagnez un bonus une fois vérifiée. La première contribution compte.';
+      'Prenez une photo, identifiez-la, et gagnez des points une fois vérifiée. La première contribution compte.';
 
   @override
   String get notesTitle => 'Notes';
@@ -312,7 +312,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get homeSignUpPrompt => 'INSCRIVEZ-VOUS SEULEMENT QUAND VOUS VOULEZ…';
 
   @override
-  String get homeLockedCredits => 'Gagner et utiliser des crédits contributeur';
+  String get homeLockedCredits => 'Gagner et utiliser des points';
 
   @override
   String get homeLockedTrackContributions => 'Suivre vos contributions';
@@ -580,7 +580,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get contributionBonusBanner =>
-      'Les nouvelles soumissions vérifiées rapportent un bonus de crédit, utilisable pour débloquer des corrigés.';
+      'Les nouvelles soumissions vérifiées rapportent des points et débloquent des codes de réduction pour les corrigés.';
 
   @override
   String get submitPaperButton => 'Soumettre l\'épreuve';
@@ -624,7 +624,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Les contributions réelles rapportent de vraies récompenses. Voici comment ça marche :';
 
   @override
-  String get contributionBenefitCreditTitle => 'Bonus de crédit';
+  String get contributionBenefitCreditTitle => 'Des points';
 
   @override
   String get contributionBenefitDiscountTitle => 'Un vrai code de réduction';
@@ -869,7 +869,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get bonusCreditBalanceLabel => 'SOLDE DE CRÉDIT BONUS';
+  String get bonusCreditBalanceLabel => 'VOS POINTS';
 
   @override
   String get ptsLabel => 'pts';
@@ -881,38 +881,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get proBadgeSemantics => 'Membre Spekooh Pro';
 
   @override
-  String get creditsAndXpTitle => 'Crédits et XP';
-
-  @override
-  String get creditsAndXpSeparateNote =>
-      'Ils sont distincts : les crédits ne se convertissent pas en XP, et l\'XP ne se convertit pas en crédits.';
-
-  @override
-  String get creditsColumnLabel => 'CRÉDITS';
-
-  @override
-  String get creditsColumnHow =>
-      'Gagnés grâce aux contributions vérifiées et aux parrainages.';
-
-  @override
-  String get creditsColumnUse =>
-      'Débloquent des codes de réduction et des corrigés.';
-
-  @override
-  String get xpColumnLabel => 'XP';
-
-  @override
-  String get xpColumnHow =>
-      'Gagnés grâce aux quiz, aux contributions et aux parrainages.';
-
-  @override
-  String get xpColumnUse =>
-      'Dépensez 500 XP pour +1 place de téléchargement hors ligne pendant 3 jours.';
-
-  @override
-  String submissionsScaleNote(int count) {
-    return '$count épreuves soumises · la valeur du code de réduction augmente avec vos contributions';
-  }
+  String get pointsBalanceHint =>
+      'Gagnez des points avec les quiz, les épreuves vérifiées et les parrainages. 500 points = +1 place hors ligne pendant 3 jours.';
 
   @override
   String get redeemCodeNotActive => 'Aucun code de réduction actif';
@@ -940,7 +910,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get inviteAFriendSubtitle =>
-      'Vous gagnez un bonus dès qu\'ils débloquent leur première épreuve.';
+      'Vous gagnez des points dès qu\'ils débloquent leur première épreuve.';
 
   @override
   String shareReferralMessage(String code) {
@@ -961,7 +931,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get profileLoginPromptSubtitle =>
-      'Vos soumissions, votre solde de crédit et vos badges apparaîtront ici une fois que vous aurez un compte.';
+      'Vos soumissions, vos points et vos badges apparaîtront ici une fois que vous aurez un compte.';
 
   @override
   String get shopHeaderSubtitle =>
@@ -1177,7 +1147,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String xpYouHaveLabel(int xp) {
-    return 'Vous avez $xp XP';
+    return 'Vous avez $xp points';
   }
 
   @override
@@ -1728,7 +1698,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get submissionDeleteBody =>
-      'Cela la retire seulement de votre liste. Une épreuve publiée reste disponible pour les autres élèves, et vos crédits ne changent pas.';
+      'Cela la retire seulement de votre liste. Une épreuve publiée reste disponible pour les autres élèves, et vos points ne changent pas.';
 
   @override
   String get submissionDeleteAction => 'Supprimer';
