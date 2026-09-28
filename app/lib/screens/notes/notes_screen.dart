@@ -13,6 +13,7 @@ import '../../widgets/list_item_row.dart';
 import '../../widgets/search_input.dart';
 import '../../widgets/spekooh_button.dart';
 import '../common/circular_back_button.dart';
+import 'note_detail_screen.dart';
 
 /// Ported from ui_kits/spekooh-app/NotesScreen.jsx. Pushed as a full-screen
 /// overlay (Navigator.push) from wherever "Notes" is tapped — not a bottom
@@ -211,6 +212,9 @@ class _NotesScreenState extends State<NotesScreen> {
                                   icon: IconChip(icon: note.icon, tint: note.tint),
                                   title: note.title,
                                   subtitle: note.subtitle,
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note, repository: widget.repository)),
+                                  ),
                                 ),
                               );
                             },

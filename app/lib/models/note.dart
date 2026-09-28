@@ -10,6 +10,7 @@ class Note {
     required this.icon,
     this.subjectTitle = '',
     this.academicLevel = '',
+    this.body = '',
   });
   final int id;
   final String title;
@@ -22,4 +23,8 @@ class Note {
   /// string) so filtering doesn't depend on parsing display text.
   final String subjectTitle;
   final String academicLevel;
+
+  /// The summary itself. Empty on list rows (the list endpoint carries no
+  /// text, to stay light); filled by [NotesRepository.getNote].
+  final String body;
 }

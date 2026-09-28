@@ -281,6 +281,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesTitle => 'Notes';
 
   @override
+  String get noteNoTextYet => 'The text for this note isn\'t available yet.';
+
+  @override
+  String get noteLoadError =>
+      'Couldn\'t open this note. Check your connection and try again.';
+
+  @override
+  String get noteTryAgain => 'Try again';
+
+  @override
   String get notesSubtitle => 'Topic study notes by subject';
 
   @override
