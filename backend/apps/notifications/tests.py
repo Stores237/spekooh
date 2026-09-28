@@ -61,7 +61,8 @@ def test_merge_and_publish_sends_submission_status_notification():
 
     notification = Notification.objects.get(user=paper.submitted_by, kind=NotificationKind.SUBMISSION_STATUS)
     assert "published" in notification.title.lower()
-    assert "credits" in notification.body.lower()
+    assert "points" in notification.body.lower()  # credits and XP are one Points balance now
+    assert "credit" not in notification.body.lower()
 
 
 @pytest.mark.django_db

@@ -48,7 +48,7 @@ def subscribe(*, user, phone_number: str) -> Subscription:
         purpose=PaymentPurpose.SUBSCRIPTION,
         amount_fcfa=PRO_MONTHLY_FCFA,
         phone_number=phone_number,
-        description="Spekooh Plus: monthly subscription",
+        description="Spekooh Pro: monthly subscription",
     )
     if transaction.status != PaymentTransactionStatus.SUCCESS:
         raise SubscriptionError(transaction.failure_reason or "Payment failed.")

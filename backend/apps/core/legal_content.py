@@ -133,7 +133,7 @@ PRIVACY_POLICY_SECTIONS = [
     ),
 ]
 
-TERMS_OF_SERVICE_LAST_UPDATED = "September 13, 2026"
+TERMS_OF_SERVICE_LAST_UPDATED = "September 28, 2026"
 
 TERMS_OF_SERVICE_INTRO = (
     'These Terms of Service ("Terms") govern your use of the Spekooh mobile app and any related services '
@@ -165,10 +165,10 @@ TERMS_OF_SERVICE_SECTIONS = [
         ("Spekooh lets students browse and view past exam papers and academic reports, contribute new ones, chat "
         "with an AI study assistant, take practice quizzes, and (once a paper is marked) access a marking guide. "
         "Non-subscribed users can view a limited number of question papers free each day; once that limit is "
-        "reached, you may watch a rewarded video ad for one additional view, or subscribe to Spekooh Plus for "
+        "reached, you may watch a rewarded video ad for one additional view, or subscribe to Spekooh Pro for "
         "unlimited views and an ad-free experience. Marking guides and, for most exam papers, downloading the "
         "scanned paper itself are separate, one-time purchases, paid for individually regardless of whether you "
-        "subscribe to Spekooh Plus. We do not guarantee that a marking guide will exist or be produced for any "
+        "subscribe to Spekooh Pro. We do not guarantee that a marking guide will exist or be produced for any "
         "specific paper, or how long that takes."),
     ),
     (
@@ -184,15 +184,20 @@ TERMS_OF_SERVICE_SECTIONS = [
         "is inaccurate, or otherwise violates these Terms, at our discretion."),
     ),
     (
-        "5. Contributor bonuses, credits, and XP",
-        ("A validated, non-duplicate contribution may earn a bonus credit, which can be converted into a redeem "
-        "code usable toward the price of unlocking a marking guide — by you, or shared with someone else who "
-        "redeems it themselves. A redeem code is fully consumed on first use. Referring a friend who goes on to "
-        "unlock content may also earn a one-time bonus, credited once per referred account. Separately, "
-        "completing quizzes earns XP, redeemable for in-app perks such as an extra offline-download slot. "
-        "Credits, XP, and redeem codes have no cash value, cannot be exchanged for cash or transferred outside "
-        "the mechanisms Spekooh actually provides, and may be adjusted or revoked if we determine they were "
-        "earned through fraud, duplicate/near-duplicate submissions, or abuse of these bonus systems."),
+        "5. Points, rewards, and redeem codes",
+        ("Spekooh has one reward balance, called points. You earn points for completing quizzes, for a "
+        "validated, non-duplicate contribution once it is accepted and published, and when a friend you "
+        "referred goes on to unlock content (once per referred account). The amounts are shown in the app "
+        "and may change. Points can be spent on in-app perks such as an extra offline-download slot; the "
+        "cost is shown in the app. Bonus credits earned before points were introduced were converted into "
+        "points one-for-one. Separately, contributors whose submissions are accepted may request a redeem "
+        "code, whose value and validity depend on how many of their submissions have been accepted. A "
+        "redeem code is not bought with points; it can be applied toward the price of unlocking a marking "
+        "guide, by you or by someone you share it with who redeems it themselves, and it is fully "
+        "consumed on first use. We may limit how many redeem codes are issued to an account. Points and "
+        "redeem codes have no cash value, cannot be exchanged for cash or transferred outside the "
+        "mechanisms Spekooh actually provides, and may be adjusted or revoked if we determine they were "
+        "earned through fraud, duplicate/near-duplicate submissions, or abuse of these reward systems."),
     ),
     (
         "6. The AI features",
@@ -200,14 +205,14 @@ TERMS_OF_SERVICE_SECTIONS = [
         "are meant to help you learn, not to replace your own judgment or your teacher. They can be wrong, "
         "incomplete, or occasionally decline to answer. Do not rely on an AI reply as a final or authoritative "
         "answer, especially for anything graded. Free AI chat use is subject to a daily message limit; Spekooh "
-        "Plus subscribers are not subject to that per-user limit, though Spekooh may still apply a shared, "
+        "Pro subscribers are not subject to that per-user limit, though Spekooh may still apply a shared, "
         "provider-wide limit across all users to keep the service available for everyone."),
     ),
     (
         "7. Prohibited conduct",
         ("You agree not to: submit content you don't have the right to share, or that is plagiarized, obscene, or "
         "unlawful; attempt to circumvent the daily view limit, a paywall, or a purchase by technical means; "
-        "submit near-duplicate or slightly-edited papers to farm contributor bonuses; use Spekooh's AI features "
+        "submit near-duplicate or slightly-edited papers to farm points or redeem codes; use Spekooh's AI features "
         "for anything unrelated to schoolwork, or to generate harmful content; scrape, reverse-engineer, or "
         "resell access to Spekooh's content or service; impersonate another person or misrepresent your "
         "affiliation with an institution; or interfere with the security or normal operation of the service."),
@@ -222,7 +227,7 @@ TERMS_OF_SERVICE_SECTIONS = [
     ),
     (
         "9. Payments, subscriptions, and refunds",
-        ("Paid features — marking-guide unlocks, exam-paper downloads, the Spekooh Plus subscription, and pamphlet "
+        ("Paid features — marking-guide unlocks, exam-paper downloads, the Spekooh Pro subscription, and pamphlet "
         "purchases — are charged through the mobile money number you provide at the time (e.g. MTN Mobile Money "
         "or Orange Money); make sure it's correct, since Spekooh is not responsible for a charge sent to a "
         "wrong number you entered. Prices are shown in FCFA before you confirm a purchase and may change at any "
@@ -235,7 +240,7 @@ TERMS_OF_SERVICE_SECTIONS = [
     (
         "10. Advertising",
         ("Free-tier use of Spekooh shows ads, including rewarded video ads through Google AdMob when you choose to "
-        "watch one for an extra paper view. Spekooh Plus removes ads for the paper-viewing experience. We are not "
+        "watch one for an extra paper view. Spekooh Pro removes ads for the paper-viewing experience. We are not "
         "responsible for the content of third-party ads shown through AdMob."),
     ),
     (
