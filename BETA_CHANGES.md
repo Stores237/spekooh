@@ -127,7 +127,7 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 
 ## Rollout order
 
-1. Merge #200 **after** #199 (already merged) (it is built on `main` as it stands now).
+1. Merge #200. It is built on `main` after #199, which has already landed.
 2. Staging deploys and migrates automatically. Expect: `accounts/0016`, `xp/0002–0003`, `credits/0006–0008`.
 3. Check the admin: points carry-over rows, one code per contributor, the tier table, and a Support account editing (but not deleting) a note.
 4. Optionally run `seed_demo_notes` on staging.
