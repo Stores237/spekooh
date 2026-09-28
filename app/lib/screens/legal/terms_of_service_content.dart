@@ -94,14 +94,16 @@ const termsOfServiceSections = [
         'referred goes on to unlock content (once per referred account). The amounts are shown in the app '
         'and may change. Points can be spent on in-app perks such as an extra offline-download slot; the '
         'cost is shown in the app. Bonus credits earned before points were introduced were converted into '
-        'points one-for-one. Separately, contributors whose submissions are accepted may request a redeem '
-        'code, whose value and validity depend on how many of their submissions have been accepted. A '
-        'redeem code is not bought with points; it can be applied toward the price of unlocking a marking '
-        'guide, by you or by someone you share it with who redeems it themselves, and it is fully '
-        'consumed on first use. We may limit how many redeem codes are issued to an account. Points and '
-        'redeem codes have no cash value, cannot be exchanged for cash or transferred outside the '
-        'mechanisms Spekooh actually provides, and may be adjusted or revoked if we determine they were '
-        'earned through fraud, duplicate/near-duplicate submissions, or abuse of these reward systems.',
+        'points one-for-one. Separately, when a contributor\'s submission is accepted and published they '
+        'automatically receive a redeem code; further accepted submissions improve and extend that same '
+        'code instead of creating new ones, and its value and validity depend on how many of their '
+        'submissions have been accepted. A redeem code is not bought with points and cannot be requested; '
+        'it can be applied toward the price of unlocking a marking guide, by you or by someone you share '
+        'it with who redeems it themselves, and it is fully consumed on first use. We may limit how many '
+        'redeem codes are issued to an account. Points and redeem codes have no cash value, cannot be '
+        'exchanged for cash or transferred outside the mechanisms Spekooh actually provides, and may be '
+        'adjusted or revoked if we determine they were earned through fraud, duplicate/near-duplicate '
+        'submissions, or abuse of these reward systems.',
   ),
   TermsSection(
     '6. The AI features',

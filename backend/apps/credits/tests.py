@@ -17,7 +17,10 @@ from .factories import CreditLedgerEntryFactory, RedeemCodeFactory
 from .models import (
     ContributorBonusConfig,
     CreditLedgerEntry,
+    RedeemCode,
+    RedeemCodeContribution,
     RedeemCodeStatus,
+    RedeemCodeTierConfig,
     ReferralBonusConfig,
     SubjectDemandFactor,
 )
@@ -30,10 +33,11 @@ from .rules_engine import (
 )
 from .services import (
     RedeemCodeError,
-    RedeemCodeIssuer,
     award_contributor_bonus,
     award_referral_bonus,
+    grant_redeem_code,
     redeem_code,
+    redeem_tier_for,
 )
 
 
@@ -148,17 +152,13 @@ def test_calculator_requires_at_least_one_question():
 
 
 @pytest.mark.django_db
-def test_redeem_code_issuer_picks_correct_tier_band():
-    owner = UserFactory()
-    low_tier = RedeemCodeIssuer().issue_for(owner=owner, accepted_submission_count=2)
-    assert low_tier.value_percent == 5
-
-    mid_tier = RedeemCodeIssuer().issue_for(owner=owner, accepted_submission_count=10)
-    assert mid_tier.value_percent == 10
-
-    high_tier = RedeemCodeIssuer().issue_for(owner=owner, accepted_submission_count=24)
-    assert high_tier.value_percent == 20
-    assert high_tier.tier_at_issuance == 24
+def test_redeem_tier_picks_the_right_band():
+    """The seeded table: 1-4 papers 5%/7d, 5-14 10%/14d, 15-23 15%/21d, 24+ 20%/30d."""
+    expected = {1: 5, 4: 5, 5: 10, 14: 10, 15: 15, 23: 15, 24: 20, 100: 20}
+    for accepted, percent in expected.items():
+        assert redeem_tier_for(accepted).value_percent == percent, accepted
+    assert redeem_tier_for(1).expiry_days == 7
+    assert redeem_tier_for(24).expiry_days == 30
 
 
 @pytest.mark.django_db
@@ -215,14 +215,245 @@ def test_mark_published_pays_one_balance_once_and_nothing_into_the_retired_credi
 
 
 @pytest.mark.django_db
-def test_issue_redeem_code_endpoint_counts_published_submissions(api_client):
+def test_there_is_no_way_to_request_a_discount_code(api_client):
+    """The old open endpoint let any signed-in user mint unlimited codes, even
+    with no accepted paper. Codes are only ever earned now."""
     user = UserFactory()
-    for _ in range(6):
-        PaperSubmissionFactory(submitted_by=user, status=PaperStatus.PUBLISHED)
     api_client.force_authenticate(user=user)
     response = api_client.post("/api/credits/redeem-codes/issue/")
-    assert response.status_code == 201
-    assert response.data["value_percent"] == 10  # 6 accepted -> the 5+ tier
+    assert response.status_code in (404, 405)
+    assert not RedeemCode.objects.filter(owner=user).exists()
+
+
+@pytest.mark.django_db
+def test_the_owner_sees_the_code_they_earned_in_their_list(api_client):
+    user = UserFactory()
+    paper = PaperSubmissionFactory(submitted_by=user, status=PaperStatus.PUBLISHED)
+    grant = grant_redeem_code(paper)
+    api_client.force_authenticate(user=user)
+    response = api_client.get("/api/credits/redeem-codes/")
+    rows = response.data["results"] if isinstance(response.data, dict) else response.data
+    assert [row["code"] for row in rows] == [grant.code.code]
+    assert rows[0]["value_percent"] == 5
+
+
+# --- automatic, accumulating discount codes (2026-09-28) -------------------
+
+
+def _accepted_paper(user, **kwargs):
+    return PaperSubmissionFactory(submitted_by=user, status=PaperStatus.PUBLISHED, is_duplicate=False, **kwargs)
+
+
+@pytest.mark.django_db
+def test_the_first_accepted_paper_grants_a_code_at_the_first_tier():
+    owner = UserFactory()
+    grant = grant_redeem_code(_accepted_paper(owner))
+
+    assert grant.created is True
+    assert grant.code.owner == owner
+    assert grant.code.value_percent == 5
+    assert grant.code.tier_at_issuance == 1
+    assert grant.code.status == RedeemCodeStatus.ACTIVE
+    assert abs(grant.code.expires_at - (timezone.now() + datetime.timedelta(days=7))) < datetime.timedelta(minutes=1)
+
+
+@pytest.mark.django_db
+def test_a_second_accepted_paper_upgrades_the_same_code_instead_of_minting_another():
+    owner = UserFactory()
+    first = grant_redeem_code(_accepted_paper(owner))
+    # "the next day": the code has 1 day left when the second paper is accepted.
+    RedeemCode.objects.filter(pk=first.code.pk).update(expires_at=timezone.now() + datetime.timedelta(days=1))
+
+    second = grant_redeem_code(_accepted_paper(owner))
+
+    assert second.created is False
+    assert second.code.pk == first.code.pk
+    assert RedeemCode.objects.filter(owner=owner).count() == 1
+    second.code.refresh_from_db()
+    assert second.code.value_percent == 5  # still the first tier
+    assert second.code.tier_at_issuance == 2
+    assert second.code.expires_at > timezone.now() + datetime.timedelta(days=6, hours=23)  # the clock was refreshed
+
+
+@pytest.mark.django_db
+def test_reaching_the_next_tier_raises_the_discount_on_the_same_code():
+    owner = UserFactory()
+    grants = [grant_redeem_code(_accepted_paper(owner)) for _ in range(5)]
+
+    assert {g.code.pk for g in grants} == {grants[0].code.pk}
+    assert RedeemCode.objects.filter(owner=owner).count() == 1
+    code = RedeemCode.objects.get(owner=owner)
+    assert code.value_percent == 10  # the 5th accepted paper crosses into the 5-14 band
+    assert code.expires_at > timezone.now() + datetime.timedelta(days=13)
+
+
+@pytest.mark.django_db
+def test_a_used_code_is_left_alone_and_the_next_paper_earns_a_fresh_one():
+    owner = UserFactory()
+    first = grant_redeem_code(_accepted_paper(owner))
+    RedeemCode.objects.filter(pk=first.code.pk).update(status=RedeemCodeStatus.REDEEMED)
+
+    second = grant_redeem_code(_accepted_paper(owner))
+
+    assert second.created is True
+    assert second.code.pk != first.code.pk
+    first.code.refresh_from_db()
+    assert first.code.status == RedeemCodeStatus.REDEEMED
+
+
+@pytest.mark.django_db
+def test_an_expired_code_is_replaced_not_revived():
+    owner = UserFactory()
+    first = grant_redeem_code(_accepted_paper(owner))
+    RedeemCode.objects.filter(pk=first.code.pk).update(expires_at=timezone.now() - datetime.timedelta(days=1))
+
+    second = grant_redeem_code(_accepted_paper(owner))
+
+    assert second.created is True
+    assert second.code.pk != first.code.pk
+
+
+@pytest.mark.django_db
+def test_a_discount_never_goes_down():
+    owner = UserFactory()
+    existing = RedeemCodeFactory(owner=owner, value_percent=15)
+
+    grant = grant_redeem_code(_accepted_paper(owner))  # the tier for 1 paper is only 5%
+
+    assert grant.created is False
+    existing.refresh_from_db()
+    assert existing.value_percent == 15
+
+
+@pytest.mark.django_db
+def test_a_duplicate_paper_earns_no_code():
+    owner = UserFactory()
+    duplicate = PaperSubmissionFactory(submitted_by=owner, status=PaperStatus.PUBLISHED, is_duplicate=True)
+
+    assert grant_redeem_code(duplicate) is None
+    assert not RedeemCode.objects.filter(owner=owner).exists()
+
+
+@pytest.mark.django_db
+def test_a_paper_counts_only_once_however_often_publishing_runs():
+    owner = UserFactory()
+    paper = _accepted_paper(owner)
+
+    assert grant_redeem_code(paper) is not None
+    assert grant_redeem_code(paper) is None
+    assert RedeemCodeContribution.objects.filter(paper_submission=paper).count() == 1
+    assert RedeemCode.objects.filter(owner=owner).count() == 1
+
+
+@pytest.mark.django_db
+def test_papers_that_are_not_accepted_do_not_count_towards_the_tier():
+    owner = UserFactory()
+    for status in (PaperStatus.PENDING_REVIEW, PaperStatus.REJECTED):
+        PaperSubmissionFactory(submitted_by=owner, status=status)
+    grant_redeem_code(_accepted_paper(owner))
+    grant = grant_redeem_code(_accepted_paper(owner))
+
+    assert grant.code.tier_at_issuance == 2  # only the two accepted ones
+
+
+@pytest.mark.django_db
+def test_no_configured_tier_grants_nothing_and_does_not_break_publishing():
+    RedeemCodeTierConfig.objects.all().delete()
+    owner = UserFactory()
+
+    assert grant_redeem_code(_accepted_paper(owner)) is None
+    assert not RedeemCode.objects.filter(owner=owner).exists()
+
+
+@pytest.mark.django_db
+def test_mark_published_grants_points_and_a_discount_code(api_client):
+    admin_user = UserFactory(is_staff=True)
+    submitter = UserFactory()
+    paper = PaperSubmissionFactory(submitted_by=submitter, is_duplicate=False)
+    api_client.force_authenticate(user=admin_user)
+
+    response = api_client.post(f"/api/papers/submissions/{paper.id}/mark_published/")
+
+    assert response.status_code == 200
+    code = RedeemCode.objects.get(owner=submitter)
+    assert code.value_percent == 5
+    assert RedeemCodeContribution.objects.filter(code=code, paper_submission=paper).exists()
+
+
+@pytest.mark.django_db
+def test_admin_tier_table_shows_readable_paper_ranges():
+    from django.contrib.admin.sites import AdminSite
+
+    from .admin import RedeemCodeTierConfigAdmin
+
+    tier_admin = RedeemCodeTierConfigAdmin(RedeemCodeTierConfig, AdminSite())
+    labels = [tier_admin.papers_range(tier) for tier in RedeemCodeTierConfig.objects.order_by("min_submissions")]
+
+    assert labels == ["1–4", "5–14", "15–23", "24 or more"]
+
+
+# --- backfill for contributors who already had accepted papers (0008) ------
+
+
+def _backfill():
+    import importlib
+
+    return importlib.import_module("apps.credits.migrations.0008_backfill_redeem_codes_for_existing_contributors")
+
+
+@pytest.mark.django_db
+def test_backfill_gives_each_existing_contributor_one_code_at_their_current_tier():
+    from django.apps import apps
+
+    veteran = UserFactory()
+    for _ in range(6):
+        _accepted_paper(veteran)
+    beginner = UserFactory()
+    _accepted_paper(beginner)
+    PaperSubmissionFactory(submitted_by=beginner, status=PaperStatus.PENDING_REVIEW)  # not accepted: ignored
+    PaperSubmissionFactory(submitted_by=beginner, status=PaperStatus.PUBLISHED, is_duplicate=True)  # duplicate: ignored
+
+    _backfill().backfill(apps, None)
+
+    veteran_code = RedeemCode.objects.get(owner=veteran)  # one code, not six
+    assert veteran_code.value_percent == 10
+    assert RedeemCodeContribution.objects.filter(code=veteran_code).count() == 6
+    beginner_code = RedeemCode.objects.get(owner=beginner)
+    assert beginner_code.value_percent == 5
+    assert RedeemCodeContribution.objects.filter(code=beginner_code).count() == 1
+
+
+@pytest.mark.django_db
+def test_backfill_upgrades_an_existing_active_code_instead_of_adding_one():
+    from django.apps import apps
+
+    owner = UserFactory()
+    existing = RedeemCodeFactory(owner=owner, value_percent=5)
+    for _ in range(5):
+        _accepted_paper(owner)
+
+    _backfill().backfill(apps, None)
+
+    assert RedeemCode.objects.filter(owner=owner).count() == 1
+    existing.refresh_from_db()
+    assert existing.value_percent == 10
+
+
+@pytest.mark.django_db
+def test_backfill_is_idempotent_and_papers_already_counted_cannot_earn_again():
+    from django.apps import apps
+
+    owner = UserFactory()
+    for _ in range(3):
+        _accepted_paper(owner)
+
+    _backfill().backfill(apps, None)
+    _backfill().backfill(apps, None)
+
+    assert RedeemCode.objects.filter(owner=owner).count() == 1
+    assert RedeemCodeContribution.objects.filter(code__owner=owner).count() == 3
+    old_paper = owner.paper_submissions.first()
+    assert grant_redeem_code(old_paper) is None  # already counted by the backfill
 
 
 @pytest.mark.django_db

@@ -892,7 +892,19 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get redeemCodeEarnHint =>
-      'Vous en recevrez un dès qu\'une soumission vérifiée atteint un palier de bonus.';
+      'Vous en recevrez un automatiquement dès qu\'une de vos épreuves est vérifiée et publiée.';
+
+  @override
+  String redeemCodeExpires(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Expire dans $days jours',
+      one: 'Expire demain',
+      zero: 'Expire aujourd\'hui',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get shareLabel => 'Partager';

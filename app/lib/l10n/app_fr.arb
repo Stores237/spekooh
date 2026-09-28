@@ -277,7 +277,11 @@
   "pointsBalanceHint": "Gagnez des points avec les quiz, les épreuves vérifiées et les parrainages. 500 points = +1 place hors ligne pendant 3 jours.",
   "redeemCodeNotActive": "Aucun code de réduction actif",
   "redeemCodeReady": "Code de réduction prêt",
-  "redeemCodeEarnHint": "Vous en recevrez un dès qu'une soumission vérifiée atteint un palier de bonus.",
+  "redeemCodeEarnHint": "Vous en recevrez un automatiquement dès qu'une de vos épreuves est vérifiée et publiée.",
+  "redeemCodeExpires": "{days, plural, =0{Expire aujourd'hui} =1{Expire demain} other{Expire dans {days} jours}}",
+  "@redeemCodeExpires": {
+    "placeholders": {"days": {"type": "int"}}
+  },
   "shareLabel": "Partager",
   "shareRedeemCodeMessage": "Utilisez mon code de réduction Spekooh {code} : {subtitle}",
   "shareRedeemCodeSubject": "Code de réduction Spekooh",

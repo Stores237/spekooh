@@ -480,6 +480,8 @@ def test_terms_of_service_describe_the_single_points_economy():
     content = Client().get("/legal/terms-of-service/").content.decode()
     assert "5. Points, rewards, and redeem codes" in content
     assert "one reward balance, called points" in content
+    assert "automatically receive a redeem code" in content  # earned, not requested
+    assert "cannot be requested" in content
     assert "bonus credit" not in content
     assert "Spekooh Plus" not in content
     assert "Spekooh Pro" in content

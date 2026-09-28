@@ -63,6 +63,7 @@ def test_merge_and_publish_sends_submission_status_notification():
     assert "published" in notification.title.lower()
     assert "points" in notification.body.lower()  # credits and XP are one Points balance now
     assert "credit" not in notification.body.lower()
+    assert "discount code" in notification.body.lower()  # the first accepted paper also earns a code
 
 
 @pytest.mark.django_db

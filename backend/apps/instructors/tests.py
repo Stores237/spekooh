@@ -332,6 +332,8 @@ def test_merge_and_publish_combines_mcq_and_instructor_guide_then_pays_bonus():
     published_note = Notification.objects.get(user=paper.submitted_by, title="Your paper is published!")
     assert f"you earned {ContributorBonusConfig.objects.first().amount} points" in published_note.body
     assert "credit" not in published_note.body.lower()
+    # A first accepted paper also earns the contributor their discount code.
+    assert "and a 5% discount code" in published_note.body
 
 
 @pytest.mark.django_db

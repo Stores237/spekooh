@@ -347,7 +347,11 @@
   "pointsBalanceHint": "Earn points from quizzes, verified papers and referrals. 500 points = +1 offline slot for 3 days.",
   "redeemCodeNotActive": "No active redeem code",
   "redeemCodeReady": "Redeem code ready",
-  "redeemCodeEarnHint": "You'll get one once a verified submission earns a bonus tier.",
+  "redeemCodeEarnHint": "You'll get one automatically once a paper of yours is verified and published.",
+  "redeemCodeExpires": "{days, plural, =0{Expires today} =1{Expires tomorrow} other{Expires in {days} days}}",
+  "@redeemCodeExpires": {
+    "placeholders": {"days": {"type": "int"}}
+  },
   "shareLabel": "Share",
   "shareRedeemCodeMessage": "Use my Spekooh redeem code {code}: {subtitle}",
   "@shareRedeemCodeMessage": {

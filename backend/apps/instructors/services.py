@@ -13,7 +13,7 @@ from apps.credits.rules_engine import (
     MarkingQuestion,
     PaperCreditCalculator,
 )
-from apps.credits.services import award_contributor_bonus
+from apps.credits.services import award_contribution_rewards
 from apps.notifications.models import NotificationKind
 from apps.notifications.services import notify
 from apps.papers.models import (
@@ -304,6 +304,17 @@ class MergeError(SafeMessageError):
     pass
 
 
+def _discount_code_sentence(code_grant) -> str:
+    """The discount-code half of the "your paper is published" message: a new
+    code is announced, an upgraded one says what it is now."""
+    if code_grant is None:
+        return ""
+    percent = code_grant.code.value_percent
+    if code_grant.created:
+        return f" and a {percent}% discount code"
+    return f"; your discount code is now {percent}% off"
+
+
 @transaction.atomic
 def merge_and_publish(paper: PaperSubmission) -> PublishedGuide:
     """Combines the in-house MCQ key with the instructor guide, then publishes and pays the contributor bonus."""
@@ -332,7 +343,7 @@ def merge_and_publish(paper: PaperSubmission) -> PublishedGuide:
 
     paper.status = PaperStatus.PUBLISHED
     paper.save(update_fields=["status", "updated_at"])
-    bonus_entry = award_contributor_bonus(paper)
+    bonus_entry, code_grant = award_contribution_rewards(paper)
 
     notify(
         user=paper.submitted_by,
@@ -341,6 +352,7 @@ def merge_and_publish(paper: PaperSubmission) -> PublishedGuide:
         body=(
             "Your submission's marking guide is live"
             + (f", and you earned {bonus_entry.amount} points" if bonus_entry else "")
+            + _discount_code_sentence(code_grant)
             + "."
         ),
     )
