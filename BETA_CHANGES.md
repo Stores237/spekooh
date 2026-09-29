@@ -193,6 +193,18 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 
 ---
 
+## 15. Play Store prep: launcher label and a real adaptive icon
+
+**The gap.** The Android manifest's launcher label was lowercase `spekooh` (iOS's `CFBundleDisplayName` was already the correct `Spekooh`). The app also only shipped legacy square launcher icons (`mipmap-*/ic_launcher.png`) with no adaptive icon (`mipmap-anydpi-v26` + foreground/background layers) — Play recommends one, and some launchers letterbox a legacy-only icon.
+
+**The fix.** Manifest label capitalized to `Spekooh`. Added `flutter_launcher_icons` (dev dependency, Android-only) and generated a real adaptive icon from the existing PWA icon source (`app/web/icons/Icon-512.png` for the legacy icon, `Icon-maskable-512.png` — already W3C safe-zone padded — as the adaptive foreground) with a flat background color (`#F5E0B2`) sampled from that same gradient's corners, since Android's adaptive background layer must be a single drawable, not a gradient bitmap.
+
+**Not done yet.** Feature graphic, real device screenshots, and the Data Safety form draft — see `PLAY_STORE.md` (new, repo root) for the full readiness checklist and what's still missing before an actual Console submission.
+
+**Verify.** `flutter analyze` clean; regenerated icons visually checked against the existing brand mark (legacy square icon and the adaptive foreground both render the "S" mark correctly, no cropping artifacts).
+
+---
+
 ## Owner decisions recorded in this stretch
 
 | Decision | Choice |

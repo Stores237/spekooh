@@ -103,8 +103,32 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Play Store requires an adaptive icon (foreground+background layers),
+  # not just the legacy mipmap PNGs this project shipped with — generates
+  # both from the existing brand source art, see flutter_launcher_icons:
+  # config below.
+  flutter_launcher_icons: ^0.14.4
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+# flutter_launcher_icons config (run: dart run flutter_launcher_icons).
+# image_path is the existing PWA icon source (app/web/icons/) — already
+# the app's real "S" mark, edge-to-edge, used as-is for the legacy square
+# icon. adaptive_icon_foreground reuses the maskable variant of the same
+# source, which was already built with W3C safe-zone padding (~80%
+# visual-content circle) — close enough to Android's own adaptive-icon
+# safe zone to reuse directly rather than hand-cropping a new asset.
+# adaptive_icon_background is a flat color sampled from the corners of
+# that same gradient background (average ~#F5E0B2), since Android's
+# adaptive icon background layer must be a single drawable, not a
+# gradient bitmap.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "web/icons/Icon-512.png"
+  adaptive_icon_background: "#F5E0B2"
+  adaptive_icon_foreground: "web/icons/Icon-maskable-512.png"
 
 # The following section is specific to Flutter packages.
 flutter:
