@@ -104,6 +104,10 @@ TRIGGERABLE_COMMANDS = {
     # tab on the free plan to delete them by hand — see "Create an admin
     # user" in RENDER_STAGING.md).
     "delete-test-accounts": "delete_test_accounts",
+    # Not a cron job either — a one-off to populate the demo Notes content
+    # (apps.notes.demo_notes) on a fresh staging database. Idempotent: safe
+    # to trigger more than once, and it never overwrites a note staff wrote.
+    "seed-demo-notes": "seed_demo_notes",
     # AI generation (2026-09-05) — this project's real replacement for a
     # Celery task queue, which it deliberately doesn't run (see
     # apps.ai.management.commands.generate_pending_artifacts's own
