@@ -91,7 +91,7 @@ Section labels are **uppercase, tracked caps** at caption size ("LANGUAGE", "PRA
 
 ## Iconography
 
-**Line icons inside tinted rounded-square chips** — never bare on a plain background, never emoji, never PNG icon sets. The app uses Lucide (`lucide_icons_flutter`): outlined, thin-to-medium stroke, rounded joins. The one custom glyph is the Spekooh Bot mark (a sparkle in a speech-bubble on a gold gradient); treat it as brand IP. The logo is the gold 3D cube "S" mark; no flat wordmark exists.
+**Line icons inside tinted rounded-square chips** — never bare on a plain background, never emoji, never PNG icon sets. The app uses Lucide (`lucide_icons_flutter`): outlined, thin-to-medium stroke, rounded joins. The one custom glyph is the Spekooh Bot mark (a sparkle in a speech-bubble on a gold gradient); treat it as brand IP. The primary mark is the gold 3D cube "S". A flat wordmark (`assets/branding/spekooh_logo.png`, "SPEKOOH" beside the same S) exists and is used on the splash screen only — not used as the app icon or referenced anywhere else in the UI.
 
 ## Content and copy
 
@@ -137,7 +137,8 @@ The admin wears the same brand: site title "Spekooh Admin", subheader "Review & 
 | 2026-09-28 | The AI assistant keeps a chat history on the phone only (per account, 30 chats, 200 messages each), with History and New chat buttons in its header and delete / Clear all that ask first. Not stored on the server: that would be new data collection needing a Privacy Policy change. |
 | 2026-09-28 | This file created; the repo had referenced a `DESIGN.md` that didn't exist. |
 | 2026-09-29 | Papers tab: the hardware/system back button now steps back through the category → system → exam type → track → subject → paper list drill-down one level at a time, matching every other step-by-step flow, instead of jumping straight to Home from anywhere inside it. |
+| 2026-09-29 | Android adaptive launcher icon added (Play Store requires one). Background layer color `#F5E0B2`, sampled from the corners of the existing app icon's gradient — Android's adaptive background must be a flat color, not a gradient bitmap. Foreground reuses the existing maskable PWA icon (`web/icons/Icon-maskable-512.png`) as-is. Launcher label also capitalized to `Spekooh` (was lowercase). |
 
 ## Known gaps
 
-No flat 2D logo or wordmark. The typeface is a substitution. Motion is undefined beyond press and sheet. The README's exact pixel values came from screenshots; the tokens above are what ships.
+The typeface is a substitution. Motion is undefined beyond press and sheet. The README's exact pixel values came from screenshots; the tokens above are what ships.
