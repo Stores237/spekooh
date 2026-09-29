@@ -25,6 +25,7 @@ Every change made in this stretch of work, why it was made, where it lives, how 
 | 11 | Summary notes: text, assignment to support staff, dashboard card | Backend + app + docs | #204 | No |
 | 12 | "Test mode" notice wherever money changes hands | Backend + app + docs | #203 | No |
 | 13 | AI assistant chat history, on the phone | App + docs | #202 | No |
+| 14 | Papers tab: hardware back steps through the drill-down instead of jumping to Home | App | the papers-back-button PR | No |
 
 ---
 
@@ -179,6 +180,16 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 **⚠️ Privacy Policy gap to look at (not changed here).** The Privacy Policy does not mention the AI assistant at all. It should say that what a student types into the assistant is sent to an outside AI provider to produce the reply, and that the chat history is kept on their phone only. Worth a legal review; it is a text change plus a bump of `TERMS_OF_SERVICE_VERSION` only if you decide it is material.
 
 **Verify.** Sign in, open the assistant, ask something; leave and come back; open **Chat history**: the chat is there. Tap it, ask a follow-up, check it is still one chat. Delete it and check the assistant starts blank.
+
+## 14. Papers tab: the hardware back button skipped the whole drill-down
+
+**The bug.** Papers browsing is a step-by-step drill-down (category -> system -> exam type -> track -> subject -> paper list), each screen's own back chevron correctly steps back one level. The hardware/system back button did not: `RootShellState`'s single `PopScope` only knew about tabs, so pressing back from anywhere inside that drill-down jumped straight to the Home tab, skipping every intermediate step.
+
+**The fix.** `PapersScreenState` (made public so `RootShellState` can hold a `GlobalKey` to it) gained `maybeStepBack()`: steps back one level and returns `true`, or returns `false` at the very first (category) step, where there is nothing left to step back through. `RootShellState`'s back handling now offers the Papers tab this call first, and only falls through to its existing "back goes to Home" behavior when it returns `false` — the same behavior every other tab already had, unchanged.
+
+**Why not two separate `PopScope` widgets.** Both Papers and RootShell sit on the same single route (Papers is a tab, not a pushed screen), and Flutter's `ModalRoute` fires every registered `PopScope`'s callback when a pop is blocked, not just the "nearest" one — nesting one inside the other would have run both `maybeStepBack()` and the jump-to-Home at once. The fix keeps one `PopScope`, owned by `RootShellState`, and has it ask Papers what to do first.
+
+**Tests.** Real system-back gestures (`tester.binding.handlePopRoute()`, not the on-screen chevron): one step back from the system step lands back on the category step, not Home; the full depth (category -> system -> exam type -> subject -> paper list) steps back one level at a time all the way to category, and only the next back after that goes to Home; from the category step alone, back still goes straight to Home as before. Mutation-checked: reverting the fix makes the deep-stepping tests fail with the exact reported symptom.
 
 ---
 
