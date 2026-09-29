@@ -36,7 +36,7 @@ markdown-it-py==4.2.0
 mdurl==0.1.2
 msgpack==1.2.2
 mypy_extensions==1.1.0
-numpy==2.5.2
+numpy==2.5.3
 packageurl-python==0.17.6
 packaging==26.3
 pathspec==1.1.1
