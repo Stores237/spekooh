@@ -43,6 +43,10 @@ class RootShellState extends State<RootShell> {
   int _activeTab = 0;
   bool _isLoggedIn = false;
 
+  // So the hardware/system back button can be offered to the Papers tab's
+  // own taxonomy drill-down first -- see PapersScreenState.maybeStepBack.
+  final _papersKey = GlobalKey<PapersScreenState>();
+
   // Terms re-acceptance (see _checkTermsAcceptance): true once this signed-in
   // account is known to have accepted the current version, so the check runs
   // once per sign-in rather than on every auth notification.
@@ -297,7 +301,16 @@ class RootShellState extends State<RootShell> {
     return PopScope(
       canPop: _activeTab == 0,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) goToTab(0);
+        if (didPop) return;
+        // On the Papers tab, step back through category -> system -> exam
+        // type -> track -> subject -> paper list first (owner-reported: back
+        // used to skip straight past all of that to Home). Only once
+        // PapersScreenState reports there is nothing left to step back
+        // through (or the tab isn't Papers, or a guest is seeing the
+        // "log in required" view instead of a real PapersScreen at all) does
+        // this fall through to the existing "back goes to Home" behavior.
+        if (_activeTab == 1 && (_papersKey.currentState?.maybeStepBack() ?? false)) return;
+        goToTab(0);
       },
       child: Scaffold(
         backgroundColor: AppColors.surfaceBg,
@@ -355,7 +368,7 @@ class RootShellState extends State<RootShell> {
       final l10n = AppLocalizations.of(context)!;
       return AccountRequiredView(body: l10n.papersRequireAccountBody, onLogin: () => _openAuthSheet(context));
     }
-    return PapersScreen(onOpenPaper: (paper) => _openPaperDetail(context, paper));
+    return PapersScreen(key: _papersKey, onOpenPaper: (paper) => _openPaperDetail(context, paper));
   }
 
   Widget _buildHomeTab(BuildContext context) {

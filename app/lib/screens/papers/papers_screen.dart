@@ -54,10 +54,15 @@ class PapersScreen extends StatefulWidget {
   final ValueChanged<PaperSelection>? onOpenPaper;
 
   @override
-  State<PapersScreen> createState() => _PapersScreenState();
+  State<PapersScreen> createState() => PapersScreenState();
 }
 
-class _PapersScreenState extends State<PapersScreen> {
+/// Public (unlike this codebase's usual private `_XyzState`) so RootShell can
+/// hold a [GlobalKey] to it and call [maybeStepBack] when the hardware/system
+/// back gesture fires while this tab is showing — the taxonomy drill-down
+/// (category -> system -> exam type -> track -> subject -> paper list) is
+/// private state RootShell has no other way to see.
+class PapersScreenState extends State<PapersScreen> {
   PaperBrowseSelection _selection = const PaperBrowseSelection();
   final _searchController = TextEditingController();
   String _paperQuery = '';
@@ -79,6 +84,21 @@ class _PapersScreenState extends State<PapersScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Owner-reported: the hardware/system back button skipped this screen's
+  /// own step-by-step drill-down entirely and went straight to the Home tab,
+  /// even from deep inside the taxonomy (e.g. from the subject list back to
+  /// the category grid). Called by RootShell before it falls back to its own
+  /// "back goes to Home" handling (see RootShellState's PopScope) -- this
+  /// steps back one level and reports true if it did, so RootShell knows not
+  /// to also act. At the top step (no category chosen yet) there is nothing
+  /// left to step back through here, so this reports false and RootShell's
+  /// own handling takes over, same as it always has for every other tab.
+  bool maybeStepBack() {
+    if (_selection.currentStep == PaperBrowseStep.category) return false;
+    _select(() => _selection.stepBack());
+    return true;
   }
 
   void _select(PaperBrowseSelection Function() next) => setState(() {

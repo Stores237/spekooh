@@ -136,6 +136,7 @@ The admin wears the same brand: site title "Spekooh Admin", subheader "Review & 
 | 2026-09-28 | Anything that looks live but isn't says so, right where it matters. Payments are simulated, so every payment screen shows "Test mode: payments aren't live yet…". The server reports what is live (`/api/status/features/`), so the notice disappears by itself once a real provider is wired in; if the server can't be reached the notice stays. |
 | 2026-09-28 | The AI assistant keeps a chat history on the phone only (per account, 30 chats, 200 messages each), with History and New chat buttons in its header and delete / Clear all that ask first. Not stored on the server: that would be new data collection needing a Privacy Policy change. |
 | 2026-09-28 | This file created; the repo had referenced a `DESIGN.md` that didn't exist. |
+| 2026-09-29 | Papers tab: the hardware/system back button now steps back through the category → system → exam type → track → subject → paper list drill-down one level at a time, matching every other step-by-step flow, instead of jumping straight to Home from anywhere inside it. |
 
 ## Known gaps
 
