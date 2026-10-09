@@ -53,7 +53,7 @@ py-serializable==2.1.0
 Pygments==2.21.0
 PyJWT==2.15.0
 pyparsing==3.3.2
-pypdf==6.16.1
+pypdf==6.19.0
 pytesseract==0.3.13
 pytest==9.1.1
 pytest-django==4.14.0
