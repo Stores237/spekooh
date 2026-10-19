@@ -7,6 +7,7 @@ from pathlib import Path
 
 import environ
 import sentry_sdk
+from botocore.config import Config as BotoConfig
 from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -252,6 +253,26 @@ STORAGES = {
                 "querystring_auth": True,
                 "querystring_expire": 3600,
                 "default_acl": None,
+                # Real live failure (2026-10-19): every paper/report
+                # submission 500'd on staging with
+                # "botocore.exceptions.ClientError: An error occurred ()
+                # when calling the PutObject operation:" — an empty error
+                # code and message, which is what botocore produces when
+                # it can't parse the response as a real S3 error body.
+                # Root cause: recent botocore (pinned 1.43.98 here)
+                # defaults to streaming S3 uploads with an "aws-chunked"
+                # trailer-checksum envelope; Supabase Storage's S3-
+                # compatible gateway doesn't handle that framing and
+                # returns something that isn't valid S3 XML. "when_required"
+                # matches pre-default-checksum botocore behavior — only
+                # sends/validates a checksum when the operation actually
+                # requires one, which PutObject doesn't. Real AWS S3 still
+                # works identically either way, so this isn't a
+                # Supabase-only special case to maintain.
+                "client_config": BotoConfig(
+                    request_checksum_calculation="when_required",
+                    response_checksum_validation="when_required",
+                ),
             },
         }
         if _aws_bucket
