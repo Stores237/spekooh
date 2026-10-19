@@ -5,6 +5,7 @@ from django.test import Client
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
+from apps.papers.models import ExamCategory, Subject
 
 from .factories import NoteFactory
 from .models import Note
@@ -15,13 +16,21 @@ def api_client():
     return APIClient()
 
 
+def _subject(title):
+    return Subject.objects.get(title=title)
+
+
+def _level(title):
+    return ExamCategory.objects.get(title=title)
+
+
 @pytest.mark.django_db
 def test_notes_were_seeded_by_migration():
     assert Note.objects.count() == 5
     newton = Note.objects.get(title__contains="Newton")
     assert "—" not in newton.title  # 0004 backfill also fixed the em dash left over in 0002's seed data
-    assert newton.subject_title == "Physics"
-    assert newton.academic_level == "A Level"
+    assert newton.subject.title == "Physics"
+    assert newton.level.title == "Secondary"  # 0008 maps the old free-text "A Level" to its real category
 
 
 @pytest.mark.django_db
@@ -34,20 +43,22 @@ def test_notes_endpoint_is_public(api_client):
 
 @pytest.mark.django_db
 def test_notes_endpoint_returns_title_subtitle_and_filter_fields(api_client):
-    NoteFactory(title="Extra Note", subtitle="Extra · Subject", subject_title="Extra", academic_level="Subject")
+    NoteFactory(
+        title="Extra Note", subtitle="Extra · Subject", subject=_subject("Physics"), level=_level("Secondary")
+    )
     response = api_client.get("/api/notes/")
     rows = response.data["results"] if isinstance(response.data, dict) else response.data
     row = next(r for r in rows if r["title"] == "Extra Note")
     assert row["subtitle"] == "Extra · Subject"
-    assert row["subject_title"] == "Extra"
-    assert row["academic_level"] == "Subject"
+    assert row["subject_title"] == "Physics"
+    assert row["academic_level"] == "Secondary"
     assert set(row.keys()) == {"id", "title", "subtitle", "subject_title", "academic_level"}
 
 
 @pytest.mark.django_db
 def test_notes_endpoint_filters_by_subject_and_level(api_client):
-    NoteFactory(title="Physics note", subject_title="Physics", academic_level="A Level")
-    NoteFactory(title="Biology note", subject_title="Biology", academic_level="O Level")
+    NoteFactory(title="Physics note", subject=_subject("Physics"), level=_level("Secondary"))
+    NoteFactory(title="Biology note", subject=_subject("Biology"), level=_level("Primary"))
 
     response = api_client.get("/api/notes/?subject_title=Physics")
     rows = response.data["results"] if isinstance(response.data, dict) else response.data
@@ -55,7 +66,7 @@ def test_notes_endpoint_filters_by_subject_and_level(api_client):
     assert "Physics note" in titles
     assert "Biology note" not in titles
 
-    response = api_client.get("/api/notes/?academic_level=O Level")
+    response = api_client.get("/api/notes/?academic_level=Primary")
     rows = response.data["results"] if isinstance(response.data, dict) else response.data
     titles = [r["title"] for r in rows]
     assert "Biology note" in titles
@@ -110,8 +121,8 @@ def test_seed_gives_every_level_a_note_with_real_text_and_is_idempotent():
 
     assert Note.objects.count() == len(DEMO_NOTES) == 17
     assert not Note.objects.filter(body="").exists()  # all seventeen can be read
-    levels = set(Note.objects.values_list("academic_level", flat=True))
-    assert {"Primary", "BEPC", "Seconde", "O Level", "A Level", "Probatoire", "Terminale", "Baccalauréat", "HND", "University"} <= levels
+    levels = set(Note.objects.values_list("level__title", flat=True))
+    assert {"Primary", "Secondary", "University", "Tertiary"} <= levels
 
     call_command("seed_demo_notes")
     assert Note.objects.count() == 17  # no duplicates
@@ -172,12 +183,19 @@ def test_support_staff_can_create_a_note_in_the_admin():
 
     response = client.post(
         "/admin/notes/note/add/",
-        {"title": "Vectors Revision", "subtitle": "", "subject_title": "Physics", "academic_level": "A Level", "sort_order": 10},
+        {
+            "title": "Vectors Revision",
+            "subtitle": "",
+            "subject": _subject("Physics").pk,
+            "level": _level("Secondary").pk,
+            "body": "Some text.",
+            "sort_order": 10,
+        },
     )
 
     assert response.status_code == 302
     note = Note.objects.get(title="Vectors Revision")
-    assert note.subtitle == "Physics · A Level"  # derived, so the app row is never blank
+    assert note.subtitle == "Physics · Secondary"  # derived, so the app row is never blank
 
 
 @pytest.mark.django_db
@@ -186,7 +204,14 @@ def test_a_typed_subtitle_is_not_overridden_by_the_derived_one():
 
     client.post(
         "/admin/notes/note/add/",
-        {"title": "Custom Line", "subtitle": "Exam tips", "subject_title": "Physics", "academic_level": "A Level", "sort_order": 1},
+        {
+            "title": "Custom Line",
+            "subtitle": "Exam tips",
+            "subject": _subject("Physics").pk,
+            "level": _level("Secondary").pk,
+            "body": "Some text.",
+            "sort_order": 1,
+        },
     )
 
     assert Note.objects.get(title="Custom Line").subtitle == "Exam tips"
@@ -194,12 +219,19 @@ def test_a_typed_subtitle_is_not_overridden_by_the_derived_one():
 
 @pytest.mark.django_db
 def test_support_staff_can_update_a_note_in_the_admin():
-    note = NoteFactory(title="Old title", subject_title="Physics", academic_level="O Level")
+    note = NoteFactory(title="Old title", subject=_subject("Physics"), level=_level("Secondary"))
     client = _support_client()
 
     response = client.post(
         f"/admin/notes/note/{note.id}/change/",
-        {"title": "New title", "subtitle": note.subtitle, "subject_title": "Physics", "academic_level": "O Level", "sort_order": 0},
+        {
+            "title": "New title",
+            "subtitle": note.subtitle,
+            "subject": _subject("Physics").pk,
+            "level": _level("Secondary").pk,
+            "body": note.body,
+            "sort_order": 0,
+        },
     )
 
     assert response.status_code == 302
@@ -216,6 +248,35 @@ def test_support_staff_cannot_delete_a_note():
 
     assert response.status_code == 403
     assert Note.objects.filter(id=note.id).exists()
+
+
+@pytest.mark.django_db
+def test_support_staff_can_add_a_subject_that_is_missing_from_the_list():
+    """The '+' beside Subject only works if Support has add permission on it
+    (papers 0018) — this exercises the real admin popup endpoint, not just
+    the note form."""
+    client = _support_client()
+
+    response = client.post(
+        "/admin/papers/subject/add/",
+        {"key": "literature", "title": "Literature", "language": "en"},
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    assert response.status_code in (200, 302)
+    assert Subject.objects.filter(title="Literature").exists()
+
+
+@pytest.mark.django_db
+def test_support_staff_cannot_add_a_new_academic_level():
+    """Academic level proposes from the app's six already-defined categories
+    only — no '+' popup, unlike Subject."""
+    client = _support_client()
+
+    page = client.get("/admin/notes/note/add/").content.decode()
+
+    assert 'name="level"' in page
+    assert "/admin/papers/examcategory/add/" not in page
 
 
 # --- assignment to support staff, and who can do what in the admin -------------
@@ -235,7 +296,14 @@ def _client_for(user):
 
 
 def _note_post(**overrides):
-    data = {"title": "New note", "subtitle": "", "subject_title": "Physics", "academic_level": "O Level", "sort_order": 1}
+    data = {
+        "title": "New note",
+        "subtitle": "",
+        "subject": _subject("Physics").pk,
+        "level": _level("Secondary").pk,
+        "body": "Some text.",
+        "sort_order": 1,
+    }
     data.update(overrides)
     return data
 

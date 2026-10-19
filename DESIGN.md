@@ -138,6 +138,7 @@ The admin wears the same brand: site title "Spekooh Admin", subheader "Review & 
 | 2026-09-28 | This file created; the repo had referenced a `DESIGN.md` that didn't exist. |
 | 2026-09-29 | Papers tab: the hardware/system back button now steps back through the category → system → exam type → track → subject → paper list drill-down one level at a time, matching every other step-by-step flow, instead of jumping straight to Home from anywhere inside it. |
 | 2026-09-29 | Android adaptive launcher icon added (Play Store requires one). Background layer color `#F5E0B2`, sampled from the corners of the existing app icon's gradient — Android's adaptive background must be a flat color, not a gradient bitmap. Foreground reuses the existing maskable PWA icon (`web/icons/Icon-maskable-512.png`) as-is. Launcher label also capitalized to `Spekooh` (was lowercase). |
+| 2026-09-29 | Summary notes' Subject and Academic level are picked from the app's own taxonomy (the `Subject`/`ExamCategory` tables every other screen already uses), not typed free text. Subject keeps a '+' to add a missing one; Academic level doesn't — the six categories are already a complete, fixed set. Summary text is compulsory: a note with nothing to read can no longer be saved. |
 
 ## Known gaps
 

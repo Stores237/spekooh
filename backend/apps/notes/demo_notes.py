@@ -8,6 +8,10 @@ starting "## " is a heading and a line starting "- " is a bullet point.
 The first five notes already exist on every database (seeded by migration
 0002 and fixed up by 0004) with no text; the seed command fills their text in
 without touching anything an admin has since written.
+
+subject/academic_level here are real apps.papers.Subject titles and
+ExamCategory titles (2026-09-29, matching Note.subject/Note.level) — the
+same already-defined taxonomy the rest of the app uses, not free text.
 """
 
 # (title, subject_title, academic_level, body)
@@ -15,7 +19,7 @@ DEMO_NOTES = [
     (
         "Mechanics: Newton’s Laws",
         "Physics",
-        "A Level",
+        "Secondary",
         """Newton's three laws describe how forces change the motion of objects.
 
 ## The laws
@@ -34,7 +38,7 @@ A 1,200 kg car accelerates at 2.5 m/s². The resultant force is 1,200 × 2.5 = 3
     (
         "Cell Structure & Function",
         "Biology",
-        "O Level",
+        "Secondary",
         """The cell is the basic unit of life. All living things are made of one or more cells.
 
 ## Parts of an animal cell
@@ -55,7 +59,7 @@ Plant and animal cells share a nucleus, cytoplasm, membrane, mitochondria and ri
     (
         "La Dissertation Philosophique",
         "Philosophie",
-        "Baccalauréat",
+        "Secondary",
         """La dissertation est un exercice de réflexion argumentée : on répond à une question en construisant un raisonnement organisé.
 
 ## Les étapes
@@ -75,7 +79,7 @@ Réciter un cours sans lien avec le sujet, ou répondre par oui ou par non sans 
     (
         "Acids, Bases & Salts",
         "Chemistry",
-        "O Level",
+        "Secondary",
         """Acids and bases are chemical opposites, and when they react they make a salt and water.
 
 ## Properties
@@ -99,7 +103,7 @@ Never taste chemicals, and wear eye protection when you handle acids or alkalis.
     (
         "Les Nombres Complexes",
         "Mathématiques",
-        "Terminale",
+        "Secondary",
         """Un nombre complexe s'écrit z = a + ib, où a et b sont des réels et i est tel que i² = −1.
 
 ## Vocabulaire
@@ -166,7 +170,7 @@ Regarde toujours l'article : « les » ou « des » t'indique que le nom est au 
     (
         "Le Théorème de Pythagore",
         "Mathématiques",
-        "BEPC",
+        "Secondary",
         """Dans un triangle rectangle, le carré de l'hypoténuse (le côté opposé à l'angle droit) est égal à la somme des carrés des deux autres côtés.
 
 ## La formule
@@ -182,7 +186,7 @@ AB = 3 cm et AC = 4 cm. Alors BC² = 3² + 4² = 9 + 16 = 25, donc BC = 5 cm.
     (
         "La Photosynthèse en Bref",
         "SVT",
-        "Seconde",
+        "Secondary",
         """La photosynthèse est la réaction par laquelle les plantes vertes fabriquent leur nourriture à partir de la lumière.
 
 ## Le bilan
@@ -203,7 +207,7 @@ Sans lumière, la photosynthèse s'arrête ; la respiration, elle, continue jour
     (
         "Quadratic Equations Quick Guide",
         "Mathematics",
-        "O Level",
+        "Secondary",
         """A quadratic equation has the form ax² + bx + c = 0, where a is not zero. It can have two, one or no real solutions.
 
 ## Three ways to solve it
@@ -223,7 +227,7 @@ Always put your answers back into the original equation to make sure both work."
     (
         "Rivers, Relief & Climate of Cameroon",
         "Geography",
-        "O Level",
+        "Secondary",
         """Cameroon is often called "Africa in miniature" because it has almost every kind of relief and climate found on the continent.
 
 ## Relief
@@ -246,7 +250,7 @@ Always put your answers back into the original equation to make sure both work."
     (
         "Organic Chemistry: Functional Groups",
         "Chemistry",
-        "A Level",
+        "Secondary",
         """A functional group is the atom or group of atoms that decides how an organic molecule reacts.
 
 ## Common groups
@@ -266,8 +270,8 @@ Name a compound from its longest carbon chain, then add the ending for the main 
     ),
     (
         "L'Électricité : la Loi d'Ohm",
-        "Physique",
-        "Probatoire",
+        "Physique-Chimie",
+        "Secondary",
         """La loi d'Ohm relie la tension aux bornes d'un conducteur ohmique au courant qui le traverse.
 
 ## La formule
@@ -288,7 +292,7 @@ La loi d'Ohm ne s'applique qu'aux conducteurs ohmiques : leur caractéristique t
     ),
     (
         "Introduction to Algorithms & Complexity",
-        "Computer Science",
+        "Computer science",
         "University",
         """An algorithm is a finite, unambiguous list of steps that solves a problem. Complexity measures how the cost of an algorithm grows as the input gets bigger.
 
@@ -331,7 +335,7 @@ If a poor harvest cuts the supply of tomatoes, the supply curve shifts left: the
     (
         "Double-Entry Bookkeeping Basics",
         "Accounting",
-        "HND",
+        "Tertiary",
         """In double-entry bookkeeping every transaction is recorded twice: once as a debit and once as a credit, for the same amount.
 
 ## The accounting equation

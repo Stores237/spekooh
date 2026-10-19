@@ -13,10 +13,11 @@ Safe to re-run, and it never overwrites anything staff have written:
     python manage.py seed_demo_notes --remove   # delete demo notes that are still untouched
 """
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from apps.notes.demo_notes import DEMO_NOTES, TITLES_FROM_MIGRATIONS
 from apps.notes.models import Note
+from apps.papers.models import ExamCategory, Subject
 
 
 class Command(BaseCommand):
@@ -37,12 +38,24 @@ class Command(BaseCommand):
 
         created = filled = 0
         for index, (title, subject_title, academic_level, body) in enumerate(DEMO_NOTES):
+            try:
+                subject = Subject.objects.get(title=subject_title)
+            except Subject.DoesNotExist:
+                raise CommandError(
+                    f'"{title}": no Subject titled {subject_title!r} exists — add it in the admin first.'
+                )
+            try:
+                level = ExamCategory.objects.get(title=academic_level)
+            except ExamCategory.DoesNotExist:
+                raise CommandError(
+                    f'"{title}": no academic level titled {academic_level!r} exists — check apps.papers.ExamCategory.'
+                )
             note, was_created = Note.objects.get_or_create(
                 title=title,
                 defaults={
                     "subtitle": f"{subject_title} · {academic_level}",
-                    "subject_title": subject_title,
-                    "academic_level": academic_level,
+                    "subject": subject,
+                    "level": level,
                     "body": body,
                     "sort_order": index,
                 },

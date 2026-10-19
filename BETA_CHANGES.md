@@ -205,6 +205,18 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 
 ---
 
+## 16. Summary notes: compulsory fields, and Subject/Academic level picked, not typed
+
+**The gap.** A note's Subject and Academic level were free-text fields — nothing stopped two notes about the same subject being spelled two different ways, nothing proposed the levels the app already has defined, and nothing stopped saving a note with no summary text at all.
+
+**The fix.** `Note.subject`/`Note.level` are now real foreign keys into the same `apps.papers` taxonomy every other part of the app already uses — `Subject` and `ExamCategory` — instead of free-text `subject_title`/`academic_level` columns. In the admin, Subject proposes from the app's own subject list with a '+' to add one that's missing (Support can now do this — `papers.add_subject` only, nothing wider); Academic level proposes from the six already-defined categories with no way to add a new one, since that set is already complete. `body` (the summary text) is now required — a note with nothing to read is a placeholder, not something to publish. The public API's wire format is unchanged: `subject_title`/`academic_level` still come back as plain strings, now sourced from the FK's title.
+
+**Backfill.** Four of the existing demo notes' subjects (Mathematics, Science, Français, Geography) had no exact match in the original 12-subject curated list — real, ordinary school subjects missing from it, not anything specific to notes, so the migration adds them rather than force-fitting a note onto the wrong subject. "Physique" (no standalone entry, only "Physique-Chimie") is aliased to the existing one instead, since a near-duplicate would be redundant. Academic-level free text ("O Level", "BEPC", "Terminale", "Seconde", …) is mapped to the real category it belongs to (all of it collapses to Secondary; "Primary"/"University" already matched a category title directly). If a future deploy has a note the migration can't match, it fails loudly rather than silently leaving a required field unset.
+
+**Verify.** `python manage.py check` and `makemigrations --check` clean; full `apps.notes`/`apps.accounts`/`apps.papers` suites (262 tests) pass; `ruff check` clean on every touched file.
+
+---
+
 ## Owner decisions recorded in this stretch
 
 | Decision | Choice |
