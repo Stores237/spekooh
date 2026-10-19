@@ -107,6 +107,23 @@ LOGGING = {
             "filters": ["require_debug_false"],
             "class": "django.utils.log.AdminEmailHandler",
         },
+        # TEMPORARY (2026-10-19) — diagnosing a live staging-only failure
+        # where every direct boto3 call to Supabase Storage (PutObject,
+        # GetObject, DeleteObject) gets back a response botocore can't
+        # parse as real S3 XML ("An error occurred () when calling the
+        # ... operation:"), while a presigned URL used by an external
+        # client (not Render itself) works fine against the same bucket.
+        # This surfaces botocore's own wire-level request/response debug
+        # logs (headers + raw body) so the next failure shows the actual
+        # bytes instead of another guess. DELETE this handler and the
+        # "botocore" logger entry below once that's captured — botocore's
+        # DEBUG output includes request headers (SigV4 Authorization
+        # value, not the secret key itself, but still not something to
+        # leave logged indefinitely).
+        "botocore_debug": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+        },
     },
     # Redefining the "console" handler above is not enough on its own —
     # dictConfig only relinks a logger to a same-named handler if that
@@ -120,6 +137,12 @@ LOGGING = {
         "django": {
             "handlers": ["console", "mail_admins"],
             "level": "INFO",
+        },
+        # TEMPORARY — see "botocore_debug" handler comment above.
+        "botocore": {
+            "handlers": ["botocore_debug"],
+            "level": "DEBUG",
+            "propagate": False,
         },
     },
 }
