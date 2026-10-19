@@ -73,6 +73,56 @@ sentry_sdk.init(
 # pair in its own message body anyway.
 ADMINS = [(email, email) for email in env.list("DJANGO_ADMIN_EMAILS", default=[])]
 
+# Third error-visibility channel, real incident (2026-10-19): staging has
+# neither DJANGO_ADMIN_EMAILS set (ADMINS is empty there) nor SENTRY_DSN
+# wired into render.yaml for that service — so every unhandled 500 (a
+# real paper-submission crash, this time) left zero trace anywhere.
+# Django's own default LOGGING config gates its "console" handler behind
+# require_debug_true, so with DEBUG=False (correct for a public server)
+# nothing reaches stdout either — the other two channels above both
+# silently no-op in exactly the environment that needs them most. This
+# redefines just that one handler, dropping the debug-only filter, so
+# django.request's ERROR-level logging (every unhandled view exception)
+# always reaches Render's own log stream — independent of whether ADMINS
+# or SENTRY_DSN are ever configured for a given environment.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    # Re-declared, not inherited — a logger's handler references (below)
+    # must resolve against handlers defined in *this* dictConfig call, not
+    # ones from Django's own earlier DEFAULT_LOGGING pass, confirmed live
+    # (dictConfig raised "Unable to configure logger 'django'" pointing at
+    # "mail_admins" until this was added here too).
+    "filters": {
+        "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+    },
+    "handlers": {
+        "console": {
+            "level": "ERROR",
+            "class": "logging.StreamHandler",
+        },
+        "mail_admins": {
+            "level": "ERROR",
+            "filters": ["require_debug_false"],
+            "class": "django.utils.log.AdminEmailHandler",
+        },
+    },
+    # Redefining the "console" handler above is not enough on its own —
+    # dictConfig only relinks a logger to a same-named handler if that
+    # logger is also listed here (confirmed live: without this, "django"
+    # kept pointing at Django's original DEFAULT_LOGGING handler object,
+    # filter and all). Mirrors Django's own default handler list for
+    # "django" (["console", "mail_admins"]) so AdminEmailHandler still
+    # fires wherever ADMINS is actually set — this only removes the
+    # debug-only filter, it doesn't replace that channel.
+    "loggers": {
+        "django": {
+            "handlers": ["console", "mail_admins"],
+            "level": "INFO",
+        },
+    },
+}
+
 INSTALLED_APPS = [
     "unfold",  # must precede django.contrib.admin to override its templates
     "django.contrib.admin",
