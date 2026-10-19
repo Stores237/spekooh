@@ -48,7 +48,7 @@ dependencies:
 
   # Real file picking for paper/report uploads (camera photo or PDF/doc pick).
   file_picker: ^11.0.3
-  image_picker: ^1.1.2
+  image_picker: ^1.2.4
 
   # Owner-requested (2026-09-01): a submitted paper is a photo of a physical
   # document — this finds its real edges/corners and auto-crops to just the
