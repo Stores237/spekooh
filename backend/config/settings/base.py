@@ -55,6 +55,24 @@ sentry_sdk.init(
     # measurable overhead on top of tracing, and nothing about this app's
     # actual traffic today indicates a need for it; revisit if a real
     # performance question comes up, not preemptively.
+    #
+    # Real live incident (2026-10-19): sentry-sdk's default is `[".*"]`
+    # (every outgoing HTTP call, from any auto-instrumented library, gets
+    # `sentry-trace`/`baggage` headers injected for distributed tracing) —
+    # including boto3's own S3 calls, since sentry-sdk auto-enables its
+    # Boto3Integration whenever boto3 is importable. Those two headers
+    # end up inside botocore's own SigV4 `SignedHeaders`, but Supabase
+    # Storage's gateway recomputes the signature from what actually hits
+    # the wire and gets `SignatureDoesNotMatch` — every direct storage
+    # write (paper uploads, avatars) failed this way, confirmed live via
+    # botocore's own wire-level debug logging (temporarily enabled to
+    # catch this, see the "botocore_debug" LOGGING handler below). This
+    # app has no other first-party service to maintain trace continuity
+    # with, so there is no real request that benefits from propagating
+    # these headers anywhere — restricting to "nothing" closes this whole
+    # class of bug (any future auto-instrumented outgoing call, not just
+    # S3) rather than special-casing the Supabase domain.
+    trace_propagation_targets=[],
 )
 
 # Django's own, second, independent error-visibility channel (2026-09-13,
@@ -107,23 +125,6 @@ LOGGING = {
             "filters": ["require_debug_false"],
             "class": "django.utils.log.AdminEmailHandler",
         },
-        # TEMPORARY (2026-10-19) — diagnosing a live staging-only failure
-        # where every direct boto3 call to Supabase Storage (PutObject,
-        # GetObject, DeleteObject) gets back a response botocore can't
-        # parse as real S3 XML ("An error occurred () when calling the
-        # ... operation:"), while a presigned URL used by an external
-        # client (not Render itself) works fine against the same bucket.
-        # This surfaces botocore's own wire-level request/response debug
-        # logs (headers + raw body) so the next failure shows the actual
-        # bytes instead of another guess. DELETE this handler and the
-        # "botocore" logger entry below once that's captured — botocore's
-        # DEBUG output includes request headers (SigV4 Authorization
-        # value, not the secret key itself, but still not something to
-        # leave logged indefinitely).
-        "botocore_debug": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-        },
     },
     # Redefining the "console" handler above is not enough on its own —
     # dictConfig only relinks a logger to a same-named handler if that
@@ -137,12 +138,6 @@ LOGGING = {
         "django": {
             "handlers": ["console", "mail_admins"],
             "level": "INFO",
-        },
-        # TEMPORARY — see "botocore_debug" handler comment above.
-        "botocore": {
-            "handlers": ["botocore_debug"],
-            "level": "DEBUG",
-            "propagate": False,
         },
     },
 }
