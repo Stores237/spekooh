@@ -243,7 +243,6 @@ STORAGES = {
                 "bucket_name": _aws_bucket,
                 "endpoint_url": env("AWS_S3_ENDPOINT_URL", default=None),
                 "region_name": env("AWS_S3_REGION_NAME", default=None),
-                "signature_version": "s3v4",
                 # Bucket is private (Supabase Storage default) — every
                 # file_url is a freshly signed, expiring link, not a static
                 # public path. 3600s matches django-storages' own default;
@@ -269,7 +268,21 @@ STORAGES = {
                 # requires one, which PutObject doesn't. Real AWS S3 still
                 # works identically either way, so this isn't a
                 # Supabase-only special case to maintain.
+                #
+                # signature_version lives HERE, not as its own top-level
+                # OPTIONS key (where it used to be) — real regression found
+                # live immediately after shipping the checksum fix above:
+                # django-storages' S3Storage only builds its own
+                # Config(signature_version=...) when self.client_config is
+                # None (see storages/backends/s3.py), so setting
+                # client_config explicitly silently discarded the separate
+                # "signature_version": "s3v4" key, and presigned URLs
+                # started coming back in legacy SigV2 query-auth form
+                # (AWSAccessKeyId=.../Signature=...) instead of SigV4 —
+                # Supabase's gateway rejected every one with a 403 "Missing
+                # signature". One Config object, one source of truth.
                 "client_config": BotoConfig(
+                    signature_version="s3v4",
                     request_checksum_calculation="when_required",
                     response_checksum_validation="when_required",
                 ),
