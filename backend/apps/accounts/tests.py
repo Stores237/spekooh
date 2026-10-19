@@ -736,9 +736,18 @@ def test_reviewer_staff_can_actually_create_a_note_and_a_pamphlet():
     client = Client()
     client.force_login(staff)
 
+    from apps.papers.models import ExamCategory, Subject
+
     note_response = client.post(
         "/admin/notes/note/add/",
-        {"title": "Physics Revision Notes", "subtitle": "", "subject_title": "", "academic_level": "", "sort_order": 0},
+        {
+            "title": "Physics Revision Notes",
+            "subtitle": "",
+            "subject": Subject.objects.get(title="Physics").pk,
+            "level": ExamCategory.objects.get(title="Secondary").pk,
+            "body": "Some text.",
+            "sort_order": 0,
+        },
     )
     assert note_response.status_code == 302  # real redirect-after-save, not a re-rendered form with errors
     from apps.notes.models import Note
@@ -790,11 +799,13 @@ def test_support_group_is_read_only_except_for_authoring_notes():
     support = Group.objects.get(name="Support")
     codenames = set(support.permissions.values_list("codename", flat=True))
     assert {"view_user", "view_papersubmission", "view_paymenttransaction"} <= codenames
-    # The one deliberate exception (owner request, 2026-09-28, migration
-    # 0016): Support authors study notes. Nothing else is writable, and even
-    # Note can't be deleted.
+    # The deliberate exceptions: Support authors study notes (owner request,
+    # 2026-09-28, migration 0016) and can add a subject a note needs that
+    # isn't in the list yet (2026-09-29, migration 0018) -- add_subject only,
+    # not view/change/delete, matching exactly what the notes admin's '+'
+    # popup needs. Nothing else is writable, and even Note can't be deleted.
     writes = {c for c in codenames if c.startswith(("change_", "add_", "delete_"))}
-    assert writes == {"add_note", "change_note"}
+    assert writes == {"add_note", "change_note", "add_subject"}
 
 
 @pytest.mark.django_db
@@ -1136,14 +1147,17 @@ def test_integration_ops_staff_can_upload_a_pdf_for_a_note():
     client = Client()
     client.force_login(staff)
 
+    from apps.papers.models import ExamCategory, Subject
+
     pdf = SimpleUploadedFile("physics-revision.pdf", b"%PDF-1.4 fake pdf bytes", content_type="application/pdf")
     response = client.post(
         "/admin/notes/note/add/",
         {
             "title": "Physics Revision Notes",
             "subtitle": "",
-            "subject_title": "",
-            "academic_level": "",
+            "subject": Subject.objects.get(title="Physics").pk,
+            "level": ExamCategory.objects.get(title="Secondary").pk,
+            "body": "Some text.",
             "sort_order": 0,
             "pdf_file": pdf,
         },
@@ -1168,14 +1182,17 @@ def test_integration_ops_cannot_upload_a_fake_pdf_for_a_note():
     client = Client()
     client.force_login(staff)
 
+    from apps.papers.models import ExamCategory, Subject
+
     fake_pdf = SimpleUploadedFile("notes.pdf", b"just plain text, not a real pdf", content_type="application/pdf")
     response = client.post(
         "/admin/notes/note/add/",
         {
             "title": "Fake Notes",
             "subtitle": "",
-            "subject_title": "",
-            "academic_level": "",
+            "subject": Subject.objects.get(title="Physics").pk,
+            "level": ExamCategory.objects.get(title="Secondary").pk,
+            "body": "Some text.",
             "sort_order": 0,
             "pdf_file": fake_pdf,
         },

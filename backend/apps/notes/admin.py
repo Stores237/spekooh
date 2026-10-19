@@ -5,6 +5,7 @@ from django.contrib import admin, messages
 from unfold.admin import ModelAdmin
 
 from apps.accounts.models import User
+from apps.papers.models import ExamCategory
 
 from .models import Note
 
@@ -73,15 +74,22 @@ class NoteAdmin(ModelAdmin):
     writing and maintaining it. The assignment is internal and never sent to
     the app."""
 
-    list_display = ("title", "subject_title", "academic_level", "assigned_to", "has_text", "sort_order")
+    list_display = ("title", "subject", "level", "assigned_to", "has_text", "sort_order")
     list_display_links = ("title",)
     list_editable = ("assigned_to",)
-    list_filter = ("academic_level", "subject_title", AssignedToFilter, HasTextFilter)
-    search_fields = ("title", "subject_title", "subtitle", "body")
+    list_filter = ("level", "subject", AssignedToFilter, HasTextFilter)
+    search_fields = ("title", "subject__title", "subtitle", "body")
     ordering = ("sort_order", "title")
     actions = ["assign_to_me", "clear_assignment"]
     fieldsets = (
-        ("Note", {"fields": ("title", "subject_title", "academic_level", "subtitle", "sort_order")}),
+        (
+            "Note",
+            {
+                "fields": ("title", "subject", "level", "subtitle", "sort_order"),
+                "description": "Subject proposes from the app's own subject list — use the '+' beside it if the "
+                "one you need isn't there yet. Academic level is one of the app's six browse categories.",
+            },
+        ),
         (
             "Summary text",
             {
@@ -95,6 +103,15 @@ class NoteAdmin(ModelAdmin):
     )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "level":
+            # A plain choice field, not super()'s usual RelatedFieldWidgetWrapper:
+            # the six academic levels are a fixed, already-complete set, so this
+            # field proposes from them but (unlike Subject) never offers a '+' to
+            # add a new one.
+            return forms.ModelChoiceField(
+                queryset=ExamCategory.objects.order_by("sort_order"),
+                label="Academic level",
+            )
         field = super().formfield_for_foreignkey(db_field, request, **kwargs)
         if db_field.name == "assigned_to" and isinstance(field, forms.ModelChoiceField):
             field.label_from_instance = staff_label
@@ -106,11 +123,11 @@ class NoteAdmin(ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         # subtitle is the one "Subject · Level" string the app renders on the
-        # note's row; without this a staff member who fills in Subject and
-        # Academic level (the fields that drive the filters) and skips
-        # Subtitle would publish a note with a blank second line.
-        if not obj.subtitle and obj.subject_title and obj.academic_level:
-            obj.subtitle = f"{obj.subject_title} · {obj.academic_level}"
+        # note's row; Subject and Academic level are compulsory now, so this
+        # always has something to build from when a staff member leaves
+        # Subtitle blank.
+        if not obj.subtitle:
+            obj.subtitle = f"{obj.subject.title} · {obj.level.title}"
         super().save_model(request, obj, form, change)
 
     @admin.action(description="Assign selected notes to me")

@@ -87,7 +87,9 @@ def authed_client(api_client):
 def test_taxonomy_was_seeded_by_migration():
     assert ExamCategory.objects.count() == 6
     assert ExamType.objects.filter(category__key="secondary", system="anglophone").count() == 2
-    assert Subject.objects.filter(language="fr").count() == 6
+    # 6 from this app's own seed (0002) + "Français" added by notes/0008 for a
+    # demo note that had no real subject match in the original curated list.
+    assert Subject.objects.filter(language="fr").count() == 7
     bepc = ExamType.objects.get(category__key="secondary", name="BEPC")
     assert bepc.tracks == ["Général", "Technique"]
     assert bepc.requires_track is True
