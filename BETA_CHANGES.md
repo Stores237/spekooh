@@ -8,6 +8,11 @@ Every change made in this stretch of work, why it was made, where it lives, how 
 - **Three migrations change real data when staging deploys** (staging runs `migrate` on every deploy): the credit → points carry-over (`xp/0003`), the discount-code backfill (`credits/0008`), and the Support notes permission (`accounts/0016`). Each is idempotent and reversible; details in each section. **None has been applied to any database yet.**
 - Production is still documented as not deployed (`RENDER_PRODUCTION.md`), so none of this has reached real users.
 
+## Beta window
+
+**Beta started 2026-10-20, time-boxed to one month (ends 2026-11-20).** Owner decision. Until then:
+beta build 5 (`spekooh-beta-1.0.0-build5.apk`, SHA-256 `6730d89f25e1fac1a04d2833b95eaf3c2b58646541e57d8094f8975d05091318`) is the distributed build — no app-code changes have shipped since it was built, only the backend fix below, so testers already on build 5 need no reinstall. Priority for this window should default to P0 stability/bug fixes over new features (see `TODOS.md`'s own P0/P1/P2 split) unless the owner says otherwise. No Play Console submission during this window — that's a separate, not-yet-started track (see `PLAY_STORE.md`).
+
 ## At a glance
 
 | # | Change | Where | PR | Changes real data? |
@@ -26,6 +31,9 @@ Every change made in this stretch of work, why it was made, where it lives, how 
 | 12 | "Test mode" notice wherever money changes hands | Backend + app + docs | #203 | No |
 | 13 | AI assistant chat history, on the phone | App + docs | #202 | No |
 | 14 | Papers tab: hardware back steps through the drill-down instead of jumping to Home | App | the papers-back-button PR | No |
+| 15 | Play Store prep: launcher label and a real adaptive icon | App | #212 | No |
+| 16 | Summary notes: compulsory fields; Subject/Academic level picked, not typed | Backend | #223 | Adds 1 subject row; backfills existing notes' subject/level |
+| 17 | Papers/reports couldn't be submitted at all (staging) — root cause: Sentry trace headers breaking S3 signatures | Backend | #224–#228 | No |
 
 ---
 
@@ -214,6 +222,20 @@ Section 5 is now "Points, rewards, and redeem codes": one balance; how points ar
 **Backfill.** Four of the existing demo notes' subjects (Mathematics, Science, Français, Geography) had no exact match in the original 12-subject curated list — real, ordinary school subjects missing from it, not anything specific to notes, so the migration adds them rather than force-fitting a note onto the wrong subject. "Physique" (no standalone entry, only "Physique-Chimie") is aliased to the existing one instead, since a near-duplicate would be redundant. Academic-level free text ("O Level", "BEPC", "Terminale", "Seconde", …) is mapped to the real category it belongs to (all of it collapses to Secondary; "Primary"/"University" already matched a category title directly). If a future deploy has a note the migration can't match, it fails loudly rather than silently leaving a required field unset.
 
 **Verify.** `python manage.py check` and `makemigrations --check` clean; full `apps.notes`/`apps.accounts`/`apps.papers` suites (262 tests) pass; `ruff check` clean on every touched file.
+
+---
+
+## 17. Papers and reports couldn't be submitted at all (staging), root-caused through four PRs
+
+**The bug.** Every paper/report submission on staging 500'd, both upload paths (direct multipart and the presigned `storage_key` path) — reported live by a real tester. Avatar upload (`apps.accounts`, unrelated code) hit the identical crash, ruling out app-specific logic from the start.
+
+**Why it took four PRs to find.** Staging runs `DJANGO_DEBUG=False` (correct for a public server) with no `DJANGO_ADMIN_EMAILS` set and no `SENTRY_DSN` wired into that service's `render.yaml` block — so the first real finding (#224) wasn't the bug itself, it was that **every unhandled exception on staging left zero trace anywhere**: Django's own console log handler is gated behind `require_debug_true`, and its email-the-admins fallback silently no-ops with an empty `ADMINS` list. Once that was fixed, the actual traceback showed `botocore.exceptions.ClientError: An error occurred () when calling the PutObject operation:` — which *looked* like an unparseable, empty response (leading #225's checksum-compat fix and #226's follow-up SigV4-regression fix, both real, legitimate issues in their own right, neither the actual cause). #227 added temporary wire-level debug logging specifically to stop guessing from a truncated error string — and the real response turned out to be a perfectly well-formed `<Code>SignatureDoesNotMatch</Code>` the whole time.
+
+**Root cause (#228).** `SignedHeaders` included `baggage` and `sentry-trace` — `sentry-sdk` auto-enables its Boto3 integration whenever boto3 is importable, and by default (`trace_propagation_targets=[".*"]`) injects distributed-tracing headers into *every* outgoing HTTP call made during a request, including boto3's own SigV4-signed S3 calls. Supabase Storage's gateway recomputes the signature from what actually hits the wire and rejects it. This is also why it was unreproducible locally for most of the investigation: it only happens with an active Sentry transaction (a real deployed request), never in a `manage.py shell` session, and never on the presigned-URL leg (a separate request made by an external client, outside Django's own transaction). Fix: `trace_propagation_targets=[]` — this app has no other first-party service to maintain trace continuity with, so nothing legitimately needs these headers propagated anywhere.
+
+**PRs.** #224 (error visibility), #225 (checksum compat — real fix, not the cause), #226 (SigV4 regression #225 introduced — real fix, not the cause), #227 (temporary debug logging, reverted by #228), #228 (the actual fix).
+
+**Verify.** Live, not from the diff: minted a real guest token against `spekooh-staging.onrender.com` and confirmed `201` on both the direct multipart submit and the presigned `storage_key` submit, plus `200` on avatar upload — all three had been a reproducible `500` before #228.
 
 ---
 

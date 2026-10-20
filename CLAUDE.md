@@ -17,6 +17,8 @@ Key routing rules:
 - Resume context → invoke /context-restore
 - Author a backlog-ready spec/issue → invoke /spec
 - CI health/dependency vulnerabilities/git hygiene pass → invoke /harden
+- Replicating this app's stack/process for a new app → invoke the `app-architecture-playbook`
+  skill (also readable stand-alone at `ARCHITECTURE_PLAYBOOK.md`, repo root)
 
 ## Design System
 Always read DESIGN.md (repo root) before making any visual or UI decisions.

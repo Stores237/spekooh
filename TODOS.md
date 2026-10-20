@@ -1192,6 +1192,36 @@ Same day, a further round of functional-mismatch fixes from more live screenshot
 
 ---
 
+## Recently shipped (2026-10-19 – 2026-10-20)
+
+- **Summary notes admin overhaul (#223)** — `Note.subject`/`Note.level` converted from free-text
+  to real foreign keys into the existing `Subject`/`ExamCategory` taxonomy; `body` made required.
+  Admin shows a "+" to add a missing Subject (Support-only permission, newly granted) but not a
+  new Academic level (that set is already complete). Full data migration with a loud failure on
+  any unmatched existing data rather than a silent drop.
+- **A real production outage, reported live, root-caused and fixed: paper/report submission was
+  completely broken on staging** — both upload paths 500'd, and so did avatar upload (unrelated
+  code), which was the first real clue this wasn't an app bug. Took four PRs to get there because
+  the first real finding was that staging had **no error visibility at all**
+  (`DJANGO_DEBUG=False`, no `DJANGO_ADMIN_EMAILS`, no `SENTRY_DSN` in that service's
+  `render.yaml`) — Django's own unhandled-exception logging was silently swallowed end to end.
+  Once that was fixed (#224), the real traceback *looked* like an unparseable, empty botocore
+  error, which led to two more real-but-not-the-actual-cause fixes (#225 checksum compat, #226 a
+  SigV4 regression #225 itself introduced) before temporary wire-level debug logging (#227)
+  showed the literal, well-formed response: `SignatureDoesNotMatch`. Root cause (#228):
+  `sentry-sdk` auto-instruments boto3 and, by default, injects `sentry-trace`/`baggage` headers
+  into every outgoing HTTP call during a request — including boto3's own SigV4-signed S3 calls —
+  which Supabase's storage gateway correctly rejects once the wire bytes don't match what was
+  signed. Fixed with `trace_propagation_targets=[]` (this app has no other first-party service to
+  propagate trace headers to). This is exactly why it never reproduced locally: only a request
+  with an active Sentry transaction triggers it, and no local `manage.py shell` test ever has one.
+  Verified live against `spekooh-staging.onrender.com` after each attempt, not from the diff —
+  the direct-multipart and presigned-`storage_key` submit paths both now return `201`, avatar
+  upload returns `200`. **PRs**: #224, #225, #226, #227, #228. See `BETA_CHANGES.md` §17 for the
+  full investigation writeup.
+
+---
+
 ## Not in the spec at all, and correctly left alone
 
 These are decorative gaps found during this session's audit. Each was deliberately left
