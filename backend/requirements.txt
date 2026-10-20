@@ -52,7 +52,7 @@ psycopg-binary==3.3.6
 py-serializable==2.1.0
 Pygments==2.21.0
 PyJWT==2.15.1
-pyparsing==3.3.2
+pyparsing==3.3.3
 pypdf==6.19.0
 pytesseract==0.3.13
 pytest==9.1.1
